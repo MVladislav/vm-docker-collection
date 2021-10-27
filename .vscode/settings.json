@@ -1,0 +1,11 @@
+{
+  "[python]": {
+    "editor.insertSpaces": true,
+    "editor.tabSize": 4
+  },
+  "python.formatting.provider": "autopep8",
+  "python.formatting.autopep8Args": ["--max-line-length", "127"],
+  "python.autoComplete.addBrackets": true,
+  "python.analysis.autoImportCompletions": true,
+  "standard.enable": false
+}

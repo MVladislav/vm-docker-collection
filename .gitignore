@@ -1,0 +1,13 @@
+/*
+!.git
+!.github
+!.vscode
+!.gitignore
+!.gitempty
+
+!CHANGELOG.md
+!LICENCE
+!README.md
+!SECURITY.md
+
+!composer/

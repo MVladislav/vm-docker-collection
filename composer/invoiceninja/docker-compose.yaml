@@ -1,0 +1,119 @@
+version: "3.8"
+
+services:
+  ######################################################################################
+  ######################################################################################
+  ######################################################################################
+  db:
+    image: mariadb:latest
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        max_replicas_per_node: 1
+        constraints:
+          # - "node.id==${NODE_ID}"
+          - "node.role==${NODE_ROLE}"
+      restart_policy:
+        condition: on-failure
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: ${DB_DATABASE}
+    volumes:
+      - db:/var/lib/mysql
+    networks:
+      default: {}
+    extra_hosts:
+      - "in5.localhost:192.168.0.124 " #host and ip
+    # command: --transaction-isolation=READ-COMMITTED --binlog-format=ROW
+    command: [mysqld, --character-set-server=utf8mb4, --collation-server=utf8mb4_unicode_ci, --wait_timeout=28800, --log-warnings=0]
+    restart: always
+
+  server:
+    image: nginx
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        max_replicas_per_node: 1
+        constraints:
+          # - "node.id==${NODE_ID}"
+          - "node.role==${NODE_ROLE}"
+      restart_policy:
+        condition: on-failure
+    env_file: .env
+    configs:
+      - source: nginx_config
+        target: /etc/nginx/conf.d/in-vhost.conf:ro
+    volumes:
+      # - ./config/Caddyfile:/etc/caddy/Caddyfiledocker-com
+      - public:/var/www/app/public
+      - storage:/var/www/app/storage
+    ports:
+      - target: 80
+        published: 80
+        protocol: tcp
+        mode: host
+      # - target: 443
+      #   published: 443
+      #   protocol: tcp
+      #   mode: host
+    networks:
+      default: {}
+    extra_hosts:
+      - "in5.localhost:192.168.0.124 " #host and ip
+    restart: always
+
+  app:
+    build:
+      context: .
+      args:
+        PHP_VERSION: ${PHP_VERSION}
+        INVOICENINJA_VERSION: ${INVOICENINJA_VERSION}
+    image: localhost:5000/invoiceninja:${INVOICENINJA_VERSION:-latest}
+    # image: invoiceninja/invoiceninja:5
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        max_replicas_per_node: 1
+        constraints:
+          # - "node.id==${NODE_ID}"
+          - "node.role==${NODE_ROLE}"
+      restart_policy:
+        condition: on-failure
+    env_file: .env
+    configs:
+      - source: hosts_config
+        target: /etc/hosts
+      - source: shutdown_config
+        target: /usr/local/bin/shutdown.sh
+    volumes:
+      - public:/var/www/app/public
+      - storage:/var/www/app/storage
+    networks:
+      default: {}
+    extra_hosts:
+      - "in5.localhost:192.168.0.124 " #host and ip
+    restart: always
+######################################################################################
+######################################################################################
+######################################################################################
+networks:
+  default:
+    driver: ${NETWORK_MODE:-bridge}
+
+volumes:
+  db: {}
+  public: {}
+  storage: {}
+
+configs:
+  nginx_config:
+    file: $PWD/config/in-vhost.conf
+  hosts_config:
+    file: $PWD/config/hosts
+  shutdown_config:
+    file: $PWD/config/shutdown.sh

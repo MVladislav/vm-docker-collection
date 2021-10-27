@@ -1,0 +1,110 @@
+version: "3.8"
+
+services:
+  ######################################################################################
+  ######################################################################################
+  ######################################################################################
+  snipeit:
+    image: snipe/snipe-it:${VERSION:-latest}
+    # image: linuxserver/snipe-it:latest
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65535
+        hard: 65535
+      fsize: -1
+      as: -1
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        max_replicas_per_node: 1
+        constraints:
+          # - "node.id==${NODE_ID}"
+          - "node.role==${NODE_ROLE:-manager}"
+      restart_policy:
+        condition: on-failure
+    ports:
+      - target: 80
+        published: 8080
+        protocol: tcp
+        mode: host
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-snipe}
+      MYSQL_USER: ${MYSQL_USER:-snipe}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-swordfish}
+      MYSQL_PORT_3306_TCP_ADDR: mysql
+      MYSQL_PORT_3306_TCP_PORT: 3306
+      # MAIL_PORT_587_TCP_ADDR: ${MAIL_PORT_587_TCP_ADDR}
+      # MAIL_PORT_587_TCP_PORT: ${MAIL_PORT_587_TCP_PORT}
+      # MAIL_ENV_FROM_ADDR: ${MAIL_ENV_FROM_ADDR}
+      # MAIL_ENV_FROM_NAME: ${MAIL_ENV_FROM_NAME}
+      # MAIL_ENV_ENCRYPTION: ${MAIL_ENV_ENCRYPTION}
+      # MAIL_ENV_USERNAME: ${MAIL_ENV_USERNAME}
+      # MAIL_ENV_PASSWORD: ${MAIL_ENV_PASSWORD}
+      APP_ENV: ${APP_ENV}
+      APP_DEBUG: ${APP_DEBUG:-false}
+      APP_KEY: ${APP_KEY:-}
+      APP_URL: ${APP_URL:-127.0.0.1:8080}
+      APP_TIMEZONE: ${APP_TIMEZONE}
+      APP_LOCALE: ${APP_LOCALE}
+      PGID: 1000
+      PUID: 1000
+    volumes:
+      - conf:/config
+    networks:
+      default: {}
+    restart: always
+
+  ######################################################################################
+  ######################################################################################
+  ######################################################################################
+  snipe-mysql:
+    image: mariadb:latest
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        max_replicas_per_node: 1
+        constraints:
+          # - "node.id==${NODE_ID}"
+          - "node.role==${NODE_ROLE:-manager}"
+      restart_policy:
+        condition: on-failure
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-swordfish}
+      MYSQL_USER: ${MYSQL_USER:-snipe}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-swordfish}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-snipe}
+    volumes:
+      - db:/var/lib/mysql
+    # This command is required to set important mariadb defaults
+    command:
+      [
+        mysqld,
+        --character-set-server=utf8mb4,
+        --collation-server=utf8mb4_unicode_ci,
+        --wait_timeout=28800,
+        --log-warnings=0,
+        --default-authentication-plugin=mysql_native_password,
+      ]
+    networks:
+      default: {}
+    restart: always
+
+######################################################################################
+######################################################################################
+######################################################################################
+networks:
+  default:
+    driver: ${NETWORK_MODE:-bridge}
+
+volumes:
+  db: {}
+  conf: {}
+# configs:
+#   xx_config:
+#     file: $PWD/...
