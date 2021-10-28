@@ -62,7 +62,7 @@ APP_LOCALE=en # you should change this for the desired language
 
 ```sh
 $docker-compose up -d
-$docker-compose logs -f snipeit
+$docker-compose exec snipeit php artisan key:generate --show
 $docker-compose stop
 ```
 
