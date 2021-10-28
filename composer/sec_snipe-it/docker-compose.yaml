@@ -60,8 +60,41 @@ services:
   ######################################################################################
   ######################################################################################
   ######################################################################################
+  # snipe-mysql:
+  #   image: mariadb:latest
+  #   deploy:
+  #     mode: replicated
+  #     replicas: 1
+  #     placement:
+  #       max_replicas_per_node: 1
+  #       constraints:
+  #         # - "node.id==${NODE_ID}"
+  #         - "node.role==${NODE_ROLE:-manager}"
+  #     restart_policy:
+  #       condition: on-failure
+  #   environment:
+  #     MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-swordfish}
+  #     MYSQL_USER: ${MYSQL_USER:-snipe}
+  #     MYSQL_PASSWORD: ${MYSQL_PASSWORD:-swordfish}
+  #     MYSQL_DATABASE: ${MYSQL_DATABASE:-snipe}
+  #   volumes:
+  #     - db:/var/lib/mysql
+  #   # This command is required to set important mariadb defaults
+  #   command:
+  #     [
+  #       mysqld,
+  #       --character-set-server=utf8mb4,
+  #       --collation-server=utf8mb4_unicode_ci,
+  #       --wait_timeout=28800,
+  #       --log-warnings=0,
+  #       --default-authentication-plugin=mysql_native_password,
+  #     ]
+  #   networks:
+  #     default: {}
+  #   restart: always
+
   snipe-mysql:
-    image: mariadb:latest
+    image: mysql:5.6
     deploy:
       mode: replicated
       replicas: 1
@@ -73,22 +106,13 @@ services:
       restart_policy:
         condition: on-failure
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-swordfish}
-      MYSQL_USER: ${MYSQL_USER:-snipe}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_USER: ${MYSQL_USER:-admin}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:-swordfish}
-      MYSQL_DATABASE: ${MYSQL_DATABASE:-snipe}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-snipeit}
     volumes:
       - db:/var/lib/mysql
-    # This command is required to set important mariadb defaults
-    command:
-      [
-        mysqld,
-        --character-set-server=utf8mb4,
-        --collation-server=utf8mb4_unicode_ci,
-        --wait_timeout=28800,
-        --log-warnings=0,
-        --default-authentication-plugin=mysql_native_password,
-      ]
+    command: --default-authentication-plugin=mysql_native_password
     networks:
       default: {}
     restart: always
@@ -101,8 +125,5 @@ networks:
     driver: ${NETWORK_MODE:-bridge}
 
 volumes:
-  db: {}
   conf: {}
-# configs:
-#   xx_config:
-#     file: $PWD/...
+  db: {}
