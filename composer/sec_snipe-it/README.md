@@ -11,6 +11,7 @@
     - [create `.env` file following:](#create-env-file-following)
       - [API Key](#api-key)
   - [References](#references)
+    - [How-To](#how-to)
 
 ---
 
@@ -75,3 +76,7 @@ replace `{{INSERT_API_TOKEN}}` with output from last command (from log) in your 
 - <https://github.com/snipe/snipe-it>
 - <https://github.com/comoser/snipe-it-docker-compose>
 - <https://hub.docker.com/r/linuxserver/snipe-it>
+
+### How-To
+
+- <https://www.youtube.com/watch?v=AmKc0GuQbAU>
