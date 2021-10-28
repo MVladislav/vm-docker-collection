@@ -60,11 +60,12 @@ APP_LOCALE=en # you should change this for the desired language
 #### API Key
 
 ```sh
-$docker exec -it snipe/snipe-it bash
-> $php artisan key:generate --show
+$docker-compose up -d
+$docker-compose logs -f snipeit
+$docker-compose stop
 ```
 
-replace `{{INSERT_API_TOKEN}}` with output from last command in your **.env** file
+replace `{{INSERT_API_TOKEN}}` with output from last command (from log) in your **.env** file
 
 ---
 
