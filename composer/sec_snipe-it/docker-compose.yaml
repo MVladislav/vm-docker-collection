@@ -31,28 +31,28 @@ services:
         published: 8080
         protocol: tcp
         mode: host
-    environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE:-snipe}
-      MYSQL_USER: ${MYSQL_USER:-snipe}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-swordfish}
-      MYSQL_PORT_3306_TCP_ADDR: mysql
-      MYSQL_PORT_3306_TCP_PORT: 3306
-      # MAIL_PORT_587_TCP_ADDR: ${MAIL_PORT_587_TCP_ADDR}
-      # MAIL_PORT_587_TCP_PORT: ${MAIL_PORT_587_TCP_PORT}
-      # MAIL_ENV_FROM_ADDR: ${MAIL_ENV_FROM_ADDR}
-      # MAIL_ENV_FROM_NAME: ${MAIL_ENV_FROM_NAME}
-      # MAIL_ENV_ENCRYPTION: ${MAIL_ENV_ENCRYPTION}
-      # MAIL_ENV_USERNAME: ${MAIL_ENV_USERNAME}
-      # MAIL_ENV_PASSWORD: ${MAIL_ENV_PASSWORD}
-      APP_ENV: ${APP_ENV}
-      APP_DEBUG: ${APP_DEBUG:-false}
-      APP_KEY: ${APP_KEY:-}
-      APP_URL: ${APP_URL:-127.0.0.1:8080}
-      APP_TIMEZONE: ${APP_TIMEZONE}
-      APP_LOCALE: ${APP_LOCALE}
-      PGID: 1000
-      PUID: 1000
+    env_file:
+      - ./.env
+    # environment:
+    #   MYSQL_PORT_3306_TCP_ADDR: ${MYSQL_PORT_3306_TCP_ADDR:-snipe-mysql}
+    #   MYSQL_PORT_3306_TCP_PORT: ${MYSQL_PORT_3306_TCP_PORT:-3306}
+    #   MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    #   MYSQL_DATABASE: ${MYSQL_DATABASE:-snipeit}
+    #   MYSQL_USER: ${MYSQL_USER:-admin}
+    #   MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    #   MAIL_PORT_587_TCP_ADDR: ${MAIL_PORT_587_TCP_ADDR}
+    #   MAIL_PORT_587_TCP_PORT: ${MAIL_PORT_587_TCP_PORT:-465}
+    #   MAIL_ENV_FROM_ADDR: ${MAIL_ENV_FROM_ADDR}
+    #   MAIL_ENV_FROM_NAME: ${MAIL_ENV_FROM_NAME}
+    #   MAIL_ENV_ENCRYPTION: ${MAIL_ENV_ENCRYPTION:-tls}
+    #   MAIL_ENV_USERNAME: ${MAIL_ENV_USERNAME}
+    #   MAIL_ENV_PASSWORD: ${MAIL_ENV_PASSWORD}
+    #   APP_ENV: ${APP_ENV:-production}
+    #   APP_DEBUG: ${APP_DEBUG:-false}
+    #   APP_KEY: ${APP_KEY}
+    #   APP_URL: ${APP_URL:-http://127.0.0.1:80}
+    #   APP_TIMEZONE: ${APP_TIMEZONE:-Europe/Berlin}
+    #   APP_LOCALE: ${APP_LOCALE:-en}
     volumes:
       - conf:/config
     networks:
@@ -62,8 +62,41 @@ services:
   ######################################################################################
   ######################################################################################
   ######################################################################################
+  # snipe-mysql:
+  #   image: mariadb:latest
+  #   deploy:
+  #     mode: replicated
+  #     replicas: 1
+  #     placement:
+  #       max_replicas_per_node: 1
+  #       constraints:
+  #         # - "node.id==${NODE_ID}"
+  #         - "node.role==${NODE_ROLE:-manager}"
+  #     restart_policy:
+  #       condition: on-failure
+  #   environment:
+  #     MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-swordfish}
+  #     MYSQL_USER: ${MYSQL_USER:-snipe}
+  #     MYSQL_PASSWORD: ${MYSQL_PASSWORD:-swordfish}
+  #     MYSQL_DATABASE: ${MYSQL_DATABASE:-snipe}
+  #   volumes:
+  #     - db:/var/lib/mysql
+  #   # This command is required to set important mariadb defaults
+  #   command:
+  #     [
+  #       mysqld,
+  #       --character-set-server=utf8mb4,
+  #       --collation-server=utf8mb4_unicode_ci,
+  #       --wait_timeout=28800,
+  #       --log-warnings=0,
+  #       --default-authentication-plugin=mysql_native_password,
+  #     ]
+  #   networks:
+  #     default: {}
+  #   restart: always
+
   snipe-mysql:
-    image: mariadb:latest
+    image: mysql:5.6
     deploy:
       mode: replicated
       replicas: 1
@@ -75,22 +108,13 @@ services:
       restart_policy:
         condition: on-failure
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-swordfish}
-      MYSQL_USER: ${MYSQL_USER:-snipe}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_USER: ${MYSQL_USER:-admin}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:-swordfish}
-      MYSQL_DATABASE: ${MYSQL_DATABASE:-snipe}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-snipeit}
     volumes:
       - db:/var/lib/mysql
-    # This command is required to set important mariadb defaults
-    command:
-      [
-        mysqld,
-        --character-set-server=utf8mb4,
-        --collation-server=utf8mb4_unicode_ci,
-        --wait_timeout=28800,
-        --log-warnings=0,
-        --default-authentication-plugin=mysql_native_password,
-      ]
+    command: --default-authentication-plugin=mysql_native_password
     networks:
       default: {}
     restart: always
@@ -103,8 +127,5 @@ networks:
     driver: ${NETWORK_MODE:-bridge}
 
 volumes:
-  db: {}
   conf: {}
-# configs:
-#   xx_config:
-#     file: $PWD/...
+  db: {}

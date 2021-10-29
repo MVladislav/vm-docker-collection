@@ -11,6 +11,7 @@
     - [create `.env` file following:](#create-env-file-following)
       - [API Key](#api-key)
   - [References](#references)
+    - [How-To](#how-to)
 
 ---
 
@@ -60,11 +61,12 @@ APP_LOCALE=en # you should change this for the desired language
 #### API Key
 
 ```sh
-$docker exec -it snipe/snipe-it bash
-> $php artisan key:generate --show
+$docker-compose up -d
+$docker-compose exec snipeit php artisan key:generate --show
+$docker-compose stop
 ```
 
-replace `{{INSERT_API_TOKEN}}` with output from last command in your **.env** file
+replace `{{INSERT_API_TOKEN}}` with output from last command (from log) in your **.env** file
 
 ---
 
@@ -74,3 +76,7 @@ replace `{{INSERT_API_TOKEN}}` with output from last command in your **.env** fi
 - <https://github.com/snipe/snipe-it>
 - <https://github.com/comoser/snipe-it-docker-compose>
 - <https://hub.docker.com/r/linuxserver/snipe-it>
+
+### How-To
+
+- <https://www.youtube.com/watch?v=AmKc0GuQbAU>
