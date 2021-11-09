@@ -54,6 +54,7 @@ services:
     #   APP_TIMEZONE: ${APP_TIMEZONE:-Europe/Berlin}
     #   APP_LOCALE: ${APP_LOCALE:-en}
     volumes:
+      - /etc/localtime:/etc/localtime:ro
       - conf:/config
     networks:
       default: {}
@@ -113,6 +114,7 @@ services:
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:-swordfish}
       MYSQL_DATABASE: ${MYSQL_DATABASE:-snipeit}
     volumes:
+      - /etc/localtime:/etc/localtime:ro
       - db:/var/lib/mysql
     command: --default-authentication-plugin=mysql_native_password
     networks:
