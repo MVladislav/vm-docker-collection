@@ -30,7 +30,7 @@ services:
         condition: on-failure
     ports:
       - target: 5000
-        published: 8080
+        published: ${PORT:-8080}
         protocol: tcp
         mode: host
     tmpfs:

@@ -24,6 +24,8 @@ NODE_ID=
 NODE_ROLE=manager
 NETWORK_MODE=overlay
 
+PORT=8080
+
 VERSION=2.0.0-latest
 TYPE=check-mk-raw
 ```
@@ -50,6 +52,8 @@ HINT: **check `VERSION` from your downloaded version**
 NODE_ID=
 NODE_ROLE=manager
 NETWORK_MODE=overlay
+
+PORT=8080
 
 VERSION=2.0.0p12
 TYPE=check-mk-free
