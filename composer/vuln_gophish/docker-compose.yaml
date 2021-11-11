@@ -1,0 +1,63 @@
+version: "3.8"
+
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  app:
+    image: gophish/gophish:${VERSION:-latest}
+    # env_file: .env
+    # privileged: true
+    # stdin_open: true # docker run -i
+    # tty: true # docker run -t
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65535
+        hard: 65535
+      fsize: -1
+      as: -1
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        max_replicas_per_node: 1
+        constraints:
+          # - "node.id==${NODE_ID}"
+          - "node.role==${NODE_ROLE:-manager}"
+      restart_policy:
+        condition: on-failure
+    ports:
+      - target: 3333
+        published: ${PORT:-3333}
+        protocol: tcp
+        mode: host
+    # environment:
+    #   VAR: ...
+    # configs:
+    #   - source: xx_config
+    #     target: ...
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      # - data:/root
+    # command: >
+    #   ...
+    networks:
+      default: {}
+    restart: always
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  default:
+    driver: ${NETWORK_MODE:-bridge}
+#
+# volumes:
+#   data: {}
+#
+# configs:
+#   xx_config:
+#     file: $PWD/config/...
