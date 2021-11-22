@@ -1,0 +1,17 @@
+region: eu
+console_ui: "iftty"
+http_proxy: false
+inspect_db_size: 0
+log_level: info
+log_format: term
+log: false # /var/log/ngrok.log
+update: false
+update_channel: stable
+web_addr: 0.0.0.0:4040
+# tunnels:
+#   ssh:
+#     proto: tcp
+#     addr: 22
+#   # web:
+#   #   proto: http
+#   #   addr: 4040
