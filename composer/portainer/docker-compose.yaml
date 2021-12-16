@@ -12,8 +12,12 @@ services:
       restart_policy:
         condition: on-failure
     ports:
-      - target: 9000
-        published: ${PORT:-9000}
+      # - target: 9000
+      #   published: ${PORT_HTTP:-9000}
+      #   protocol: tcp
+      #   mode: host
+      - target: 9443
+        published: ${PORT_HTTPS:-9443}
         protocol: tcp
         mode: host
     volumes:

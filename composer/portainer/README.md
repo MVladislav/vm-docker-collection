@@ -20,7 +20,8 @@
 ```env
 NETWORK_MODE=overlay
 
-PORT=9000
+PORT_HTTP=9000
+PORT_HTTPS=9443
 ```
 
 ---
