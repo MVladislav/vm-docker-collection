@@ -19,7 +19,7 @@
 
 ```env
 NODE_ID=
-NODE_ROLE=worker
+NODE_ROLE=manager
 NETWORK_MODE=overlay
 
 VERSION=latest
