@@ -40,6 +40,7 @@ $openssl req -x509 -nodes -newkey rsa:2048 \
 -keyout $PWD/config/ssl/influxdb-selfsigned.key \
 -out $PWD/config/ssl/influxdb-selfsigned.crt \
 -days 999 \
+-addext "subjectAltName=DNS:home.local,IP:127.0.0.1" \
 -subj "/C=DE/ST=BW/L=A/O=VM/OU=VM/CN=home.local"
 ```
 
