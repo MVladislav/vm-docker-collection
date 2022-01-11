@@ -1,0 +1,87 @@
+version: "3.8"
+
+services:
+  ######################################################################################
+  ######################################################################################
+  ######################################################################################
+  influxdb:
+    image: influxdb:${VERSION:-latest}
+    env_file: .env
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65535
+        hard: 65535
+      fsize: -1
+      as: -1
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        max_replicas_per_node: 1
+        constraints:
+          # - "node.id==${NODE_ID}"
+          - "node.role==${NODE_ROLE:-manager}"
+    ports:
+      - target: 8086
+        published: ${PORT:-8086}
+        protocol: tcp
+        mode: host
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - influxdb2-storage:/var/lib/influxdb2
+      - influxdb2-config:/etc/influxdb2
+    environment:
+      DOCKER_INFLUXDB_INIT_MODE: ${DOCKER_INFLUXDB_INIT_MODE:-setup}
+      DOCKER_INFLUXDB_INIT_USERNAME: ${DOCKER_INFLUXDB_INIT_USERNAME:-root}
+      # DOCKER_INFLUXDB_INIT_PASSWORD: ${DOCKER_INFLUXDB_INIT_PASSWORD:-}
+      DOCKER_INFLUXDB_INIT_ORG: ${DOCKER_INFLUXDB_INIT_ORG:-my_orga}
+      DOCKER_INFLUXDB_INIT_BUCKET: ${DOCKER_INFLUXDB_INIT_BUCKET:-db0}
+      # DOCKER_INFLUXDB_INIT_RETENTION: ${DOCKER_INFLUXDB_INIT_RETENTION:-1w}
+      # DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: ${DOCKER_INFLUXDB_INIT_ADMIN_TOKEN:-my-super-secret-auth-token}
+    networks:
+      default: {}
+    restart: always
+
+  ######################################################################################
+  ######################################################################################
+  ######################################################################################
+  # chronograf:
+  #   image: chronograf:${VERSION:-latest}
+  #   deploy:
+  #     mode: replicated
+  #     replicas: 1
+  #     placement:
+  #       max_replicas_per_node: 1
+  #       constraints:
+  #         # - "node.id==${NODE_ID}"
+  #         - "node.role==${NODE_ROLE:-manager}"
+  #     restart_policy:
+  #       condition: on-failure
+  #   ports:
+  #     - target: 8888
+  #       published: 8888
+  #       mode: host
+  #   volumes:
+  #     - chronograf-storage:/var/lib/chronograf
+  #   environment:
+  #     - INFLUXDB_URL: http://influxdb:8086
+  #     - INFLUXDB_USERNAME: ${INFLUXDB_USERNAME}
+  #     - INFLUXDB_PASSWORD: ${INFLUXDB_PASSWORD}
+  #   networks:
+  #     default: {}
+  #   restart: always
+
+######################################################################################
+######################################################################################
+######################################################################################
+networks:
+  default:
+    driver: ${NETWORK_MODE:-bridge}
+
+volumes:
+  influxdb2-storage: {}
+  influxdb2-config: {}
+  # chronograf-storage: {}
