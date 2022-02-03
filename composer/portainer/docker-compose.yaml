@@ -25,10 +25,15 @@ services:
         published: ${PORT_OTHER:-8000}
         protocol: tcp
         mode: host
+    configs:
+      - source: crt_config
+        target: /certs/selfsigned.crt
+      - source: key_config
+        target: /certs/selfsigned.key
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - data:/data
-    command: -H tcp://tasks.agent:9001 --tlsskipverify
+    command: -H tcp://tasks.agent:9001 --tlsskipverify --ssl --sslcert /certs/selfsigned.crt --sslkey /certs/selfsigned.key
     networks:
       default: {}
 
@@ -79,3 +84,9 @@ networks:
 volumes:
   data: {}
   # registry: {}
+
+configs:
+  crt_config:
+    file: $PWD/config/ssl/selfsigned.crt
+  key_config:
+    file: $PWD/config/ssl/selfsigned.key
