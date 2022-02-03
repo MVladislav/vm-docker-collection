@@ -5,7 +5,7 @@ services:
   ##############################################################################
   ##############################################################################
 
-  app:
+  checkmk:
     image: checkmk/${TYPE:-check-mk-raw}:${VERSION:-2.0.0-latest}
     stdin_open: true # docker run -i
     tty: true # docker run -t

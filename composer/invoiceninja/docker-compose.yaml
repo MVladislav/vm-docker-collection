@@ -73,7 +73,7 @@ services:
       - "in5.localhost:192.168.0.124 " #host and ip
     restart: always
 
-  app:
+  invoiceninja:
     build:
       context: .
       args:
