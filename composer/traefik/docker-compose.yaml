@@ -66,6 +66,7 @@ services:
 networks:
   default:
     driver: ${NETWORK_MODE:-bridge}
+    attachable: true
 
 volumes:
   ssl_cert: {}
