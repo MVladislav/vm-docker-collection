@@ -33,7 +33,7 @@ services:
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - data:/data
-    command: -H tcp://tasks.agent:9001 --tlsskipverify --ssl --sslcert /certs/selfsigned.crt --sslkey /certs/selfsigned.key
+    command: -H tcp://tasks.agent:9001 --tlsskipverify --tls-cert /certs/selfsigned.crt --tls-key /certs/selfsigned.key
     networks:
       default: {}
 
