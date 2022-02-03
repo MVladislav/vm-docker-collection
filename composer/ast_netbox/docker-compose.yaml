@@ -4,7 +4,8 @@ services:
   ##############################################################################
   ##############################################################################
   ##############################################################################
-  netbox: &netbox
+  netbox:
+    &netbox
     image: netboxcommunity/netbox:${VERSION:-v3.0}
     deploy:
       mode: replicated
@@ -122,11 +123,13 @@ services:
 networks:
   default:
     driver: ${NETWORK_MODE:-bridge}
+    attachable: true
 
 volumes:
   netbox-media-files: {}
   netbox-postgres-data: {}
   netbox-redis-data: {}
+
 # configs:
 #   startup_scripts_config:
 #     file: $PWD/config/startup_scripts

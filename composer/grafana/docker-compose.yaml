@@ -57,6 +57,7 @@ services:
 networks:
   default:
     driver: ${NETWORK_MODE:-bridge}
+    attachable: true
   elastic_default:
     external: true
     name: elastic_default

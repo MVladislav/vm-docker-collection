@@ -28,7 +28,14 @@ services:
     extra_hosts:
       - "in5.localhost:192.168.0.124 " #host and ip
     # command: --transaction-isolation=READ-COMMITTED --binlog-format=ROW
-    command: [mysqld, --character-set-server=utf8mb4, --collation-server=utf8mb4_unicode_ci, --wait_timeout=28800, --log-warnings=0]
+    command:
+      [
+        mysqld,
+        --character-set-server=utf8mb4,
+        --collation-server=utf8mb4_unicode_ci,
+        --wait_timeout=28800,
+        --log-warnings=0
+      ]
     restart: always
 
   server:
@@ -104,6 +111,7 @@ services:
 networks:
   default:
     driver: ${NETWORK_MODE:-bridge}
+    attachable: true
 
 volumes:
   db: {}

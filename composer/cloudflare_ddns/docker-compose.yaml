@@ -31,6 +31,7 @@ services:
       # API_KEY: ${API_KEY}
       ZONE: ${ZONE}
       PROXIED: ${PROXIED:-true}
+      RRTYPE: ${RRTYPE:-A}
       PUID: ${PUID:-1000}
       PGID: ${PGID:-1000}
     volumes:
@@ -45,3 +46,4 @@ services:
 networks:
   default:
     driver: ${NETWORK_MODE:-bridge}
+    attachable: true

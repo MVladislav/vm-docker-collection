@@ -89,6 +89,7 @@ services:
 networks:
   default:
     driver: ${NETWORK_MODE:-bridge}
+    attachable: true
   # default_host:
   #   external: true
   #   name: host

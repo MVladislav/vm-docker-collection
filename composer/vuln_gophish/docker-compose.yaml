@@ -42,8 +42,8 @@ services:
     volumes:
       - /etc/localtime:/etc/localtime:ro
       # - data:/root
-    # command: >
-    #   ...
+      # command: >
+      #   ...
     networks:
       default: {}
     restart: always
@@ -54,6 +54,8 @@ services:
 networks:
   default:
     driver: ${NETWORK_MODE:-bridge}
+    attachable: true
+
 #
 # volumes:
 #   data: {}
