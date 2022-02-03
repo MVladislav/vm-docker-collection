@@ -1,0 +1,73 @@
+version: "3.8"
+
+services:
+
+  # whoami:
+  #   image: "traefik/whoami"
+  #   container_name: "simple-service"
+  #   labels:
+  #     - "traefik.enable=true"
+  #     - "traefik.http.routers.whoami.rule=Host(`whoami.localhost`)"
+  #     - "traefik.http.routers.whoami.entrypoints=web"
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  app:
+    image: traefik:${VERSION:-v2.6}
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65535
+        hard: 65535
+      fsize: -1
+      as: -1
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        max_replicas_per_node: 1
+        constraints:
+          # - "node.id==${NODE_ID}"
+          - "node.role==${NODE_ROLE:-manager}"
+      restart_policy:
+        condition: on-failure
+    ports:
+      - target: 80
+        published: ${PORT_HTTP:-80}
+        protocol: tcp
+        mode: host
+      - target: 443
+        published: ${PORT_HTTPS:-443}
+        protocol: tcp
+        mode: host
+      - target: 8080
+        published: 8080
+        protocol: tcp
+        mode: host
+    configs:
+      - source: traefik_config
+        target: /etc/traefik/traefik.yml
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - ssl_cert:/ssl-certs
+    networks:
+      default: {}
+    restart: always
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  default:
+    driver: ${NETWORK_MODE:-bridge}
+
+volumes:
+  ssl_cert: {}
+
+configs:
+  traefik_config:
+    file: $PWD/config/traefik.yml
