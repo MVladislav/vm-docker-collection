@@ -27,6 +27,7 @@ services:
       - source: key_config
         target: /etc/ssl/grafana-selfsigned.key
     volumes:
+      - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - grafana-storage:/var/lib/grafana
       # - provisioning:/etc/grafana/provisioning

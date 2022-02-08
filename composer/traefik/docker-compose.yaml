@@ -51,6 +51,7 @@ services:
       - source: traefik_config
         target: /etc/traefik/traefik.yml
     volumes:
+      - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
       - ssl_cert:/ssl-certs"

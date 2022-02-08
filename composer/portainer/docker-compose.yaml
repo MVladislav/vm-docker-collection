@@ -31,6 +31,7 @@ services:
       - source: key_config
         target: /certs/selfsigned.key
     volumes:
+      - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - data:/data
     command: -H tcp://tasks.agent:9001 --tlsskipverify --sslcert /certs/selfsigned.crt --sslkey /certs/selfsigned.key

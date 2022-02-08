@@ -35,6 +35,7 @@ services:
       - source: key_config
         target: /etc/ssl/influxdb-selfsigned.key
     volumes:
+      - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - influxdb2-storage:/var/lib/influxdb2
       - influxdb2-config:/etc/influxdb2

@@ -54,6 +54,7 @@ services:
     #   APP_TIMEZONE: ${APP_TIMEZONE:-Europe/Berlin}
     #   APP_LOCALE: ${APP_LOCALE:-en}
     volumes:
+      - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - conf:/config
     networks:

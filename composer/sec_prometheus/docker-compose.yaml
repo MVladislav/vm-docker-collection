@@ -40,6 +40,7 @@ services:
       - source: prom_config
         target: /etc/prometheus/prometheus.yml
     volumes:
+      - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - prometheus-data:/prometheus
       - prometheus-conf:/etc/prometheus

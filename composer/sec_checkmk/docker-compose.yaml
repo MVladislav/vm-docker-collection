@@ -36,6 +36,7 @@ services:
     tmpfs:
       - /opt/cmk/tmp:uid=1000,gid=1000
     volumes:
+      - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - data:/omd/sites
     networks:

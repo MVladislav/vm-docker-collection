@@ -37,6 +37,7 @@ services:
     #   - source: xx_config
     #     target: ...
     volumes:
+      - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - data:/app/data
     # command: >

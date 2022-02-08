@@ -86,6 +86,7 @@ services:
         condition: on-failure
     env_file: $PWD/config/env/redis.env
     volumes:
+      - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - netbox-redis-data:/data
     command:
