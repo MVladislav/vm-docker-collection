@@ -51,7 +51,7 @@ services:
       - source: traefik_config
         target: /etc/traefik/traefik.yml
       - source: traefik_crt_config
-        target: /etc/traefik/certs/cert-key.pem
+        target: /etc/traefik/certs/cert.pem
       - source: traefik_key_config
         target: /etc/traefik/certs/cert-key.pem
     volumes:
@@ -80,4 +80,4 @@ configs:
   traefik_crt_config:
     file: $PWD/config/ssl/cert.pem
   traefik_key_config:
-    file: $PWD/config/ssl/traefik.yml
+    file: $PWD/config/ssl/cert-key.pem
