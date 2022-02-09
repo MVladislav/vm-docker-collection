@@ -12,5 +12,7 @@
 !LICENCE
 !README.md
 
-!config
+!config/
 !config/*
+config/ssl/*
+!config/ssl/.gitempty

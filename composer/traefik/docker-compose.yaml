@@ -43,20 +43,22 @@ services:
         published: ${PORT_HTTPS:-443}
         protocol: tcp
         mode: host
-      # - target: 8080
-      #   published: ${PORT_GUI:-8080}
-      #   protocol: tcp
-      #   mode: host
+      - target: 8080
+        published: ${PORT_GUI:-8080}
+        protocol: tcp
+        mode: host
     configs:
       - source: traefik_config
         target: /etc/traefik/traefik.yml
+      - source: traefik_crt_config
+        target: /etc/traefik/certs/cert-key.pem
+      - source: traefik_key_config
+        target: /etc/traefik/certs/cert-key.pem
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
-      - ssl_cert:/ssl-certs"
-    # command:
-    #   - "--api.insecure=true"
+      - ssl_cert:/etc/traefik/certs/"
     networks:
       default: {}
     restart: always
@@ -75,3 +77,7 @@ volumes:
 configs:
   traefik_config:
     file: $PWD/config/traefik.yml
+  traefik_crt_config:
+    file: $PWD/config/ssl/cert.pem
+  traefik_key_config:
+    file: $PWD/config/ssl/traefik.yml
