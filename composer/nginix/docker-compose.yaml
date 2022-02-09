@@ -1,0 +1,62 @@
+version: "3.8"
+
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  nginx-proxy-manager:
+    image: jc21/nginx-proxy-manager:${VERSION:-latest}
+    env_file: .env
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65535
+        hard: 65535
+      fsize: -1
+      as: -1
+    deploy:
+      mode: global
+      placement:
+        constraints:
+          - node.platform.os == linux
+      restart_policy:
+        condition: on-failure
+    ports:
+      - target: 80
+        published: ${PORT_HTTP:-80}
+        protocol: tcp
+        mode: host
+      - target: 81
+        published: ${PORT_81:-81}
+        protocol: tcp
+        mode: host
+      - target: 443
+        published: ${PORT_HTTPS:-443}
+        protocol: tcp
+        mode: host
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - data:/data
+      - letsencrypt:/etc/letsencrypt
+    healthcheck:
+      test: [ "CMD", "/bin/check-health" ]
+      interval: 10s
+      timeout: 3s
+    networks:
+      default: {}
+    restart: always
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  default:
+    driver: ${NETWORK_MODE:-bridge}
+    attachable: true
+
+volumes:
+  data: {}
+  letsencrypt: {}
