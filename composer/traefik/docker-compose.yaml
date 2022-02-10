@@ -55,10 +55,10 @@ services:
       - source: traefik_key_config
         target: /etc/traefik/certs/cert-key.pem
     volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-      - "/var/run/docker.sock:/var/run/docker.sock:ro"
-      - ssl_cert:/etc/traefik/certs/"
+      - ssl_cert:/etc/traefik/certs:ro
     networks:
       default: {}
     restart: always
