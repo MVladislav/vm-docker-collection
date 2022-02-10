@@ -15,10 +15,11 @@
 
 ## basic
 
+> defined to work with treafik
+
 ### create `.env` file following:
 
 ```env
-NODE_ID=
 NODE_ROLE=manager
 NETWORK_MODE=overlay
 

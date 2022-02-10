@@ -6,7 +6,6 @@ services:
   ##############################################################################
   uptime_kuma:
     image: louislam/uptime-kuma:${VERSION:-latest}
-    # env_file: .env
     ulimits:
       memlock:
         soft: -1
@@ -26,38 +25,39 @@ services:
           - "node.role==${NODE_ROLE:-manager}"
       restart_policy:
         condition: on-failure
-    ports:
-      - target: 3001
-        published: ${PORT:-3001}
-        protocol: tcp
-        mode: host
-    # environment:
-    #   VAR: ...
-    # configs:
-    #   - source: xx_config
-    #     target: ...
+      labels:
+        - traefik.enable=true
+        - traefik.docker.lbswarm=true
+        - traefik.docker.network=proxy
+        - traefik.http.routers.kuma.entrypoints=https
+        - traefik.http.routers.kuma.rule=Host(`status.home.local`)
+        - traefik.http.routers.kuma.tls=true
+        - traefik.http.routers.kuma.service=kuma
+        - traefik.http.services.kuma.loadbalancer.server.scheme=http
+        - traefik.http.services.kuma.loadbalancer.server.port=3001
+    # ports:
+    #   - target: 3001
+    #     published: ${PORT:-3001}
+    #     protocol: tcp
+    #     mode: host
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - data:/app/data
-    # command: >
-    #   ...
     networks:
-      default: {}
+      # default: {}
+      proxy: {}
     restart: always
 
 ################################################################################
 ################################################################################
 ################################################################################
 networks:
-  default:
-    driver: ${NETWORK_MODE:-bridge}
-    attachable: true
-#
+  # default:
+  #   driver: ${NETWORK_MODE:-bridge}
+  #   attachable: true
+  proxy:
+    external: true
+
 volumes:
   data: {}
-
-#
-# configs:
-#   xx_config:
-#     file: $PWD/config/...
