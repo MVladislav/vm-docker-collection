@@ -15,6 +15,8 @@
 
 ## basic
 
+> defined to work with treafik
+
 ### create `.env` file following:
 
 ```env

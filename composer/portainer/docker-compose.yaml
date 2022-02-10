@@ -2,6 +2,9 @@
 version: "3.8"
 
 services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
   portainer:
     image: portainer/portainer-ce:latest
     deploy:
@@ -12,32 +15,47 @@ services:
           - "node.role==manager"
       restart_policy:
         condition: on-failure
-    ports:
-      # - target: 9000
-      #   published: ${PORT_HTTP:-9000}
-      #   protocol: tcp
-      #   mode: host
-      - target: 9443
-        published: ${PORT_HTTPS:-9443}
-        protocol: tcp
-        mode: host
-      - target: 8000
-        published: ${PORT_OTHER:-8000}
-        protocol: tcp
-        mode: host
-    configs:
-      - source: crt_config
-        target: /certs/selfsigned.crt
-      - source: key_config
-        target: /certs/selfsigned.key
+      labels:
+        - traefik.enable=true
+        - traefik.docker.lbswarm=true
+        - traefik.docker.network=proxy
+        - traefik.http.routers.portainer.entrypoints=https
+        - traefik.http.routers.portainer.rule=Host(`portainer.home.local`)
+        - traefik.http.routers.portainer.tls=true
+        - traefik.http.routers.portainer.service=portainer
+        - traefik.http.services.portainer.loadbalancer.server.scheme=http
+        - traefik.http.services.portainer.loadbalancer.server.port=9000
+    # ports:
+    #   - target: 9000
+    #     published: ${PORT_HTTP:-9000}
+    #     protocol: tcp
+    #     mode: host
+    #   - target: 9443
+    #     published: ${PORT_HTTPS:-9443}
+    #     protocol: tcp
+    #     mode: host
+    #   - target: 8000
+    #     published: ${PORT_OTHER:-8000}
+    #     protocol: tcp
+    #     mode: host
+    # configs:
+    #   - source: crt_config
+    #     target: /certs/selfsigned.crt
+    #   - source: key_config
+    #     target: /certs/selfsigned.key
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - data:/data
-    command: -H tcp://tasks.agent:9001 --tlsskipverify --sslcert /certs/selfsigned.crt --sslkey /certs/selfsigned.key
+    command: -H tcp://tasks.agent:9001 --tlsskipverify
+    # --sslcert /certs/selfsigned.crt --sslkey /certs/selfsigned.key
     networks:
       default: {}
+      proxy: {}
 
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
   agent:
     image: portainer/agent:latest
     deploy:
@@ -59,35 +77,22 @@ services:
       - /var/lib/docker/volumes:/var/lib/docker/volumes
     networks:
       default: {}
-  # registry:
-  #   image: registry:latest
-  #   deploy:
-  #     mode: global
-  #     placement:
-  #       constraints:
-  #         - "node.role==manager"
-  #     restart_policy:
-  #       condition: on-failure
-  #   ports:
-  #     - "5000:5000"
-  #   environment:
-  #     REGISTRY_STORAGE_FILESYSTEM_ROOTDIRECTORY: /data
-  #   volumes:
-  #     - registry:/data
-  #   networks:
-  #     default: {}
 
+################################################################################
+################################################################################
+################################################################################
 networks:
   default:
     driver: ${NETWORK_MODE:-overlay}
     attachable: true
+  proxy:
+    external: true
 
 volumes:
   data: {}
-  # registry: {}
 
-configs:
-  crt_config:
-    file: $PWD/config/ssl/selfsigned.crt
-  key_config:
-    file: $PWD/config/ssl/selfsigned.key
+# configs:
+#   crt_config:
+#     file: $PWD/config/ssl/selfsigned.crt
+#   key_config:
+#     file: $PWD/config/ssl/selfsigned.key
