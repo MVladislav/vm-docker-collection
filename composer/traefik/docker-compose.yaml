@@ -55,19 +55,20 @@ services:
       - source: traefik_key_config
         target: /etc/traefik/certs/cert-key.pem
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-      - ssl_cert:/etc/traefik/certs:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ssl_cert:/etc/traefik/certs
     networks:
-      default: {}
+      proxy: {}
     restart: always
 
 ################################################################################
 ################################################################################
 ################################################################################
 networks:
-  default:
+  proxy:
+    name: proxy
     driver: ${NETWORK_MODE:-bridge}
     attachable: true
 

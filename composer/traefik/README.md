@@ -31,6 +31,9 @@ PORT_GUI=8080
 
 ## label setup
 
+> defined label which needs to be setup per docker-composer,
+> also not forget to add network
+
 ```yml
 labels:
   - traefik.enable=true
@@ -40,7 +43,18 @@ labels:
   - traefik.http.routers.<router_name>.rule=Host(`<router_name>.home.local`)
   - traefik.http.routers.<router_name>.tls=true
   - traefik.http.routers.<router_name>.service=<router_name>
+  - traefik.http.services.<router_name>.loadbalancer.server.scheme=https
   - traefik.http.services.<router_name>.loadbalancer.server.port=<port>
+```
+
+```yml
+# ...
+networks:
+  default: {}
+# ...
+networks:
+  proxy:
+    external: true
 ```
 
 ---
@@ -49,3 +63,4 @@ labels:
 
 - <https://doc.traefik.io/traefik/user-guides/docker-compose/basic-example/>
 - <https://github.com/xcad2k/boilerplates/tree/main/docker-compose/traefik>
+- <https://doc.traefik.io/traefik/routing/providers/docker/#tcp-services>
