@@ -35,6 +35,7 @@ services:
         - traefik.http.routers.influxdb.service=influxdb
         - traefik.http.services.influxdb.loadbalancer.server.scheme=http
         - traefik.http.services.influxdb.loadbalancer.server.port=8086
+        - traefik.http.routers.influxdb.middlewares=default-secured@file
     # ports:
     #   - target: 8086
     #     published: ${PORT:-8086}

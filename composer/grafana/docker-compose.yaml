@@ -26,6 +26,7 @@ services:
         - traefik.http.routers.grafana.service=grafana
         - traefik.http.services.grafana.loadbalancer.server.scheme=http
         - traefik.http.services.grafana.loadbalancer.server.port=3000
+        - traefik.http.routers.grafana.middlewares=admin-secured@file
     # ports:
     #   - target: 3000
     #     published: ${PORT:-3443}
