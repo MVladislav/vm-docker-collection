@@ -22,18 +22,29 @@ services:
       placement:
         max_replicas_per_node: 1
         constraints:
-          # - "node.id==${NODE_ID}"
           - "node.role==${NODE_ROLE:-manager}"
-    ports:
-      - target: 8086
-        published: ${PORT:-8086}
-        protocol: tcp
-        mode: host
-    configs:
-      - source: crt_config
-        target: /etc/ssl/influxdb-selfsigned.crt
-      - source: key_config
-        target: /etc/ssl/influxdb-selfsigned.key
+      restart_policy:
+        condition: on-failure
+      labels:
+        - traefik.enable=true
+        - traefik.docker.lbswarm=true
+        - traefik.docker.network=proxy
+        - traefik.http.routers.influxdb.entrypoints=https
+        - traefik.http.routers.influxdb.rule=Host(`influxdb.home.local`)
+        - traefik.http.routers.influxdb.tls=true
+        - traefik.http.routers.influxdb.service=influxdb
+        - traefik.http.services.influxdb.loadbalancer.server.scheme=http
+        - traefik.http.services.influxdb.loadbalancer.server.port=8086
+    # ports:
+    #   - target: 8086
+    #     published: ${PORT:-8086}
+    #     protocol: tcp
+    #     mode: host
+    # configs:
+    #   - source: crt_config
+    #     target: /etc/ssl/influxdb-selfsigned.crt
+    #   - source: key_config
+    #     target: /etc/ssl/influxdb-selfsigned.key
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
@@ -47,56 +58,25 @@ services:
       DOCKER_INFLUXDB_INIT_BUCKET: ${DOCKER_INFLUXDB_INIT_BUCKET:-db0}
       # DOCKER_INFLUXDB_INIT_RETENTION: ${DOCKER_INFLUXDB_INIT_RETENTION:-1w}
       # DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: ${DOCKER_INFLUXDB_INIT_ADMIN_TOKEN:-my-super-secret-auth-token}
-      INFLUXD_TLS_CERT: /etc/ssl/influxdb-selfsigned.crt
-      INFLUXD_TLS_KEY: /etc/ssl/influxdb-selfsigned.key
+      # INFLUXD_TLS_CERT: /etc/ssl/influxdb-selfsigned.crt
+      # INFLUXD_TLS_KEY: /etc/ssl/influxdb-selfsigned.key
     networks:
-      default: {}
+      proxy: {}
     restart: always
-
-  ######################################################################################
-  ######################################################################################
-  ######################################################################################
-  # chronograf:
-  #   image: chronograf:${VERSION:-latest}
-  #   deploy:
-  #     mode: replicated
-  #     replicas: 1
-  #     placement:
-  #       max_replicas_per_node: 1
-  #       constraints:
-  #         # - "node.id==${NODE_ID}"
-  #         - "node.role==${NODE_ROLE:-manager}"
-  #     restart_policy:
-  #       condition: on-failure
-  #   ports:
-  #     - target: 8888
-  #       published: 8888
-  #       mode: host
-  #   volumes:
-  #     - chronograf-storage:/var/lib/chronograf
-  #   environment:
-  #     - INFLUXDB_URL: http://influxdb:8086
-  #     - INFLUXDB_USERNAME: ${INFLUXDB_USERNAME}
-  #     - INFLUXDB_PASSWORD: ${INFLUXDB_PASSWORD}
-  #   networks:
-  #     default: {}
-  #   restart: always
 
 ######################################################################################
 ######################################################################################
 ######################################################################################
 networks:
-  default:
-    driver: ${NETWORK_MODE:-bridge}
-    attachable: true
+  proxy:
+    external: true
 
 volumes:
   influxdb2-storage: {}
   influxdb2-config: {}
-  # chronograf-storage: {}
 
-configs:
-  crt_config:
-    file: $PWD/config/ssl/influxdb-selfsigned.crt
-  key_config:
-    file: $PWD/config/ssl/influxdb-selfsigned.key
+# configs:
+#   crt_config:
+#     file: $PWD/config/ssl/influxdb-selfsigned.crt
+#   key_config:
+#     file: $PWD/config/ssl/influxdb-selfsigned.key
