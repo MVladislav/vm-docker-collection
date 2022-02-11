@@ -43,10 +43,22 @@ http:
         sourceRange:
           - 192.168.xx.0/24
 
+    protected-whitelist:
+      ipWhiteList:
+        sourceRange:
+          - 192.168.xx.0/24
+          - 192.168.xx.0/24
+
     default-secured:
       chain:
         middlewares:
           - default-whitelist
+          - default-headers
+
+    protected-secured:
+      chain:
+        middlewares:
+          - protected-whitelist
           - default-headers
 
     admin-secured:
