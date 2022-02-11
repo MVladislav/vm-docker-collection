@@ -13,6 +13,8 @@
 !README.md
 
 !config/
+config/*
 !config/traefik.yml
+!config/config-example.yml
 config/ssl/*
 !config/ssl/.gitempty

@@ -6,14 +6,14 @@ global:
 # ---
 log:
   level: WARNING # DEBUG, INFO, WARNING, ERROR, CRITICAL
-  format: common # common, json, logfmt
-  filePath: /var/log/traefik/traefik.log
+  # format: common # common, json, logfmt
+  # filePath: /var/log/traefik/traefik.log
 
 # (Optional) Accesslog
 # ---
 accesslog:
   format: common # common, json, logfmt
-  filePath: /var/log/traefik/access.log
+  # filePath: /var/log/traefik/access.log
 
 # (Optional) Enable API and Dashboard
 # ---
@@ -35,6 +35,13 @@ entryPoints:
           scheme: https
   https:
     address: :443
+
+# Allow unsecure Cert
+# ---
+serversTransport:
+  insecureSkipVerify: true
+  rootCAs:
+    - "/etc/traefik/certs/ca.pem"
 
 # Configure your CertificateResolver here...
 # ---
@@ -58,16 +65,17 @@ entryPoints:
 # (Optional) Overwrite Default Certificates
 tls:
   certificates:
-    - certFile: /etc/certs/cert.pem
-      keyFile: /etc/certs/cert-key.pem
+    - certFile: /etc/traefik/certs/cert.pem
+      keyFile: /etc/traefik/certs/cert-key.pem
   stores:
     default:
       defaultCertificate:
-        certFile: /etc/certs/cert.pem
-        keyFile: /etc/certs/cert-key.pem
+        certFile: /etc/traefik/certs/cert.pem
+        keyFile: /etc/traefik/certs/cert-key.pem
 
 providers:
   docker:
+    endpoint: "unix:///var/run/docker.sock"
     exposedByDefault: false # Default is true
     swarmMode: true
   file:

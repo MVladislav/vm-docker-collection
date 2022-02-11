@@ -10,6 +10,7 @@
   - [basic](#basic)
     - [create `.env` file following:](#create-env-file-following)
   - [label setup](#label-setup)
+  - [config setup](#config-setup)
   - [References](#references)
 
 ---
@@ -55,6 +56,14 @@ networks:
 networks:
   proxy:
     external: true
+```
+
+## config setup
+
+> instead or byside to labels you can also define a config.yml
+
+```sh
+$cp ./config/config-example.yml ./config/config.yml
 ```
 
 ---
