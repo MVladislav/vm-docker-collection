@@ -46,6 +46,7 @@ labels:
   - traefik.http.routers.<router_name>.service=<router_name>
   - traefik.http.services.<router_name>.loadbalancer.server.scheme=https
   - traefik.http.services.<router_name>.loadbalancer.server.port=<port>
+  - traefik.http.routers.<router_name>.middlewares=<default-secured@file | admin-secured@file>
 ```
 
 ```yml
