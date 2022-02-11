@@ -24,6 +24,21 @@ services:
           - "node.role==${NODE_ROLE:-manager}"
       restart_policy:
         condition: on-failure
+      labels:
+        - traefik.enable=true
+        - traefik.docker.lbswarm=true
+        - traefik.docker.network=proxy
+        - traefik.http.routers.traefik.entrypoints=https
+        - traefik.http.routers.traefik.rule=Host(`${DOMAIN?Variable not set}`)
+        - traefik.http.routers.traefik.tls=true
+        - traefik.http.routers.traefik.service=api@internal
+        - traefik.http.services.traefik.loadbalancer.server.scheme=http
+        - traefik.http.services.traefik.loadbalancer.server.port=8080
+        - traefik.http.routers.traefik.middlewares=admin-secured@file
+        # admin-auth middleware with HTTP Basic auth
+        # Using the environment variables USERNAME and HASHED_PASSWORD
+        - traefik.http.routers.traefik.middlewares=admin-auth
+        - traefik.http.middlewares.admin-auth.basicauth.users=${USERNAME?Variable not set}:${HASHED_PASSWORD?Variable not set}
     ports:
       - target: 80
         published: ${PORT_HTTP:-80}
@@ -33,31 +48,26 @@ services:
         published: ${PORT_HTTPS:-443}
         protocol: tcp
         mode: host
-      - target: 8080
-        published: ${PORT_GUI:-8080}
-        protocol: tcp
-        mode: ingress
     configs:
       - source: traefik_config
         target: /etc/traefik/traefik.yml
-        mode: 0440
+        mode: 440
       - source: traefik_config_http
         target: /etc/traefik/config.yml
-        mode: 0440
+        mode: 440
       - source: traefik_ca_config
         target: /etc/traefik/certs/ca.pem
-        mode: 0440
+        mode: 440
       - source: traefik_crt_config
         target: /etc/traefik/certs/cert.pem
-        mode: 0440
+        mode: 440
       - source: traefik_key_config
         target: /etc/traefik/certs/cert-key.pem
-        mode: 0440
+        mode: 440
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      # - config:/etc/traefik/
     networks:
       proxy: {}
     restart: always

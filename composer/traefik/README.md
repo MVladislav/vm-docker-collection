@@ -28,6 +28,11 @@ VERSION=v2.6
 PORT_HTTP=80
 PORT_HTTPS=443
 PORT_GUI=8080
+
+DOMAIN=traefik.home.local
+USERNAME=traefik
+# or $(openssl passwd -apr1)
+HASHED_PASSWORD=$(openssl passwd -apr1 $PASSWORD)
 ```
 
 ## label setup
