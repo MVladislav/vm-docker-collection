@@ -21,7 +21,6 @@ services:
       placement:
         max_replicas_per_node: 1
         constraints:
-          # - "node.id==${NODE_ID}"
           - "node.role==${NODE_ROLE:-manager}"
       restart_policy:
         condition: on-failure
@@ -41,17 +40,17 @@ services:
     configs:
       - source: traefik_config
         target: /etc/traefik/traefik.yml
-      - source: traefik_config_http
-        target: /etc/traefik/config.yml
+      # - source: traefik_config_http
+      #   target: /etc/traefik/config.yml
       - source: traefik_crt_config
-        target: /etc/traefik/certs/cert.pem
+        target: /etc/certs/cert.pem
       - source: traefik_key_config
-        target: /etc/traefik/certs/cert-key.pem
+        target: /etc/certs/cert-key.pem
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ssl_cert:/etc/traefik/certs
+      - ssl_cert:/etc/certs
     networks:
       proxy: {}
     restart: always

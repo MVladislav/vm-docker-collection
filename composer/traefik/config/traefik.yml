@@ -57,11 +57,14 @@ entryPoints:
 
 # (Optional) Overwrite Default Certificates
 tls:
+  certificates:
+    - certFile: /etc/certs/cert.pem
+      keyFile: /etc/certs/cert-key.pem
   stores:
     default:
       defaultCertificate:
-        certFile: /etc/traefik/certs/cert.pem
-        keyFile: /etc/traefik/certs/cert-key.pem
+        certFile: /etc/certs/cert.pem
+        keyFile: /etc/certs/cert-key.pem
 
 providers:
   docker:
