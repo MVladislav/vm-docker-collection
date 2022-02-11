@@ -73,3 +73,4 @@ $cp ./config/config-example.yml ./config/config.yml
 - <https://doc.traefik.io/traefik/user-guides/docker-compose/basic-example/>
 - <https://github.com/xcad2k/boilerplates/tree/main/docker-compose/traefik>
 - <https://doc.traefik.io/traefik/routing/providers/docker/#tcp-services>
+- <https://doc.traefik.io/traefik/reference/dynamic-configuration/file/>

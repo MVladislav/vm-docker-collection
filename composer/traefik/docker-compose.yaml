@@ -41,9 +41,9 @@ services:
       - source: traefik_config
         target: /etc/traefik/traefik.yml
         mode: 0440
-      # - source: traefik_config_http
-      #   target: /etc/traefik/config.yml
-      #   mode: 0440
+      - source: traefik_config_http
+        target: /etc/traefik/config.yml
+        mode: 0440
       - source: traefik_ca_config
         target: /etc/traefik/certs/ca.pem
         mode: 0440
@@ -77,8 +77,8 @@ volumes:
 configs:
   traefik_config:
     file: $PWD/config/traefik.yml
-  # traefik_config_http:
-  #   file: $PWD/config/config.yml
+  traefik_config_http:
+    file: $PWD/config/config.yml
   traefik_ca_config:
     file: $PWD/config/ssl/ca.pem
   traefik_crt_config:
