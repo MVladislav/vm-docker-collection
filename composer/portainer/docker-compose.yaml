@@ -25,7 +25,7 @@ services:
         - traefik.http.routers.portainer.service=portainer
         - traefik.http.services.portainer.loadbalancer.server.scheme=http
         - traefik.http.services.portainer.loadbalancer.server.port=9000
-        - traefik.http.routers.portainer.middlewares=admin-secured@file
+        - traefik.http.routers.portainer.middlewares=protected-secured@file
     # ports:
     #   - target: 9000
     #     published: ${PORT_HTTP:-9000}
