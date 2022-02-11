@@ -1,15 +1,6 @@
 version: "3.8"
 
 services:
-
-  # whoami:
-  #   image: "traefik/whoami"
-  #   container_name: "simple-service"
-  #   labels:
-  #     - "traefik.enable=true"
-  #     - "traefik.http.routers.whoami.rule=Host(`whoami.localhost`)"
-  #     - "traefik.http.routers.whoami.entrypoints=web"
-
   ##############################################################################
   ##############################################################################
   ##############################################################################
@@ -46,7 +37,7 @@ services:
       - target: 8080
         published: ${PORT_GUI:-8080}
         protocol: tcp
-        mode: host
+        mode: ingress
     configs:
       - source: traefik_config
         target: /etc/traefik/traefik.yml
