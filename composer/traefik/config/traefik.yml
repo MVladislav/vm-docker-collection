@@ -15,6 +15,16 @@ accesslog:
   format: common # common, json, logfmt
   # filePath: /var/log/traefik/access.log
 
+# (Optional) Metrics
+# ---
+# metrics:
+#   influxDB2:
+#     address: http://influxdb:8086
+#     token: <token>
+#     org: <org>
+#     bucket: traefik
+#     addRoutersLabels: true
+
 # (Optional) Enable API and Dashboard
 # ---
 # api:
