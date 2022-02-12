@@ -56,7 +56,7 @@ labels:
 ```yml
 # ...
 networks:
-  default: {}
+  proxy: {}
 # ...
 networks:
   proxy:
