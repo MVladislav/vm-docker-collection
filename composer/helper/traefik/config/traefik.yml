@@ -54,7 +54,7 @@ log:
   # Optional
   # Default: "ERROR"
   #
-  level: ERROR
+  level: WARNING # DEBUG, INFO, WARNING, ERROR, CRITICAL
 
   # Sets the filepath for the traefik log. If not specified, stdout will be used.
   # Intermediate directories are created if necessary.
@@ -81,7 +81,7 @@ log:
 #
 # Optional
 #
-accessLog:
+accesslog:
   # Sets the file path for the access log. If not specified, stdout will be used.
   # Intermediate directories are created if necessary.
   #
@@ -160,13 +160,6 @@ providers:
     # Default: "unix:///var/run/docker.sock"
     #
     endpoint: "unix:///var/run/docker.sock"
-
-    # Default host rule.
-    #
-    # Optional
-    # Default: "Host(`{{ normalize .Name }}`)"
-    #
-    #    defaultRule: Host(`{{ normalize .Name }}.docker.localhost`)
 
     # Expose containers by default in traefik
     #
