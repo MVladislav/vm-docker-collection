@@ -24,6 +24,8 @@ NETWORK_MODE=overlay
 
 PORT_HTTP=9000
 PORT_HTTPS=9443
+
+DOMAIN=portainer.home.local
 ```
 
 ---

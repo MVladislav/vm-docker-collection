@@ -29,7 +29,7 @@ services:
         - traefik.docker.lbswarm=true
         - traefik.docker.network=proxy
         - traefik.http.routers.traefik.entrypoints=https
-        - traefik.http.routers.traefik.rule=Host(`${DOMAIN?Variable not set}`)
+        - traefik.http.routers.traefik.rule=Host(`${DOMAIN?domain variable not set}`)
         - traefik.http.routers.traefik.tls=true
         - traefik.http.routers.traefik.service=api@internal
         - traefik.http.services.traefik.loadbalancer.server.scheme=http
@@ -38,7 +38,7 @@ services:
         # admin-auth middleware with HTTP Basic auth
         # Using the environment variables USERNAME and HASHED_PASSWORD
         - traefik.http.routers.traefik.middlewares=admin-auth
-        - traefik.http.middlewares.admin-auth.basicauth.users=${USERNAME?Variable not set}:${HASHED_PASSWORD?Variable not set}
+        - traefik.http.middlewares.admin-auth.basicauth.users=${USERNAME?username variable not set}:${HASHED_PASSWORD?password hash variable not set}
     ports:
       - target: 80
         published: ${PORT_HTTP:-80}

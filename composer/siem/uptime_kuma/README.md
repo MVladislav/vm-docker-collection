@@ -25,6 +25,8 @@ NETWORK_MODE=overlay
 
 VERSION=latest
 PORT=3001
+
+DOMAIN=status.home.local
 ```
 
 ---

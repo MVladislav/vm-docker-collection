@@ -30,7 +30,7 @@ services:
         - traefik.docker.lbswarm=true
         - traefik.docker.network=proxy
         - traefik.http.routers.influxdb.entrypoints=https
-        - traefik.http.routers.influxdb.rule=Host(`influxdb.home.local`)
+        - traefik.http.routers.influxdb.rule=Host(`${DOMAIN?domain variable not set}`)
         - traefik.http.routers.influxdb.tls=true
         - traefik.http.routers.influxdb.service=influxdb
         - traefik.http.services.influxdb.loadbalancer.server.scheme=http

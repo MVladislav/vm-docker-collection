@@ -30,7 +30,7 @@ services:
         - traefik.docker.lbswarm=true
         - traefik.docker.network=proxy
         - traefik.http.routers.kuma.entrypoints=https
-        - traefik.http.routers.kuma.rule=Host(`status.home.local`)
+        - traefik.http.routers.kuma.rule=Host(`${DOMAIN?domain variable not set}`)
         - traefik.http.routers.kuma.tls=true
         - traefik.http.routers.kuma.service=kuma
         - traefik.http.services.kuma.loadbalancer.server.scheme=http
