@@ -45,7 +45,7 @@ labels:
   - traefik.docker.lbswarm=true
   - traefik.docker.network=proxy
   - traefik.http.routers.<router_name>.entrypoints=https
-  - traefik.http.routers.<router_name>.rule=Host(`<router_name>.home.local`)
+  - traefik.http.routers.<router_name>.rule=Host(`${DOMAIN?domain variable not set}`)
   - traefik.http.routers.<router_name>.tls=true
   - traefik.http.routers.<router_name>.service=<router_name>
   - traefik.http.services.<router_name>.loadbalancer.server.scheme=https
