@@ -15,6 +15,8 @@
 
 ---
 
+A tool for Infrastructure & Application Monitoring. It is a software developed for IT Infrastructure monitoring. It is used for the monitoring of servers, applications, networks, cloud infrastructures, containers, storage, databases and environment sensors.
+
 ## basic
 
 ### create `.env` file following:

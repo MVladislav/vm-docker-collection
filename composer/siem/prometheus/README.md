@@ -15,6 +15,10 @@
 
 ---
 
+An open-source service monitoring system and time series database, developed by SoundCloud.
+Prometheus is a systems and service monitoring system.
+It collects metrics from configured targets at given intervals, evaluates rule expressions, displays the results, and can trigger alerts if some condition is observed to be true.
+
 ## basic
 
 ### create `.env` file following:
