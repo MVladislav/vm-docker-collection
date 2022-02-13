@@ -58,7 +58,7 @@ services:
       # GF_SERVER_CERT_KEY: /etc/ssl/grafana-selfsigned.key
     networks:
       proxy: {}
-      elastic_default: {}
+      elasticsearch: {}
       influxdb_default: {}
     restart: always
 
@@ -68,9 +68,9 @@ services:
 networks:
   proxy:
     external: true
-  elastic_default:
+  elasticsearch:
     external: true
-    name: elastic_default
+    name: elasticsearch
   influxdb_default:
     external: true
     name: influxdb_default
