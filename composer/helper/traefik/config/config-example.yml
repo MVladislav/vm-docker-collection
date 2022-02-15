@@ -1,4 +1,5 @@
 http:
+  # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   routers:
     example:
       entryPoints:
@@ -9,6 +10,7 @@ http:
       tls: {}
       service: example
 
+  # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   services:
     example:
       loadBalancer:
@@ -16,6 +18,7 @@ http:
           - url: "https://192.168.xx.xx"
         passHostHeader: true
 
+  # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   middlewares:
     default-headers:
       headers:
@@ -31,6 +34,7 @@ http:
         customRequestHeaders:
           X-Forwarded-Proto: https
 
+    # --------------------------------------------------------------------------
     default-whitelist:
       ipWhiteList:
         sourceRange:
@@ -49,6 +53,7 @@ http:
           - 192.168.xx.0/24
           - 192.168.xx.0/24
 
+    # --------------------------------------------------------------------------
     default-secured:
       chain:
         middlewares:
@@ -66,3 +71,9 @@ http:
         middlewares:
           - admin-whitelist
           - default-headers
+
+    # --------------------------------------------------------------------------
+    bouncer-crowdsec:
+      forwardauth:
+        address: http://bouncer-traefik:8080/api/v1/forwardAuth
+        trustForwardHeader: true

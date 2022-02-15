@@ -27,12 +27,19 @@ entryPoints:
     # (Optional) Redirect to HTTPS
     # ---
     http:
+      middlewares:
+        - default-secured@file
+        # - bouncer-crowdsec
       redirections:
         entryPoint:
           to: https
           scheme: https
   https:
     address: :443
+    http:
+      middlewares:
+        - default-secured@file
+        # - bouncer-crowdsec
 
 serversTransport:
   insecureSkipVerify: true
@@ -62,14 +69,14 @@ log:
   # Optional
   # Default: os.Stdout
   #
-#  filePath: log/traefik.log
+  filePath: /var/log/traefik/traefik.log
 
-# Format is either "json" or "common".
-#
-# Optional
-# Default: "common"
-#
-#  format: json
+  # Format is either "json" or "common".
+  #
+  # Optional
+  # Default: "common"
+  #
+  format: common
 
 ################################################################
 # Access logs configuration
@@ -88,7 +95,7 @@ accesslog:
   # Optional
   # Default: os.Stdout
   #
-  #  filePath: /var/log/traefik/access.log
+  filePath: /var/log/traefik/access.log
 
   # Format is either "json" or "common".
   #
