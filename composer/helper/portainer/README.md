@@ -22,10 +22,14 @@
 ```env
 NETWORK_MODE=overlay
 
-PORT_HTTP=9000
-PORT_HTTPS=9443
+VERSION=latest
 
 DOMAIN=portainer.home.local
+PROTOCOL=http
+PORT=9000
+
+PORT_HTTP=9000
+PORT_HTTPS=9443
 ```
 
 ---

@@ -24,9 +24,10 @@ NODE_ROLE=manager
 NETWORK_MODE=overlay
 
 VERSION=latest
-PORT=3001
 
 DOMAIN=status.home.local
+PROTOCOL=http
+PORT=3001
 ```
 
 ---

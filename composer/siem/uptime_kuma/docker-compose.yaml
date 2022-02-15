@@ -33,8 +33,8 @@ services:
         - traefik.http.routers.kuma.rule=Host(`${DOMAIN?domain variable not set}`)
         - traefik.http.routers.kuma.tls=true
         - traefik.http.routers.kuma.service=kuma
-        - traefik.http.services.kuma.loadbalancer.server.scheme=http
-        - traefik.http.services.kuma.loadbalancer.server.port=3001
+        - traefik.http.services.kuma.loadbalancer.server.scheme=${PROTOCOL:-http}
+        - traefik.http.services.kuma.loadbalancer.server.port=${PORT:-3001}
         - traefik.http.routers.kuma.middlewares=default-secured@file
     # ports:
     #   - target: 3001

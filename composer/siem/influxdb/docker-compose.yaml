@@ -33,8 +33,8 @@ services:
         - traefik.http.routers.influxdb.rule=Host(`${DOMAIN?domain variable not set}`)
         - traefik.http.routers.influxdb.tls=true
         - traefik.http.routers.influxdb.service=influxdb
-        - traefik.http.services.influxdb.loadbalancer.server.scheme=http
-        - traefik.http.services.influxdb.loadbalancer.server.port=8086
+        - traefik.http.services.influxdb.loadbalancer.server.scheme=${PROTOCOL:-http}
+        - traefik.http.services.influxdb.loadbalancer.server.port=${PORT:-8086}
         - traefik.http.routers.influxdb.middlewares=default-secured@file
     # ports:
     #   - target: 8086
@@ -62,6 +62,7 @@ services:
       # INFLUXD_TLS_CERT: /etc/ssl/influxdb-selfsigned.crt
       # INFLUXD_TLS_KEY: /etc/ssl/influxdb-selfsigned.key
     networks:
+      influxdb2: {}
       proxy: {}
     restart: always
 
@@ -69,13 +70,17 @@ services:
 ######################################################################################
 ######################################################################################
 networks:
+  influxdb2:
+    name: influxdb2
+    driver: ${NETWORK_MODE:-bridge}
+    attachable: true
   proxy:
     external: true
 
 volumes:
   influxdb2-storage: {}
   influxdb2-config: {}
-
+#
 # configs:
 #   crt_config:
 #     file: $PWD/config/ssl/influxdb-selfsigned.crt

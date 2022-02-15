@@ -25,9 +25,10 @@ NODE_ROLE=manager
 NETWORK_MODE=overlay
 
 VERSION=latest
-PORT=3443
 
 DOMAIN=grafana.home.local
+PROTOCOL=http
+PORT=3000
 
 GF_SECURITY_ADMIN_USER=root
 GF_SECURITY_ADMIN_PASSWORD=swordfish

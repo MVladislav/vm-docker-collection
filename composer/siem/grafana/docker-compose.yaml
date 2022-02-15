@@ -24,8 +24,8 @@ services:
         - traefik.http.routers.grafana.rule=Host(`${DOMAIN?domain variable not set}`)
         - traefik.http.routers.grafana.tls=true
         - traefik.http.routers.grafana.service=grafana
-        - traefik.http.services.grafana.loadbalancer.server.scheme=http
-        - traefik.http.services.grafana.loadbalancer.server.port=3000
+        - traefik.http.services.grafana.loadbalancer.server.scheme=${PROTOCOL:-http}
+        - traefik.http.services.grafana.loadbalancer.server.port=${PORT:-3000}
         - traefik.http.routers.grafana.middlewares=protected-secured@file
     # ports:
     #   - target: 3000

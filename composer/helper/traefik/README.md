@@ -25,10 +25,14 @@ NODE_ROLE=manager
 NETWORK_MODE=overlay
 
 VERSION=v2.6
+
+DOMAIN=traefik.home.local
+PROTOCOL=http
+PORT=8080
+
 PORT_HTTP=80
 PORT_HTTPS=443
 
-DOMAIN=traefik.home.local
 USERNAME=traefik
 # $(openssl passwd -apr1 $PASSWORD) or $(openssl passwd -apr1)
 HASHED_PASSWORD=

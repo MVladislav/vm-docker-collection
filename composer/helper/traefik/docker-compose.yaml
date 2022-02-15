@@ -32,8 +32,8 @@ services:
         - traefik.http.routers.traefik.rule=Host(`${DOMAIN?domain variable not set}`)
         - traefik.http.routers.traefik.tls=true
         - traefik.http.routers.traefik.service=api@internal
-        - traefik.http.services.traefik.loadbalancer.server.scheme=http
-        - traefik.http.services.traefik.loadbalancer.server.port=8080
+        - traefik.http.services.traefik.loadbalancer.server.scheme=${PROTOCOL:-http}
+        - traefik.http.services.traefik.loadbalancer.server.port=${PORT:-8080}
         - traefik.http.routers.traefik.middlewares=admin-secured@file
         # admin-auth middleware with HTTP Basic auth
         # Using the environment variables USERNAME and HASHED_PASSWORD
@@ -68,6 +68,7 @@ services:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik_logs:/var/log/traefik
     networks:
       proxy: {}
     restart: always
@@ -83,6 +84,8 @@ networks:
 
 volumes:
   config: {}
+  traefik_logs:
+    name: traefik_logs
 
 configs:
   traefik_config:

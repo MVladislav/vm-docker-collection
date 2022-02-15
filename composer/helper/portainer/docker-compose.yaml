@@ -6,7 +6,7 @@ services:
   ##############################################################################
   ##############################################################################
   portainer:
-    image: portainer/portainer-ce:latest
+    image: portainer/portainer-ce:${VERSION:-latest}
     deploy:
       mode: replicated
       replicas: 1
@@ -23,8 +23,8 @@ services:
         - traefik.http.routers.portainer.rule=Host(`${DOMAIN?domain variable not set}`)
         - traefik.http.routers.portainer.tls=true
         - traefik.http.routers.portainer.service=portainer
-        - traefik.http.services.portainer.loadbalancer.server.scheme=http
-        - traefik.http.services.portainer.loadbalancer.server.port=9000
+        - traefik.http.services.portainer.loadbalancer.server.scheme=${PROTOCOL:-http}
+        - traefik.http.services.portainer.loadbalancer.server.port=${PORT:-9000}
         - traefik.http.routers.portainer.middlewares=protected-secured@file
     # ports:
     #   - target: 9000
@@ -58,7 +58,7 @@ services:
   ##############################################################################
   ##############################################################################
   agent:
-    image: portainer/agent:latest
+    image: portainer/agent:${VERSION:-latest}
     deploy:
       mode: global
       placement:
