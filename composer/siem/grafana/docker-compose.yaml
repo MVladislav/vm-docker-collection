@@ -59,7 +59,7 @@ services:
     networks:
       proxy: {}
       elasticsearch: {}
-      influxdb_default: {}
+      influxdb2: {}
     restart: always
 
 ######################################################################################
@@ -71,9 +71,9 @@ networks:
   elasticsearch:
     external: true
     name: elasticsearch
-  influxdb_default:
+  influxdb2:
     external: true
-    name: influxdb_default
+    name: influxdb2
 
 volumes:
   grafana-storage: {}
