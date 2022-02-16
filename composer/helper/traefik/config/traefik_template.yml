@@ -104,6 +104,17 @@ accesslog:
   #
   format: common
 
+  fields:
+    defaultMode: keep
+    names:
+      ClientUsername: drop
+    headers:
+      defaultMode: keep
+      names:
+        User-Agent: keep
+        Authorization: drop
+        Content-Type: keep
+
 ################################################################
 # Metric logs configuration
 ################################################################
@@ -125,7 +136,7 @@ accesslog:
 # tracing:
 #   elastic:
 #     serverURL: "http://apm-server:8200"
-#     secretToken: ...
+#     secretToken: <token>
 
 ################################################################
 # API and dashboard configuration

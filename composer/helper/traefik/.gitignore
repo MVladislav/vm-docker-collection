@@ -14,8 +14,8 @@
 
 !config/
 config/*
-!config/traefik.yml
-!config/config-example.yml
+!config/*_template.yml
+
 !config/ssl/
 config/ssl/*
 !config/ssl/.gitempty

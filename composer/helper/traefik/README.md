@@ -67,12 +67,20 @@ networks:
     external: true
 ```
 
+## traefik setup
+
+> copy and update the general traefik setup
+
+```sh
+$cp ./config/traefik_template.yml ./config/traefik.yml
+```
+
 ## config setup
 
 > instead or byside to labels you can also define a config.yml
 
 ```sh
-$cp ./config/config-example.yml ./config/config.yml
+$cp ./config/config_template.yml ./config/config.yml
 ```
 
 ---
