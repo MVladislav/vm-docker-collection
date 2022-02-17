@@ -1,0 +1,90 @@
+version: "3.8"
+
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  telegraf:
+    image: telegraf:${VERSION:-latest}
+    env_file: .env
+    # run to check "$(stat -c '%g' /var/run/docker.sock)"
+    user: telegraf:998
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65535
+        hard: 65535
+      fsize: -1
+      as: -1
+    deploy:
+      mode: global
+      placement:
+        max_replicas_per_node: 1
+        constraints:
+          # - "node.id==${NODE_ID}"
+          # - "node.role==${NODE_ROLE:-manager}"
+          - node.platform.os == linux
+      restart_policy:
+        condition: on-failure
+      labels:
+        - traefik.enable=true
+        - traefik.docker.lbswarm=${LB_SWARM:-true}
+        - traefik.docker.network=proxy
+        - traefik.http.routers.telegraf.entrypoints=https
+        - traefik.http.routers.telegraf.rule=Host(`${DOMAIN?domain variable not set}`)
+        - traefik.http.routers.telegraf.tls=true
+        - traefik.http.routers.telegraf.service=telegraf
+        - traefik.http.services.telegraf.loadbalancer.server.scheme=${PROTOCOL:-http}
+        - traefik.http.services.telegraf.loadbalancer.server.port=${PORT:-8125}
+        - traefik.http.routers.telegraf.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    # ports:
+    #   - target: 8125
+    #     published: ${PORT:-8125}
+    #     protocol: udp
+    #     mode: host
+    environment:
+      HOST_PROC: /rootfs/proc
+      HOST_SYS: /rootfs/sys
+      HOST_ETC: /rootfs/etc
+    configs:
+      - source: telegraf_config
+        target: /etc/telegraf/telegraf.conf
+        mode: 0440
+        # uid: "1000"
+        gid: "998"
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /sys:/rootfs/sys:ro
+      - /proc:/rootfs/proc:ro
+      - /etc:/rootfs/etc:ro
+    # command: >
+    #   ...
+    networks:
+      # default: {}
+      proxy: {}
+      influxdb2: {}
+    restart: always
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  # default:
+  #   driver: ${NETWORK_MODE:-bridge}
+  #   attachable: true
+  proxy:
+    external: true
+  influxdb2:
+    external: true
+    name: influxdb2
+#
+# volumes:
+#   data: {}
+#
+configs:
+  telegraf_config:
+    file: $PWD/config/telegraf.conf
