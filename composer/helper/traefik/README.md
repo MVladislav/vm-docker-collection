@@ -24,7 +24,7 @@ NODE_ID=
 NODE_ROLE=manager
 NETWORK_MODE=overlay
 
-VERSION=v2.6
+VERSION=latest
 
 DOMAIN=traefik.home.local
 PROTOCOL=http
