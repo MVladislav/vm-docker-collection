@@ -1,0 +1,13 @@
+*
+!.git
+!.github
+!.gitignore
+!.gitempty
+
+!.dockerignore
+!docker-*
+!Dockerfile
+
+!CHANGELOG.md
+!LICENCE
+!README.md
