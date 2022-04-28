@@ -1,0 +1,99 @@
+---
+version: "3.8"
+
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  portainer:
+    image: portainer/portainer-ce:${VERSION:-latest}
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - "node.role==manager"
+      restart_policy:
+        condition: on-failure
+      labels:
+        - traefik.enable=true
+        - traefik.docker.lbswarm=${LB_SWARM:-true}
+        - traefik.docker.network=proxy
+        - traefik.http.routers.portainer.entrypoints=https
+        - traefik.http.routers.portainer.rule=Host(`${DOMAIN?domain variable not set}`)
+        - traefik.http.routers.portainer.tls=true
+        - traefik.http.routers.portainer.service=portainer
+        - traefik.http.services.portainer.loadbalancer.server.scheme=${PROTOCOL:-http}
+        - traefik.http.services.portainer.loadbalancer.server.port=${PORT:-9000}
+        - traefik.http.routers.portainer.middlewares=${MIDDLEWARE_SECURED:-protected-secured@file}
+    # ports:
+    #   - target: 9000
+    #     published: ${PORT_HTTP:-9000}
+    #     protocol: tcp
+    #     mode: host
+    #   - target: 9443
+    #     published: ${PORT_HTTPS:-9443}
+    #     protocol: tcp
+    #     mode: host
+    #   - target: 8000
+    #     published: ${PORT_OTHER:-8000}
+    #     protocol: tcp
+    #     mode: host
+    # configs:
+    #   - source: crt_config
+    #     target: /certs/selfsigned.crt
+    #   - source: key_config
+    #     target: /certs/selfsigned.key
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - data:/data
+    command: -H tcp://tasks.agent:9001 --tlsskipverify
+    # --sslcert /certs/selfsigned.crt --sslkey /certs/selfsigned.key
+    networks:
+      default: {}
+      proxy: {}
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  agent:
+    image: portainer/agent:${VERSION:-latest}
+    deploy:
+      mode: global
+      placement:
+        constraints:
+          - node.platform.os == linux
+      restart_policy:
+        condition: on-failure
+    environment:
+      # REQUIRED: Should be equal to the service name prefixed by "tasks." when
+      # deployed inside an overlay network
+      AGENT_CLUSTER_ADDR: tasks.agent
+      # AGENT_PORT: 9001
+      # LOG_LEVEL: debug
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/lib/docker/volumes:/var/lib/docker/volumes
+    networks:
+      default: {}
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  default:
+    driver: ${NETWORK_MODE:-overlay}
+    attachable: true
+  proxy:
+    external: true
+
+volumes:
+  data: {}
+
+# configs:
+#   crt_config:
+#     file: $PWD/config/ssl/selfsigned.crt
+#   key_config:
+#     file: $PWD/config/ssl/selfsigned.key

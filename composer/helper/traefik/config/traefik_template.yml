@@ -1,0 +1,233 @@
+################################################################
+#
+# Configuration sample for Traefik v2.
+#
+# For Traefik v1: https://github.com/traefik/traefik/blob/v1.7/traefik.sample.toml
+#
+################################################################
+
+################################################################
+# Global configuration
+################################################################
+global:
+  checkNewVersion: true
+  sendAnonymousUsage: false # true by default
+
+################################################################
+# EntryPoints configuration
+################################################################
+
+# EntryPoints definition
+#
+# Optional
+#
+entryPoints:
+  http:
+    address: :80
+    # (Optional) Redirect to HTTPS
+    # ---
+    http:
+      middlewares:
+        - default-secured@file
+        # - bouncer-crowdsec
+      redirections:
+        entryPoint:
+          to: https
+          scheme: https
+  https:
+    address: :443
+    http:
+      middlewares:
+        - default-secured@file
+        # - bouncer-crowdsec
+
+serversTransport:
+  insecureSkipVerify: true
+  rootCAs:
+    - "/etc/traefik/certs/ca.pem"
+
+################################################################
+# Traefik logs configuration
+################################################################
+
+# Traefik logs
+# Enabled by default and log to stdout
+#
+# Optional
+#
+log:
+  # Log level
+  #
+  # Optional
+  # Default: "ERROR"
+  #
+  level: WARNING # DEBUG, INFO, WARNING, ERROR, CRITICAL
+
+  # Sets the filepath for the traefik log. If not specified, stdout will be used.
+  # Intermediate directories are created if necessary.
+  #
+  # Optional
+  # Default: os.Stdout
+  #
+  filePath: /var/log/traefik/traefik.log
+
+  # Format is either "json" or "common".
+  #
+  # Optional
+  # Default: "common"
+  #
+  format: common
+
+################################################################
+# Access logs configuration
+################################################################
+
+# Enable access logs
+# By default it will write to stdout and produce logs in the textual
+# Common Log Format (CLF), extended with additional fields.
+#
+# Optional
+#
+accesslog:
+  # Sets the file path for the access log. If not specified, stdout will be used.
+  # Intermediate directories are created if necessary.
+  #
+  # Optional
+  # Default: os.Stdout
+  #
+  filePath: /var/log/traefik/access.log
+
+  # Format is either "json" or "common".
+  #
+  # Optional
+  # Default: "common"
+  #
+  format: common
+
+  fields:
+    defaultMode: keep
+    names:
+      ClientUsername: drop
+    headers:
+      defaultMode: keep
+      names:
+        User-Agent: keep
+        Authorization: drop
+        Content-Type: keep
+
+################################################################
+# Metric logs configuration
+################################################################
+
+# metrics:
+#   influxDB2:
+#     address: http://influxdb:8086
+#     token: <token>
+#     org: <org>
+#     bucket: traefik
+#     addRoutersLabels: true
+
+################################################################
+# Tracing logs configuration
+################################################################
+
+# tracing:
+#   elastic:
+#     serverURL: "http://apm-server:8200"
+#     secretToken: <token>
+
+################################################################
+# API and dashboard configuration
+################################################################
+
+# Enable API and dashboard
+#
+# Optional
+#
+api:
+  # Enable the API in insecure mode
+  #
+  # Optional
+  # Default: false
+  #
+  #  insecure: true
+
+  # Enabled Dashboard
+  #
+  # Optional
+  # Default: true
+  #
+  dashboard: true
+
+################################################################
+# Ping configuration
+################################################################
+
+# Enable ping
+#ping:
+# Name of the related entry point
+#
+# Optional
+# Default: "traefik"
+#
+#  entryPoint: traefik
+
+################################################################
+# Docker configuration backend
+################################################################
+
+providers:
+  # Enable Docker configuration backend
+  docker:
+    # Docker server endpoint. Can be a tcp or a unix socket endpoint.
+    #
+    # Required
+    # Default: "unix:///var/run/docker.sock"
+    #
+    endpoint: "unix:///var/run/docker.sock"
+
+    # Expose containers by default in traefik
+    #
+    # Optional
+    # Default: true
+    #
+    exposedByDefault: false
+    swarmMode: true
+  file:
+    # watch for dynamic configuration changes
+    directory: /etc/traefik
+    watch: true
+
+################################################################
+# TLS
+################################################################
+
+# Configure your CertificateResolver here...
+# ---
+# certificatesResolvers:
+#   staging:
+#     acme:
+#       email: your-email@example.com
+#       storage: /etc/traefik/certs/acme.json
+#       caServer: "https://acme-staging-v02.api.letsencrypt.org/directory"
+#       httpChallenge:
+#         entryPoint: web
+#
+#   production:
+#     acme:
+#       email: your-email@example.com
+#       storage: /etc/traefik/certs/acme.json
+#       caServer: "https://acme-v02.api.letsencrypt.org/directory"
+#       httpChallenge:
+#         entryPoint: web
+
+# (Optional) Overwrite Default Certificates
+tls:
+  certificates:
+    - certFile: /etc/traefik/certs/cert.pem
+      keyFile: /etc/traefik/certs/cert-key.pem
+  stores:
+    default:
+      defaultCertificate:
+        certFile: /etc/traefik/certs/cert.pem
+        keyFile: /etc/traefik/certs/cert-key.pem

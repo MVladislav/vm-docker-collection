@@ -1,0 +1,96 @@
+version: "3.8"
+
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  ngrok:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+      args:
+        BUILD_DATE: ${BUILD_DATE:-2021}
+        VERSION: ${VERSION:-latest}
+    image: localhost:5000/ngrok:${VERSION:-latest}
+    # env_file: .env
+    stdin_open: true # docker run -i
+    tty: true # docker run -t
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65535
+        hard: 65535
+      fsize: -1
+      as: -1
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        max_replicas_per_node: 1
+        constraints:
+          # - "node.id==${NODE_ID}"
+          - "node.role==${NODE_ROLE:-manager}"
+      restart_policy:
+        condition: on-failure
+    # ports:
+    #   - target: 4040
+    #     published: ${PORT:-4040}
+    #     protocol: tcp
+    #     mode: host
+    #   - target: ${NGROK_PORT:-80}
+    #     published: ${NGROK_PORT:-80}
+    #     protocol: tcp
+    #     mode: host
+    environment:
+      # Authentication key for your Ngrok account. This is needed for custom subdomains, custom domains, and HTTP authentication.
+      NGROK_AUTH: ${NGROK_AUTH:-}
+      # Name of the custom subdomain to use for your tunnel. You must also provide the authentication token.
+      NGROK_SUBDOMAIN: ${NGROK_SUBDOMAIN:-}
+      # Paying Ngrok customers can specify a custom domain. Only one subdomain or domain can be specified, with the domain taking priority.
+      NGROK_HOSTNAME: ${NGROK_HOSTNAME:-}
+      # Name of the reserved TCP address to use for a TCP tunnel. You must also provide the authentication token.
+      NGROK_REMOTE_ADDR: ${NGROK_REMOTE_ADDR:-}
+      # Username to use for HTTP authentication on the tunnel. You must also specify an authentication token.
+      NGROK_USERNAME: ${NGROK_USERNAME:-}
+      # Password to use for HTTP authentication on the tunnel. You must also specify an authentication token.
+      NGROK_PASSWORD: ${NGROK_PASSWORD:-}
+      # Can either be HTTP, TLS or TCP, and it defaults to HTTP if not specified. If set to TCP, Ngrok will allocate a port instead of a subdomain and proxy TCP requests directly to your application.
+      NGROK_PROTOCOL: ${NGROK_PROTOCOL:-}
+      # Port to expose (defaults to 80 for HTTP protocol, 443 for TLS protocol). If the server is non-local, the hostname can also be specified, e.g. 192.168.0.102:80 or dev.local:443.
+      NGROK_PORT: ${NGROK_PORT:-80}
+      # Location of the ngrok tunnel server; can be us (United States, default), eu (Europe), ap (Asia/Pacific) or au (Australia)
+      NGROK_REGION: ${NGROK_REGION:-}
+      # This is the domain name referred to by ngrok. (default: localhost).
+      NGROK_LOOK_DOMAIN: ${NGROK_LOOK_DOMAIN:-}
+      # Toggle tunneling only HTTP or HTTPS traffic. When true, Ngrok only opens the HTTPS endpoint. When false, Ngrok only opens the HTTP endpoint
+      NGROK_BINDTLS: ${NGROK_BINDTLS:-}
+      # Rewrites the Host header for incoming HTTP requests to determine which development site to display.
+      NGROK_HEADER: ${NGROK_HEADER:-}
+      # Toggle output of logs. When true, Ngrok will output logs to stdout.
+      NGROK_DEBUG: ${NGROK_DEBUG:-}
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    # command:
+    #   - sh -c '(ngrok http 8080 &)
+    #   - sleep 5
+    #   - curl --connect-timeout 5 --silent --show-error --fail
+    #     http://localhost:4040'
+    network_mode: "host" # bridge | host
+    # networks:
+    #   default_host: {}
+    restart: always
+
+################################################################################
+################################################################################
+################################################################################
+
+networks:
+  default:
+    driver: ${NETWORK_MODE:-bridge}
+    attachable: true
+  # default_host:
+  #   external: true
+  #   name: host

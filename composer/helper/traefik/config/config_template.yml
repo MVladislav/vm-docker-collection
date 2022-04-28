@@ -1,0 +1,79 @@
+http:
+  # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  routers:
+    example:
+      entryPoints:
+        - https
+      rule: "Host(`example.home.local`)"
+      middlewares:
+        - default-secured
+      tls: {}
+      service: example
+
+  # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  services:
+    example:
+      loadBalancer:
+        servers:
+          - url: "https://192.168.xx.xx"
+        passHostHeader: true
+
+  # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  middlewares:
+    default-headers:
+      headers:
+        frameDeny: true
+        sslRedirect: true
+        browserXssFilter: true
+        contentTypeNosniff: true
+        forceSTSHeader: true
+        stsIncludeSubdomains: true
+        stsPreload: true
+        stsSeconds: 15552000
+        customFrameOptionsValue: SAMEORIGIN
+        customRequestHeaders:
+          X-Forwarded-Proto: https
+
+    # --------------------------------------------------------------------------
+    default-whitelist:
+      ipWhiteList:
+        sourceRange:
+          - 10.0.0.0/8
+          - 192.168.0.0/16
+          - 172.16.0.0/12
+
+    admin-whitelist:
+      ipWhiteList:
+        sourceRange:
+          - 192.168.xx.0/24
+
+    protected-whitelist:
+      ipWhiteList:
+        sourceRange:
+          - 192.168.xx.0/24
+          - 192.168.xx.0/24
+
+    # --------------------------------------------------------------------------
+    default-secured:
+      chain:
+        middlewares:
+          - default-whitelist
+          - default-headers
+
+    protected-secured:
+      chain:
+        middlewares:
+          - protected-whitelist
+          - default-headers
+
+    admin-secured:
+      chain:
+        middlewares:
+          - admin-whitelist
+          - default-headers
+
+    # --------------------------------------------------------------------------
+    bouncer-crowdsec:
+      forwardauth:
+        address: http://bouncer-traefik:8080/api/v1/forwardAuth
+        trustForwardHeader: true

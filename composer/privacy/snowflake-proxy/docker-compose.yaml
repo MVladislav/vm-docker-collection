@@ -1,0 +1,47 @@
+version: "3.8"
+
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  snowflake-proxy:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    image: thetorproject/snowflake-proxy:${VERSION:-latest}
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65535
+        hard: 65535
+      fsize: -1
+      as: -1
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        max_replicas_per_node: 1
+        constraints:
+          - "node.role==${NODE_ROLE:-manager}"
+          - node.platform.os == linux
+      restart_policy:
+        condition: on-failure
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    network_mode: host
+    # command: [ "-broker" , "https://snowflake-broker.bamsoftware.com/" ]
+    # command: [ "-broker" , "https://snowflake-broker.torproject.net/" ]
+    restart: always
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  default:
+    driver: ${NETWORK_MODE:-bridge}
+    attachable: true
+  proxy:
+    external: true

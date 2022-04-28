@@ -1,0 +1,46 @@
+version: "3.8"
+
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  gophish:
+    image: gophish/gophish:${VERSION:-latest}
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65535
+        hard: 65535
+      fsize: -1
+      as: -1
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        max_replicas_per_node: 1
+        constraints:
+          # - "node.id==${NODE_ID}"
+          - "node.role==${NODE_ROLE:-manager}"
+      restart_policy:
+        condition: on-failure
+    ports:
+      - target: 3333
+        published: ${PORT:-3333}
+        protocol: tcp
+        mode: host
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    networks:
+      default: {}
+    restart: always
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  default:
+    driver: ${NETWORK_MODE:-bridge}
+    attachable: true

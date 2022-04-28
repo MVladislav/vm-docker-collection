@@ -1,0 +1,109 @@
+version: "3.8"
+
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  crowdsec:
+    image: crowdsecurity/crowdsec:${VERSION:-latest}
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65535
+        hard: 65535
+      fsize: -1
+      as: -1
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        max_replicas_per_node: 1
+        constraints:
+          # - "node.id==${NODE_ID}"
+          - "node.role==${NODE_ROLE:-manager}"
+      restart_policy:
+        condition: on-failure
+    environment:
+      # this is the list of collections we want to install
+      # https://hub.crowdsec.net/author/crowdsecurity/collections/nginx
+      COLLECTIONS: "crowdsecurity/linux crowdsecurity/traefik"
+      GID: "${GID-1000}"
+    configs:
+      - source: acquis_config
+        target: /etc/crowdsec/acquis.yaml
+        mode: 0440
+        uid: "1000"
+        gid: "1000"
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - db:/var/lib/crowdsec/data/
+      - config:/etc/crowdsec/
+      - traefik_logs:/var/log/traefik:ro
+    logging:
+      driver: 'json-file'
+      options:
+          max-size: '2m'
+          max-file: '5'
+    networks:
+      proxy: {}
+    restart: always
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  bouncer-traefik:
+    image: fbonalair/traefik-crowdsec-bouncer:${VERSION:-latest}
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65535
+        hard: 65535
+      fsize: -1
+      as: -1
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        max_replicas_per_node: 1
+        constraints:
+          # - "node.id==${NODE_ID}"
+          - "node.role==${NODE_ROLE:-manager}"
+      restart_policy:
+        condition: on-failure
+    environment:
+      CROWDSEC_BOUNCER_API_KEY: ${CROWDSEC_BOUNCER_API_KEY}
+      CROWDSEC_AGENT_HOST: ${CROWDSEC_AGENT_HOST:-8080}
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    logging:
+      driver: 'json-file'
+      options:
+          max-size: '2m'
+          max-file: '5'
+    networks:
+      proxy: {}
+    restart: always
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  proxy:
+    external: true
+
+volumes:
+  db: {}
+  config: {}
+  traefik_logs:
+    name: traefik_logs
+    external: true
+
+configs:
+  acquis_config:
+    file: $PWD/config/acquis.yaml

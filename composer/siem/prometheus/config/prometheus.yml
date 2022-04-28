@@ -1,0 +1,27 @@
+### Die Globalen Informationen
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+### Alertmanager Konfiguration ## Standard abgeschaltet. Anderes Thema
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          # - alertmanager:9093
+
+### Hier werden die Konfigurationen für die Zielhosts angegeben.
+scrape_configs:
+  # Damit überwacht sich Prometheus selbst
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  ### So sieht eine Beispiel Konfiguration aus. Alle 5 Sekunden wird hier abgefragt.
+
+  # - job_name: <SYSTEM-NAMEN>
+  #   scrape_interval: 5s
+  #   static_configs:
+  #     - targets: ["<DEINE-IPs-DER-SYSTEME:9100"]
+### Es können im selben Format viele weitere Hosts angelegt werden.
+### Einfach alles ab job_name Kopieren

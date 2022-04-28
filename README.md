@@ -68,6 +68,20 @@ $docker-swarm-compose <STACK_NAME>
 
 ---
 
+## TODOs
+
+- cleanups and fixes:
+  - [ ] heimdall
+  - [ ] netbox
+  - [ ] snipe-it
+  - [ ] gopish
+  - [ ] ngrok
+  - [ ] checkmk
+  - [ ] crowdsec
+  - [ ] prometheus
+
+---
+
 ## References
 
 - <...>
