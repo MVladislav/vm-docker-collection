@@ -27,7 +27,7 @@ services:
         condition: on-failure
       labels:
         - traefik.enable=true
-        - traefik.docker.lbswarm=true
+        - traefik.docker.lbswarm=${LB_SWARM:-true}
         - traefik.docker.network=proxy
         - traefik.http.routers.influxdb.entrypoints=https
         - traefik.http.routers.influxdb.rule=Host(`${DOMAIN?domain variable not set}`)
@@ -35,7 +35,7 @@ services:
         - traefik.http.routers.influxdb.service=influxdb
         - traefik.http.services.influxdb.loadbalancer.server.scheme=${PROTOCOL:-http}
         - traefik.http.services.influxdb.loadbalancer.server.port=${PORT:-8086}
-        - traefik.http.routers.influxdb.middlewares=default-secured@file
+        - traefik.http.routers.influxdb.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
     # ports:
     #   - target: 8086
     #     published: ${PORT:-8086}

@@ -15,6 +15,8 @@
 
 ## basic
 
+> defined to work with treafik
+
 ### create `.env` file following:
 
 ```env
@@ -29,8 +31,8 @@ PORT=8125
 # default-secured@file | protected-secured@file | admin-secured@file
 MIDDLEWARE_SECURED=default-secured@file
 
-INFLUXDB_ORG=
-INFLUXDB_BUCKET=
+INFLUXDB_ORG=<ORG>
+INFLUXDB_BUCKET=<BUCKET>
 INFLUXDB_TOKEN=<TOKEN>
 ```
 

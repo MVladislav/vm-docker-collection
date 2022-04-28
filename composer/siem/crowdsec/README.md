@@ -25,8 +25,12 @@ NETWORK_MODE=overlay
 
 VERSION=latest
 
+LB_SWARM=true
 DOMAIN=crowdsec.home.local
+PROTOCOL=http
 PORT=80
+# default-secured@file | protected-secured@file | admin-secured@file
+MIDDLEWARE_SECURED=default-secured@file
 ```
 
 ---

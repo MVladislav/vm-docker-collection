@@ -27,7 +27,7 @@ services:
         condition: on-failure
       labels:
         - traefik.enable=true
-        - traefik.docker.lbswarm=true
+        - traefik.docker.lbswarm=${LB_SWARM:-true}
         - traefik.docker.network=proxy
         - traefik.http.routers.kuma.entrypoints=https
         - traefik.http.routers.kuma.rule=Host(`${DOMAIN?domain variable not set}`)
@@ -35,7 +35,8 @@ services:
         - traefik.http.routers.kuma.service=kuma
         - traefik.http.services.kuma.loadbalancer.server.scheme=${PROTOCOL:-http}
         - traefik.http.services.kuma.loadbalancer.server.port=${PORT:-3001}
-        - traefik.http.routers.kuma.middlewares=default-secured@file
+        - traefik.http.middlewares.frameOptionsFromSmart.headers.framedeny=true
+        - traefik.http.routers.kuma.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
     # ports:
     #   - target: 3001
     #     published: ${PORT:-3001}

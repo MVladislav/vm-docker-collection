@@ -26,12 +26,12 @@ NETWORK_MODE=overlay
 
 VERSION=latest
 
+LB_SWARM=true
 DOMAIN=traefik.home.local
 PROTOCOL=http
 PORT=8080
-
-PORT_HTTP=80
-PORT_HTTPS=443
+# default-secured@file | protected-secured@file | admin-secured@file
+MIDDLEWARE_SECURED=admin-secured@file
 
 USERNAME=traefik
 # $(openssl passwd -apr1 $PASSWORD) or $(openssl passwd -apr1)

@@ -17,7 +17,3 @@ config/*
 
 !config/.gitempty
 !config/acquis.yaml
-
-!config/ssl/
-config/ssl/*
-!config/ssl/.gitempty

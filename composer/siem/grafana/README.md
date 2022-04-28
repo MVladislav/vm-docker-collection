@@ -26,9 +26,12 @@ NETWORK_MODE=overlay
 
 VERSION=latest
 
+LB_SWARM=true
 DOMAIN=grafana.home.local
 PROTOCOL=http
 PORT=3000
+# default-secured@file | protected-secured@file | admin-secured@file
+MIDDLEWARE_SECURED=protected-secured@file
 
 GF_SECURITY_ADMIN_USER=root
 GF_SECURITY_ADMIN_PASSWORD=swordfish

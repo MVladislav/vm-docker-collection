@@ -1,16 +1,18 @@
-/*
+*
 !.git
 !.github
 !.gitignore
 !.gitempty
+
 !.dockerignore
 !docker-*
-!DOCKERFILE
-!README.md
+!Dockerfile
+
 !CHANGELOG.md
 !LICENCE
+!README.md
 
 !config/
 config/*
-!config/.gitignore
+
 !config/.gitempty

@@ -15,10 +15,4 @@
 !config/
 config/*
 
-!config/.gitempty
 !config/telegraf.conf
-!config/*_template.*
-
-!config/ssl/
-config/ssl/*
-!config/ssl/.gitempty

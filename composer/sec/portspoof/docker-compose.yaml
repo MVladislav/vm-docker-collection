@@ -25,7 +25,6 @@ services:
       as: -1
     deploy:
       mode: replicated
-      # mode: global
       replicas: 1
       placement:
         max_replicas_per_node: 1
@@ -39,27 +38,13 @@ services:
         published: ${PORT:-4444}
         protocol: tcp
         mode: host
-    # environment:
-    #   VAR: ...
-    # configs:
-    #   - source: xx_config
-    #     target: ...
-    #     mode: 0440
-    #     uid: "1000"
-    #     gid: "1000"
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-      # - data:/root
-      # - type: bind
-      #   source: ./logstash/config/logstash.yml
-      #   target: /usr/share/logstash/config/logstash.yml
-      #   read_only: true
     # command: >
     #   portspoof -s /usr/local/etc/portspoof_signatures
     networks:
       default: {}
-    # network_mode: host
     restart: always
 
 ################################################################################
@@ -69,10 +54,3 @@ networks:
   default:
     driver: ${NETWORK_MODE:-bridge}
     attachable: true
-#
-# volumes:
-#   data: {}
-#
-# configs:
-#   xx_config:
-#     file: $PWD/config/...

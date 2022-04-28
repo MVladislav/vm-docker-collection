@@ -24,12 +24,15 @@ NETWORK_MODE=overlay
 
 VERSION=latest
 
+LB_SWARM=true
 DOMAIN=portainer.home.local
 PROTOCOL=http
 PORT=9000
+# default-secured@file | protected-secured@file | admin-secured@file
+MIDDLEWARE_SECURED=protected-secured@file
 
-PORT_HTTP=9000
-PORT_HTTPS=9443
+# PORT_HTTP=9000
+# PORT_HTTPS=9443
 ```
 
 ---

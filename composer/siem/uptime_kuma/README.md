@@ -20,14 +20,18 @@
 ### create `.env` file following:
 
 ```env
+NODE_ID=
 NODE_ROLE=manager
 NETWORK_MODE=overlay
 
 VERSION=latest
 
+LB_SWARM=true
 DOMAIN=status.home.local
 PROTOCOL=http
 PORT=3001
+# default-secured@file | protected-secured@file | admin-secured@file
+MIDDLEWARE_SECURED=default-secured@file
 ```
 
 ---

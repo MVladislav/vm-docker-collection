@@ -26,8 +26,8 @@ services:
       restart_policy:
         condition: on-failure
     environment:
-      #this is the list of collections we want to install
-      #https://hub.crowdsec.net/author/crowdsecurity/collections/nginx
+      # this is the list of collections we want to install
+      # https://hub.crowdsec.net/author/crowdsecurity/collections/nginx
       COLLECTIONS: "crowdsecurity/linux crowdsecurity/traefik"
       GID: "${GID-1000}"
     configs:

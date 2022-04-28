@@ -119,8 +119,6 @@ accesslog:
 # Metric logs configuration
 ################################################################
 
-# (Optional) Metrics
-# ---
 # metrics:
 #   influxDB2:
 #     address: http://influxdb:8086

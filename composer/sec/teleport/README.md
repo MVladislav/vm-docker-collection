@@ -45,4 +45,5 @@ $docker exec <CONTAINER> tctl users add teleuser --roles=editor,access --logins=
 
 ## References
 
-- <https://...>
+- <https://goteleport.com/>
+- <https://goteleport.com/docs/getting-started/docker-compose/>

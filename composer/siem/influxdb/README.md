@@ -26,9 +26,12 @@ NETWORK_MODE=overlay
 
 VERSION=latest
 
+LB_SWARM=true
 DOMAIN=influxdb.home.local
 PROTOCOL=http
 PORT=8086
+# default-secured@file | protected-secured@file | admin-secured@file
+MIDDLEWARE_SECURED=default-secured@file
 
 DOCKER_INFLUXDB_INIT_MODE=setup
 DOCKER_INFLUXDB_INIT_USERNAME=root

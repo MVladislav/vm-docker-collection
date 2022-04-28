@@ -8,7 +8,7 @@ services:
     image: telegraf:${VERSION:-latest}
     env_file: .env
     # run to check "$(stat -c '%g' /var/run/docker.sock)"
-    user: telegraf:998
+    user: telegraf:999
     ulimits:
       memlock:
         soft: -1
@@ -23,8 +23,6 @@ services:
       placement:
         max_replicas_per_node: 1
         constraints:
-          # - "node.id==${NODE_ID}"
-          # - "node.role==${NODE_ROLE:-manager}"
           - node.platform.os == linux
       restart_policy:
         condition: on-failure
@@ -45,28 +43,30 @@ services:
     #     protocol: udp
     #     mode: host
     environment:
-      HOST_PROC: /rootfs/proc
-      HOST_SYS: /rootfs/sys
-      HOST_ETC: /rootfs/etc
+      HOST_MOUNT_PREFIX: /hostfs
+      HOST_PROC: /hostfs/proc
+      HOST_SYS: /hostfs/sys
+      HOST_ETC: /hostfs/etc
+      HOST_VAR: /hostfs/var
+      HOST_RUN: /hostfs/run
     configs:
       - source: telegraf_config
         target: /etc/telegraf/telegraf.conf
         mode: 0440
         # uid: "1000"
-        gid: "998"
+        gid: "999"
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - /sys:/rootfs/sys:ro
-      - /proc:/rootfs/proc:ro
-      - /etc:/rootfs/etc:ro
-    # command: >
-    #   ...
+      - /sys:/hostfs/sys:ro
+      - /proc:/hostfs/proc:ro
+      - /etc:/hostfs/etc:ro
+      - /var:/hostfs/var:ro
+      - /run:/hostfs/run:ro
     networks:
       # default: {}
       proxy: {}
-      influxdb2: {}
     restart: always
 
 ################################################################################
@@ -78,13 +78,7 @@ networks:
   #   attachable: true
   proxy:
     external: true
-  influxdb2:
-    external: true
-    name: influxdb2
-#
-# volumes:
-#   data: {}
-#
+
 configs:
   telegraf_config:
     file: $PWD/config/telegraf.conf
