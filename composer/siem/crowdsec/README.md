@@ -40,13 +40,13 @@ MIDDLEWARE_SECURED=default-secured@file
 show metrics:
 
 ```sh
-$docker exec <container> cscli metrics
+$docker exec "$(docker ps -q -f name=crowdsec)" cscli metrics
 ```
 
 check if decisions listed:
 
 ```sh
-$docker exec <container> cscli decisions list
+$docker exec "$(docker ps -q -f name=crowdsec)" cscli decisions list
 ```
 
 install collection:
@@ -54,20 +54,20 @@ install collection:
 > some default are always in docker-composer defined
 
 ```sh
-$docker exec <container> cscli collections install crowdsecurity/<collection name>
+$docker exec "$(docker ps -q -f name=crowdsec)" cscli collections install crowdsecurity/<collection name>
 ```
 
 perform updates:
 
 ```sh
-$docker exec <container> cscli hub update
-$docker exec <container> cscli hub upgrade
+$docker exec "$(docker ps -q -f name=crowdsec)" cscli hub update
+$docker exec "$(docker ps -q -f name=crowdsec)" cscli hub upgrade
 ```
 
 get api key for bouncer (traefik):
 
 ```sh
-$docker exec <container> cscli bouncers add bouncer-traefik
+$docker exec "$(docker ps -q -f name=crowdsec)" cscli bouncers add bouncer-traefik
 ```
 
 ---

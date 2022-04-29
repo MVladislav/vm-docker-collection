@@ -38,7 +38,7 @@ MIDDLEWARE_SECURED=default-secured@file
 create a user for login:
 
 ```sh
-$docker exec <CONTAINER> tctl users add teleuser --roles=editor,access --logins=root,ubuntu,ansible-admin
+$docker exec "$(docker ps -q -f name=teleport)" tctl users add teleuser --roles=editor,access --logins=root,ubuntu,ansible-admin
 ```
 
 ---
