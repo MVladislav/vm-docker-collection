@@ -74,7 +74,7 @@ $docker-swarm-compose <STACK_NAME>
   - [ ] heimdall
   - [ ] netbox
   - [ ] snipe-it
-  - [ ] gopish
+  - [x] gopish
   - [ ] ngrok
   - [ ] checkmk
   - [ ] crowdsec
