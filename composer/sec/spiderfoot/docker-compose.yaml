@@ -1,0 +1,69 @@
+version: "3.8"
+
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  spiderfoot:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    image: spiderfoot:${VERSION:-latest}
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65535
+        hard: 65535
+      fsize: -1
+      as: -1
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        max_replicas_per_node: 1
+        constraints:
+          # - "node.id==${NODE_ID}"
+          - "node.role==${NODE_ROLE:-manager}"
+          - node.platform.os == linux
+      restart_policy:
+        condition: on-failure
+      labels:
+        - traefik.enable=true
+        - traefik.docker.lbswarm=${LB_SWARM:-true}
+        - traefik.docker.network=proxy
+        - traefik.http.routers.spiderfoot.entrypoints=https
+        - traefik.http.routers.spiderfoot.rule=Host(`${DOMAIN?domain variable not set}`)
+        - traefik.http.routers.spiderfoot.tls=true
+        - traefik.http.routers.spiderfoot.service=spiderfoot
+        - traefik.http.services.spiderfoot.loadbalancer.server.scheme=${PROTOCOL:-http}
+        - traefik.http.services.spiderfoot.loadbalancer.server.port=${PORT:-5001}
+        - traefik.http.routers.spiderfoot.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    # ports:
+    #   - target: 5001
+    #     published: ${PORT:-5001}
+    #     protocol: tcp
+    #     mode: host
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - data:/var/lib/spiderfoot
+    networks:
+      proxy: {}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "${PROTOCOL:-https}://localhost:${PORT:-443}"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: always
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  proxy:
+    external: true
+
+volumes:
+  data: {}
