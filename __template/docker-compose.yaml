@@ -93,6 +93,18 @@ networks:
     attachable: true
   proxy:
     external: true
+  nfs-data:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: nfsvers=4,addr=${NAS_HOST},rw,uid=${NAS_PUID:-1000},gid=${NAS_PGID:-1000}
+      device: ":{NAS_PATH:-/}"
+  smb-data:
+    driver: local
+    driver_opts:
+      type: "cifs"
+      device: "//${NAS_HOST}${NAS_PATH:-/}"
+      o: "username=${NAS_USERNAME},password=${NAS_PASSWORD},vers=3.0,uid=${NAS_PUID:-1000},gid=${NAS_PGID:-1000}"
 #
 # volumes:
 #   data: {}
