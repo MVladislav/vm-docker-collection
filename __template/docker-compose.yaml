@@ -93,12 +93,12 @@ networks:
     attachable: true
   proxy:
     external: true
-  nfs-data:
+  nas-data:
     driver: local
     driver_opts:
       type: nfs
-      o: nfsvers=4,addr=${NAS_HOST},rw,uid=${NAS_PUID:-1000},gid=${NAS_PGID:-1000}
-      device: ":{NAS_PATH:-/}"
+      o: nfsvers=4,addr=${NAS_HOST},rw,noatime,rsize=8192,wsize=8192,tcp,timeo=14
+      device: ":${NAS_PATH:-/}"
   smb-data:
     driver: local
     driver_opts:
