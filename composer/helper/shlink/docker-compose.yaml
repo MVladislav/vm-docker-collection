@@ -1,0 +1,128 @@
+version: "3.8"
+
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  shlink-short:
+    image: shlinkio/shlink:${VERSION:-latest}
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65535
+        hard: 65535
+      fsize: -1
+      as: -1
+    deploy:
+      mode: replicated
+      # mode: global
+      replicas: 1
+      placement:
+        max_replicas_per_node: 1
+        constraints:
+          # - "node.id==${NODE_ID}"
+          - "node.role==${NODE_ROLE:-manager}"
+          - node.platform.os == linux
+      restart_policy:
+        condition: on-failure
+      labels:
+        - traefik.enable=true
+        - traefik.docker.lbswarm=${LB_SWARM:-true}
+        - traefik.docker.network=proxy
+        - traefik.http.routers.shlink-short.entrypoints=https
+        - traefik.http.routers.shlink-short.rule=Host(`${DOMAIN_SHORT?domain variable not set}`)
+        - traefik.http.routers.shlink-short.tls=true
+        - traefik.http.routers.shlink-short.service=shlink-short
+        - traefik.http.services.shlink-short.loadbalancer.server.scheme=${PROTOCOL:-http}
+        - traefik.http.services.shlink-short.loadbalancer.server.port=${PORT_SHORT:-8080}
+        - traefik.http.routers.shlink-short.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    # ports:
+    #   - target: 8080
+    #     published: ${PORT:-8080}
+    #     protocol: tcp
+    #     mode: host
+    environment:
+      TIMEZONE: ${TZ:-Europe/Berlin}
+      DEFAULT_DOMAIN: ${DOMAIN_SHORT?domain variable not set}
+      IS_HTTPS_ENABLED: ${IS_HTTPS_ENABLED:-true}
+      # DB_DRIVER: postgres
+      # DB_NAME: shlink_db
+      # DB_USER: username
+      # DB_PASSWORD: verystrongpassword
+      # DB_HOST: db
+      # DB_PORT: 5432
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - db:/etc/shlink/data
+    networks:
+      default: {}
+      proxy: {}
+    restart: always
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  shlink-web:
+    image: shlinkio/shlink-web-client:${VERSION:-latest}
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65535
+        hard: 65535
+      fsize: -1
+      as: -1
+    deploy:
+      mode: replicated
+      # mode: global
+      replicas: 1
+      placement:
+        max_replicas_per_node: 1
+        constraints:
+          # - "node.id==${NODE_ID}"
+          - "node.role==${NODE_ROLE:-manager}"
+          - node.platform.os == linux
+      restart_policy:
+        condition: on-failure
+      labels:
+        - traefik.enable=true
+        - traefik.docker.lbswarm=${LB_SWARM:-true}
+        - traefik.docker.network=proxy
+        - traefik.http.routers.shlink-web.entrypoints=https
+        - traefik.http.routers.shlink-web.rule=Host(`${DOMAIN?domain variable not set}`)
+        - traefik.http.routers.shlink-web.tls=true
+        - traefik.http.routers.shlink-web.service=shlink-web
+        - traefik.http.services.shlink-web.loadbalancer.server.scheme=${PROTOCOL:-http}
+        - traefik.http.services.shlink-web.loadbalancer.server.port=${PORT:-80}
+        - traefik.http.routers.shlink-web.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    # ports:
+    #   - target: 80
+    #     published: ${PORT:-80}
+    #     protocol: tcp
+    #     mode: host
+    environment:
+      TIMEZONE: ${TZ:-Europe/Berlin}
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    networks:
+      default: {}
+      proxy: {}
+    restart: always
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  default:
+    driver: ${NETWORK_MODE:-bridge}
+    attachable: true
+  proxy:
+    external: true
+
+volumes:
+  db: {}
