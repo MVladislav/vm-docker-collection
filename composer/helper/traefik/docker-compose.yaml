@@ -53,13 +53,9 @@ services:
         published: 9200
         protocol: tcp
         mode: host
-      - target: 9002 # elk iptables
-        published: 9002
-        protocol: udp
-        mode: host
-      - target: 9003 # elk pfsense
-        published: 9003
-        protocol: udp
+      - target: 8220 # elastic-agent
+        published: 8220
+        protocol: tcp
         mode: host
       - target: 5140 # elk opnsense
         published: 5140
@@ -67,6 +63,7 @@ services:
         mode: host
       - target: 5044 # elk beats
         published: 5044
+        protocol: tcp
         mode: host
       # -------------------------------------
       - target: 1012 # fritz call monit

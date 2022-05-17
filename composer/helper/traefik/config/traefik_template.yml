@@ -40,6 +40,16 @@ entryPoints:
       middlewares:
         - default-secured@file
         # - bouncer-crowdsec
+  # -------------------------------------
+  elastic:
+    address: :9200
+  elastic-agent:
+    address: :8220
+  opnsense:
+    address: :5140
+  beats:
+    address: :5044
+  # -------------------------------------
 
 serversTransport:
   insecureSkipVerify: true
@@ -69,7 +79,7 @@ log:
   # Optional
   # Default: os.Stdout
   #
-  filePath: /var/log/traefik/traefik.log
+  # filePath: /var/log/traefik/traefik.log
 
   # Format is either "json" or "common".
   #
@@ -95,7 +105,7 @@ accesslog:
   # Optional
   # Default: os.Stdout
   #
-  filePath: /var/log/traefik/access.log
+  # filePath: /var/log/traefik/access.log
 
   # Format is either "json" or "common".
   #
