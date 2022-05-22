@@ -1,7 +1,10 @@
-/*
-!.git
-!.github
-!.vscode
+*
+!.git/
+!.git/**
+!.github/
+!.github/**
+!.vscode/
+!.vscode/**
 !.gitignore
 !.gitempty
 
