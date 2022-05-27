@@ -65,10 +65,18 @@ services:
         published: 5044
         protocol: tcp
         mode: host
+      - target: 2055 # elk netlfow
+        published: 2055
+        protocol: udp
+        mode: host
       # -------------------------------------
       - target: 1012 # fritz call monit
         published: 1012
         protocol: tcp
+        mode: host
+      - target: 1012 # fritz call monit
+        published: 1012
+        protocol: udp
         mode: host
       # -------------------------------------
     configs:

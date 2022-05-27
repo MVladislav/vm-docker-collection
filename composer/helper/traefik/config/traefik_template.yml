@@ -49,6 +49,11 @@ entryPoints:
     address: :5140
   beats:
     address: :5044
+  netflow:
+    address: ":2055/udp"
+  # -------------------------------------
+  fritz-monit:
+    address: :1012
   # -------------------------------------
 
 serversTransport:
@@ -125,17 +130,19 @@ accesslog:
         Authorization: drop
         Content-Type: keep
 
-################################################################
-# Metric logs configuration
-################################################################
+    ################################################################
+    # Metric logs configuration
+    ################################################################
 
-# metrics:
-#   influxDB2:
-#     address: http://influxdb:8086
-#     token: <token>
-#     org: <org>
-#     bucket: traefik
-#     addRoutersLabels: true
+    # metrics:
+    #   influxDB2:
+    #     address: http://influxdb:8086
+    #     token: <token>
+    #     org: <org>
+    #     bucket: traefik
+    addEntryPointsLabels: true
+    addRoutersLabels: true
+    addServicesLabels: true
 
 ################################################################
 # Tracing logs configuration
