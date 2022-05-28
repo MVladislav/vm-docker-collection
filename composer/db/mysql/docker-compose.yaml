@@ -1,0 +1,143 @@
+version: "3.8"
+
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  mysql:
+    image: mysql:${VERSION:-5.7}
+    env_file: .env
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65535
+        hard: 65535
+      fsize: -1
+      as: -1
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        max_replicas_per_node: 1
+        constraints:
+          # - "node.id==${NODE_ID}"
+          - "node.role==${NODE_ROLE:-manager}"
+          - node.platform.os == linux
+      restart_policy:
+        condition: on-failure
+    environment:
+      TZ: ${TZ:-Europe/Berlin}
+      MYSQL_ROOT_USER: ${MYSQL_ROOT_USER:-root}
+      # MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      # MYSQL_USER: ${MYSQL_USER:-default}
+      # MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      # MYSQL_DATABASE: ${MYSQL_DATABASE:-default}
+    volumes:
+      - db:/var/lib/mysql
+    command:
+      - --default-authentication-plugin=mysql_native_password
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --innodb-buffer-pool-size=900M
+
+      - --max_allowed_packet=64M
+      - --innodb_buffer_pool_size=500M
+      - --innodb_lock_wait_timeout=90
+      - --innodb_file_per_table
+      - --innodb_flush_log_at_trx_commit=0
+      - --innodb_flush_method=O_DIRECT
+      - --innodb_log_file_size=64M
+      - --innodb_log_buffer_size=16M
+      - --innodb_io_capacity=100
+      - --thread_cache_size=8
+      - --thread_stack=256K
+      - --max_connections=100
+      - --key_buffer_size=4M
+      - --read_buffer_size=128K
+      - --read_rnd_buffer_size=128K
+      - --sort_buffer_size=128K
+      - --join_buffer_size=4M
+      - --query_cache_type=1
+      - --query_cache_size=64M
+      - --query_cache_min_res_unit=2k
+      - --query_cache_limit=256K
+
+    networks:
+      mysql: {}
+    restart: always
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  phpmyadmin:
+    image: phpmyadmin:latest
+    env_file: .env
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65535
+        hard: 65535
+      fsize: -1
+      as: -1
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        max_replicas_per_node: 1
+        constraints:
+          # - "node.id==${NODE_ID}"
+          - "node.role==${NODE_ROLE:-manager}"
+          - node.platform.os == linux
+      restart_policy:
+        condition: on-failure
+      labels:
+        - traefik.enable=true
+        - traefik.docker.lbswarm=${LB_SWARM:-true}
+        - traefik.docker.network=proxy
+
+        - traefik.http.routers.phpmyadmin.entrypoints=https
+        - traefik.http.routers.phpmyadmin.rule=Host(`${DOMAIN?domain variable not set}`)
+        - traefik.http.routers.phpmyadmin.tls=true
+        - traefik.http.routers.phpmyadmin.service=phpmyadmin
+        - traefik.http.services.phpmyadmin.loadbalancer.server.scheme=${PROTOCOL:-http}
+        - traefik.http.services.phpmyadmin.loadbalancer.server.port=${PORT:-80}
+        - traefik.http.routers.phpmyadmin.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    # ports:
+    #   - target: 80
+    #     published: ${PORT:-80}
+    #     protocol: tcp
+    #     mode: host
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    networks:
+      mysql: {}
+      proxy: {}
+    # healthcheck:
+    #   test: ["CMD", "curl", "-f", "${PROTOCOL:-https}://localhost:${PORT:-443}"]
+    #   interval: 30s
+    #   timeout: 10s
+    #   retries: 5
+    restart: always
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  mysql:
+    name: mysql
+    driver: ${NETWORK_MODE:-bridge}
+    attachable: true
+  proxy:
+    external: true
+
+volumes:
+  db: {}

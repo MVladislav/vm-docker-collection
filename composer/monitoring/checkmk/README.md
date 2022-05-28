@@ -9,8 +9,9 @@
 - [SETUP](#setup)
   - [basic](#basic)
     - [create `.env` file following:](#create-env-file-following)
-  - [enterprise free](#enterprise-free)
-    - [create `.env` file following:](#create-env-file-following-1)
+  - [enterprise free from checkmk-page](#enterprise-free-from-checkmk-page)
+    - [change `.env` file following:](#change-env-file-following)
+  - [info](#info)
   - [References](#references)
 
 ---
@@ -19,6 +20,8 @@ A tool for Infrastructure & Application Monitoring. It is a software developed f
 
 ## basic
 
+> defined to work with treafik
+
 ### create `.env` file following:
 
 ```env
@@ -26,13 +29,18 @@ NODE_ID=
 NODE_ROLE=manager
 NETWORK_MODE=overlay
 
-PORT=8080
-
-VERSION=2.0.0-latest
+VERSION=2.1.0
 TYPE=check-mk-raw
+
+LB_SWARM=true
+DOMAIN=checkmk.home.local
+PROTOCOL=http
+PORT=5000
+# default-secured@file | protected-secured@file | admin-secured@file
+MIDDLEWARE_SECURED=default-secured@file
 ```
 
-## enterprise free
+## enterprise free from checkmk-page
 
 download **tar.gz** from site as choosed for docker download:
 
@@ -46,19 +54,21 @@ and run:
 $docker load -i check-mk-free-docker-2.0.0p12.tar.gz
 ```
 
-### create `.env` file following:
+### change `.env` file following:
 
-HINT: **check `VERSION` from your downloaded version**
+> HINT: **check `VERSION` from your downloaded version**
 
 ```env
-NODE_ID=
-NODE_ROLE=manager
-NETWORK_MODE=overlay
-
-PORT=8080
-
 VERSION=2.0.0p12
 TYPE=check-mk-free
+```
+
+## info
+
+user credentials can be found in the logs:
+
+```sh
+$docker service logs --raw -f checkmk_checkmk
 ```
 
 ---

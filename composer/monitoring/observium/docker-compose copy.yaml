@@ -51,64 +51,25 @@ services:
     #     mode: host
     environment:
       TZ: ${TZ:-Europe/Berlin}
+
       OBSERVIUM_ADMIN_USER: ${OBSERVIUM_ADMIN_USER:-admin}
       OBSERVIUM_ADMIN_PASS: ${OBSERVIUM_ADMIN_PASS}
       OBSERVIUM_BASE_URL: https://${DOMAIN?domain variable not set}
 
-      OBSERVIUM_DB_HOST: ${OBSERVIUM_DB_HOST:-db}
-      OBSERVIUM_DB_NAME: ${OBSERVIUM_DB_NAME:-observium}
-      OBSERVIUM_DB_USER: ${OBSERVIUM_DB_USER:-observium }
-      OBSERVIUM_DB_PASS: ${OBSERVIUM_DB_PASS}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      OBSERVIUM_DB_HOST: ${DBHOST:-mysql}
+      OBSERVIUM_DB_PORT: ${DBPORT:-3306}
+
+      OBSERVIUM_DB_NAME: ${DBNAME:-observium}
+      OBSERVIUM_DB_USER: ${DBUSER:-observium }
+      OBSERVIUM_DB_PASS: ${DBPASS}
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - logs:/opt/observium/logs
       - rrd:/opt/observium/rrd
     networks:
-      default: {}
-      proxy: {}
-    restart: always
-
-  ##############################################################################
-  ##############################################################################
-  ##############################################################################
-  db:
-    image: mariadb:latest
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
-      nofile:
-        soft: 65535
-        hard: 65535
-      fsize: -1
-      as: -1
-    deploy:
-      mode: replicated
-      replicas: 1
-      placement:
-        max_replicas_per_node: 1
-        constraints:
-          # - "node.id==${NODE_ID}"
-          - "node.role==${NODE_ROLE:-manager}"
-          - node.platform.os == linux
-      restart_policy:
-        condition: on-failure
-    environment:
-      TZ: ${TZ:-Europe/Berlin}
-      # MYSQL_RANDOM_ROOT_PASSWORD: ${MYSQL_RANDOM_ROOT_PASSWORD:-yes}
-      MYSQL_ROOT_USER: ${MYSQL_ROOT_USER:-root}
-      # MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_USER: ${OBSERVIUM_DB_USER:-observium}
-      # MYSQL_PASSWORD: ${OBSERVIUM_DB_PASS}
-      MYSQL_DATABASE: ${OBSERVIUM_DB_NAME:-observium}
-    volumes:
-      - db:/var/lib/mysql
-    command:
-      - --character-set-server=utf8mb4
-      - --collation-server=utf8mb4_unicode_ci
-    networks:
-      default: {}
+      mysql: {}
       proxy: {}
     restart: always
 
@@ -116,13 +77,11 @@ services:
 ################################################################################
 ################################################################################
 networks:
-  default:
-    driver: ${NETWORK_MODE:-bridge}
-    attachable: true
+  mysql:
+    external: true
   proxy:
     external: true
 
 volumes:
   logs: {}
   rrd: {}
-  db: {}

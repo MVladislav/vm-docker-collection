@@ -1,0 +1,96 @@
+version: "3.8"
+
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  pandorafms:
+    image: pandorafms/pandorafms-open-stack-el8:${VERSION:-latest}
+    # env_file: .env
+    # privileged: true
+    # stdin_open: true # docker run -i
+    # tty: true # docker run -t
+    # cap_add: ["CHOWN", "DAC_OVERRIDE", "SETGID", "SETUID"]
+    # cap_drop: ["ALL"]
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65535
+        hard: 65535
+      fsize: -1
+      as: -1
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        max_replicas_per_node: 1
+        constraints:
+          # - "node.id==${NODE_ID}"
+          - "node.role==${NODE_ROLE:-manager}"
+          - node.platform.os == linux
+      restart_policy:
+        condition: on-failure
+      labels:
+        - traefik.enable=true
+        - traefik.docker.lbswarm=${LB_SWARM:-true}
+        - traefik.docker.network=proxy
+
+        - traefik.http.routers.pandorafms.entrypoints=https
+        - traefik.http.routers.pandorafms.rule=Host(`${DOMAIN?domain variable not set}`)
+        - traefik.http.routers.pandorafms.tls=true
+        - traefik.http.routers.pandorafms.service=pandorafms
+        - traefik.http.services.pandorafms.loadbalancer.server.scheme=${PROTOCOL:-http}
+        - traefik.http.services.pandorafms.loadbalancer.server.port=${PORT:-80}
+        - traefik.http.routers.pandorafms.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    # ports:
+    #   - target: 80 # httpd
+    #     published: ${PORT:-80}
+    #     protocol: tcp
+    #     mode: host
+    #   - target: 41121 # tentacle
+    #     published: ${PORT:-41121}
+    #     protocol: tcp
+    #     mode: host
+    #   - target: 162
+    #     published: ${PORT:-162}
+    #     protocol: udp
+    #     mode: host
+    #   - target: 9995
+    #     published: ${PORT:-9995}
+    #     protocol: udp
+    #     mode: host
+    environment:
+      DBHOST: ${DBHOST:-mysql}
+      DBPORT: ${DBPORT:-3306}
+
+      DBNAME: ${DBNAME:-pandora}
+      DBUSER: ${DBUSER:-pandora}
+      DBPASS: ${DBPASS:-pandora}
+
+      INSTANCE_NAME: ${INSTANCE_NAME:-pandora01}
+      PUBLICURL: ${PUBLICURL:-""}
+      SLEEP: ${SLEEP:-5}
+      RETRIES: ${RETRIES:-10}
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    networks:
+      mysql: {}
+      proxy: {}
+    # healthcheck:
+    #   test: ["CMD", "curl", "-f", "${PROTOCOL:-https}://localhost:${PORT:-443}"]
+    #   interval: 30s
+    #   timeout: 10s
+    #   retries: 5
+    restart: always
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  mysql:
+    external: true
+  proxy:
+    external: true
