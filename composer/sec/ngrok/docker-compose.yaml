@@ -11,7 +11,7 @@ services:
       args:
         BUILD_DATE: ${BUILD_DATE:-2021}
         VERSION: ${VERSION:-latest}
-    image: localhost:5000/ngrok:${VERSION:-latest}
+    image: ngrok:${VERSION:-latest}
     # env_file: .env
     stdin_open: true # docker run -i
     tty: true # docker run -t

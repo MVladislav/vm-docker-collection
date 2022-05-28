@@ -32,11 +32,6 @@ services:
     #   - target: 3000
     #     published: ${PORT:-3443}
     #     mode: host
-    # configs:
-    #   - source: crt_config
-    #     target: /etc/ssl/grafana-selfsigned.crt
-    #   - source: key_config
-    #     target: /etc/ssl/grafana-selfsigned.key
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
@@ -54,9 +49,6 @@ services:
       GF_SMTP_FROM_ADDRESS: ${GF_SMTP_FROM_ADDRESS:-}
       GF_INSTALL_PLUGINS: magnesium-wordcloud-panel,flant-statusmap-panel,grafana-piechart-panel,grafana-worldmap-panel,mxswat-separator-panel
       # "GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource"
-      # GF_SERVER_PROTOCOL: https
-      # GF_SERVER_CERT_FILE: /etc/ssl/grafana-selfsigned.crt
-      # GF_SERVER_CERT_KEY: /etc/ssl/grafana-selfsigned.key
     networks:
       proxy: {}
       elasticsearch: {}
@@ -78,9 +70,3 @@ networks:
 
 volumes:
   grafana-storage: {}
-
-# configs:
-#   crt_config:
-#     file: $PWD/config/ssl/grafana-selfsigned.crt
-#   key_config:
-#     file: $PWD/config/ssl/grafana-selfsigned.key

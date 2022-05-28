@@ -22,7 +22,6 @@ services:
       placement:
         max_replicas_per_node: 1
         constraints:
-          # - "node.id==${NODE_ID}"
           - "node.role==${NODE_ROLE:-manager}"
       restart_policy:
         condition: on-failure

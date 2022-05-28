@@ -22,7 +22,6 @@ services:
       placement:
         max_replicas_per_node: 1
         constraints:
-          # - "node.id==${NODE_ID}"
           - "node.role==${NODE_ROLE:-manager}"
           - node.platform.os == linux
       restart_policy:
@@ -31,9 +30,6 @@ services:
       TZ: ${TZ:-Europe/Berlin}
       MYSQL_ROOT_USER: ${MYSQL_ROOT_USER:-root}
       # MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      # MYSQL_USER: ${MYSQL_USER:-default}
-      # MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-      # MYSQL_DATABASE: ${MYSQL_DATABASE:-default}
     volumes:
       - db:/var/lib/mysql
     command:
@@ -63,7 +59,6 @@ services:
       - --query_cache_size=64M
       - --query_cache_min_res_unit=2k
       - --query_cache_limit=256K
-
     networks:
       mysql: {}
     restart: always
@@ -89,7 +84,6 @@ services:
       placement:
         max_replicas_per_node: 1
         constraints:
-          # - "node.id==${NODE_ID}"
           - "node.role==${NODE_ROLE:-manager}"
           - node.platform.os == linux
       restart_policy:
@@ -114,18 +108,12 @@ services:
     environment:
       PMA_HOST: mysql
       PMA_PORT: 3306
-
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
     networks:
       mysql: {}
       proxy: {}
-    # healthcheck:
-    #   test: ["CMD", "curl", "-f", "${PROTOCOL:-https}://localhost:${PORT:-443}"]
-    #   interval: 30s
-    #   timeout: 10s
-    #   retries: 5
     restart: always
 
 ################################################################################

@@ -41,18 +41,31 @@ entryPoints:
         - default-secured@file
         # - bouncer-crowdsec
   # -------------------------------------
-  elastic:
-    address: :9200
-  elastic-agent:
-    address: :8220
-  opnsense:
-    address: :5140
-  beats:
-    address: :5044
-  netflow:
-    address: ":2055/udp"
+  mysql:
+    address: :3306
+  postgress:
+    address: :5432
+  influxdb:
+    address: :8086
+  prometheus:
+    address: :9090
   # -------------------------------------
-  fritz-monit:
+  ssh:
+    address: :22
+  # -------------------------------------
+  elastic: # send metrics direct to elastic
+    address: :9200
+  elastic-agent: # access elastic over installed agent
+    address: :8220
+  elastic-beats: # logtash used for example sysmon
+    address: :5044
+  # -------------------------------------
+  syslog: # logstash syslogs collector
+    address: :5140
+  netflow: # filebeat netflow collector
+    address: :2055
+  # -------------------------------------
+  fritz-monit: # fritzbox phone monitoring
     address: :1012
   # -------------------------------------
 

@@ -28,6 +28,7 @@ services:
         - traefik.enable=true
         - traefik.docker.lbswarm=${LB_SWARM:-true}
         - traefik.docker.network=proxy
+
         - traefik.http.routers.traefik.entrypoints=https
         - traefik.http.routers.traefik.rule=Host(`${DOMAIN?domain variable not set}`)
         - traefik.http.routers.traefik.tls=true
@@ -40,41 +41,60 @@ services:
         - traefik.http.routers.traefik.middlewares=admin-auth
         - traefik.http.middlewares.admin-auth.basicauth.users=${USERNAME?username variable not set}:${HASHED_PASSWORD?password hash variable not set}
     ports:
-      - target: 80
+      - target: 80 # http
         published: 80
         protocol: tcp
         mode: host
-      - target: 443
+      - target: 443 # https
         published: 443
         protocol: tcp
         mode: host
       # -------------------------------------
-      - target: 9200 # elasticsearch
+      - target: 3306 # mysql
+        published: 3306
+        protocol: tcp
+        mode: host
+      - target: 5432 # postgress
+        published: 5432
+        protocol: tcp
+        mode: host
+      - target: 8086 # influxdb
+        published: 8086
+        protocol: tcp
+        mode: host
+      - target: 9090 # prometheus
+        published: 9090
+        protocol: tcp
+        mode: host
+      # -------------------------------------
+      - target: 22 # ssh
+        published: 22
+        protocol: tcp
+        mode: host
+      # -------------------------------------
+      - target: 9200 # elastic - send metrics direct to elastic
         published: 9200
         protocol: tcp
         mode: host
-      - target: 8220 # elastic-agent
+      - target: 8220 # elastic-agent - access elastic over installed agent
         published: 8220
         protocol: tcp
         mode: host
-      - target: 5140 # elk opnsense
-        published: 5140
-        protocol: tcp
-        mode: host
-      - target: 5044 # elk beats
+      - target: 5044 # elastic-beats - logtash used for example sysmon
         published: 5044
         protocol: tcp
         mode: host
-      - target: 2055 # elk netlfow
+      # -------------------------------------
+      - target: 5140 # syslog - logstash syslogs collector
+        published: 5140
+        protocol: tcp
+        mode: host
+      - target: 2055 # netflow - filebeat netflow collector
         published: 2055
         protocol: udp
         mode: host
       # -------------------------------------
-      - target: 1012 # fritz call monit
-        published: 1012
-        protocol: tcp
-        mode: host
-      - target: 1012 # fritz call monit
+      - target: 1012 # fritz-monit - fritzbox phone monitoring
         published: 1012
         protocol: udp
         mode: host

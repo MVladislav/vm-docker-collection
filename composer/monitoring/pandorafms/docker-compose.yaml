@@ -6,12 +6,7 @@ services:
   ##############################################################################
   pandorafms:
     image: pandorafms/pandorafms-open-stack-el8:${VERSION:-latest}
-    # env_file: .env
-    # privileged: true
-    # stdin_open: true # docker run -i
-    # tty: true # docker run -t
-    # cap_add: ["CHOWN", "DAC_OVERRIDE", "SETGID", "SETUID"]
-    # cap_drop: ["ALL"]
+    env_file: .env
     ulimits:
       memlock:
         soft: -1
@@ -67,7 +62,7 @@ services:
 
       DBNAME: ${DBNAME:-pandora}
       DBUSER: ${DBUSER:-pandora}
-      DBPASS: ${DBPASS:-pandora}
+      # DBPASS: ${DBPASS:-pandora}
 
       INSTANCE_NAME: ${INSTANCE_NAME:-pandora01}
       PUBLICURL: ${PUBLICURL:-""}
@@ -79,11 +74,6 @@ services:
     networks:
       mysql: {}
       proxy: {}
-    # healthcheck:
-    #   test: ["CMD", "curl", "-f", "${PROTOCOL:-https}://localhost:${PORT:-443}"]
-    #   interval: 30s
-    #   timeout: 10s
-    #   retries: 5
     restart: always
 
 ################################################################################

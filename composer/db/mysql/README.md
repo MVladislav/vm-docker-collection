@@ -36,10 +36,6 @@ MIDDLEWARE_SECURED=default-secured@file
 TZ = Europe/Berlin
 MYSQL_ROOT_USER = root
 MYSQL_ROOT_PASSWORD = <PASSWORD>
-
-# MYSQL_USER = default
-# MYSQL_PASSWORD = <PASSWORD>
-# MYSQL_DATABASE = default
 ```
 
 ---
