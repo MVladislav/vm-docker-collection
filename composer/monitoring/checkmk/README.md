@@ -79,3 +79,4 @@ $docker service logs --raw -f checkmk_checkmk
 - <https://github.com/tribe29/checkmk/>
 - <https://hub.docker.com/r/checkmk/check-mk-raw/>
 - <https://docs.checkmk.com/latest/de/agent_linux.html#security>
+- <https://github.com/filipnet/checkmk-telegram-notify>

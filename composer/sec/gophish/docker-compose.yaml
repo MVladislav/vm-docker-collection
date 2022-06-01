@@ -49,7 +49,7 @@ services:
     networks:
       proxy: {}
     healthcheck:
-      test: ["CMD", "curl", "-f", "${PROTOCOL:-https}://localhost:${PORT:-443}"]
+      test: ["CMD", "curl", "-f", "${PROTOCOL:-http}://localhost:${PORT:-3333}"]
       interval: 30s
       timeout: 10s
       retries: 5

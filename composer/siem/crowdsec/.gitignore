@@ -15,5 +15,4 @@
 !config/
 config/*
 
-!config/.gitempty
 !config/acquis.yaml
