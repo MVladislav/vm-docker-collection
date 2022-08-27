@@ -9,7 +9,7 @@ services:
       context: .
       dockerfile: ./Dockerfile
       args:
-        BUILD_DATE: ${BUILD_DATE:-2021}
+        BUILD_DATE: ${BUILD_DATE:-2022}
         VERSION: ${VERSION:-latest}
     image: localhost:5000/...:${VERSION:-latest}
     env_file: .env
