@@ -50,8 +50,12 @@ entryPoints:
   prometheus:
     address: :9090
   # -------------------------------------
-  ssh:
-    address: :22
+  smb-139:
+    address: :139/tcp
+  smb-445:
+    address: :445/tcp
+  spice:
+    address: :3128/tcp
   # -------------------------------------
   elastic: # send metrics direct to elastic
     address: :9200
@@ -60,13 +64,15 @@ entryPoints:
   elastic-beats: # logtash used for example sysmon
     address: :5044
   # -------------------------------------
-  syslog: # logstash syslogs collector
+  syslog-opnsense: # logstash syslogs opnsense collector
     address: :5140
+  syslog-unifi: # logstash syslogs unifi collector
+    address: :5145
   netflow: # filebeat netflow collector
-    address: :2055
+    address: :2055/udp
   # -------------------------------------
   fritz-monit: # fritzbox phone monitoring
-    address: :1012
+    address: :1012/tcp
   # -------------------------------------
 
 serversTransport:

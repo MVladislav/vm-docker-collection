@@ -50,6 +50,19 @@ services:
         protocol: tcp
         mode: host
       # -------------------------------------
+      - target: 139 # smb
+        published: 139
+        protocol: tcp
+        mode: host
+      - target: 445 # smb
+        published: 445
+        protocol: tcp
+        mode: host
+      - target: 3128 # spice
+        published: 3128
+        protocol: tcp
+        mode: host
+      # -------------------------------------
       - target: 3306 # mysql
         published: 3306
         protocol: tcp
@@ -67,11 +80,6 @@ services:
         protocol: tcp
         mode: host
       # -------------------------------------
-      - target: 22 # ssh
-        published: 22
-        protocol: tcp
-        mode: host
-      # -------------------------------------
       - target: 9200 # elastic - send metrics direct to elastic
         published: 9200
         protocol: tcp
@@ -85,9 +93,13 @@ services:
         protocol: tcp
         mode: host
       # -------------------------------------
-      - target: 5140 # syslog - logstash syslogs collector
+      - target: 5140 # syslog-opnsense - logstash syslogs collector
         published: 5140
         protocol: tcp
+        mode: host
+      - target: 5145 # syslog-unifi - logstash syslogs collector
+        published: 5145
+        protocol: udp
         mode: host
       - target: 2055 # netflow - filebeat netflow collector
         published: 2055
@@ -96,7 +108,7 @@ services:
       # -------------------------------------
       - target: 1012 # fritz-monit - fritzbox phone monitoring
         published: 1012
-        protocol: udp
+        protocol: tcp
         mode: host
       # -------------------------------------
     configs:
