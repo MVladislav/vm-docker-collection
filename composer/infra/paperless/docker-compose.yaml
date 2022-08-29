@@ -1,0 +1,109 @@
+version: "3.8"
+
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  paperless:
+    image: jonaswinkler/paperless-ng:${VERSION:-latest}
+    env_file: .env
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65535
+        hard: 65535
+      fsize: -1
+      as: -1
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        max_replicas_per_node: 1
+        constraints:
+          # - "node.id==${NODE_ID}"
+          - "node.role==${NODE_ROLE:-manager}"
+          - node.platform.os == linux
+      restart_policy:
+        condition: on-failure
+      labels:
+        - traefik.enable=true
+        - traefik.docker.lbswarm=${LB_SWARM:-true}
+        - traefik.docker.network=proxy
+        - traefik.http.routers.paperless.entrypoints=https
+        - traefik.http.routers.paperless.rule=Host(`${DOMAIN?domain variable not set}`)
+        - traefik.http.routers.paperless.tls=true
+        - traefik.http.routers.paperless.service=paperless
+        - traefik.http.services.paperless.loadbalancer.server.scheme=${PROTOCOL:-http}
+        - traefik.http.services.paperless.loadbalancer.server.port=${PORT:-8000}
+        - traefik.http.routers.paperless.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    # ports:
+    #   - target: 8000
+    #     published: ${PORT:-8000}
+    #     protocol: tcp
+    #     mode: host
+    environment:
+      PAPERLESS_REDIS: ${PAPERLESS_REDIS:-redis://broker:6379}
+      PAPERLESS_TIKA_ENABLED: ${PAPERLESS_TIKA_ENABLED:-1}
+      PAPERLESS_TIKA_GOTENBERG_ENDPOINT: ${PAPERLESS_TIKA_GOTENBERG_ENDPOINT:-http://gotenberg:3000}
+      PAPERLESS_TIKA_ENDPOINT: ${PAPERLESS_TIKA_ENDPOINT:-http://tika:9998}
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - data:/usr/src/paperless/data
+      - media:/usr/src/paperless/media
+      - $PWD/export:/usr/src/paperless/export
+      - $PWD/consume:/usr/src/paperless/consume
+    networks:
+      default: {}
+      proxy: {}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "${PROTOCOL:-http}://localhost:${PORT:-8000}"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  broker:
+    image: redis:latest
+    networks:
+      default: {}
+    restart: unless-stopped
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  gotenberg:
+    image: thecodingmachine/gotenberg:latest
+    environment:
+      DISABLE_GOOGLE_CHROME: 1
+    networks:
+      default: {}
+    restart: unless-stopped
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  tika:
+    image: apache/tika:latest
+    networks:
+      default: {}
+    restart: unless-stopped
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  default:
+    driver: ${NETWORK_MODE:-bridge}
+    attachable: true
+  proxy:
+    external: true
+
+volumes:
+  data: {}
+  media: {}
