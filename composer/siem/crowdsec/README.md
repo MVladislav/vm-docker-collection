@@ -25,12 +25,13 @@ NETWORK_MODE=overlay
 
 VERSION=latest
 
-LB_SWARM=true
-DOMAIN=crowdsec.home.local
-PROTOCOL=http
-PORT=80
-# default-secured@file | protected-secured@file | admin-secured@file
-MIDDLEWARE_SECURED=default-secured@file
+DISABLE_LOCAL_API=false
+AGENT_USERNAME=<USERNAME>
+AGENT_PASSWORD=<PASSWORD>
+LOCAL_API_URL=http://<HOST>:8080
+
+CROWDSEC_BOUNCER_API_KEY_TRAEFIK=<API_KEY>
+CROWDSEC_AGENT_HOST=crowdsec:8080
 ```
 
 ---
