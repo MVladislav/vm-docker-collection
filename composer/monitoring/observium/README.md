@@ -64,20 +64,14 @@ $sudo nano /etc/snmp/snmpd.conf
 ```conf
 createUser snmp SHA '<PASSWORD>' AES '<ENCRYPT>'
 
-rouser snmp priv
+rouser snmp authpriv
 master  agentx
-agentAddress  udp:<IPv4>:161
+agentAddress  udp:161
 
 sysLocation <LOCATION>
-sysContact <CONTACT>
+sysContact <NAME> <MAIL>
 sysName <FQDN>
 sysServices    72
-
-view   systemonly  included   .1.3.6.1.2.1.1
-view   systemonly  included   .1.3.6.1.2.1.25.1
-
-rocommunity  public default -V systemonly
-rocommunity6 public default -V systemonly
 
 includeDir /etc/snmp/snmpd.conf.d
 
