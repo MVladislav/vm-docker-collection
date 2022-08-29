@@ -1,0 +1,68 @@
+version: "3.8"
+
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  attacknavigator:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+      args:
+        BUILD_DATE: ${BUILD_DATE:-2022}
+        VERSION: ${VERSION:-latest}
+    image: attacknavigator:${VERSION:-latest}
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65535
+        hard: 65535
+      fsize: -1
+      as: -1
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        max_replicas_per_node: 1
+        constraints:
+          # - "node.id==${NODE_ID}"
+          - "node.role==${NODE_ROLE:-manager}"
+      restart_policy:
+        condition: on-failure
+      labels:
+        - traefik.enable=true
+        - traefik.docker.lbswarm=${LB_SWARM:-true}
+        - traefik.docker.network=proxy
+        - traefik.http.routers.attack-navigator.entrypoints=https
+        - traefik.http.routers.attack-navigator.rule=Host(`${DOMAIN?domain variable not set}`)
+        - traefik.http.routers.attack-navigator.tls=true
+        - traefik.http.routers.attack-navigator.service=attack-navigator
+        - traefik.http.services.attack-navigator.loadbalancer.server.scheme=${PROTOCOL:-http}
+        - traefik.http.services.attack-navigator.loadbalancer.server.port=${PORT:-4200}
+        - traefik.http.routers.attack-navigator.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    ports:
+      - target: 4200
+        published: ${PORT:-4200}
+        protocol: tcp
+        mode: host
+    # environment:
+    #   VAR: ...
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    networks:
+      default: {}
+      # proxy: {}
+    restart: always
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  default:
+    driver: ${NETWORK_MODE:-bridge}
+    attachable: true
+  # proxy:
+  #   external: true
