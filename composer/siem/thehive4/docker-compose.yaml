@@ -1,0 +1,88 @@
+version: "3.8"
+
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  thehive:
+    # image: thehiveproject/thehive4:${VERSION:-latest}
+    image: thehive4:${VERSION:-latest}
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    user: "1000:1000"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65535
+        hard: 65535
+      fsize: -1
+      as: -1
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        max_replicas_per_node: 1
+        constraints:
+          # - "node.id==${NODE_ID}"
+          - "node.role==${NODE_ROLE:-manager}"
+      restart_policy:
+        condition: on-failure
+      labels:
+        - traefik.enable=true
+        - traefik.docker.lbswarm=true
+        - traefik.docker.network=proxy
+        - traefik.http.routers.thehive4.entrypoints=https
+        - traefik.http.routers.thehive4.rule=Host(`${DOMAIN?domain variable not set}`)
+        - traefik.http.routers.thehive4.tls=true
+        - traefik.http.routers.thehive4.service=thehive4
+        - traefik.http.services.thehive4.loadbalancer.server.scheme=${PROTOCOL:-http}
+        - traefik.http.services.thehive4.loadbalancer.server.port=${PORT:-9000}
+        - traefik.http.routers.thehive4.middlewares=protected-secured@file
+    # ports:
+    #   - target: 9000
+    #     published: ${PORT:-9000}
+    #     protocol: tcp
+    #     mode: host
+    environment:
+      MAX_HEAP_SIZE: ${MAX_HEAP_SIZE:-1G}
+      HEAP_NEWSIZE: ${HEAP_NEWSIZE:-1G}
+    configs:
+      - source: app_config
+        target: /etc/thehive/application.conf
+        mode: 0444
+        # uid: "1000"
+        # gid: "1000"
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      # - db:/opt/thp/thehive/db
+      # - index:/opt/thp/thehive/index
+      # - data:/opt/thp/thehive/data
+    command: >
+      --no-config --no-config-secret
+    networks:
+      # default: {}
+      proxy: {}
+    restart: always
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  # default:
+  #   driver: ${NETWORK_MODE:-bridge}
+  #   attachable: true
+  proxy:
+    external: true
+
+volumes:
+  db: {}
+  index: {}
+  data: {}
+
+configs:
+  app_config:
+    file: $PWD/config/application.conf
