@@ -92,3 +92,7 @@ firewall: `$sudo ufw allow in on ens18 to any port 161 proto udp comment "allow 
 
 - <https://observium.org/>
 - <https://github.com/somsakc/docker-observium>
+- <https://github.com/Yelp/docker-observium>
+- <https://github.com/charlescng/docker-containers/tree/master/observium>
+- <https://github.com/phusion/baseimage-docker>
+- <https://github.com/outstand/docker-syslog-ng-stdout>
