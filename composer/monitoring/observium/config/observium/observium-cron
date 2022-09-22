@@ -5,6 +5,8 @@ PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 
 # Run a complete discovery of all devices once every 6 hours
 33  */6   * * *   root    . /opt/observium/observium-setenv.sh && /opt/observium/discovery.php -h all >>/opt/observium/logs/cron-discovery-all.log 2>&1
+# Run a complete discovery of all devices once every 6 hours by nmap
+#33  */12   * * *   root    . /opt/observium/observium-setenv.sh && /opt/observium/observium-nmap-autodiscover.sh >>/opt/observium/logs/cron-discovery-nmap.log 2>&1
 # Run automated discovery of newly added devices every 5 minutes
 */5 *     * * *   root    . /opt/observium/observium-setenv.sh && /opt/observium/discovery.php -h new >>/opt/observium/logs/cron-discovery-new.log 2>&1
 # Run multithreaded poller wrapper every 5 minutes

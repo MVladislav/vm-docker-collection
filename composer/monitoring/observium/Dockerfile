@@ -31,6 +31,18 @@ ENV UBUNTU_PHP_VERSION="8.1"
 
 # ------------------------------------------------------------------------------
 
+## Fix some issues with APT packages.
+## See https://github.com/dotcloud/docker/issues/1024
+RUN dpkg-divert --local --rename --add /sbin/initctl
+RUN ln -sf /bin/true /sbin/initctl
+
+## Replace the 'ischroot' tool to make it always return true.
+## Prevent initscripts updates from breaking /dev/shm.
+## https://journal.paul.querna.org/articles/2013/10/15/docker-ubuntu-on-rackspace/
+## https://bugs.launchpad.net/launchpad/+bug/974584
+RUN dpkg-divert --local --rename --add /usr/bin/ischroot
+RUN ln -sf /bin/true /usr/bin/ischroot
+
 # LANG SETUP
 ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US.UTF-8
@@ -41,7 +53,8 @@ RUN \
   && apt-get upgrade -y -q \
   && apt-get install -y --no-install-recommends \
   locales \
-  apt-utils
+  apt-utils \
+  language-pack-en
 # Install locales
 RUN locale-gen cs_CZ.UTF-8
 RUN locale-gen de_DE.UTF-8
@@ -64,7 +77,6 @@ RUN \
   "libapache2-mod-php${UBUNTU_PHP_VERSION}" \
   "php${UBUNTU_PHP_VERSION}-cli" \
   "php${UBUNTU_PHP_VERSION}-mysql" \
-  "php${UBUNTU_PHP_VERSION}-mysqli" \
   "php${UBUNTU_PHP_VERSION}-bcmath" \
   "php${UBUNTU_PHP_VERSION}-gd" \
   "php${UBUNTU_PHP_VERSION}-bz2" \
@@ -107,8 +119,11 @@ RUN \
   curl \
   supervisor \
   wget \
+  apt-transport-https \
   ca-certificates \
-  nano
+  nano \
+  software-properties-common \
+  iproute2
 
 RUN \
   echo "install & configure php modules" \
@@ -134,12 +149,16 @@ RUN \
   && apt-get clean \
   && rm -rf \
   /tmp/* \
-  /var/lib/apt/lists/* \
   /var/tmp/* \
+  /var/lib/apt/lists/* \
   /var/log/* \
-  /var/www \
-  && rm -f \
+  /var/www
+RUN \
+  echo "**** cleanup ****" \
+  rm -f /etc/ssh/ssh_host_* \
   /etc/apache2/sites-available/* \
+  /dev/log \
+  /var/lib/syslog-ng/syslog-ng.ctl \
   /etc/cron.d/* \
   /etc/cron.hourly/* \
   /etc/cron.daily/* \
@@ -147,6 +166,10 @@ RUN \
   /etc/cron.monthly/* \
   /etc/logrotate.d/* \
   /etc/supervisord/conf.d/*
+# clean up python bytecode
+# RUN \
+#   find / -mount -name *.pyc -delete\
+#   find / -mount -name *__pycache__* -delete
 
 # ------------------------------------------------------------------------------
 
@@ -155,6 +178,8 @@ RUN locale-gen en_US.UTF-8
 
 RUN sed -i "s#\;date\.timezone\ \=#date\.timezone\ \=\ $TZ#g" "/etc/php/${UBUNTU_PHP_VERSION}/cli/php.ini"
 RUN sed -i "s#\;date\.timezone\ \=#date\.timezone\ \=\ $TZ#g" "/etc/php/${UBUNTU_PHP_VERSION}/apache2/php.ini"
+
+# ------------------------------------------------------------------------------
 
 # install observium package
 RUN mkdir -p \
@@ -173,18 +198,21 @@ COPY config/184.sql /opt/observium/update/184.sql
 COPY config/observium/observium-init.sh /opt/observium/observium-init.sh
 
 # configure observium package
-RUN cd /opt/observium \
-  && cp config.php.default config.php \
-  && sed -i -e "s/= 'localhost';/= getenv('OBSERVIUM_DB_HOST');/g" config.php \
-  && sed -i -e "s/= 'USERNAME';/= getenv('OBSERVIUM_DB_USER');/g" config.php \
-  && sed -i -e "s/= 'PASSWORD';/= getenv('OBSERVIUM_DB_PASS');/g" config.php \
-  && sed -i -e "s/= 'observium';/= getenv('OBSERVIUM_DB_NAME');/g" config.php \
-  && grep -qF 'base_url' config.php || echo "\$config['base_url'] = getenv('OBSERVIUM_BASE_URL');" >> config.php \
-  && grep -qF 'enable_syslog' config.php || echo "\$config['enable_syslog'] = 1;" >> config.php
+# RUN cd /opt/observium \
+#   && cp config.php.default config.php \
+#   && sed -i -e "s/= 'localhost';/= getenv('OBSERVIUM_DB_HOST');/g" config.php \
+#   && sed -i -e "s/= 'USERNAME';/= getenv('OBSERVIUM_DB_USER');/g" config.php \
+#   && sed -i -e "s/= 'PASSWORD';/= getenv('OBSERVIUM_DB_PASS');/g" config.php \
+#   && sed -i -e "s/= 'observium';/= getenv('OBSERVIUM_DB_NAME');/g" config.php \
+#   && grep -qF 'base_url' config.php || echo "\$config['base_url'] = getenv('OBSERVIUM_BASE_URL');" >> config.php \
+#   && grep -qF 'enable_syslog' config.php || echo "\$config['enable_syslog'] = 1;" >> config.php
+COPY config/observium/config.php /opt/observium/config.php
+COPY config/observium/observium-nmap-autodiscover.sh /opt/observium/observium-nmap-autodiscover.sh
 
 # set rights and own
 RUN chmod 755 /opt/observium/observium-init.sh \
   && chmod 755 /opt/observium/update/184.sql \
+  && chmod 755 /opt/observium/observium-nmap-autodiscover.sh \
   && chown -R www-data:www-data /opt/observium
 
 # check version and installed files
@@ -203,44 +231,42 @@ RUN \
   && chmod 644 /etc/apache2/sites-available/000-default.conf \
   && sed -i -e "s/\${APACHE_LOG_DIR}\//\/opt\/observium\/logs\/apache2-/g" /etc/apache2/apache2.conf
 
-# configure cron and logrotate
+# configure cron, syslog & logrotate
 RUN mkdir -p \
   /var/lib/syslog-ng \
   /etc/logrotate.d \
   /etc/cron.d
-RUN touch /var/log/syslog && chmod u=rw,g=r,o= /var/log/syslog
 # syslog-ng
-COPY config/syslog-ng/syslog-ng.init /etc/my_init.d/10_syslog-ng.init
-RUN chmod u+x /etc/my_init.d/10_syslog-ng.init
-COPY config/syslog-ng/syslog-ng.shutdown /etc/my_init.post_shutdown.d/10_syslog-ng.shutdown
-RUN chmod u+x /etc/my_init.post_shutdown.d/10_syslog-ng.shutdown
-COPY config/syslog-ng/syslog_ng_default /etc/default/syslog-ng
+RUN touch /var/log/syslog
 COPY config/syslog-ng/syslog-ng.conf /etc/syslog-ng/syslog-ng.conf
 # syslog config
 COPY config/syslog-ng/observium.conf /etc/syslog-ng/conf.d/observium.conf
 # logrotate
-COPY config/logrotate/logrotate-conf /etc/logrotate.conf
-COPY config/logrotate/logrotate-conf-observium /etc/logrotate.d/observium
-COPY config/logrotate/logrotate-conf-syslogng /etc/logrotate.d/syslogng
+COPY config/logrotate/logrotate.conf /etc/logrotate.conf
+COPY config/logrotate/logrotate_syslogng /etc/logrotate.d/syslogng
+COPY config/logrotate/logrotate_observium /etc/logrotate.d/observium
 # cron
 COPY config/logrotate/logrotate-cron /etc/cron.d/logrotate
 COPY config/observium/observium-cron /etc/cron.d/observium
-RUN chmod 644 \
-  /etc/logrotate.conf /etc/logrotate.d/observium /etc/logrotate.d/syslogng \
+# set rights
+RUN \
+  chown root:root /var/log \
+  && chmod 0755 /var/log \
+  && chmod 640 /var/log/syslog \
+  && chmod 644 \
+  /etc/logrotate.conf /etc/logrotate.d/syslogng /etc/logrotate.d/observium \
+  /etc/syslog-ng/syslog-ng.conf /etc/syslog-ng/conf.d/observium.conf \
   /etc/cron.d/logrotate /etc/cron.d/observium
 
 # ------------------------------------------------------------------------------
 
 # configure working directory
 WORKDIR /opt/observium
-
-# configure entry point
-COPY config/supervisord.conf /etc/supervisord.conf
-
 # expose tcp port
 EXPOSE 80/tcp
 # set volumes
 VOLUME ["/opt/observium/logs","/opt/observium/rrd"]
 
-# CMD ["syslog-ng", "-F"]
+# configure entry point
+COPY config/supervisord.conf /etc/supervisord.conf
 ENTRYPOINT [ "/usr/bin/supervisord", "-c", "/etc/supervisord.conf" ]

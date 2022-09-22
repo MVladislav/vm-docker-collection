@@ -64,6 +64,8 @@ load extend scripts:
 ```sh
 $sudo curl https://raw.githubusercontent.com/librenms/librenms-agent/master/snmp/distro -o /usr/local/lib/snmpd/distro
 $sudo curl https://raw.githubusercontent.com/librenms/librenms-agent/master/snmp/osupdate -o /usr/local/lib/snmpd/osupdate
+$sudo curl https://www.observium.org/files/distro -o /usr/local/bin/distro
+$sudo apt install libsnmp-extension-passpersist-perl
 
 : 'for proxmox'
 $sudo curl https://raw.githubusercontent.com/librenms/librenms-agent/master/agent-local/proxmox -o /usr/local/lib/snmpd/proxmox
@@ -86,13 +88,37 @@ sysServices 72
 
 includeDir /etc/snmp/snmpd.conf.d
 
-# wget https://raw.githubusercontent.com/librenms/librenms-agent/master/snmp/distro
+## wget https://raw.githubusercontent.com/librenms/librenms-agent/master/snmp/distro
 extend .1.3.6.1.4.1.2021.7890.1 distro /usr/local/lib/snmpd/distro
-# wget https://raw.githubusercontent.com/librenms/librenms-agent/master/snmp/osupdate
+## wget https://raw.githubusercontent.com/librenms/librenms-agent/master/snmp/osupdate
 extend osupdate /usr/local/lib/snmpd/osupdate
 
-# proxmox
-# wget https://raw.githubusercontent.com/librenms/librenms-agent/master/agent-local/proxmox
+## Disk Monitoring
+includeAllDisks  10%
+
+## This line allows Observium to detect the host OS if the distro script is installed
+## wget https://www.observium.org/files/distro
+#extend .1.3.6.1.4.1.2021.7890.1 distro /usr/local/bin/distro
+
+# This lines allows Observium to detect hardware, vendor and serial
+# Common Linux:
+extend .1.3.6.1.4.1.2021.7890.2 hardware /bin/cat /sys/devices/virtual/dmi/id/product_name
+extend .1.3.6.1.4.1.2021.7890.3 vendor   /bin/cat /sys/devices/virtual/dmi/id/sys_vendor
+extend .1.3.6.1.4.1.2021.7890.4 serial   /bin/cat /sys/devices/virtual/dmi/id/product_serial
+
+## Raspberry Pi:
+#extend .1.3.6.1.4.1.2021.7890.2 hardware /bin/cat /proc/device-tree/model
+#extend .1.3.6.1.4.1.2021.7890.4 serial   /bin/cat /proc/device-tree/serial
+
+## This line allows Observium to collect an accurate uptime
+extend uptime /bin/cat /proc/uptime
+
+## This line enables Observium's ifAlias description injection
+## apt install libsnmp-extension-passpersist-perl
+pass_persist .1.3.6.1.2.1.31.1.1.1.18 /usr/local/bin/ifAlias_persist
+
+## proxmox
+## wget https://raw.githubusercontent.com/librenms/librenms-agent/master/agent-local/proxmox
 #extend proxmox /usr/bin/sudo /usr/local/lib/snmpd/proxmox
 ```
 
