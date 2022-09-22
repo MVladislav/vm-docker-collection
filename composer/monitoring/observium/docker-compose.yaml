@@ -53,16 +53,15 @@ services:
       TZ: ${TZ:-Europe/Berlin}
 
       OBSERVIUM_ADMIN_USER: ${OBSERVIUM_ADMIN_USER:-admin}
-      OBSERVIUM_ADMIN_PASS: ${OBSERVIUM_ADMIN_PASS}
-      OBSERVIUM_BASE_URL: https://${DOMAIN?domain variable not set}
+      # OBSERVIUM_ADMIN_PASS: ${OBSERVIUM_ADMIN_PASS}
+      OBSERVIUM_BASE_URL: http://${DOMAIN?domain variable not set}
 
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      OBSERVIUM_DB_HOST: ${DBHOST:-mysql}
-      OBSERVIUM_DB_PORT: ${DBPORT:-3306}
+      OBSERVIUM_DB_HOST: ${OBSERVIUM_DB_HOST:-mysql}
+      OBSERVIUM_DB_PORT: ${OBSERVIUM_DB_PORT:-3306}
 
-      OBSERVIUM_DB_NAME: ${DBNAME:-observium}
-      OBSERVIUM_DB_USER: ${DBUSER:-observium }
-      OBSERVIUM_DB_PASS: ${DBPASS}
+      OBSERVIUM_DB_NAME: ${OBSERVIUM_DB_NAME:-observium}
+      OBSERVIUM_DB_USER: ${OBSERVIUM_DB_USER:-observium }
+      # OBSERVIUM_DB_PASS: ${OBSERVIUM_DB_PASS}
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro

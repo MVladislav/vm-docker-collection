@@ -40,44 +40,63 @@ TZ=Europe/Berlin
 OBSERVIUM_ADMIN_USER=admin
 OBSERVIUM_ADMIN_PASS=swordfish
 
-MYSQL_ROOT_PASSWORD = <PASSWORD>
-DBHOST = mysql
-DBPORT = 3306
+OBSERVIUM_DB_HOST = mysql
+OBSERVIUM_DB_PORT = 3306
 
-DBNAME = observium
-DBUSER = observium
-DBPASS = <PASSWORD>
+OBSERVIUM_DB_NAME = observium
+OBSERVIUM_DB_USER = observium
+OBSERVIUM_DB_PASS = <PASSWORD>
 ```
 
 ## client setup
 
 ### snmpv3
 
+install snmp:
+
 ```sh
 $sudo apt install snmp snmpd
 $sudo mkdir /usr/local/lib/snmpd/
-$sudo curl https://raw.githubusercontent.com/librenms/librenms-agent/master/snmp/distro -o /usr/local/lib/snmpd/distro
-$sudo curl https://raw.githubusercontent.com/librenms/librenms-agent/master/snmp/osupdate -o /usr/local/lib/snmpd/osupdate
-$sudo nano /etc/snmp/snmpd.conf
 ```
 
-```conf
-createUser snmp SHA '<PASSWORD>' AES '<ENCRYPT>'
+load extend scripts:
 
+```sh
+$sudo curl https://raw.githubusercontent.com/librenms/librenms-agent/master/snmp/distro -o /usr/local/lib/snmpd/distro
+$sudo curl https://raw.githubusercontent.com/librenms/librenms-agent/master/snmp/osupdate -o /usr/local/lib/snmpd/osupdate
+
+: 'for proxmox'
+$sudo curl https://raw.githubusercontent.com/librenms/librenms-agent/master/agent-local/proxmox -o /usr/local/lib/snmpd/proxmox
+```
+
+configure `sudo nano /etc/snmp/snmpd.conf`:
+
+```conf
+createUser snmp SHA '<PASSWORD>' AES '<ENCRYPTION>'
+
+#rouser snmp priv
 rouser snmp authpriv
 master  agentx
 agentAddress  udp:161
 
-sysLocation <LOCATION>
-sysContact <NAME> <MAIL>
-sysName <FQDN>
-sysServices    72
+sysLocation home
+sysContact  <NAME> <MAIL>
+sysName     <FQDN>.home.local
+sysServices 72
 
 includeDir /etc/snmp/snmpd.conf.d
 
+# wget https://raw.githubusercontent.com/librenms/librenms-agent/master/snmp/distro
 extend .1.3.6.1.4.1.2021.7890.1 distro /usr/local/lib/snmpd/distro
+# wget https://raw.githubusercontent.com/librenms/librenms-agent/master/snmp/osupdate
 extend osupdate /usr/local/lib/snmpd/osupdate
+
+# proxmox
+# wget https://raw.githubusercontent.com/librenms/librenms-agent/master/agent-local/proxmox
+#extend proxmox /usr/bin/sudo /usr/local/lib/snmpd/proxmox
 ```
+
+enable and restart:
 
 ```sh
 $sudo systemctl enable snmpd

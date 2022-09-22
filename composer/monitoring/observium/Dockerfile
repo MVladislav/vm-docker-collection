@@ -107,7 +107,8 @@ RUN \
   curl \
   supervisor \
   wget \
-  ca-certificates
+  ca-certificates \
+  nano
 
 RUN \
   echo "install & configure php modules" \
@@ -210,9 +211,13 @@ RUN mkdir -p \
 RUN touch /var/log/syslog && chmod u=rw,g=r,o= /var/log/syslog
 # syslog-ng
 COPY config/syslog-ng/syslog-ng.init /etc/my_init.d/10_syslog-ng.init
+RUN chmod u+x /etc/my_init.d/10_syslog-ng.init
 COPY config/syslog-ng/syslog-ng.shutdown /etc/my_init.post_shutdown.d/10_syslog-ng.shutdown
+RUN chmod u+x /etc/my_init.post_shutdown.d/10_syslog-ng.shutdown
 COPY config/syslog-ng/syslog_ng_default /etc/default/syslog-ng
 COPY config/syslog-ng/syslog-ng.conf /etc/syslog-ng/syslog-ng.conf
+# syslog config
+COPY config/syslog-ng/observium.conf /etc/syslog-ng/conf.d/observium.conf
 # logrotate
 COPY config/logrotate/logrotate-conf /etc/logrotate.conf
 COPY config/logrotate/logrotate-conf-observium /etc/logrotate.d/observium
@@ -224,9 +229,6 @@ RUN chmod 644 \
   /etc/logrotate.conf /etc/logrotate.d/observium /etc/logrotate.d/syslogng \
   /etc/cron.d/logrotate /etc/cron.d/observium
 
-# syslog config
-COPY config/observium/observium.conf /etc/syslog-ng/conf.d/observium.conf
-
 # ------------------------------------------------------------------------------
 
 # configure working directory
@@ -234,10 +236,11 @@ WORKDIR /opt/observium
 
 # configure entry point
 COPY config/supervisord.conf /etc/supervisord.conf
-ENTRYPOINT [ "/usr/bin/supervisord", "-c", "/etc/supervisord.conf" ]
 
 # expose tcp port
 EXPOSE 80/tcp
-
 # set volumes
 VOLUME ["/opt/observium/logs","/opt/observium/rrd"]
+
+# CMD ["syslog-ng", "-F"]
+ENTRYPOINT [ "/usr/bin/supervisord", "-c", "/etc/supervisord.conf" ]
