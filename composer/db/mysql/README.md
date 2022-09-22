@@ -24,7 +24,8 @@ NODE_ID=
 NODE_ROLE=manager
 NETWORK_MODE=overlay
 
-VERSION=5.7
+VERSION_MYSQL=5.7
+VERSION_PHPMYADMIN=latest
 
 LB_SWARM=true
 DOMAIN=mysql.home.local

@@ -5,7 +5,7 @@ services:
   ##############################################################################
   ##############################################################################
   mysql:
-    image: mysql:${VERSION:-5.7}
+    image: mysql:${VERSION_MYSQL:-5.7}
     env_file: .env
     ulimits:
       memlock:
@@ -67,7 +67,7 @@ services:
   ##############################################################################
   ##############################################################################
   phpmyadmin:
-    image: phpmyadmin:latest
+    image: phpmyadmin:${VERSION_PHPMYADMIN:-latest}
     env_file: .env
     ulimits:
       memlock:
