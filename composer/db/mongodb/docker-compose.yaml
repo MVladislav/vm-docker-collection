@@ -1,0 +1,60 @@
+version: "3.8"
+
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  mongo:
+    image: mongo:${VERSION:-latest}
+    env_file: .env
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65535
+        hard: 65535
+      fsize: -1
+      as: -1
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        max_replicas_per_node: 1
+        constraints:
+          - "node.role==${NODE_ROLE:-manager}"
+          - node.platform.os == linux
+      resources:
+        limits:
+          memory: 1g
+      restart_policy:
+        condition: on-failure
+    # secrets:
+    #   - ...
+    environment:
+      TZ: ${TZ:-Europe/Berlin}
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - db:/data/db
+    networks:
+      mongodb: {}
+    restart: always
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  mongodb:
+    name: mongodb
+    driver: ${NETWORK_MODE:-bridge}
+    attachable: true
+  # proxy:
+  #   external: true
+
+volumes:
+  db: {}
+#
+# secrets:
+#   ...:
+#     file: config/secrets/....txt
