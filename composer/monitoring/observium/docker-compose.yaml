@@ -5,6 +5,7 @@ services:
   ##############################################################################
   ##############################################################################
   observium:
+    hostname: observium
     build:
       context: .
       dockerfile: ./Dockerfile
@@ -44,28 +45,36 @@ services:
         - traefik.http.services.observium.loadbalancer.server.scheme=${PROTOCOL:-http}
         - traefik.http.services.observium.loadbalancer.server.port=${PORT:-80}
         - traefik.http.routers.observium.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
-    # ports:
-    #   - target: 80
-    #     published: ${PORT:-80}
-    #     protocol: tcp
-    #     mode: host
+    ports:
+      # - target: 80
+      #   published: ${PORT:-80}
+      #   protocol: tcp
+      #   mode: host
+      - target: 514
+        published: 514
+        protocol: udp
+        mode: host
+    secrets:
+      - observium_admin_pass
+      - observium_db_pass
     environment:
       TZ: ${TZ:-Europe/Berlin}
 
       OBSERVIUM_ADMIN_USER: ${OBSERVIUM_ADMIN_USER:-admin}
-      # OBSERVIUM_ADMIN_PASS: ${OBSERVIUM_ADMIN_PASS}
-      OBSERVIUM_BASE_URL: http://${DOMAIN?domain variable not set}
+      OBSERVIUM_ADMIN_PASS_FILE: /run/secrets/observium_admin_pass
+      OBSERVIUM_BASE_URL: https://${DOMAIN?domain variable not set}
 
       OBSERVIUM_DB_HOST: ${OBSERVIUM_DB_HOST:-mysql}
       OBSERVIUM_DB_PORT: ${OBSERVIUM_DB_PORT:-3306}
 
       OBSERVIUM_DB_NAME: ${OBSERVIUM_DB_NAME:-observium}
       OBSERVIUM_DB_USER: ${OBSERVIUM_DB_USER:-observium }
-      # OBSERVIUM_DB_PASS: ${OBSERVIUM_DB_PASS}
+      OBSERVIUM_DB_PASS_FILE: /run/secrets/observium_db_pass
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-      - logs:/opt/observium/logs
+      - logs_observium:/opt/observium/logs
+      - logs_sys:/var/log
       - rrd:/opt/observium/rrd
     networks:
       mysql: {}
@@ -82,5 +91,12 @@ networks:
     external: true
 
 volumes:
-  logs: {}
+  logs_observium: {}
+  logs_sys: {}
   rrd: {}
+
+secrets:
+  observium_admin_pass:
+    file: config/secrets/observium_admin_pass.txt
+  observium_db_pass:
+    file: config/secrets/observium_db_pass.txt

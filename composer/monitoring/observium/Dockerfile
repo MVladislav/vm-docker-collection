@@ -14,34 +14,31 @@ LABEL maintainer="MVladislav"
 ENV DEBIAN_FRONTEND noninteractive
 
 ARG OBSERVIUM_ADMIN_USER=admin
-ARG OBSERVIUM_ADMIN_PASS=$(pwgen -1snc 32)
 
 ARG OBSERVIUM_DB_HOST=mysql
 ARG OBSERVIUM_DB_NAME=observium
 ARG OBSERVIUM_DB_USER=observium
-ARG OBSERVIUM_DB_PASS=$(pwgen -1snc 32)
 
 # set environment variables
 ENV OBSERVIUM_DB_HOST=$OBSERVIUM_DB_HOST
 ENV OBSERVIUM_DB_NAME=$OBSERVIUM_DB_NAME
 ENV OBSERVIUM_DB_USER=$OBSERVIUM_DB_USER
-ENV OBSERVIUM_DB_PASS=$OBSERVIUM_DB_PASS
 
 ENV UBUNTU_PHP_VERSION="8.1"
 
 # ------------------------------------------------------------------------------
 
-## Fix some issues with APT packages.
-## See https://github.com/dotcloud/docker/issues/1024
-RUN dpkg-divert --local --rename --add /sbin/initctl
-RUN ln -sf /bin/true /sbin/initctl
+# ## Fix some issues with APT packages.
+# ## See https://github.com/dotcloud/docker/issues/1024
+# RUN dpkg-divert --local --rename --add /sbin/initctl
+# RUN ln -sf /bin/true /sbin/initctl
 
-## Replace the 'ischroot' tool to make it always return true.
-## Prevent initscripts updates from breaking /dev/shm.
-## https://journal.paul.querna.org/articles/2013/10/15/docker-ubuntu-on-rackspace/
-## https://bugs.launchpad.net/launchpad/+bug/974584
-RUN dpkg-divert --local --rename --add /usr/bin/ischroot
-RUN ln -sf /bin/true /usr/bin/ischroot
+# ## Replace the 'ischroot' tool to make it always return true.
+# ## Prevent initscripts updates from breaking /dev/shm.
+# ## https://journal.paul.querna.org/articles/2013/10/15/docker-ubuntu-on-rackspace/
+# ## https://bugs.launchpad.net/launchpad/+bug/974584
+# RUN dpkg-divert --local --rename --add /usr/bin/ischroot
+# RUN ln -sf /bin/true /usr/bin/ischroot
 
 # LANG SETUP
 ENV LANG en_US.UTF-8
@@ -268,5 +265,6 @@ EXPOSE 80/tcp
 VOLUME ["/opt/observium/logs","/opt/observium/rrd"]
 
 # configure entry point
+COPY --chmod=750 config/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 COPY config/supervisord.conf /etc/supervisord.conf
-ENTRYPOINT [ "/usr/bin/supervisord", "-c", "/etc/supervisord.conf" ]
+ENTRYPOINT [ "/usr/local/bin/docker-entrypoint.sh" ]

@@ -8,6 +8,7 @@
 
 - [SETUP](#setup)
   - [basic](#basic)
+    - [create your `secrets`:](#create-your-secrets)
     - [create `.env` file following:](#create-env-file-following)
   - [client setup](#client-setup)
     - [snmpv3](#snmpv3)
@@ -18,6 +19,13 @@
 ## basic
 
 > defined to work with treafik
+
+### create your `secrets`:
+
+```sh
+$echo "swordfish" > config/secrets/observium_admin_pass.txt
+$echo "swordfish" > config/secrets/observium_db_pass.txt
+```
 
 ### create `.env` file following:
 
@@ -38,14 +46,12 @@ MIDDLEWARE_SECURED=protected-secured@file
 TZ=Europe/Berlin
 
 OBSERVIUM_ADMIN_USER=admin
-OBSERVIUM_ADMIN_PASS=swordfish
 
 OBSERVIUM_DB_HOST = mysql
 OBSERVIUM_DB_PORT = 3306
 
 OBSERVIUM_DB_NAME = observium
 OBSERVIUM_DB_USER = observium
-OBSERVIUM_DB_PASS = <PASSWORD>
 ```
 
 ## client setup
@@ -129,7 +135,11 @@ $sudo systemctl enable snmpd
 $sudo systemctl restart snmpd
 ```
 
-firewall: `$sudo ufw allow in on ens18 to any port 161 proto udp comment "allow incoming connection on standard snmp port"`
+firewall:
+
+```sh
+$sudo ufw allow in on <INTERFACE> to any port 161 proto udp comment "allow incoming connection on standard snmp port"
+```
 
 ---
 
