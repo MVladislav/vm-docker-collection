@@ -50,13 +50,21 @@ services:
         - traefik.http.services.<router_name>.loadbalancer.server.scheme=${PROTOCOL:-https}
         - traefik.http.services.<router_name>.loadbalancer.server.port=${PORT:-443}
         - traefik.http.routers.<router_name>.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+      resources:
+        limits:
+          memory: 1g
+    mem_limit: 1g
     # ports:
     #   - target: ...
     #     published: ${PORT:-...}
     #     protocol: tcp
     #     mode: host
-    # environment:
-    #   VAR: ...
+    secrets:
+      - my_external_secret
+      - my_file_secret
+    environment:
+      MY_EXTERNAL_SECRET_FILE: /run/secrets/my_external_secret
+      MY_FILE_SECRET_FILE: /run/secrets/my_file_secret
     # configs:
     #   - source: xx_config
     #     target: ...
@@ -112,3 +120,10 @@ networks:
 # configs:
 #   xx_config:
 #     file: $PWD/config/...
+#
+# secrets:
+#   # echo "This is an external secret" | docker secret create my_external_secret -
+#   my_external_secret:
+#     external: true
+#   my_file_secret:
+#     file: config/secrets/my_file_secret.txt
