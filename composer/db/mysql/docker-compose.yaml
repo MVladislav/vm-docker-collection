@@ -46,7 +46,7 @@ services:
       - --innodb_file_per_table
       - --innodb_flush_log_at_trx_commit=0
       - --innodb_flush_method=O_DIRECT
-      - --innodb_log_file_size=64M
+      - --innodb_redo_log_capacity=1073741824
       - --innodb_log_buffer_size=16M
       - --innodb_io_capacity=100
       - --thread_cache_size=8
@@ -57,6 +57,8 @@ services:
       - --read_rnd_buffer_size=128K
       - --sort_buffer_size=128K
       - --join_buffer_size=4M
+
+      - --host_cache_size=0
     networks:
       mysql: {}
     restart: always
@@ -158,8 +160,8 @@ services:
     #     mode: host
     environment:
       ADMINER_DEFAULT_SERVER: mysql
-      ADMINER_PLUGINS: 'tables-filter tinymce'
-      ADMINER_DESIGN: 'flat'
+      ADMINER_PLUGINS: "tables-filter tinymce"
+      ADMINER_DESIGN: "hydra"
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
