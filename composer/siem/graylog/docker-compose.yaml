@@ -1,0 +1,100 @@
+version: "3.8"
+
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  # Graylog: https://hub.docker.com/r/graylog/graylog/
+  graylog:
+    image: graylog/graylog:${VERSION:-latest}
+    env_file: .env
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65535
+        hard: 65535
+      fsize: -1
+      as: -1
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        max_replicas_per_node: 1
+        constraints:
+          # - "node.id==${NODE_ID}"
+          - "node.role==${NODE_ROLE:-manager}"
+          - node.platform.os == linux
+      restart_policy:
+        condition: on-failure
+      labels:
+        - traefik.enable=true
+        - traefik.docker.lbswarm=${LB_SWARM:-true}
+        - traefik.docker.network=proxy
+        - traefik.http.routers.graylog.entrypoints=https
+        - traefik.http.routers.graylog.rule=Host(`${DOMAIN?domain variable not set}`)
+        - traefik.http.routers.graylog.tls=true
+        - traefik.http.routers.graylog.service=graylog
+        - traefik.http.services.graylog.loadbalancer.server.scheme=${PROTOCOL:-https}
+        - traefik.http.services.graylog.loadbalancer.server.port=${PORT:-9000}
+        - traefik.http.routers.graylog.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    ports:
+      # Graylog web interface and REST API
+      # - 9000:9000
+      # Syslog TCP
+      - 1514:1514
+      # Syslog UDP
+      - 1514:1514/udp
+      # GELF TCP
+      - 12201:12201
+      # GELF UDP
+      - 12201:12201/udp
+    secrets:
+      # - graylog_password_secret
+      - graylog_root_password_sha2
+    environment:
+      # GRAYLOG_PASSWORD_SECRET_FILE: /run/secrets/graylog_password_secret
+      GRAYLOG_PASSWORD_SECRET: ${GRAYLOG_PASSWORD_SECRET:-swordfishswordfish}
+      GRAYLOG_ROOT_PASSWORD_SHA2__FILE: /run/secrets/graylog_root_password_sha2
+      GRAYLOG_HTTP_EXTERNAL_URI: ${GRAYLOG_HTTP_EXTERNAL_URI:-http://127.0.0.1:9000/}
+      GRAYLOG_TRANSPORT_EMAIL_ENABLED: ${GRAYLOG_TRANSPORT_EMAIL_ENABLED:-true}
+      GRAYLOG_TRANSPORT_EMAIL_HOSTNAME: ${GRAYLOG_TRANSPORT_EMAIL_HOSTNAME:-smtp}
+      GRAYLOG_TRANSPORT_EMAIL_PORT: ${GRAYLOG_TRANSPORT_EMAIL_PORT:-465}
+      GRAYLOG_TRANSPORT_EMAIL_USE_AUTH: ${GRAYLOG_TRANSPORT_EMAIL_USE_AUTH:-true}
+      GRAYLOG_TRANSPORT_EMAIL_USE_TLS: ${GRAYLOG_TRANSPORT_EMAIL_USE_TLS:-true}
+      GRAYLOG_TRANSPORT_EMAIL_USE_SSL: ${GRAYLOG_TRANSPORT_EMAIL_USE_SSL:-false}
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - graylog_data:/usr/share/graylog/data
+      - ./config/plugins:/usr/share/graylog/plugin
+      # - ./config/configs:/usr/share/graylog/data/config
+    entrypoint: /usr/bin/tini -- wait-for-it elasticsearch:9200 --  /docker-entrypoint.sh
+    networks:
+      elasticsearch: {}
+      mongodb: {}
+      proxy: {}
+    restart: always
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  elasticsearch:
+    external: true
+  mongodb:
+    external: true
+  proxy:
+    external: true
+
+volumes:
+  mongo_data: {}
+  es_data: {}
+  graylog_data: {}
+
+secrets:
+  # graylog_password_secret:
+  #   file: config/secrets/graylog_password_secret.txt
+  graylog_root_password_sha2:
+    file: config/secrets/graylog_root_password_sha2.txt
