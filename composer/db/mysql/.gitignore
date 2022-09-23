@@ -9,3 +9,10 @@
 !CHANGELOG.md
 !LICENCE
 !README.md
+
+!config/
+config/*
+
+!config/secrets/
+config/secrets/*
+!config/secrets/.gitempty

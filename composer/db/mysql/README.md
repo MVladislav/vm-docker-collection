@@ -8,6 +8,7 @@
 
 - [SETUP](#setup)
   - [basic](#basic)
+    - [create your `secrets`:](#create-your-secrets)
     - [create `.env` file following:](#create-env-file-following)
   - [References](#references)
 
@@ -16,6 +17,12 @@
 ## basic
 
 > defined to work with treafik
+
+### create your `secrets`:
+
+```sh
+$echo "swordfish" > config/secrets/mysql_root_password.txt
+```
 
 ### create `.env` file following:
 
@@ -36,7 +43,6 @@ MIDDLEWARE_SECURED=default-secured@file
 
 TZ = Europe/Berlin
 MYSQL_ROOT_USER = root
-MYSQL_ROOT_PASSWORD = <PASSWORD>
 ```
 
 ---

@@ -26,10 +26,12 @@ services:
           - node.platform.os == linux
       restart_policy:
         condition: on-failure
+    secrets:
+      - mysql_root_password
     environment:
       TZ: ${TZ:-Europe/Berlin}
       MYSQL_ROOT_USER: ${MYSQL_ROOT_USER:-root}
-      # MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/mysql_root_password
     volumes:
       - db:/var/lib/mysql
     command:
@@ -129,3 +131,7 @@ networks:
 
 volumes:
   db: {}
+
+secrets:
+  mysql_root_password:
+    file: config/secrets/mysql_root_password.txt
