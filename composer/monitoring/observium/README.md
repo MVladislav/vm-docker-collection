@@ -20,6 +20,8 @@
 
 > defined to work with treafik
 
+TODO: define source to start mysql
+
 ### create your `secrets`:
 
 ```sh

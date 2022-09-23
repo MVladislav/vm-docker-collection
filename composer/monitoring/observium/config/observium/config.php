@@ -18,9 +18,19 @@ $config['install_dir'] = "/opt/observium";
 // Default snmp version
 $config['snmp']['version'] = "v3";
 // Snmp max repetition for faster requests
-#$config['snmp']['max-rep'] = TRUE;
+$config['snmp']['max-rep'] = TRUE;
 // Default snmp community list to use when adding/discovering
 // $config['snmp']['community'] = [ ];
+// Defines a list of transports to be used during discovery autodetection and
+// adding device with autodetect snmp params. Note udp/tcp used only for IPv4 hosts, udp6/tcp6 only for IPv6 hosts.
+$config['snmp']['transports'] = array('udp', 'udp6', 'tcp', 'tcp6');
+// Defines a list of v3 arrays to be used during discovery autodetection and adding device autodetect snmp params. Each set with separate array key.
+$config['snmp']['v3'][0]['authlevel'] = "authPriv";  // noAuthNoPriv | authNoPriv | authPriv
+$config['snmp']['v3'][0]['authname'] = "snmp";      // User Name (required even for noAuthNoPriv)
+#$config['snmp']['v3'][0]['authpass'] = "";               // Auth Passphrase
+$config['snmp']['v3'][0]['authalgo'] = "SHA";            // MD5 | SHA
+#$config['snmp']['v3'][0]['cryptopass'] = "";             // Privacy (Encryption) Passphrase
+$config['snmp']['v3'][0]['cryptoalgo'] = "AES";          // AES | DES
 
 // Authentication Model
 #$config['auth_mechanism'] = "mysql";    // default, other options: ldap, http-auth, please see documentation for config help
