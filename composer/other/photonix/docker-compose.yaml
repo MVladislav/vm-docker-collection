@@ -1,0 +1,176 @@
+version: "3.8"
+
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  photonix:
+    build:
+      context: .
+      dockerfile: ./Dockerfile_short
+      args:
+        BUILD_DATE: ${BUILD_DATE:-2022}
+        VERSION: ${VERSION:-latest}
+    image: photonix:${VERSION:-latest}
+    env_file: .env
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65535
+        hard: 65535
+      fsize: -1
+      as: -1
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        max_replicas_per_node: 1
+        constraints:
+          # - "node.id==${NODE_ID}"
+          - "node.role==${NODE_ROLE:-manager}"
+          - node.platform.os == linux
+      restart_policy:
+        condition: on-failure
+      labels:
+        - traefik.enable=true
+        - traefik.docker.lbswarm=${LB_SWARM:-true}
+        - traefik.docker.network=proxy
+        - traefik.http.routers.photonix.entrypoints=https
+        - traefik.http.routers.photonix.rule=Host(`${DOMAIN?domain variable not set}`)
+        - traefik.http.routers.photonix.tls=true
+        - traefik.http.routers.photonix.service=photonix
+        - traefik.http.services.photonix.loadbalancer.server.scheme=${PROTOCOL:-http}
+        - traefik.http.services.photonix.loadbalancer.server.port=${PORT:-80}
+        - traefik.http.routers.photonix.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+      resources:
+        limits:
+          memory: 1g
+    mem_limit: 1g
+    ports:
+      - target: 80
+        published: ${PORT:-80}
+        protocol: tcp
+        mode: host
+    secrets:
+      - postgres_secret
+    environment:
+      ENV: prd
+      POSTGRES_HOST: postgres
+      POSTGRES_DB: photonix
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_secret
+      REDIS_HOST: redis
+      ALLOWED_HOSTS: "*"
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - photos:/data/photos
+      - raw-photos-processed:/data/raw-photos-processed
+      - cache:/data/cache
+      - models:/data/models
+    networks:
+      default: {}
+      # proxy: {}
+    restart: always
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  postgres:
+    image: postgres:${VERSION_POSTGRES:-latest}
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65535
+        hard: 65535
+      fsize: -1
+      as: -1
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        max_replicas_per_node: 1
+        constraints:
+          # - "node.id==${NODE_ID}"
+          - "node.role==${NODE_ROLE:-manager}"
+          - node.platform.os == linux
+      restart_policy:
+        condition: on-failure
+      resources:
+        limits:
+          memory: 1g
+    mem_limit: 1g
+    secrets:
+      - postgres_secret
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: photonix
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_secret
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - db:/var/lib/postgresql/data
+    networks:
+      default: {}
+    restart: always
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  redis:
+    image: redis:${VERSION_REDIS:-latest}
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65535
+        hard: 65535
+      fsize: -1
+      as: -1
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        max_replicas_per_node: 1
+        constraints:
+          # - "node.id==${NODE_ID}"
+          - "node.role==${NODE_ROLE:-manager}"
+          - node.platform.os == linux
+      restart_policy:
+        condition: on-failure
+      resources:
+        limits:
+          memory: 1g
+    mem_limit: 1g
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    networks:
+      default: {}
+    restart: always
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  default:
+    driver: ${NETWORK_MODE:-bridge}
+    attachable: true
+  proxy:
+    external: true
+
+volumes:
+  photos: {}
+  raw-photos-processed: {}
+  cache: {}
+  models: {}
+  db: {}
+
+secrets:
+  postgres_secret:
+    file: config/secrets/postgres_secret.txt
