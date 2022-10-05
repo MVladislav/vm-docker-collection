@@ -18,6 +18,10 @@ services:
     tty: true # docker run -t
     cap_add: ["CHOWN", "DAC_OVERRIDE", "SETGID", "SETUID"]
     cap_drop: ["ALL"]
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 200
+    # read_only: ${CONTAINER_READONLY:-false}
     ulimits:
       memlock:
         soft: -1
@@ -79,6 +83,8 @@ services:
       #   source: ./logstash/config/logstash.yml
       #   target: /usr/share/logstash/config/logstash.yml
       #   read_only: true
+    tmpfs:
+      - /tmp
     # command: >
     #   ...
     networks:
