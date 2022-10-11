@@ -38,7 +38,7 @@ VERSION_ADMINER=4.8.1-standalone
 LB_SWARM=true
 DOMAIN=mysql.home.local
 PROTOCOL=http
-PORT=80
+PORT=8080
 # default-secured@file | protected-secured@file | admin-secured@file
 MIDDLEWARE_SECURED=default-secured@file
 
