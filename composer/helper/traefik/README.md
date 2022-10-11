@@ -36,6 +36,7 @@ MIDDLEWARE_SECURED=admin-secured@file
 
 ADMIN_USERNAME=traefik=traefik
 # $(openssl passwd -apr1 $PASSWORD) or $(openssl passwd -apr1)
+# new echo $(htpasswd -nB traefik)
 HASHED_PASSWORD=
 ```
 
