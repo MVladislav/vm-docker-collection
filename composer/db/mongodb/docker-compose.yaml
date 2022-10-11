@@ -29,6 +29,11 @@ services:
           memory: 1g
       restart_policy:
         condition: on-failure
+    # ports:
+    #   - target: 27017
+    #     published: ${PORT_MONGO:-27017}
+    #     protocol: tcp
+    #     mode: host
     secrets:
       - mongo_initdb_root_password
     environment:
