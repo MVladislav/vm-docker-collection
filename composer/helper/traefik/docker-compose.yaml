@@ -5,7 +5,9 @@ services:
   ##############################################################################
   ##############################################################################
   traefik:
+    # https://hub.docker.com/_/traefik
     image: traefik:${VERSION:-latest}
+    env_file: .env
     ulimits:
       memlock:
         soft: -1
@@ -37,9 +39,9 @@ services:
         - traefik.http.services.traefik.loadbalancer.server.port=${PORT:-8080}
         - traefik.http.routers.traefik.middlewares=${MIDDLEWARE_SECURED:-admin-secured@file}
         # admin-auth middleware with HTTP Basic auth
-        # Using the environment variables USERNAME and HASHED_PASSWORD
+        # Using the environment variables ADMIN_USERNAME and HASHED_PASSWORD
         - traefik.http.routers.traefik.middlewares=admin-auth
-        - traefik.http.middlewares.admin-auth.basicauth.users=${USERNAME?username variable not set}:${HASHED_PASSWORD?password hash variable not set}
+        - traefik.http.middlewares.admin-auth.basicauth.users=${ADMIN_USERNAME?username variable not set}:${HASHED_PASSWORD?password hash variable not set}
     ports:
       - target: 80 # http
         published: 80
