@@ -12,7 +12,7 @@ if [ $EUID != 0 ]; then
 fi
 
 # If required variables are not set, set sensible defaults
-OBSERVIUM_INSTALL_DIR=${OBSERVIUM_INSTALL_DIR:-/opt/observium}
+OBSERVIUM_INSTALL_DIR="${OBSERVIUM_INSTALL_DIR:-/opt/observium}"
 
 # Get the network to scan from this computer's IP address
 # SUBNET=$(ip -o -f inet addr show | awk '/scope global/ {print $4}')
@@ -38,5 +38,5 @@ echo "Attempting to add devices to Observium..."
 # Observium uses the options set in
 # /opt/observium/config.php
 for i in "${SNMP_HOSTS[@]}"; do
-  cd $OBSERVIUM_INSTALL_DIR && $OBSERVIUM_INSTALL_DIR/add_device.php $i -p
+  cd "${OBSERVIUM_INSTALL_DIR}" && "${OBSERVIUM_INSTALL_DIR}/add_device.php" $i -p
 done
