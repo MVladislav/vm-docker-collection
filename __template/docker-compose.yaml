@@ -66,6 +66,10 @@ services:
     secrets:
       - my_external_secret
       - my_file_secret
+      - source: own_secret
+        uid: "1000"
+        gid: "1000"
+        mode: 0400
     environment:
       MY_EXTERNAL_SECRET_FILE: /run/secrets/my_external_secret
       MY_FILE_SECRET_FILE: /run/secrets/my_file_secret
