@@ -24,6 +24,8 @@ TODO: define source to start mysql
 
 ### create your `secrets`:
 
+> do not use hard passwort with example "$", they not work current
+
 ```sh
 $echo "swordfish" > config/secrets/observium_admin_pass.txt
 $echo "swordfish" > config/secrets/observium_db_pass.txt
