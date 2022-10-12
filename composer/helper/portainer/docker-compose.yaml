@@ -7,6 +7,15 @@ services:
   ##############################################################################
   portainer:
     image: portainer/portainer-ce:${VERSION:-latest}
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65535
+        hard: 65535
+      fsize: -1
+      as: -1
     deploy:
       mode: replicated
       replicas: 1
@@ -26,6 +35,10 @@ services:
         - traefik.http.services.portainer.loadbalancer.server.scheme=${PROTOCOL:-http}
         - traefik.http.services.portainer.loadbalancer.server.port=${PORT:-9000}
         - traefik.http.routers.portainer.middlewares=${MIDDLEWARE_SECURED:-protected-secured@file}
+      resources:
+        limits:
+          memory: 1g
+    mem_limit: 1g
     # ports:
     #   - target: 9000
     #     published: ${PORT_HTTP:-9000}
@@ -53,6 +66,15 @@ services:
   ##############################################################################
   agent:
     image: portainer/agent:${VERSION:-latest}
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65535
+        hard: 65535
+      fsize: -1
+      as: -1
     deploy:
       mode: global
       placement:
@@ -60,6 +82,10 @@ services:
           - node.platform.os == linux
       restart_policy:
         condition: on-failure
+      resources:
+        limits:
+          memory: 1g
+    mem_limit: 1g
     environment:
       # REQUIRED: Should be equal to the service name prefixed by "tasks." when
       # deployed inside an overlay network
