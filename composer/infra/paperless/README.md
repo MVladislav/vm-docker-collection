@@ -8,6 +8,7 @@
 
 - [SETUP](#setup)
   - [basic](#basic)
+    - [create your `secrets`:](#create-your-secrets)
     - [create `.env` file following:](#create-env-file-following)
   - [create user](#create-user)
   - [References](#references)
@@ -17,6 +18,12 @@
 ## basic
 
 > defined to work with treafik
+
+### create your `secrets`:
+
+```sh
+$echo "paperless" > config/secrets/postgres_password.txt
+```
 
 ### create `.env` file following:
 
@@ -33,18 +40,6 @@ PROTOCOL=http
 PORT=8000
 # default-secured@file | protected-secured@file | admin-secured@file
 MIDDLEWARE_SECURED=default-secured@file
-
-PAPERLESS_REDIS=redis://broker:6379
-PAPERLESS_TIKA_ENABLED=1
-PAPERLESS_TIKA_GOTENBERG_ENDPOINT=http://gotenberg:3000
-PAPERLESS_TIKA_ENDPOINT=http://tika:9998
-
-USERMAP_UID=1000
-USERMAP_GID=1000
-
-PAPERLESS_SECRET_KEY=<LONG-SECRET>
-PAPERLESS_TIME_ZONE=Europe/Berlin
-PAPERLESS_OCR_LANGUAGE=ger
 ```
 
 ## create user
