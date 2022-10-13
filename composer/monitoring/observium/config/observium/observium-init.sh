@@ -3,6 +3,9 @@
 count=0
 rc=1
 
+sed -i "s#\;date\.timezone\ \=#date\.timezone\ \=\ $TZ#g" "/etc/php/${UBUNTU_PHP_VERSION}/cli/php.ini"
+sed -i "s#\;date\.timezone\ \=#date\.timezone\ \=\ $TZ#g" "/etc/php/${UBUNTU_PHP_VERSION}/apache2/php.ini"
+
 while [ $rc -ne 0 ]; do
   let count++
   echo "[$count] Verifying coonection to observium database."

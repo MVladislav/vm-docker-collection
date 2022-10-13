@@ -76,6 +76,7 @@ services:
       - logs_observium:/opt/observium/logs
       - logs_sys:/var/log
       - rrd:/opt/observium/rrd
+      - html:/opt/observium/html
     networks:
       mysql: {}
       proxy: {}
@@ -94,6 +95,7 @@ volumes:
   logs_observium: {}
   logs_sys: {}
   rrd: {}
+  html: {}
 
 secrets:
   observium_admin_pass:
