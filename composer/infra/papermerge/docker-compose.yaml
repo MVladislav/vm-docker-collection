@@ -1,0 +1,307 @@
+version: "3.8"
+
+x-backend: &backend
+  build:
+    context: .
+    dockerfile: ./Dockerfile
+    args:
+      VERSION_PAPERMERGE: ${VERSION_PAPERMERGE:-latest}
+  image: papermerge:${VERSION_PAPERMERGE:-latest}
+  env_file: .env
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 65535
+      hard: 65535
+    fsize: -1
+    as: -1
+  secrets:
+    - papermerge__main__secret_key
+    - papermerge__database__password
+    - django_superuser_password
+  environment:
+    PAPERMERGE__MAIN__SECRET_KEY_FILE: /run/secrets/papermerge__main__secret_key
+    PAPERMERGE__DATABASE__TYPE: ${DB_TYPE:-postgres}
+    PAPERMERGE__DATABASE__USER: ${DB_USER:-papermerge}
+    PAPERMERGE__DATABASE__NAME: ${DB_NAME:-papermerge}
+    PAPERMERGE__DATABASE__PASSWORD_FILE: /run/secrets/papermerge__database__password
+    PAPERMERGE__DATABASE__HOST: ${DB_HOST:-postgres}
+    PAPERMERGE__REDIS__HOST: ${REDIS_HOST:-redis}
+    PAPERMERGE__REDIS__PORT: ${REDIS_PORT:-6379}
+    # PAPERMERGE__MAIN__TIMEZONE: ${TIMEZONE:-Berlin/Europe}
+    # path where xapian index data is stored
+    PAPERMERGE__SEARCH__PATH: /app/xapian_index
+    # PAPERMERGE__SEARCH__ENGINE: ${PAPERMERGE_SEARCH_ENGINE:-elastic7}
+    # PAPERMERGE__SEARCH__URL: ${PAPERMERGE_SEARCH_URL:-http://elasticsearch:9200}
+    DJANGO_SUPERUSER_USERNAME: ${SUPERUSER_USERNAME:-admin}
+    DJANGO_SUPERUSER_EMAIL: ${SUPERUSER_EMAIL:-admin@home.local}
+    DJANGO_SUPERUSER_PASSWORD_FILE: /run/secrets/django_superuser_password
+    DJANGO_SETTINGS_MODULE: config.settings
+  volumes:
+    - /etc/timezone:/etc/timezone:ro
+    - /etc/localtime:/etc/localtime:ro
+    - media_root:/app/media
+    - xapian_index:/app/xapian_index
+  networks:
+    default: {}
+    proxy: {}
+  restart: always
+
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  worker: # celery worker
+    <<: *backend
+    command: worker
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        max_replicas_per_node: 1
+        constraints:
+          - "node.role==${NODE_ROLE:-manager}"
+          - node.platform.os == linux
+      restart_policy:
+        condition: on-failure
+      resources:
+        limits:
+          memory: 1g
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  ws_server:  # websockets server / daphne
+    <<: *backend
+    command: ws_server
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        max_replicas_per_node: 1
+        constraints:
+          - "node.role==${NODE_ROLE:-manager}"
+          - node.platform.os == linux
+      restart_policy:
+        condition: on-failure
+      resources:
+        limits:
+          memory: 1g
+      labels:
+        - traefik.enable=true
+        - traefik.docker.lbswarm=${LB_SWARM:-true}
+        - traefik.docker.network=proxy
+        - traefik.http.routers.papermerge_ws_server.entrypoints=https
+        - traefik.http.routers.papermerge_ws_server.rule=Host(`${DOMAIN?domain variable not set}`) && PathPrefix(`/ws/`)
+        - traefik.http.routers.papermerge_ws_server.tls=true
+        - traefik.http.routers.papermerge_ws_server.service=papermerge_ws_server
+        - traefik.http.services.papermerge_ws_server.loadbalancer.server.scheme=${PROTOCOL_BACKEND:-http}
+        - traefik.http.services.papermerge_ws_server.loadbalancer.server.port=${PORT_BACKEND:-8000}
+        - traefik.http.routers.papermerge_ws_server.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  backend:  # rest api backend / uwsgi
+    <<: *backend
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        max_replicas_per_node: 1
+        constraints:
+          - "node.role==${NODE_ROLE:-manager}"
+          - node.platform.os == linux
+      restart_policy:
+        condition: on-failure
+      resources:
+        limits:
+          memory: 1g
+      labels:
+        - traefik.enable=true
+        - traefik.docker.lbswarm=${LB_SWARM:-true}
+        - traefik.docker.network=proxy
+        - traefik.http.routers.papermerge_backend.entrypoints=https
+        - traefik.http.routers.papermerge_backend.rule=Host(`${DOMAIN?domain variable not set}`) && PathPrefix(`/api/`)
+        - traefik.http.routers.papermerge_backend.tls=true
+        - traefik.http.routers.papermerge_backend.service=papermerge_backend
+        - traefik.http.services.papermerge_backend.loadbalancer.server.scheme=${PROTOCOL_BACKEND:-http}
+        - traefik.http.services.papermerge_backend.loadbalancer.server.port=${PORT_BACKEND:-8000}
+        - traefik.http.routers.papermerge_backend.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  frontend: # emberjs
+    image: papermerge/papermerge.js:${VERSION_PAPERMERGE_JS:-latest}
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65535
+        hard: 65535
+      fsize: -1
+      as: -1
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        max_replicas_per_node: 1
+        constraints:
+          - "node.role==${NODE_ROLE:-manager}"
+          - node.platform.os == linux
+      restart_policy:
+        condition: on-failure
+      resources:
+        limits:
+          memory: 1g
+      labels:
+        - traefik.enable=true
+        - traefik.docker.lbswarm=${LB_SWARM:-true}
+        - traefik.docker.network=proxy
+        - traefik.http.routers.papermerge_frontend.entrypoints=https
+        - traefik.http.routers.papermerge_frontend.rule=Host(`${DOMAIN?domain variable not set}`) && PathPrefix(`/`)
+        - traefik.http.routers.papermerge_frontend.tls=true
+        - traefik.http.routers.papermerge_frontend.service=papermerge_frontend
+        - traefik.http.services.papermerge_frontend.loadbalancer.server.scheme=${PROTOCOL_FRONTEND:-http}
+        - traefik.http.services.papermerge_frontend.loadbalancer.server.port=${PORT_FRONTEND:-80}
+        - traefik.http.routers.papermerge_frontend.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    networks:
+      default: {}
+      proxy: {}
+    restart: always
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  postgres:
+    image: postgres:14.4
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65535
+        hard: 65535
+      fsize: -1
+      as: -1
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        max_replicas_per_node: 1
+        constraints:
+          - "node.role==${NODE_ROLE:-manager}"
+          - node.platform.os == linux
+      restart_policy:
+        condition: on-failure
+      resources:
+        limits:
+          memory: 1g
+    secrets:
+      - papermerge__database__password
+    environment:
+      POSTGRES_USER: ${DB_USER:-papermerge}
+      POSTGRES_DB: ${DB_NAME:-papermerge}
+      POSTGRES_PASSWORD_FILE: /run/secrets/papermerge__database__password
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - postgres_data:/var/lib/postgresql/data/
+    networks:
+      default: {}
+    restart: always
+
+  redis:
+    image: redis:6
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65535
+        hard: 65535
+      fsize: -1
+      as: -1
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        max_replicas_per_node: 1
+        constraints:
+          - "node.role==${NODE_ROLE:-manager}"
+          - node.platform.os == linux
+      restart_policy:
+        condition: on-failure
+      resources:
+        limits:
+          memory: 1g
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - redis_data:/data
+    networks:
+      default: {}
+    restart: always
+
+  # elasticsearch:
+  #   image: docker.elastic.co/elasticsearch/elasticsearch:7.16.2
+  #   ulimits:
+  #     memlock:
+  #       soft: -1
+  #       hard: -1
+  #     nofile:
+  #       soft: 65535
+  #       hard: 65535
+  #     fsize: -1
+  #     as: -1
+  #   deploy:
+  #     mode: replicated
+  #     replicas: 1
+  #     placement:
+  #       max_replicas_per_node: 1
+  #       constraints:
+  #         - "node.role==${NODE_ROLE:-manager}"
+  #         - node.platform.os == linux
+  #     restart_policy:
+  #       condition: on-failure
+  #     resources:
+  #       limits:
+  #         memory: 1g
+  #   environment:
+  #     - discovery.type=single-node
+  #     - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+  #   volumes:
+  #     - /etc/timezone:/etc/timezone:ro
+  #     - /etc/localtime:/etc/localtime:ro
+  #   networks:
+  #     default: {}
+  #   restart: always
+
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  default:
+    driver: ${NETWORK_MODE:-bridge}
+    attachable: true
+  proxy:
+    external: true
+
+volumes:
+  media_root: {}
+  xapian_index: {}
+  postgres_data: {}
+  redis_data: {}
+
+secrets:
+  papermerge__main__secret_key:
+    file: config/secrets/papermerge__main__secret_key.txt
+  papermerge__database__password:
+    file: config/secrets/papermerge__database__password.txt
+  django_superuser_password:
+    file: config/secrets/django_superuser_password.txt
