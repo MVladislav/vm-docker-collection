@@ -38,7 +38,6 @@ services:
       resources:
         limits:
           memory: 1g
-    mem_limit: 1g
     # ports:
     #   - target: 9000
     #     published: ${PORT_HTTP:-9000}
@@ -85,7 +84,6 @@ services:
       resources:
         limits:
           memory: 1g
-    mem_limit: 1g
     environment:
       # REQUIRED: Should be equal to the service name prefixed by "tasks." when
       # deployed inside an overlay network
