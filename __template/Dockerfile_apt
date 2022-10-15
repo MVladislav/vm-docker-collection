@@ -129,3 +129,4 @@ VOLUME ["/app", "/var/log"]
 COPY --chmod=750 config/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 COPY config/supervisord.conf /etc/supervisord.conf
 ENTRYPOINT [ "/usr/local/bin/docker-entrypoint.sh" ]
+CMD ["/bin/bash","-c","/usr/bin/supervisord -c /etc/supervisord.conf --nodaemon"]

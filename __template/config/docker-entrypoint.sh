@@ -49,6 +49,4 @@ file_env() {
 file_env 'MY_EXTERNAL_SECRET'
 file_env 'MY_FILE_SECRET'
 
-exec /usr/bin/supervisord -c /etc/supervisord.conf --nodaemon
-
-exit 0
+exec "$@"
