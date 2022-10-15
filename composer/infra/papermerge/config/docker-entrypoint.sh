@@ -50,9 +50,6 @@ file_env 'PAPERMERGE__MAIN__SECRET_KEY'
 file_env 'PAPERMERGE__DATABASE__PASSWORD'
 file_env 'DJANGO_SUPERUSER_PASSWORD'
 
-file_env 'PAPERMERGE_SECRET_KEY'
-file_env 'PAPERMERGE_DATABASE_PASSWORD'
-
 exec /run.bash "$@"
 
 exit 0
