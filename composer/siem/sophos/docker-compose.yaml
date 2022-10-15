@@ -45,17 +45,11 @@ services:
     #     mode: 0440
     #     uid: "1000"
     #     gid: "1000"
-    #   - source: config_config
-    #     target: /app/sophos/config.ini
-    #     mode: 0440
-    #     uid: "1000"
-    #     gid: "1000"
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - logs:/var/log/sophos:rw
       # - ./config/crontab:/etc/crontab:ro
-      - ./config/config.ini:/app/sophos/config.ini:ro
     networks:
       default: {}
     restart: always
@@ -70,9 +64,7 @@ networks:
 
 volumes:
   logs: {}
-
+#
 # configs:
 #   crontab_config:
 #     file: $PWD/config/crontab
-#   config_config:
-#     file: $PWD/config/config.ini

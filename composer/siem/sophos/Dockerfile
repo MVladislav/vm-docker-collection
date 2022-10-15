@@ -11,11 +11,6 @@ LABEL maintainer="MVladislav"
 
 # ------------------------------------------------------------------------------
 
-ARG GROUP 1000
-ARG USER 1000
-
-ARG SOPHOS_SIEM_HOME=/app/sophos
-ENV SOPHOS_SIEM_HOME ${SOPHOS_SIEM_HOME}
 ENV DEBIAN_FRONTEND noninteractive
 
 # ------------------------------------------------------------------------------
@@ -35,15 +30,21 @@ RUN \
 
 # ------------------------------------------------------------------------------
 
-WORKDIR /app
+ARG GROUP 1000
+ARG USER 1000
 
 RUN \
   addgroup -S -g ${GROUP} nonroot \
   && adduser -S -D -u ${USER} -G nonroot  nonroot
 
+# ------------------------------------------------------------------------------
+
+WORKDIR /app
+
 # copy the project from sophos and give access to non root user
-RUN git clone https://github.com/sophos/Sophos-Central-SIEM-Integration.git ${SOPHOS_SIEM_HOME}
-RUN chown -R nonroot:nonroot ${SOPHOS_SIEM_HOME}
+RUN git clone https://github.com/MVladislav/Sophos-Central-SIEM-Integration.git /app/sophos
+RUN chown -R nonroot:nonroot /app/sophos
+RUN cd /app/sophos && python3 -m pip install -r requirements.txt
 
 # ------------------------------------------------------------------------------
 
@@ -58,14 +59,10 @@ RUN crontab -u nonroot /etc/crontab
 # allow non root user start crond
 RUN chmod u+s /usr/sbin/crond
 
-# COPY --chown=nonroot:nonroot config/entrypoint.sh /entrypoint.sh
-# RUN chmod u+x /entrypoint.sh
-
 # ------------------------------------------------------------------------------
 
 # USER nonroot:nonroot
 
 # ------------------------------------------------------------------------------
 
-# ENTRYPOINT ["/entrypoint.sh"]
 CMD ["crond","-f", "-l", "2"]
