@@ -12,7 +12,7 @@ services:
       args:
         BUILD_DATE: ${BUILD_DATE:-2022}
         VERSION: ${VERSION:-latest}
-    image: observium:${VERSION:-latest}
+    image: mvladislav/observium:${VERSION:-latest}
     env_file: .env
     ulimits:
       memlock:
