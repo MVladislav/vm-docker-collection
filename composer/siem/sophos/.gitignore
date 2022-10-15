@@ -13,6 +13,12 @@
 !config/
 config/*
 
-!config/config.ini
-!config/crontab
-!config/entrypoint.sh
+!config/docker-entrypoint.sh
+
+!config/secrets/
+config/secrets/*
+!config/secrets/.gitempty
+
+!logs
+logs/**
+!logs/.gitempty

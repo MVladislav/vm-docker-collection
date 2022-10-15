@@ -1,4 +1,4 @@
-ARG PYTHON_VERSION=3.6.12-alpine3.12
+ARG PYTHON_VERSION=3.10.8-alpine3.16
 FROM python:${PYTHON_VERSION}
 
 # ------------------------------------------------------------------------------
@@ -22,6 +22,8 @@ RUN \
   git \
   wget \
   curl \
+  gcc \
+  g++ \
   bash;
 
 RUN \
@@ -39,21 +41,23 @@ RUN \
 
 # ------------------------------------------------------------------------------
 
+RUN ln -s /usr/include/locale.h /usr/include/xlocale.h
+
 WORKDIR /app
 
 # copy the project from sophos and give access to non root user
 RUN git clone https://github.com/MVladislav/Sophos-Central-SIEM-Integration.git /app/sophos
 RUN chown -R nonroot:nonroot /app/sophos
-RUN cd /app/sophos && python3 -m pip install -r requirements.txt
+RUN cd /app/sophos && python3 -m pip install --no-cache-dir -r requirements.txt
 
 # ------------------------------------------------------------------------------
 
 # create logging folder, with access for non root user
-RUN mkdir -p /var/log/sophos
+RUN mkdir -p /var/log/sophos/{reports,state}
 RUN chown -R nonroot:nonroot /var/log/sophos
 
-# copy default crontab, with access for non root user
-COPY config/crontab /etc/crontab
+# set default crontab, with access for non root user
+RUN echo '* * * * * cd /app/sophos && python3 siem.py >> /var/log/sophos/sophos-$(date +'%Y-%m-%d').log' > /etc/crontab
 RUN crontab -u nonroot /etc/crontab
 
 # allow non root user start crond
@@ -65,4 +69,8 @@ RUN chmod u+s /usr/sbin/crond
 
 # ------------------------------------------------------------------------------
 
-CMD ["crond","-f", "-l", "2"]
+# configure entry point
+COPY --chmod=755 config/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+ENTRYPOINT [ "bash","/usr/local/bin/docker-entrypoint.sh" ]
+
+CMD ["/bin/bash","-c","crond -f -l 2"]

@@ -1,1 +1,0 @@
-* * * * * cd /app/sophos && python3 siem.py >> /var/log/sophos/sophos-$(date +'%Y-%m-%d').log
