@@ -1,12 +1,12 @@
----
 version: "3.8"
 
 services:
   ##############################################################################
   ##############################################################################
   ##############################################################################
-  portainer:
-    image: portainer/portainer-ce:${VERSION:-latest}
+  papermerge:
+    image: linuxserver/papermerge:${VERSION:-latest}
+    env_file: .env
     ulimits:
       memlock:
         soft: -1
@@ -20,51 +20,54 @@ services:
       mode: replicated
       replicas: 1
       placement:
+        max_replicas_per_node: 1
         constraints:
-          - "node.role==manager"
+          - "node.role==${NODE_ROLE:-manager}"
+          - node.platform.os == linux
       restart_policy:
         condition: on-failure
+      resources:
+        limits:
+          memory: 1g
       labels:
         - traefik.enable=true
         - traefik.docker.lbswarm=${LB_SWARM:-true}
         - traefik.docker.network=proxy
-        - traefik.http.routers.portainer.entrypoints=https
-        - traefik.http.routers.portainer.rule=Host(`${DOMAIN?domain variable not set}`)
-        - traefik.http.routers.portainer.tls=true
-        - traefik.http.routers.portainer.service=portainer
-        - traefik.http.services.portainer.loadbalancer.server.scheme=${PROTOCOL:-http}
-        - traefik.http.services.portainer.loadbalancer.server.port=${PORT:-9000}
-        - traefik.http.routers.portainer.middlewares=${MIDDLEWARE_SECURED:-protected-secured@file}
-      resources:
-        limits:
-          memory: 1g
-    # ports:
-    #   - target: 9000
-    #     published: ${PORT_HTTP:-9000}
-    #     protocol: tcp
-    #     mode: host
-    #   - target: 9443
-    #     published: ${PORT_HTTPS:-9443}
-    #     protocol: tcp
-    #     mode: host
-    #   - target: 8000
-    #     published: ${PORT_OTHER:-8000}
-    #     protocol: tcp
-    #     mode: host
+        - traefik.http.routers.papermerge.entrypoints=https
+        - traefik.http.routers.papermerge.rule=Host(`${DOMAIN?domain variable not set}`)
+        - traefik.http.routers.papermerge.tls=true
+        - traefik.http.routers.papermerge.service=papermerge
+        - traefik.http.services.papermerge.loadbalancer.server.scheme=${PROTOCOL:-http}
+        - traefik.http.services.papermerge.loadbalancer.server.port=${PORT:-8000}
+        - traefik.http.routers.papermerge.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    environment:
+      DOCKER_MODS: linuxserver/mods:papermerge-multilangocr
+      OCRLANG: deu,eng
+
+      PUID: ${PUID:-1000}
+      PGID: ${PGID:-1000}
+      TZ: ${TZ:-Europe/Berlin}
+    configs:
+      - source: paper_config
+        target: /config/papermerge.conf.py
+        mode: 0644
+        uid: ${PUID:-1000}
+        gid: ${PUID:-1000}
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
+      - config:/config
       - data:/data
-    command: -H tcp://tasks.agent:9001 --tlsskipverify
     networks:
       default: {}
       proxy: {}
+    restart: always
 
   ##############################################################################
   ##############################################################################
   ##############################################################################
-  agent:
-    image: portainer/agent:${VERSION:-latest}
+  redis:
+    image: redis:6
     ulimits:
       memlock:
         soft: -1
@@ -75,37 +78,41 @@ services:
       fsize: -1
       as: -1
     deploy:
-      mode: global
+      mode: replicated
+      replicas: 1
       placement:
+        max_replicas_per_node: 1
         constraints:
+          - "node.role==${NODE_ROLE:-manager}"
           - node.platform.os == linux
       restart_policy:
         condition: on-failure
       resources:
         limits:
           memory: 1g
-    environment:
-      # REQUIRED: Should be equal to the service name prefixed by "tasks." when
-      # deployed inside an overlay network
-      AGENT_CLUSTER_ADDR: tasks.agent
-      # AGENT_PORT: 9001
-      # LOG_LEVEL: debug
     volumes:
+      - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-      - /var/run/docker.sock:/var/run/docker.sock
-      - /var/lib/docker/volumes:/var/lib/docker/volumes
+      - redis_data:/data
     networks:
       default: {}
+    restart: always
 
 ################################################################################
 ################################################################################
 ################################################################################
 networks:
   default:
-    driver: ${NETWORK_MODE:-overlay}
+    driver: ${NETWORK_MODE:-bridge}
     attachable: true
   proxy:
     external: true
 
 volumes:
+  config: {}
   data: {}
+  redis_data: {}
+
+configs:
+  paper_config:
+    file: $PWD/config/papermerge.conf.py

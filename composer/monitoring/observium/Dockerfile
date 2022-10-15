@@ -28,17 +28,19 @@ ENV UBUNTU_PHP_VERSION="8.1"
 
 # ------------------------------------------------------------------------------
 
-# ## Fix some issues with APT packages.
-# ## See https://github.com/dotcloud/docker/issues/1024
-# RUN dpkg-divert --local --rename --add /sbin/initctl
-# RUN ln -sf /bin/true /sbin/initctl
+## Fix some issues with APT packages.
+## See https://github.com/dotcloud/docker/issues/1024
+RUN dpkg-divert --local --rename --add /sbin/initctl
+RUN ln -sf /bin/true /sbin/initctl
 
-# ## Replace the 'ischroot' tool to make it always return true.
-# ## Prevent initscripts updates from breaking /dev/shm.
-# ## https://journal.paul.querna.org/articles/2013/10/15/docker-ubuntu-on-rackspace/
-# ## https://bugs.launchpad.net/launchpad/+bug/974584
-# RUN dpkg-divert --local --rename --add /usr/bin/ischroot
-# RUN ln -sf /bin/true /usr/bin/ischroot
+## Replace the 'ischroot' tool to make it always return true.
+## Prevent initscripts updates from breaking /dev/shm.
+## https://journal.paul.querna.org/articles/2013/10/15/docker-ubuntu-on-rackspace/
+## https://bugs.launchpad.net/launchpad/+bug/974584
+RUN dpkg-divert --local --rename --add /usr/bin/ischroot
+RUN ln -sf /bin/true /usr/bin/ischroot
+
+# ------------------------------------------------------------------------------
 
 # LANG SETUP
 ENV LANG en_US.UTF-8
@@ -91,6 +93,7 @@ RUN \
   fping \
   # mysql-server \
   mysql-client \
+  rrdcached \
   rrdtool \
   subversion \
   whois \
@@ -163,18 +166,11 @@ RUN \
   /etc/cron.monthly/* \
   /etc/logrotate.d/* \
   /etc/supervisord/conf.d/*
-# clean up python bytecode
-# RUN \
-#   find / -mount -name *.pyc -delete\
-#   find / -mount -name *__pycache__* -delete
 
 # ------------------------------------------------------------------------------
 
 # set locale
 RUN locale-gen en_US.UTF-8
-
-RUN sed -i "s#\;date\.timezone\ \=#date\.timezone\ \=\ $TZ#g" "/etc/php/${UBUNTU_PHP_VERSION}/cli/php.ini"
-RUN sed -i "s#\;date\.timezone\ \=#date\.timezone\ \=\ $TZ#g" "/etc/php/${UBUNTU_PHP_VERSION}/apache2/php.ini"
 
 # ------------------------------------------------------------------------------
 
@@ -189,21 +185,21 @@ RUN cd /opt \
   && tar zxf observium-community-latest.tar.gz --checkpoint=.1000 \
   && rm -f observium-community-latest.tar.gz
 
+# Installing WMIC
+# https://docs.observium.org/device_windows/
+RUN wget https://www.observium.org/files/wmic_1.3.16_static_64bit.tar.gz \
+  && tar zxvf wmic_1.3.16_static_64bit.tar.gz \
+  && mv wmic winexe /usr/bin
+
 # Patch schema upgrade SQL
 COPY config/184.sql /opt/observium/update/184.sql
 # ...
 COPY config/observium/observium-init.sh /opt/observium/observium-init.sh
-
-# configure observium package
-# RUN cd /opt/observium \
-#   && cp config.php.default config.php \
-#   && sed -i -e "s/= 'localhost';/= getenv('OBSERVIUM_DB_HOST');/g" config.php \
-#   && sed -i -e "s/= 'USERNAME';/= getenv('OBSERVIUM_DB_USER');/g" config.php \
-#   && sed -i -e "s/= 'PASSWORD';/= getenv('OBSERVIUM_DB_PASS');/g" config.php \
-#   && sed -i -e "s/= 'observium';/= getenv('OBSERVIUM_DB_NAME');/g" config.php \
-#   && grep -qF 'base_url' config.php || echo "\$config['base_url'] = getenv('OBSERVIUM_BASE_URL');" >> config.php \
-#   && grep -qF 'enable_syslog' config.php || echo "\$config['enable_syslog'] = 1;" >> config.php
+# rddchached config
+COPY config/observium/rrdcached /etc/default/rrdcached
+# default observium config
 COPY config/observium/config.php /opt/observium/config.php
+# nmap discover script
 COPY config/observium/observium-nmap-autodiscover.sh /opt/observium/observium-nmap-autodiscover.sh
 
 # set rights and own

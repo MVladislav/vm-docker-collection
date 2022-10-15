@@ -10,6 +10,7 @@
   - [basic](#basic)
     - [create your `secrets`:](#create-your-secrets)
     - [create `.env` file following:](#create-env-file-following)
+  - [Hint](#hint)
   - [client setup](#client-setup)
     - [snmpv3](#snmpv3)
   - [References](#references)
@@ -57,6 +58,10 @@ OBSERVIUM_DB_PORT = 3306
 OBSERVIUM_DB_NAME = observium
 OBSERVIUM_DB_USER = observium
 ```
+
+## Hint
+
+- Mail alert send, works with `Mail backend = SMTP`
 
 ## client setup
 
@@ -155,3 +160,4 @@ $sudo ufw allow in on <INTERFACE> to any port 161 proto udp comment "allow incom
 - <https://github.com/charlescng/docker-containers/tree/master/observium>
 - <https://github.com/phusion/baseimage-docker>
 - <https://github.com/outstand/docker-syslog-ng-stdout>
+- <https://docs.observium.org/alerting_examples/>

@@ -50,5 +50,5 @@ $config['base_url'] = getenv('OBSERVIUM_BASE_URL');
 $config['enable_syslog'] = 1;
 
 // autodiscover
-$config['autodiscovery']['ip_nets']        = array("127.0.0.0/8", "192.168.0.0/16", "10.0.0.0/8", "172.16.0.0/12");
+#$config['autodiscovery']['ip_nets']        = array("127.0.0.0/8", "192.168.0.0/16", "10.0.0.0/8", "172.16.0.0/12");
 $config['autodiscovery']['snmp_scan']       = TRUE; // autodiscover hosts via SNMP scanning
