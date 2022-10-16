@@ -33,5 +33,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - ...
 
-[unreleased]: https://github.com/../../compare/v1.0.0...HEAD
-[0.0.1]: https://github.com/../../releases/tag/v0.0.1
+[unreleased]: https://github.com/mvladislav/vm-docker-collection/compare/v1.0.0...HEAD
+[0.0.1]: https://github.com/mvladislav/vm-docker-collection/releases/tag/v0.0.1

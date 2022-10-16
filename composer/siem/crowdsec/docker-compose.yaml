@@ -17,22 +17,46 @@ services:
       as: -1
     deploy:
       mode: replicated
+      # mode: global
       replicas: 1
       placement:
         max_replicas_per_node: 1
         constraints:
           # - "node.id==${NODE_ID}"
           - "node.role==${NODE_ROLE:-manager}"
+          - node.platform.os == linux
       restart_policy:
         condition: on-failure
     environment:
+      GID: "${GID-1000}"
       # this is the list of collections we want to install
       # https://hub.crowdsec.net/author/crowdsecurity/collections/nginx
       COLLECTIONS: "crowdsecurity/linux crowdsecurity/traefik"
-      GID: "${GID-1000}"
+
+      DISABLE_LOCAL_API: ${DISABLE_LOCAL_API:-false}
+      AGENT_USERNAME: ${AGENT_USERNAME:-}
+      AGENT_PASSWORD: ${AGENT_PASSWORD:-}
+      LOCAL_API_URL: ${LOCAL_API_URL:-"http://192.168.5.1:8080}
+
+      BOUNCER_KEY_TRAEFIK: ${CROWDSEC_BOUNCER_API_KEY_TRAEFIK}
     configs:
       - source: acquis_config
         target: /etc/crowdsec/acquis.yaml
+        mode: 0440
+        uid: "1000"
+        gid: "1000"
+      - source: profiles_config
+        target: /etc/crowdsec/profiles.yaml
+        mode: 0440
+        uid: "1000"
+        gid: "1000"
+      - source: http_elasticsearch_config
+        target: /etc/crowdsec/notifications/http.yaml
+        mode: 0440
+        uid: "1000"
+        gid: "1000"
+      - source: http_telegram_config
+        target: /etc/crowdsec/notifications/telegram.yaml
         mode: 0440
         uid: "1000"
         gid: "1000"
@@ -42,18 +66,14 @@ services:
       - db:/var/lib/crowdsec/data/
       - config:/etc/crowdsec/
       - traefik_logs:/var/log/traefik:ro
-    logging:
-      driver: 'json-file'
-      options:
-          max-size: '2m'
-          max-file: '5'
     networks:
       proxy: {}
     restart: always
 
-  ##############################################################################
-  ##############################################################################
-  ##############################################################################
+
+  #############################################################################
+  #############################################################################
+  #############################################################################
   bouncer-traefik:
     image: fbonalair/traefik-crowdsec-bouncer:${VERSION:-latest}
     ulimits:
@@ -67,25 +87,23 @@ services:
       as: -1
     deploy:
       mode: replicated
+      # mode: global
       replicas: 1
       placement:
         max_replicas_per_node: 1
         constraints:
           # - "node.id==${NODE_ID}"
           - "node.role==${NODE_ROLE:-manager}"
+          - node.platform.os == linux
       restart_policy:
         condition: on-failure
     environment:
-      CROWDSEC_BOUNCER_API_KEY: ${CROWDSEC_BOUNCER_API_KEY}
-      CROWDSEC_AGENT_HOST: ${CROWDSEC_AGENT_HOST:-8080}
+      GIN_MODE: release
+      CROWDSEC_BOUNCER_API_KEY: ${CROWDSEC_BOUNCER_API_KEY_TRAEFIK}
+      CROWDSEC_AGENT_HOST: ${CROWDSEC_AGENT_HOST:-crowdsec:8080}
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-    logging:
-      driver: 'json-file'
-      options:
-          max-size: '2m'
-          max-file: '5'
     networks:
       proxy: {}
     restart: always
@@ -107,3 +125,9 @@ volumes:
 configs:
   acquis_config:
     file: $PWD/config/acquis.yaml
+  profiles_config:
+    file: $PWD/config/profiles.yaml
+  http_elasticsearch_config:
+    file: $PWD/config/elasticsearch.yaml
+  http_telegram_config:
+    file: $PWD/config/telegram.yaml

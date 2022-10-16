@@ -1,0 +1,78 @@
+version: "3.8"
+
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  checkmk:
+    image: checkmk/${TYPE:-check-mk-raw}:${VERSION:-2.1.0}
+    env_file: .env
+    stdin_open: true # docker run -i
+    tty: true # docker run -t
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65535
+        hard: 65535
+      fsize: -1
+      as: -1
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        max_replicas_per_node: 1
+        constraints:
+          # - "node.id==${NODE_ID}"
+          - "node.role==${NODE_ROLE:-manager}"
+          - node.platform.os == linux
+      restart_policy:
+        condition: on-failure
+      labels:
+        - traefik.enable=true
+        - traefik.docker.lbswarm=${LB_SWARM:-true}
+        - traefik.docker.network=proxy
+        - traefik.http.routers.checkmk.entrypoints=https
+        - traefik.http.routers.checkmk.rule=Host(`${DOMAIN?domain variable not set}`)
+        - traefik.http.routers.checkmk.tls=true
+        - traefik.http.routers.checkmk.service=checkmk
+        - traefik.http.services.checkmk.loadbalancer.server.scheme=${PROTOCOL:-http}
+        - traefik.http.services.checkmk.loadbalancer.server.port=${PORT:-5000}
+        - traefik.http.routers.checkmk.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    # ports:
+    #   - target: 5000
+    #     published: ${PORT:-5000}
+    #     protocol: tcp
+    #     mode: host
+    # environment:
+    #   VAR: ...
+    tmpfs:
+      - /opt/omd/sites/cmk/tmp:uid=1000,gid=1000
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - monitoring:/omd/sites
+    networks:
+      # default: {}
+      proxy: {}
+    # healthcheck:
+    #   test: ["CMD", "curl", "-f", "${PROTOCOL:-https}://localhost:${PORT:-443}"]
+    #   interval: 30s
+    #   timeout: 10s
+    #   retries: 5
+    # cmd: curl https://raw.githubusercontent.com/filipnet/checkmk-telegram-notify/main/check_mk_telegram-notify.sh -o /omd/sites/cmk/share/check_mk/notifications/telegram && chmod +x /omd/sites/cmk/share/check_mk/notifications/telegram
+    restart: always
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  default:
+    driver: ${NETWORK_MODE:-bridge}
+    attachable: true
+  proxy:
+    external: true
+
+volumes:
+  monitoring: {}

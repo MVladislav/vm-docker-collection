@@ -6,6 +6,7 @@ services:
   ##############################################################################
   gophish:
     image: gophish/gophish:${VERSION:-latest}
+    env_file: .env
     ulimits:
       memlock:
         soft: -1
@@ -23,24 +24,40 @@ services:
         constraints:
           # - "node.id==${NODE_ID}"
           - "node.role==${NODE_ROLE:-manager}"
+          - node.platform.os == linux
       restart_policy:
         condition: on-failure
-    ports:
-      - target: 3333
-        published: ${PORT:-3333}
-        protocol: tcp
-        mode: host
+      labels:
+        - traefik.enable=true
+        - traefik.docker.lbswarm=${LB_SWARM:-true}
+        - traefik.docker.network=proxy
+        - traefik.http.routers.gophish.entrypoints=https
+        - traefik.http.routers.gophish.rule=Host(`${DOMAIN?domain variable not set}`)
+        - traefik.http.routers.gophish.tls=true
+        - traefik.http.routers.gophish.service=gophish
+        - traefik.http.services.gophish.loadbalancer.server.scheme=${PROTOCOL:-http}
+        - traefik.http.services.gophish.loadbalancer.server.port=${PORT:-3333}
+        - traefik.http.routers.gophish.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    # ports:
+    #   - target: 3333
+    #     published: ${PORT:-3333}
+    #     protocol: tcp
+    #     mode: host
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
     networks:
-      default: {}
+      proxy: {}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "${PROTOCOL:-http}://localhost:${PORT:-3333}"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
     restart: always
 
 ################################################################################
 ################################################################################
 ################################################################################
 networks:
-  default:
-    driver: ${NETWORK_MODE:-bridge}
-    attachable: true
+  proxy:
+    external: true

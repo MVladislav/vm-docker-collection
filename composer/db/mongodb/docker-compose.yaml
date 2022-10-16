@@ -1,0 +1,135 @@
+version: "3.8"
+
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  mongodb:
+    image: mongo:${VERSION_MONGODB:-latest}
+    env_file: .env
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65535
+        hard: 65535
+      fsize: -1
+      as: -1
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        max_replicas_per_node: 1
+        constraints:
+          - "node.role==${NODE_ROLE:-manager}"
+          - node.platform.os == linux
+      resources:
+        limits:
+          memory: 1g
+      restart_policy:
+        condition: on-failure
+    # ports:
+    #   - target: 27017
+    #     published: ${PORT_MONGO:-27017}
+    #     protocol: tcp
+    #     mode: host
+    secrets:
+      - mongo_initdb_root_password
+    environment:
+      TZ: ${TZ:-Europe/Berlin}
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:-root}
+      MONGO_INITDB_ROOT_PASSWORD_FILE: /run/secrets/mongo_initdb_root_password
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - db:/data/db
+    networks:
+      mongodb: {}
+    restart: always
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  mongo-express:
+    depends_on:
+      - mongodb
+    image: mongo-express:${VERSION_EXPRESS:-latest}
+    env_file: .env
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65535
+        hard: 65535
+      fsize: -1
+      as: -1
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        max_replicas_per_node: 1
+        constraints:
+          - "node.role==${NODE_ROLE:-manager}"
+          - node.platform.os == linux
+      restart_policy:
+        condition: on-failure
+      labels:
+        - traefik.enable=true
+        - traefik.docker.lbswarm=${LB_SWARM:-true}
+        - traefik.docker.network=proxy
+        - traefik.http.routers.mongo-express.entrypoints=https
+        - traefik.http.routers.mongo-express.rule=Host(`${DOMAIN?domain variable not set}`)
+        - traefik.http.routers.mongo-express.tls=true
+        - traefik.http.routers.mongo-express.service=mongo-express
+        - traefik.http.services.mongo-express.loadbalancer.server.scheme=${PROTOCOL:-http}
+        - traefik.http.services.mongo-express.loadbalancer.server.port=${PORT:-8081}
+        - traefik.http.routers.mongo-express.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+      resources:
+        limits:
+          memory: 1g
+    mem_limit: 1g
+    ports:
+      - target: 8081
+        published: ${PORT:-8081}
+        protocol: tcp
+        mode: host
+    secrets:
+      - me_config_basicauth_password
+      - mongo_initdb_root_password
+    environment:
+      ME_CONFIG_BASICAUTH_USERNAME: ${ME_CONFIG_BASICAUTH_USERNAME:-admin}
+      ME_CONFIG_BASICAUTH_PASSWORD_FILE: /run/secrets/me_config_basicauth_password
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGO_INITDB_ROOT_USERNAME:-root}
+      ME_CONFIG_MONGODB_ADMINPASSWORD_FILE: /run/secrets/mongo_initdb_root_password
+      ME_CONFIG_MONGODB_PORT: 27017
+      ME_CONFIG_MONGODB_SERVER: mongodb
+      ME_CONFIG_OPTIONS_EDITORTHEME: midnight
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    networks:
+      mongodb: {}
+      proxy: {}
+    restart: always
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  mongodb:
+    name: mongodb
+    driver: ${NETWORK_MODE:-bridge}
+    attachable: true
+  proxy:
+    external: true
+
+volumes:
+  db: {}
+
+secrets:
+  me_config_basicauth_password:
+    file: config/secrets/me_config_basicauth_password.txt
+  mongo_initdb_root_password:
+    file: config/secrets/mongo_initdb_root_password.txt

@@ -1,0 +1,63 @@
+version: "3.8"
+
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  cloudflare-tunnel:
+    image: cloudflare/cloudflared:${VERSION:-2020.7.0}
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65535
+        hard: 65535
+      fsize: -1
+      as: -1
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        max_replicas_per_node: 1
+        constraints:
+          - "node.role==${NODE_ROLE:-manager}"
+          - node.platform.os == linux
+      restart_policy:
+        condition: on-failure
+    # environment:
+    #   VAR: ...
+    # configs:
+    #   - source: xx_config
+    #     target: ...
+    #     mode: 0440
+    #     uid: "1000"
+    #     gid: "1000"
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - ~/.cloudflared:/etc/cloudflared
+    # command: >
+    #   ...
+    entrypoints: tunnel --no-autoupdate run --token ${TOKEN}
+    networks:
+      default: {}
+      proxy: {}
+    restart: always
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  default:
+    driver: ${NETWORK_MODE:-bridge}
+    attachable: true
+  proxy:
+    external: true
+#
+# volumes:
+#   data: {}
+#
+# configs:
+#   xx_config:
+#     file: $PWD/config/...

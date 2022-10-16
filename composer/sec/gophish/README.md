@@ -9,12 +9,14 @@
 - [SETUP](#setup)
   - [basic](#basic)
     - [create `.env` file following:](#create-env-file-following)
-  - [info](#info)
+  - [login credentials](#login-credentials)
   - [References](#references)
 
 ---
 
 ## basic
+
+> defined to work with treafik
 
 ### create `.env` file following:
 
@@ -24,15 +26,21 @@ NODE_ROLE=manager
 NETWORK_MODE=overlay
 
 VERSION=latest
+
+LB_SWARM=true
+DOMAIN=gophish.home.local
+PROTOCOL=http
 PORT=3333
+# default-secured@file | protected-secured@file | admin-secured@file
+MIDDLEWARE_SECURED=admin-secured@file
 ```
 
-## info
+## login credentials
 
 default credentials are printed in log, get it with:
 
 ```sh
-$docker logs gophish_app*| grep "Please login with"
+$docker logs "$(docker ps -q -f name=gophish)"| grep "Please login with"
 ```
 
 ---

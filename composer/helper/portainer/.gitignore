@@ -11,8 +11,3 @@
 !CHANGELOG.md
 !LICENCE
 !README.md
-
-!config/
-!config/ssl/
-config/ssl/*
-!config/ssl/.gitempty

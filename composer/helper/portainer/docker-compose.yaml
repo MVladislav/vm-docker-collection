@@ -7,6 +7,15 @@ services:
   ##############################################################################
   portainer:
     image: portainer/portainer-ce:${VERSION:-latest}
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65535
+        hard: 65535
+      fsize: -1
+      as: -1
     deploy:
       mode: replicated
       replicas: 1
@@ -26,6 +35,9 @@ services:
         - traefik.http.services.portainer.loadbalancer.server.scheme=${PROTOCOL:-http}
         - traefik.http.services.portainer.loadbalancer.server.port=${PORT:-9000}
         - traefik.http.routers.portainer.middlewares=${MIDDLEWARE_SECURED:-protected-secured@file}
+      resources:
+        limits:
+          memory: 1g
     # ports:
     #   - target: 9000
     #     published: ${PORT_HTTP:-9000}
@@ -39,17 +51,11 @@ services:
     #     published: ${PORT_OTHER:-8000}
     #     protocol: tcp
     #     mode: host
-    # configs:
-    #   - source: crt_config
-    #     target: /certs/selfsigned.crt
-    #   - source: key_config
-    #     target: /certs/selfsigned.key
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - data:/data
     command: -H tcp://tasks.agent:9001 --tlsskipverify
-    # --sslcert /certs/selfsigned.crt --sslkey /certs/selfsigned.key
     networks:
       default: {}
       proxy: {}
@@ -59,6 +65,15 @@ services:
   ##############################################################################
   agent:
     image: portainer/agent:${VERSION:-latest}
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65535
+        hard: 65535
+      fsize: -1
+      as: -1
     deploy:
       mode: global
       placement:
@@ -66,6 +81,9 @@ services:
           - node.platform.os == linux
       restart_policy:
         condition: on-failure
+      resources:
+        limits:
+          memory: 1g
     environment:
       # REQUIRED: Should be equal to the service name prefixed by "tasks." when
       # deployed inside an overlay network
@@ -91,9 +109,3 @@ networks:
 
 volumes:
   data: {}
-
-# configs:
-#   crt_config:
-#     file: $PWD/config/ssl/selfsigned.crt
-#   key_config:
-#     file: $PWD/config/ssl/selfsigned.key

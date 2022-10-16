@@ -1,0 +1,18 @@
+FROM photonixapp/photonix:latest
+
+# ------------------------------------------------------------------------------
+
+# set version label
+ARG BUILD_DATE
+ARG VERSION
+LABEL build_version="MVladislav version:- ${VERSION} Build-date:- ${BUILD_DATE}"
+LABEL maintainer="MVladislav"
+
+# ------------------------------------------------------------------------------
+
+# set volumes
+VOLUME ["/data/photos", "/data/raw-photos-processed", "/data/cache", "/data/models"]
+
+# configure entry point
+COPY --chmod=750 config/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+ENTRYPOINT [ "/usr/local/bin/docker-entrypoint.sh" ]

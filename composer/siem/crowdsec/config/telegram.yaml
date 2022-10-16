@@ -1,0 +1,36 @@
+type: http # Don't change
+name: http_telegram # Must match the registered plugin in the profile
+
+# One of "trace", "debug", "info", "warn", "error", "off"
+log_level: debug
+
+# group_wait:         # Time to wait collecting alerts before relaying a message to this plugin, eg "30s"
+# group_threshold:    # Amount of alerts that triggers a message before <group_wait> has expired, eg "10"
+# max_retry:          # Number of attempts to relay messages to plugins in case of error
+# timeout:            # Time to wait for response from the plugin before considering the attempt a failure, eg "10s"
+
+#-------------------------
+# plugin-specific options
+
+# The following template receives a list of models.Alert objects
+# The output goes in the http request body
+
+# Replace with your Telegram chat ID
+format: |
+  {
+   "chat_id": 21349331,
+   "text": "
+     {{range . -}}
+     {{$alert := . -}}
+     {{range .Decisions -}}
+     {{.Value}} will get {{.Type}} for next {{.Duration}} for  triggering {{.Scenario}}.\r\n https://www.shodan.io/host/{{.Value}}
+     {{end -}}
+     {{end -}}
+   "
+  }
+
+url: https://api.telegram.org/bot1321190932:AAEFEW7Jx6ORwwd_cN5t8H2Q-EHzQcsAc3Q/sendMessage # Replace <TELEGRAM_APY_KEY> with your APi key
+
+method: POST
+headers:
+  Content-Type: "application/json"

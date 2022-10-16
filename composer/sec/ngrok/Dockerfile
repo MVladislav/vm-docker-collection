@@ -1,7 +1,8 @@
-FROM alpine:3.12
+ARG VERSION_ALPINE=3.16.2
+FROM alpine:${VERSION_ALPINE}
 
 # https://github.com/sgerrand/alpine-pkg-glibc
-ARG GLIBC_VERSION=2.31-r0
+ARG GLIBC_VERSION=2.35-r0
 
 # ------------------------------------------------------------------------------
 

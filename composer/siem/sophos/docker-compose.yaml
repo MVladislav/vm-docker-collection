@@ -1,0 +1,75 @@
+version: "3.8"
+
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  sophos:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+      args:
+        BUILD_DATE: ${BUILD_DATE:-2022}
+        VERSION: ${VERSION:-latest}
+        PYTHON_VERSION: 3.10.8-alpine3.16
+        GROUP: 1000
+        USER: 1000
+    image: sophos:${VERSION:-latest}
+    env_file: .env
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65535
+        hard: 65535
+      fsize: -1
+      as: -1
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        max_replicas_per_node: 1
+        constraints:
+          - "node.role==${NODE_ROLE:-manager}"
+          - node.platform.os == linux
+      restart_policy:
+        condition: on-failure
+    secrets:
+      # - token_info
+      - client_id
+      - client_secret
+      # - tenant_id
+    environment:
+      # TOKEN_INFO_FILE: /run/secrets/token_info
+      CLIENT_ID_FILE: /run/secrets/client_id
+      CLIENT_SECRET_FILE: /run/secrets/client_secret
+      # TENANT_ID_FILE: /run/secrets/tenant_id
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - ./logs:/var/log/sophos:rw
+    networks:
+      default: {}
+    restart: always
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  default:
+    driver: ${NETWORK_MODE:-bridge}
+    attachable: true
+
+volumes:
+  logs: {}
+
+secrets:
+  # token_info:
+  #   file: config/secrets/token_info.txt
+  client_id:
+    file: config/secrets/client_id.txt
+  client_secret:
+    file: config/secrets/client_secret.txt
+  # tenant_id:
+  #   file: config/secrets/tenant_id.txt

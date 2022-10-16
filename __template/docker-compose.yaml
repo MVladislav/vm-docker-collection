@@ -1,0 +1,139 @@
+version: "3.8"
+
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  app:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+      args:
+        BUILD_DATE: ${BUILD_DATE:-2022}
+        VERSION: ${VERSION:-latest}
+    image: localhost:5000/...:${VERSION:-latest}
+    env_file: .env
+    privileged: true
+    stdin_open: true # docker run -i
+    tty: true # docker run -t
+    cap_add: ["CHOWN", "DAC_OVERRIDE", "SETGID", "SETUID"]
+    cap_drop: ["ALL"]
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 200
+    # read_only: ${CONTAINER_READONLY:-false}
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65535
+        hard: 65535
+      fsize: -1
+      as: -1
+    deploy:
+      mode: replicated
+      # mode: global
+      replicas: 1
+      placement:
+        max_replicas_per_node: 1
+        constraints:
+          # - "node.id==${NODE_ID}"
+          - "node.role==${NODE_ROLE:-manager}"
+          - node.platform.os == linux
+      restart_policy:
+        condition: on-failure
+      labels:
+        - traefik.enable=true
+        - traefik.docker.lbswarm=${LB_SWARM:-true}
+        - traefik.docker.network=proxy
+        - traefik.http.routers.<router_name>.entrypoints=https
+        - traefik.http.routers.<router_name>.rule=Host(`${DOMAIN?domain variable not set}`)
+        - traefik.http.routers.<router_name>.tls=true
+        - traefik.http.routers.<router_name>.service=<router_name>
+        - traefik.http.services.<router_name>.loadbalancer.server.scheme=${PROTOCOL:-https}
+        - traefik.http.services.<router_name>.loadbalancer.server.port=${PORT:-443}
+        - traefik.http.routers.<router_name>.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+      resources:
+        limits:
+          memory: 1g
+    mem_limit: 1g
+    # ports:
+    #   - target: ...
+    #     published: ${PORT:-...}
+    #     protocol: tcp
+    #     mode: host
+    secrets:
+      - my_external_secret
+      - my_file_secret
+      - source: own_secret
+        uid: "1000"
+        gid: "1000"
+        mode: 0400
+    environment:
+      MY_EXTERNAL_SECRET_FILE: /run/secrets/my_external_secret
+      MY_FILE_SECRET_FILE: /run/secrets/my_file_secret
+    # configs:
+    #   - source: xx_config
+    #     target: ...
+    #     mode: 0440
+    #     uid: "1000"
+    #     gid: "1000"
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      # - data:/root
+      # - type: bind
+      #   source: ./logstash/config/logstash.yml
+      #   target: /usr/share/logstash/config/logstash.yml
+      #   read_only: true
+    tmpfs:
+      - /tmp
+    # command: >
+    #   ...
+    networks:
+      default: {}
+      proxy: {}
+    # network_mode: host
+    # healthcheck:
+    #   test: ["CMD", "curl", "-f", "${PROTOCOL:-https}://localhost:${PORT:-443}"]
+    #   interval: 30s
+    #   timeout: 10s
+    #   retries: 5
+    restart: always
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  default:
+    driver: ${NETWORK_MODE:-bridge}
+    attachable: true
+  proxy:
+    external: true
+  nas-data:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: nfsvers=4,addr=${NAS_HOST},rw,noatime,rsize=8192,wsize=8192,tcp,timeo=14
+      device: ":${NAS_PATH:-/}"
+  smb-data:
+    driver: local
+    driver_opts:
+      type: "cifs"
+      device: "//${NAS_HOST}${NAS_PATH:-/}"
+      o: "username=${NAS_USERNAME},password=${NAS_PASSWORD},vers=3.0,uid=${NAS_PUID:-1000},gid=${NAS_PGID:-1000}"
+#
+# volumes:
+#   data: {}
+#
+# configs:
+#   xx_config:
+#     file: $PWD/config/...
+#
+# secrets:
+#   # echo "This is an external secret" | docker secret create my_external_secret -
+#   my_external_secret:
+#     external: true
+#   my_file_secret:
+#     file: config/secrets/my_file_secret.txt

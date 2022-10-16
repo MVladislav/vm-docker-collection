@@ -1,0 +1,118 @@
+version: "3.8"
+
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  papermerge:
+    image: linuxserver/papermerge:${VERSION:-latest}
+    env_file: .env
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65535
+        hard: 65535
+      fsize: -1
+      as: -1
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        max_replicas_per_node: 1
+        constraints:
+          - "node.role==${NODE_ROLE:-manager}"
+          - node.platform.os == linux
+      restart_policy:
+        condition: on-failure
+      resources:
+        limits:
+          memory: 1g
+      labels:
+        - traefik.enable=true
+        - traefik.docker.lbswarm=${LB_SWARM:-true}
+        - traefik.docker.network=proxy
+        - traefik.http.routers.papermerge.entrypoints=https
+        - traefik.http.routers.papermerge.rule=Host(`${DOMAIN?domain variable not set}`)
+        - traefik.http.routers.papermerge.tls=true
+        - traefik.http.routers.papermerge.service=papermerge
+        - traefik.http.services.papermerge.loadbalancer.server.scheme=${PROTOCOL:-http}
+        - traefik.http.services.papermerge.loadbalancer.server.port=${PORT:-8000}
+        - traefik.http.routers.papermerge.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    environment:
+      DOCKER_MODS: linuxserver/mods:papermerge-multilangocr
+      OCRLANG: deu,eng
+
+      PUID: ${PUID:-1000}
+      PGID: ${PGID:-1000}
+      TZ: ${TZ:-Europe/Berlin}
+    configs:
+      - source: paper_config
+        target: /config/papermerge.conf.py
+        mode: 0644
+        uid: ${PUID:-1000}
+        gid: ${PUID:-1000}
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - config:/config
+      - data:/data
+    networks:
+      default: {}
+      proxy: {}
+    restart: always
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  redis:
+    image: redis:6
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65535
+        hard: 65535
+      fsize: -1
+      as: -1
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        max_replicas_per_node: 1
+        constraints:
+          - "node.role==${NODE_ROLE:-manager}"
+          - node.platform.os == linux
+      restart_policy:
+        condition: on-failure
+      resources:
+        limits:
+          memory: 1g
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - redis_data:/data
+    networks:
+      default: {}
+    restart: always
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  default:
+    driver: ${NETWORK_MODE:-bridge}
+    attachable: true
+  proxy:
+    external: true
+
+volumes:
+  config: {}
+  data: {}
+  redis_data: {}
+
+configs:
+  paper_config:
+    file: $PWD/config/papermerge.conf.py

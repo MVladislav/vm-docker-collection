@@ -1,0 +1,104 @@
+version: "3.8"
+
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  observium:
+    hostname: observium
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+      args:
+        BUILD_DATE: ${BUILD_DATE:-2022}
+        VERSION: ${VERSION:-latest}
+    image: mvladislav/observium:${VERSION:-latest}
+    env_file: .env
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65535
+        hard: 65535
+      fsize: -1
+      as: -1
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        max_replicas_per_node: 1
+        constraints:
+          # - "node.id==${NODE_ID}"
+          - "node.role==${NODE_ROLE:-manager}"
+          - node.platform.os == linux
+      restart_policy:
+        condition: on-failure
+      labels:
+        - traefik.enable=true
+        - traefik.docker.lbswarm=${LB_SWARM:-true}
+        - traefik.docker.network=proxy
+        - traefik.http.routers.observium.entrypoints=https
+        - traefik.http.routers.observium.rule=Host(`${DOMAIN?domain variable not set}`)
+        - traefik.http.routers.observium.tls=true
+        - traefik.http.routers.observium.service=observium
+        - traefik.http.services.observium.loadbalancer.server.scheme=${PROTOCOL:-http}
+        - traefik.http.services.observium.loadbalancer.server.port=${PORT:-80}
+        - traefik.http.routers.observium.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    ports:
+      # - target: 80
+      #   published: ${PORT:-80}
+      #   protocol: tcp
+      #   mode: host
+      - target: 514
+        published: 514
+        protocol: udp
+        mode: host
+    secrets:
+      - observium_admin_pass
+      - observium_db_pass
+    environment:
+      TZ: ${TZ:-Europe/Berlin}
+
+      OBSERVIUM_ADMIN_USER: ${OBSERVIUM_ADMIN_USER:-admin}
+      OBSERVIUM_ADMIN_PASS_FILE: /run/secrets/observium_admin_pass
+      OBSERVIUM_BASE_URL: https://${DOMAIN?domain variable not set}
+
+      OBSERVIUM_DB_HOST: ${OBSERVIUM_DB_HOST:-mysql}
+      OBSERVIUM_DB_PORT: ${OBSERVIUM_DB_PORT:-3306}
+
+      OBSERVIUM_DB_NAME: ${OBSERVIUM_DB_NAME:-observium}
+      OBSERVIUM_DB_USER: ${OBSERVIUM_DB_USER:-observium }
+      OBSERVIUM_DB_PASS_FILE: /run/secrets/observium_db_pass
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - logs_observium:/opt/observium/logs
+      - logs_sys:/var/log
+      - rrd:/opt/observium/rrd
+      - html:/opt/observium/html
+    networks:
+      mysql: {}
+      proxy: {}
+    restart: always
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  mysql:
+    external: true
+  proxy:
+    external: true
+
+volumes:
+  logs_observium: {}
+  logs_sys: {}
+  rrd: {}
+  html: {}
+
+secrets:
+  observium_admin_pass:
+    file: config/secrets/observium_admin_pass.txt
+  observium_db_pass:
+    file: config/secrets/observium_db_pass.txt

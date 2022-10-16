@@ -71,14 +71,21 @@ $docker-swarm-compose <STACK_NAME>
 ## TODOs
 
 - cleanups and fixes:
-  - [ ] heimdall
-  - [ ] netbox
-  - [ ] snipe-it
-  - [ ] gopish
-  - [ ] ngrok
-  - [ ] checkmk
-  - [ ] crowdsec
-  - [ ] prometheus
+  - [ ] composer/helper/cloudflare-tunnel
+  - [ ] composer/helper/heimdall
+  - ...
+  - [ ] composer/infra/netbox
+  - [ ] composer/infra/paperless
+  - [ ] composer/infra/snipe-it
+  - ...
+  - [ ] composer/monitoring/pandorafms
+  - [ ] composer/monitoring/prometheus
+  - ...
+  - [ ] composer/sec/ngrok
+  - [ ] composer/sec/portspoof
+  - [ ] composer/sec/teleport
+  - ...
+  - [ ] composer/siem/crowdsec
 
 ---
 

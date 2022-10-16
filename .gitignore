@@ -1,7 +1,11 @@
-/*
-!.git
-!.github
-!.vscode
+*
+.env
+!.git/
+!.git/**
+!.github/
+!.github/**
+!.vscode/
+!.vscode/**
 !.gitignore
 !.gitempty
 
@@ -10,4 +14,6 @@
 !README.md
 !SECURITY.md
 
+!__template/
 !composer/
+!composer/**

@@ -10,6 +10,7 @@
   - [basic](#basic)
     - [create `.env` file following:](#create-env-file-following)
   - [label setup](#label-setup)
+  - [traefik setup](#traefik-setup)
   - [config setup](#config-setup)
   - [References](#references)
 
@@ -24,7 +25,7 @@ NODE_ID=
 NODE_ROLE=manager
 NETWORK_MODE=overlay
 
-VERSION=latest
+VERSION=v2.9.1
 
 LB_SWARM=true
 DOMAIN=traefik.home.local
@@ -33,8 +34,9 @@ PORT=8080
 # default-secured@file | protected-secured@file | admin-secured@file
 MIDDLEWARE_SECURED=admin-secured@file
 
-USERNAME=traefik
+ADMIN_USERNAME=traefik=traefik
 # $(openssl passwd -apr1 $PASSWORD) or $(openssl passwd -apr1)
+# new echo $(htpasswd -nB traefik)
 HASHED_PASSWORD=
 ```
 

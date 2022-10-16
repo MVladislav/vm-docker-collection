@@ -1,0 +1,98 @@
+version: "3.8"
+
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  focalboard:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+      args:
+        BUILD_DATE: ${BUILD_DATE:-2022}
+        VERSION: ${VERSION:-latest}
+    image: focalboard:${VERSION:-latest}
+    env_file: .env
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65535
+        hard: 65535
+      fsize: -1
+      as: -1
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        max_replicas_per_node: 1
+        constraints:
+          # - "node.id==${NODE_ID}"
+          - "node.role==${NODE_ROLE:-manager}"
+          - node.platform.os == linux
+      restart_policy:
+        condition: on-failure
+      labels:
+        - traefik.enable=true
+        - traefik.docker.lbswarm=${LB_SWARM:-true}
+        - traefik.docker.network=proxy
+        - traefik.http.routers.focalboard.entrypoints=https
+        - traefik.http.routers.focalboard.rule=Host(`${DOMAIN?domain variable not set}`)
+        - traefik.http.routers.focalboard.tls=true
+        - traefik.http.routers.focalboard.service=focalboard
+        - traefik.http.services.focalboard.loadbalancer.server.scheme=${PROTOCOL:-http}
+        - traefik.http.services.focalboard.loadbalancer.server.port=${PORT:-8000}
+        - traefik.http.routers.focalboard.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+      resources:
+        limits:
+          memory: 1g
+    mem_limit: 1g
+    ports:
+      - target: 8000
+        published: ${PORT:-8000}
+        protocol: tcp
+        mode: host
+    # secrets:
+    #   - my_external_secret
+    #   - my_file_secret
+    # environment:
+    #   MY_EXTERNAL_SECRET_FILE: /run/secrets/my_external_secret
+    #   MY_FILE_SECRET_FILE: /run/secrets/my_file_secret
+    configs:
+      - source: focalboard_config
+        target: /opt/focalboard/config.json
+        mode: 0550
+        # uid: "1000"
+        # gid: "1000"
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    networks:
+      default: {}
+      # proxy: {}
+    restart: always
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  default:
+    driver: ${NETWORK_MODE:-bridge}
+    attachable: true
+  proxy:
+    external: true
+
+volumes:
+  data: {}
+
+configs:
+  focalboard_config:
+    file: $PWD/config/config.json
+#
+# secrets:
+#   # echo "This is an external secret" | docker secret create my_external_secret -
+#   my_external_secret:
+#     external: true
+#   my_file_secret:
+#     file: config/secrets/my_file_secret.txt
