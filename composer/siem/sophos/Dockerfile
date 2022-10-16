@@ -57,7 +57,7 @@ RUN mkdir -p /var/log/sophos/{reports,state}
 RUN chown -R nonroot:nonroot /var/log/sophos
 
 # set default crontab, with access for non root user
-RUN echo '* * * * * cd /app/sophos && python3 siem.py -q >> /var/log/sophos/sophos-$(date +'%Y-%m-%d').log' > /etc/crontab
+RUN echo '* */11 * * * cd /app/sophos && python3 siem.py -q >> /var/log/sophos/sophos-$(date +'%Y-%m-%d').log' > /etc/crontab
 RUN crontab -u nonroot /etc/crontab
 
 # allow non root user start crond
