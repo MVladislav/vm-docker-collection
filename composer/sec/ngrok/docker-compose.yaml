@@ -9,8 +9,10 @@ services:
       context: .
       dockerfile: ./Dockerfile
       args:
-        BUILD_DATE: ${BUILD_DATE:-2021}
+        BUILD_DATE: ${BUILD_DATE:-2022}
         VERSION: ${VERSION:-latest}
+        VERSION_ALPINE: ${VERSION_ALPINE:-3.16.2}
+        GLIBC_VERSION: ${GLIBC_VERSION:-2.35-r0}
     image: ngrok:${VERSION:-latest}
     # env_file: .env
     stdin_open: true # docker run -i
