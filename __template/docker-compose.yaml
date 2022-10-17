@@ -16,7 +16,14 @@ services:
     privileged: true
     stdin_open: true # docker run -i
     tty: true # docker run -t
-    cap_add: ["CHOWN", "DAC_OVERRIDE", "SETGID", "SETUID"]
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - SETGID
+      - SETUID
+      - NET_ADMIN
+      - NET_RAW
+      - SYS_MODULE
     cap_drop: ["ALL"]
     security_opt:
       - no-new-privileges:true
@@ -43,6 +50,9 @@ services:
           - node.platform.os == linux
       restart_policy:
         condition: on-failure
+      resources:
+        limits:
+          memory: 1g
       labels:
         - traefik.enable=true
         - traefik.docker.lbswarm=${LB_SWARM:-true}
@@ -54,9 +64,6 @@ services:
         - traefik.http.services.<router_name>.loadbalancer.server.scheme=${PROTOCOL:-https}
         - traefik.http.services.<router_name>.loadbalancer.server.port=${PORT:-443}
         - traefik.http.routers.<router_name>.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
-      resources:
-        limits:
-          memory: 1g
     mem_limit: 1g
     # ports:
     #   - target: ...
@@ -95,6 +102,11 @@ services:
       default: {}
       proxy: {}
     # network_mode: host
+    sysctls:
+      - net.ipv4.ip_forward=1
+      - net.ipv4.conf.all.src_valid_mark=1
+      - net.ipv6.conf.all.disable_ipv6=0
+      - net.ipv6.conf.all.forwarding=1
     # healthcheck:
     #   test: ["CMD", "curl", "-f", "${PROTOCOL:-https}://localhost:${PORT:-443}"]
     #   interval: 30s
