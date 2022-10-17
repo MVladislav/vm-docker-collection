@@ -1,0 +1,409 @@
+version: "3.8"
+
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  netmaker:
+    image: gravitl/netmaker:${VERSION_NETMAKER:-v0.16.1}
+    env_file: .env
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+      - SYS_MODULE
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65535
+        hard: 65535
+      fsize: -1
+      as: -1
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        max_replicas_per_node: 1
+        constraints:
+          - "node.role==${NODE_ROLE:-manager}"
+          - node.platform.os == linux
+      restart_policy:
+        condition: on-failure
+      resources:
+        limits:
+          memory: 1g
+      labels:
+        - traefik.enable=true
+        - traefik.docker.lbswarm=${LB_SWARM:-true}
+        - traefik.docker.network=proxy
+        - traefik.http.routers.netmaker.entrypoints=https
+        - traefik.http.routers.netmaker.rule=Host(`api.${DOMAIN?domain variable not set}`)
+        - traefik.http.routers.netmaker.tls=true
+        - traefik.http.routers.netmaker.service=netmaker
+        - traefik.http.services.netmaker.loadbalancer.server.scheme=${PROTOCOL_NETMAKER:-http}
+        - traefik.http.services.netmaker.loadbalancer.server.port=${PORT_NETMAKER:-8081}
+    ports:
+      - "51821-51830:51821-51830/udp"
+    environment:
+      SERVER_NAME: "broker.${DOMAIN}"
+      SERVER_HOST: "${SERVER_PUBLIC_IP}"
+      SERVER_API_CONN_STRING: "api.${DOMAIN}:443"
+      COREDNS_ADDR: "${SERVER_PUBLIC_IP}"
+      DNS_MODE: "on"
+      SERVER_HTTP_HOST: "api.${DOMAIN}"
+      API_PORT: "8081"
+      CLIENT_MODE: "on"
+      MASTER_KEY: "${MASTER_KEY}"
+      CORS_ALLOWED_ORIGIN: "*"
+      DISPLAY_KEYS: "on"
+      DATABASE: "sqlite"
+      NODE_ID: "netmaker-server-1"
+      MQ_HOST: "mq"
+      MQ_PORT: "443"
+      MQ_SERVER_PORT: "1883"
+      HOST_NETWORK: "off"
+      VERBOSITY: "1"
+      MANAGE_IPTABLES: "on"
+      PORT_FORWARD_SERVICES: "dns"
+      MQ_ADMIN_PASSWORD: "${MQ_ADMIN_PASSWORD}"
+      TELEMETRY: "off"
+      AUTH_PROVIDER: "github"
+      CLIENT_ID: "${AUTH_PROVIDER_CLIENT_ID}"
+      CLIENT_SECRET: "${AUTH_PROVIDER_CLIENT_SECRET}"
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - dnsconfig:/root/config/dnsconfig
+      - sqldata:/root/data
+      - mosquitto_data:/etc/netmaker
+    sysctls:
+      - net.ipv4.ip_forward=1
+      - net.ipv4.conf.all.src_valid_mark=1
+      - net.ipv6.conf.all.disable_ipv6=0
+      - net.ipv6.conf.all.forwarding=1
+    networks:
+      default: {}
+      proxy: {}
+    restart: always
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  netmaker-ui:
+    image: gravitl/netmaker-ui:${VERSION_NETMAKER_UI:-v0.16.1}
+    env_file: .env
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65535
+        hard: 65535
+      fsize: -1
+      as: -1
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        max_replicas_per_node: 1
+        constraints:
+          - "node.role==${NODE_ROLE:-manager}"
+          - node.platform.os == linux
+      restart_policy:
+        condition: on-failure
+      resources:
+        limits:
+          memory: 1g
+      labels:
+        - traefik.enable=true
+        - traefik.docker.lbswarm=${LB_SWARM:-true}
+        - traefik.docker.network=proxy
+
+        - traefik.http.middlewares.netmaker-ui.headers.accessControlAllowOriginList=*.${DOMAIN}
+        - traefik.http.middlewares.netmaker-ui.headers.stsSeconds=31536000
+        - traefik.http.middlewares.netmaker-ui.headers.browserXssFilter=true
+        - traefik.http.middlewares.netmaker-ui.headers.customFrameOptionsValue=SAMEORIGIN
+        - traefik.http.middlewares.netmaker-ui.headers.customResponseHeaders.X-Robots-Tag=none
+        - traefik.http.middlewares.netmaker-ui.headers.customResponseHeaders.Server= # Remove the server name
+
+        - traefik.http.routers.netmaker-ui.entrypoints=https
+        - traefik.http.routers.netmaker-ui.rule=Host(`dashboard.${DOMAIN?domain variable not set}`)
+        - traefik.http.routers.netmaker-ui.tls=true
+        - traefik.http.routers.netmaker-ui.service=netmaker-ui
+        - traefik.http.services.netmaker-ui.loadbalancer.server.scheme=${PROTOCOL_NETMAKER_UI:-http}
+        - traefik.http.services.netmaker-ui.loadbalancer.server.port=${PORT_NETMAKER_UI:-80}
+        - traefik.http.routers.netmaker-ui.middlewares=netmaker-ui@docker
+    environment:
+      BACKEND_URL: "https://api.${DOMAIN}"
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    networks:
+      default: {}
+      proxy: {}
+    restart: always
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  coredns:
+    image: coredns/coredns:${VERSION_COREDNS:-latest}
+    env_file: .env
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65535
+        hard: 65535
+      fsize: -1
+      as: -1
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        max_replicas_per_node: 1
+        constraints:
+          - "node.role==${NODE_ROLE:-manager}"
+          - node.platform.os == linux
+      restart_policy:
+        condition: on-failure
+      resources:
+        limits:
+          memory: 1g
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - dnsconfig:/root/dnsconfig
+    command: -conf /root/dnsconfig/Corefile
+    networks:
+      default: {}
+    restart: always
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  # traefik:
+  #   image: traefik:${VERSION_traefik:-v2.6}
+  #   command:
+  #     - "--certificatesresolvers.http.acme.email=YOUR_EMAIL"
+  #     - "--certificatesresolvers.http.acme.storage=/letsencrypt/acme.json"
+  #     - "--certificatesresolvers.http.acme.tlschallenge=true"
+  #     - "--entrypoints.websecure.address=:443"
+  #     - "--entrypoints.websecure.http.tls=true"
+  #     - "--entrypoints.websecure.http.tls.certResolver=http"
+  #     - "--log.level=INFO"
+  #     - "--providers.docker=true"
+  #     - "--providers.docker.exposedByDefault=false"
+  #     - "--serverstransport.insecureskipverify=true"
+  #   volumes:
+  #     - /var/run/docker.sock:/var/run/docker.sock:ro
+  #     - traefik_certs:/letsencrypt
+  #   restart: always
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  mq:
+    image: eclipse-mosquitto:${VERSION_MQTT:-2.0.11-openssl}
+    env_file: .env
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65535
+        hard: 65535
+      fsize: -1
+      as: -1
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        max_replicas_per_node: 1
+        constraints:
+          - "node.role==${NODE_ROLE:-manager}"
+          - node.platform.os == linux
+      restart_policy:
+        condition: on-failure
+      resources:
+        limits:
+          memory: 1g
+      labels:
+        - traefik.enable=true
+        - traefik.docker.lbswarm=${LB_SWARM:-true}
+        - traefik.docker.network=proxy
+        - traefik.tcp.routers.mqtt.entrypoints=https
+        - traefik.tcp.routers.mqtt.rule=HostSNI(`broker.${DOMAIN}`)
+        # - traefik.tcp.routers.mqtt.tls.certresolver=http
+        - traefik.tcp.services.mqtt.loadbalancer.server.scheme=${PROTOCOL_MQTT:-http}
+        - traefik.tcp.services.mqtt.loadbalancer.server.port=${PORT_MQTT:-8883}
+    environment:
+      NETMAKER_SERVER_HOST: "https://api.${DOMAIN}"
+    configs:
+      - source: mqtt_mosquitto_config
+        target: /mosquitto/config/mosquitto.conf
+        mode: 0440
+      - source: mqtt_wait_config
+        target: /mosquitto/config/wait.sh
+        mode: 0740
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - mosquitto_data:/mosquitto/data
+      - mosquitto_logs:/mosquitto/log
+    command: ["/mosquitto/config/wait.sh"]
+    networks:
+      default: {}
+    restart: unless-stopped
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  # prometheus:
+  #   image: gravitl/netmaker-prometheus:${VERSION_PROMETHEUS:-latest}
+  #   ulimits:
+  #     memlock:
+  #       soft: -1
+  #       hard: -1
+  #     nofile:
+  #       soft: 65535
+  #       hard: 65535
+  #     fsize: -1
+  #     as: -1
+  #   deploy:
+  #     mode: replicated
+  #     replicas: 1
+  #     placement:
+  #       max_replicas_per_node: 1
+  #       constraints:
+  #         - "node.role==${NODE_ROLE:-manager}"
+  #         - node.platform.os == linux
+  #     restart_policy:
+  #       condition: on-failure
+  #     resources:
+  #       limits:
+  #         memory: 1g
+  #   environment:
+  #     NETMAKER_METRICS_TARGET: "netmaker-exporter"
+  #     LICENSE_KEY: "YOUR_LICENSE_KEY"
+  #   volumes:
+  #     - /etc/timezone:/etc/timezone:ro
+  #     - /etc/localtime:/etc/localtime:ro
+  #     - prometheus_data:/prometheus
+  #   networks:
+  #     default: {}
+  #   restart: always
+
+  # netmaker-exporter:
+  #   image: gravitl/netmaker-exporter:${VERSION_NETMAKER_EXPORTER:-latest}
+  #   ulimits:
+  #     memlock:
+  #       soft: -1
+  #       hard: -1
+  #     nofile:
+  #       soft: 65535
+  #       hard: 65535
+  #     fsize: -1
+  #     as: -1
+  #   deploy:
+  #     mode: replicated
+  #     replicas: 1
+  #     placement:
+  #       max_replicas_per_node: 1
+  #       constraints:
+  #         - "node.role==${NODE_ROLE:-manager}"
+  #         - node.platform.os == linux
+  #     restart_policy:
+  #       condition: on-failure
+  #     resources:
+  #       limits:
+  #         memory: 1g
+  #   environment:
+  #     MQ_HOST: "mq"
+  #     MQ_PORT: "443"
+  #     MQ_SERVER_PORT: "1883"
+  #     PROMETHEUS: "on"
+  #     VERBOSITY: "1"
+  #     API_PORT: "8085"
+  #     LICENSE_KEY: "YOUR_LICENSE_KEY"
+  #     PROMETHEUS_HOST: prometheus
+  #   volumes:
+  #     - /etc/timezone:/etc/timezone:ro
+  #     - /etc/localtime:/etc/localtime:ro
+  #   networks:
+  #     default: {}
+  #   restart: always
+
+  # grafana:
+  #   image: gravitl/netmaker-grafana:${VERSION_GRAFANA:-latest}
+  #   ulimits:
+  #     memlock:
+  #       soft: -1
+  #       hard: -1
+  #     nofile:
+  #       soft: 65535
+  #       hard: 65535
+  #     fsize: -1
+  #     as: -1
+  #   deploy:
+  #     mode: replicated
+  #     replicas: 1
+  #     placement:
+  #       max_replicas_per_node: 1
+  #       constraints:
+  #         - "node.role==${NODE_ROLE:-manager}"
+  #         - node.platform.os == linux
+  #     restart_policy:
+  #       condition: on-failure
+  #     resources:
+  #       limits:
+  #         memory: 1g
+  #     labels:
+  #       - traefik.enable=true
+  #       - traefik.docker.lbswarm=${LB_SWARM:-true}
+  #       - traefik.docker.network=proxy
+  #       - traefik.http.routers.grafana.entrypoints=https
+  #       - traefik.http.routers.grafana.rule=Host(`grafana.${DOMAIN?domain variable not set}`)
+  #       - traefik.http.routers.grafana.tls=true
+  #       - traefik.http.routers.grafana.service=grafana
+  #       - traefik.http.services.grafana.loadbalancer.server.scheme=${PROTOCOL_NETMAKER:-http}
+  #       - traefik.http.services.grafana.loadbalancer.server.port=${PORT_NETMAKER:-3000}
+  #   environment:
+  #     PROMETHEUS_HOST: "prometheus"
+  #     NETMAKER_METRICS_TARGET: "netmaker-exporter"
+  #     LICENSE_KEY: "YOUR_LICENSE_KEY"
+  #   volumes:
+  #     - /etc/timezone:/etc/timezone:ro
+  #     - /etc/localtime:/etc/localtime:ro
+  #     - grafana_data:/var/lib/grafana
+  #   networks:
+  #     default: {}
+  #     proxy: {}
+  #   restart: always
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  default:
+    driver: ${NETWORK_MODE:-bridge}
+    attachable: true
+  proxy:
+    external: true
+
+volumes:
+  traefik_certs: {}
+  sqldata: {}
+  dnsconfig: {}
+  mosquitto_data: {}
+  mosquitto_logs: {}
+  # prometheus_data: {}
+  # grafana_data: {}
+
+configs:
+  mqtt_mosquitto_config:
+    file: $PWD/config/mosquitto.conf
+  mqtt_wait_config:
+    file: $PWD/config/wait.sh
