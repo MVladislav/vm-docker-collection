@@ -16,19 +16,19 @@ ENV DEBIAN_FRONTEND noninteractive
 # ------------------------------------------------------------------------------
 
 RUN \
-  echo "**** install packages ****" && \
-  apk update; \
-  apk add --update \
+  echo "**** install packages ****" \
+  && apk update \
+  && apk add --update \
   git \
   wget \
   curl \
   gcc \
   g++ \
-  bash;
+  bash
 
 RUN \
-  echo "**** cleanup ****" && \
-  rm -rf /var/cache/apk/* ;
+  echo "**** cleanup ****" \
+  && rm -rf /var/cache/apk/*
 
 # ------------------------------------------------------------------------------
 

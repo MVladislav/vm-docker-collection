@@ -81,7 +81,7 @@ PYTHON_VERSION=3.10.8-alpine3.16
 GROUP=1000
 USER=1000
 
-VERSION=latest
+VERSION=2022-10-17
 
 # Host URL for Oauth token
 AUTH_URL = https://id.sophos.com/api/v2/oauth2/token
