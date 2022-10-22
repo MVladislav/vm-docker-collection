@@ -1,0 +1,113 @@
+version: "3.8"
+
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  nextcloud:
+    image: nextcloud:${VERSION:-apache}
+    env_file: .env
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65535
+        hard: 65535
+      fsize: -1
+      as: -1
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        max_replicas_per_node: 1
+        constraints:
+          - "node.role==${NODE_ROLE:-manager}"
+          - node.platform.os == linux
+      restart_policy:
+        condition: on-failure
+      resources:
+        limits:
+          memory: 1g
+      labels:
+        - traefik.enable=true
+        - traefik.docker.lbswarm=${LB_SWARM:-true}
+        - traefik.docker.network=proxy
+        - traefik.http.routers.nextcloud.entrypoints=https
+        - traefik.http.routers.nextcloud.rule=Host(`${DOMAIN?domain variable not set}`)
+        - traefik.http.routers.nextcloud.tls=true
+        - traefik.http.routers.nextcloud.service=nextcloud
+        - traefik.http.services.nextcloud.loadbalancer.server.scheme=${PROTOCOL:-http}
+        - traefik.http.services.nextcloud.loadbalancer.server.port=${PORT:-80}
+        - traefik.http.routers.nextcloud.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    # ports:
+    #   - target: 80
+    #     published: ${PORT:-80}
+    #     protocol: tcp
+    #     mode: host
+    secrets:
+      - nextcloud_admin_password
+      - mysql_password
+    environment:
+      NEXTCLOUD_ADMIN_USER: ${NEXTCLOUD_ADMIN_USER:-admin}
+      NEXTCLOUD_ADMIN_PASSWORD_FILE: /run/secrets/nextcloud_admin_password
+
+      MYSQL_HOST: ${MYSQL_HOST:-mysql}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-nextcloud}
+      MYSQL_USER: ${MYSQL_USER:-nextcloud}
+      MYSQL_PASSWORD_FILE: /run/secrets/mysql_password
+
+      # REDIS_HOST: redis
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - nextcloud:/var/www/html
+    networks:
+      # default: {}
+      mysql: {}
+      proxy: {}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "${PROTOCOL:-http}://localhost:${PORT:-80}"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: always
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  # redis:
+  #   image: redis:alpine
+  #   networks:
+  #     default: {}
+  #   restart: always
+
+  # cron:
+  #   image: nextcloud:apache
+  #   volumes:
+  #     - nextcloud:/var/www/html
+  #   entrypoint: /cron.sh
+  #   networks:
+  #     default: {}
+  #   restart: always
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  default:
+    driver: ${NETWORK_MODE:-bridge}
+    attachable: true
+  mysql:
+    external: true
+  proxy:
+    external: true
+
+volumes:
+  nextcloud: {}
+
+secrets:
+  nextcloud_admin_password:
+    file: config/secrets/nextcloud_admin_password.txt
+  mysql_password:
+    file: config/secrets/mysql_password.txt
