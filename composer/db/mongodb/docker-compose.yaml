@@ -52,8 +52,6 @@ services:
   ##############################################################################
   ##############################################################################
   mongo-express:
-    depends_on:
-      - mongodb
     image: mongo-express:${VERSION_EXPRESS:-latest}
     env_file: .env
     ulimits:
@@ -89,12 +87,11 @@ services:
       resources:
         limits:
           memory: 1g
-    mem_limit: 1g
-    ports:
-      - target: 8081
-        published: ${PORT:-8081}
-        protocol: tcp
-        mode: host
+    # ports:
+    #   - target: 8081
+    #     published: ${PORT:-8081}
+    #     protocol: tcp
+    #     mode: host
     secrets:
       - me_config_basicauth_password
       - mongo_initdb_root_password
