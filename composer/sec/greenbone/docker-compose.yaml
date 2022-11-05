@@ -3,12 +3,328 @@ version: "3.8"
 ################################################################################
 ################################################################################
 ################################################################################
+
+x-basic-deploy-labels:
+  &basic-deploy-labels
+  labels:
+    - traefik.enable=true
+    - traefik.docker.lbswarm=${LB_SWARM:-true}
+    - traefik.docker.network=proxy
+    - traefik.http.routers.gsa.entrypoints=https
+    - traefik.http.routers.gsa.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.gsa.tls=true
+    - traefik.http.routers.gsa.service=gsa
+    - traefik.http.services.gsa.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.gsa.loadbalancer.server.port=${PORT:-9392}
+    - traefik.http.routers.gsa.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+
+x-basic-deploy:
+  &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  restart_policy:
+    condition: on-failure
+  # resources:
+  #   limits:
+  #     memory: 1g
+
+x-basic:
+  &basic
+  env_file: .env
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 65535
+      hard: 65535
+    fsize: -1
+    as: -1
+  networks:
+    default: {}
+    proxy: {}
+  sysctls:
+    - net.ipv4.ip_forward=1
+    - net.ipv4.conf.all.src_valid_mark=1
+    - net.ipv4.conf.all.rp_filter=0
+    - net.ipv4.conf.default.rp_filter=0
+    - net.ipv4.conf.eth0.rp_filter=0
+    - net.ipv4.conf.lo.rp_filter=0
+  restart: always # always | on-failure
+
+################################################################################
+################################################################################
+################################################################################
+
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+
+  vulnerability-tests:
+    image: greenbone/vulnerability-tests:${VERSION_LATEST:-latest}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+    environment:
+      STORAGE_PATH: /var/lib/openvas/22.04/vt-data/nasl
+    volumes:
+      # - /etc/timezone:/etc/timezone:ro
+      # - /etc/localtime:/etc/localtime:ro
+      - vt_data_vol:/mnt
+
+  notus-data:
+    image: greenbone/notus-data:${VERSION_LATEST:-latest}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+    volumes:
+      # - /etc/timezone:/etc/timezone:ro
+      # - /etc/localtime:/etc/localtime:ro
+      - notus_data_vol:/mnt
+
+  scap-data:
+    image: greenbone/scap-data:${VERSION_LATEST:-latest}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+    volumes:
+      # - /etc/timezone:/etc/timezone:ro
+      # - /etc/localtime:/etc/localtime:ro
+      - scap_data_vol:/mnt
+
+  cert-bund-data:
+    image: greenbone/cert-bund-data:${VERSION_LATEST:-latest}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+    volumes:
+      # - /etc/timezone:/etc/timezone:ro
+      # - /etc/localtime:/etc/localtime:ro
+      - cert_data_vol:/mnt
+
+  dfn-cert-data:
+    image: greenbone/dfn-cert-data:${VERSION_LATEST:-latest}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+    volumes:
+      # - /etc/timezone:/etc/timezone:ro
+      # - /etc/localtime:/etc/localtime:ro
+      - cert_data_vol:/mnt
+    depends_on:
+      - cert-bund-data
+
+  data-objects:
+    image: greenbone/data-objects:${VERSION_LATEST:-latest}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+    volumes:
+      # - /etc/timezone:/etc/timezone:ro
+      # - /etc/localtime:/etc/localtime:ro
+      - data_objects_vol:/mnt
+
+  report-formats:
+    image: greenbone/report-formats:${VERSION_LATEST:-latest}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+    volumes:
+      # - /etc/timezone:/etc/timezone:ro
+      # - /etc/localtime:/etc/localtime:ro
+      - data_objects_vol:/mnt
+    depends_on:
+      - data-objects
+
+  gpg-data:
+    image: greenbone/gpg-data:${VERSION_LATEST:-latest}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+    volumes:
+      # - /etc/timezone:/etc/timezone:ro
+      # - /etc/localtime:/etc/localtime:ro
+      - gpg_data_vol:/mnt
+
+  redis-server:
+    image: greenbone/redis-server:${VERSION_LATEST:-latest}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+    restart: on-failure
+    volumes:
+      # - /etc/timezone:/etc/timezone:ro
+      # - /etc/localtime:/etc/localtime:ro
+      - redis_socket_vol:/run/redis/
+
+  pg-gvm:
+    image: greenbone/pg-gvm:${VERSION_PG_GVM:-22.4.0}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+    restart: on-failure
+    volumes:
+      # - /etc/timezone:/etc/timezone:ro
+      # - /etc/localtime:/etc/localtime:ro
+      - psql_data_vol:/var/lib/postgresql
+      - psql_socket_vol:/var/run/postgresql
+
+  gvmd:
+    image: greenbone/gvmd:${VERSION_GVMD:-22.4.0}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+    restart: on-failure
+    volumes:
+      # - /etc/timezone:/etc/timezone:ro
+      # - /etc/localtime:/etc/localtime:ro
+      - gvmd_data_vol:/var/lib/gvm
+      - scap_data_vol:/var/lib/gvm/scap-data/
+      - cert_data_vol:/var/lib/gvm/cert-data
+      - data_objects_vol:/var/lib/gvm/data-objects/gvmd
+      - vt_data_vol:/var/lib/openvas/plugins
+      - psql_data_vol:/var/lib/postgresql
+      - gvmd_socket_vol:/run/gvmd
+      - ospd_openvas_socket_vol:/run/ospd
+      - psql_socket_vol:/var/run/postgresql
+    depends_on:
+      pg-gvm:
+        condition: service_started
+      scap-data:
+        condition: service_completed_successfully
+      cert-bund-data:
+        condition: service_completed_successfully
+      dfn-cert-data:
+        condition: service_completed_successfully
+      data-objects:
+        condition: service_completed_successfully
+      report-formats:
+        condition: service_completed_successfully
+
+  gsa:
+    image: greenbone/gsa:${VERSION_GSA:-22.4.0}
+    <<: *basic
+    deploy:
+      # <<: [ *basic-deploy, *basic-deploy-labels ]
+      <<: *basic-deploy
+    restart: on-failure
+    ports:
+      - 9392:80
+    volumes:
+      # - /etc/timezone:/etc/timezone:ro
+      # - /etc/localtime:/etc/localtime:ro
+      - gvmd_socket_vol:/run/gvmd
+    depends_on:
+      - gvmd
+
+  ospd-openvas:
+    image: greenbone/ospd-openvas:${VERSION_OSPD_OPENVAS:-22.4.1}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+    restart: on-failure
+    init: true
+    hostname: ospd-openvas.local
+    cap_add:
+      - NET_ADMIN # for capturing packages in promiscuous mode
+      - NET_RAW # for raw sockets e.g. used for the boreas alive detection
+    security_opt:
+      - seccomp=unconfined
+      - apparmor=unconfined
+    command:
+      [
+        "ospd-openvas",
+        "-f",
+        "--config",
+        "/etc/gvm/ospd-openvas.conf",
+        "--mqtt-broker-address",
+        "mqtt-broker",
+        "--notus-feed-dir",
+        "/var/lib/notus/advisories",
+        "-m",
+        "666"
+      ]
+    volumes:
+      # - /etc/timezone:/etc/timezone:ro
+      # - /etc/localtime:/etc/localtime:ro
+      - gpg_data_vol:/etc/openvas/gnupg
+      - vt_data_vol:/var/lib/openvas/plugins
+      - notus_data_vol:/var/lib/notus
+      - ospd_openvas_socket_vol:/run/ospd
+      - redis_socket_vol:/run/redis/
+    depends_on:
+      redis-server:
+        condition: service_started
+      gpg-data:
+        condition: service_completed_successfully
+      vulnerability-tests:
+        condition: service_completed_successfully
+
+  mqtt-broker:
+    restart: on-failure
+    image: greenbone/mqtt-broker:${VERSION_LATEST:-latest}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+    ports:
+      - 1883:1883
+    # volumes:
+    #   - /etc/timezone:/etc/timezone:ro
+    #   - /etc/localtime:/etc/localtime:ro
+    networks:
+      default:
+        aliases:
+          - mqtt-broker
+          - broker
+
+  notus-scanner:
+    restart: on-failure
+    image: greenbone/notus-scanner:${VERSION_NOTUS_SCANNER:-22.4.1}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+    volumes:
+      # - /etc/timezone:/etc/timezone:ro
+      # - /etc/localtime:/etc/localtime:ro
+      - notus_data_vol:/var/lib/notus
+      - gpg_data_vol:/etc/openvas/gnupg
+    environment:
+      NOTUS_SCANNER_MQTT_BROKER_ADDRESS: mqtt-broker
+      NOTUS_SCANNER_PRODUCTS_DIRECTORY: /var/lib/notus/products
+    depends_on:
+      - mqtt-broker
+      - gpg-data
+      - vulnerability-tests
+
+  gvm-tools:
+    image: greenbone/gvm-tools:${VERSION_LATEST:-latest}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+    volumes:
+      # - /etc/timezone:/etc/timezone:ro
+      # - /etc/localtime:/etc/localtime:ro
+      - gvmd_socket_vol:/run/gvmd
+      - ospd_openvas_socket_vol:/run/ospd
+    depends_on:
+      - gvmd
+      - ospd-openvas
+
+################################################################################
+################################################################################
+################################################################################
 networks:
   default:
     driver: ${NETWORK_MODE:-bridge}
     attachable: true
-  # proxy:
-  #   external: true
+  proxy:
+    external: true
 
 volumes:
   gpg_data_vol:
@@ -23,550 +339,3 @@ volumes:
   gvmd_socket_vol:
   ospd_openvas_socket_vol:
   redis_socket_vol:
-
-################################################################################
-################################################################################
-################################################################################
-
-services:
-  ##############################################################################
-  ##############################################################################
-  ##############################################################################
-
-  vulnerability-tests:
-    image: greenbone/vulnerability-tests:${VERSION:-latest}
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
-      nofile:
-        soft: 65535
-        hard: 65535
-      fsize: -1
-      as: -1
-    deploy:
-      mode: replicated
-      replicas: 1
-      placement:
-        max_replicas_per_node: 1
-        constraints:
-          # - "node.id==${NODE_ID}"
-          - "node.role==${NODE_ROLE:-manager}"
-          - node.platform.os == linux
-      restart_policy:
-        condition: on-failure
-    environment:
-      STORAGE_PATH: /var/lib/openvas/22.04/vt-data/nasl
-    volumes:
-      - vt_data_vol:/mnt
-    networks:
-      default: {}
-    restart: on-failure
-
-  notus-data:
-    image: greenbone/notus-data:${VERSION:-latest}
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
-      nofile:
-        soft: 65535
-        hard: 65535
-      fsize: -1
-      as: -1
-    deploy:
-      mode: replicated
-      replicas: 1
-      placement:
-        max_replicas_per_node: 1
-        constraints:
-          # - "node.id==${NODE_ID}"
-          - "node.role==${NODE_ROLE:-manager}"
-          - node.platform.os == linux
-      restart_policy:
-        condition: on-failure
-    volumes:
-      - notus_data_vol:/mnt
-    networks:
-      default: {}
-    restart: on-failure
-
-  scap-data:
-    image: greenbone/scap-data:${VERSION:-latest}
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
-      nofile:
-        soft: 65535
-        hard: 65535
-      fsize: -1
-      as: -1
-    deploy:
-      mode: replicated
-      replicas: 1
-      placement:
-        max_replicas_per_node: 1
-        constraints:
-          # - "node.id==${NODE_ID}"
-          - "node.role==${NODE_ROLE:-manager}"
-          - node.platform.os == linux
-      restart_policy:
-        condition: on-failure
-    volumes:
-      - scap_data_vol:/mnt
-    networks:
-      default: {}
-    restart: on-failure
-
-  cert-bund-data:
-    image: greenbone/cert-bund-data:${VERSION:-latest}
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
-      nofile:
-        soft: 65535
-        hard: 65535
-      fsize: -1
-      as: -1
-    deploy:
-      mode: replicated
-      replicas: 1
-      placement:
-        max_replicas_per_node: 1
-        constraints:
-          # - "node.id==${NODE_ID}"
-          - "node.role==${NODE_ROLE:-manager}"
-          - node.platform.os == linux
-      restart_policy:
-        condition: on-failure
-    volumes:
-      - cert_data_vol:/mnt
-    networks:
-      default: {}
-    restart: on-failure
-
-  dfn-cert-data:
-    image: greenbone/dfn-cert-data:${VERSION:-latest}
-    depends_on:
-      - cert-bund-data
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
-      nofile:
-        soft: 65535
-        hard: 65535
-      fsize: -1
-      as: -1
-    deploy:
-      mode: replicated
-      replicas: 1
-      placement:
-        max_replicas_per_node: 1
-        constraints:
-          # - "node.id==${NODE_ID}"
-          - "node.role==${NODE_ROLE:-manager}"
-          - node.platform.os == linux
-      restart_policy:
-        condition: on-failure
-    volumes:
-      - cert_data_vol:/mnt
-    networks:
-      default: {}
-    restart: on-failure
-
-  data-objects:
-    image: greenbone/data-objects:${VERSION:-latest}
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
-      nofile:
-        soft: 65535
-        hard: 65535
-      fsize: -1
-      as: -1
-    deploy:
-      mode: replicated
-      replicas: 1
-      placement:
-        max_replicas_per_node: 1
-        constraints:
-          # - "node.id==${NODE_ID}"
-          - "node.role==${NODE_ROLE:-manager}"
-          - node.platform.os == linux
-      restart_policy:
-        condition: on-failure
-    volumes:
-      - data_objects_vol:/mnt
-    networks:
-      default: {}
-    restart: on-failure
-
-  report-formats:
-    image: greenbone/report-formats:${VERSION:-latest}
-    depends_on:
-      - data-objects
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
-      nofile:
-        soft: 65535
-        hard: 65535
-      fsize: -1
-      as: -1
-    deploy:
-      mode: replicated
-      replicas: 1
-      placement:
-        max_replicas_per_node: 1
-        constraints:
-          # - "node.id==${NODE_ID}"
-          - "node.role==${NODE_ROLE:-manager}"
-          - node.platform.os == linux
-      restart_policy:
-        condition: on-failure
-    volumes:
-      - data_objects_vol:/mnt
-    networks:
-      default: {}
-    restart: on-failure
-
-  gpg-data:
-    image: greenbone/gpg-data:${VERSION:-latest}
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
-      nofile:
-        soft: 65535
-        hard: 65535
-      fsize: -1
-      as: -1
-    deploy:
-      mode: replicated
-      replicas: 1
-      placement:
-        max_replicas_per_node: 1
-        constraints:
-          # - "node.id==${NODE_ID}"
-          - "node.role==${NODE_ROLE:-manager}"
-          - node.platform.os == linux
-      restart_policy:
-        condition: on-failure
-    volumes:
-      - gpg_data_vol:/mnt
-    networks:
-      default: {}
-    restart: on-failure
-
-  redis-server:
-    image: greenbone/redis-server:${VERSION:-latest}
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
-      nofile:
-        soft: 65535
-        hard: 65535
-      fsize: -1
-      as: -1
-    deploy:
-      mode: replicated
-      replicas: 1
-      placement:
-        max_replicas_per_node: 1
-        constraints:
-          # - "node.id==${NODE_ID}"
-          - "node.role==${NODE_ROLE:-manager}"
-          - node.platform.os == linux
-      restart_policy:
-        condition: on-failure
-    volumes:
-      - redis_socket_vol:/run/redis/
-    networks:
-      default: {}
-    restart: on-failure
-
-  pg-gvm:
-    image: greenbone/pg-gvm:${VERSION:-stable}
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
-      nofile:
-        soft: 65535
-        hard: 65535
-      fsize: -1
-      as: -1
-    deploy:
-      mode: replicated
-      replicas: 1
-      placement:
-        max_replicas_per_node: 1
-        constraints:
-          # - "node.id==${NODE_ID}"
-          - "node.role==${NODE_ROLE:-manager}"
-          - node.platform.os == linux
-      restart_policy:
-        condition: on-failure
-    volumes:
-      - psql_data_vol:/var/lib/postgresql
-      - psql_socket_vol:/var/run/postgresql
-    networks:
-      default: {}
-    restart: on-failure
-
-  gvmd:
-    image: greenbone/gvmd:${VERSION:-stable}
-    depends_on:
-      pg-gvm:
-        condition: service_started
-      scap-data:
-        condition: service_completed_successfully
-      cert-bund-data:
-        condition: service_completed_successfully
-      dfn-cert-data:
-        condition: service_completed_successfully
-      data-objects:
-        condition: service_completed_successfully
-      report-formats:
-        condition: service_completed_successfully
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
-      nofile:
-        soft: 65535
-        hard: 65535
-      fsize: -1
-      as: -1
-    deploy:
-      mode: replicated
-      replicas: 1
-      placement:
-        max_replicas_per_node: 1
-        constraints:
-          # - "node.id==${NODE_ID}"
-          - "node.role==${NODE_ROLE:-manager}"
-          - node.platform.os == linux
-      restart_policy:
-        condition: on-failure
-    volumes:
-      - gvmd_data_vol:/var/lib/gvm
-      - scap_data_vol:/var/lib/gvm/scap-data/
-      - cert_data_vol:/var/lib/gvm/cert-data
-      - data_objects_vol:/var/lib/gvm/data-objects/gvmd
-      - vt_data_vol:/var/lib/openvas/plugins
-      - psql_data_vol:/var/lib/postgresql
-      - gvmd_socket_vol:/run/gvmd
-      - ospd_openvas_socket_vol:/run/ospd
-      - psql_socket_vol:/var/run/postgresql
-    networks:
-      default: {}
-    restart: on-failure
-
-  gsa:
-    image: greenbone/gsa:${VERSION:-stable}
-    depends_on:
-      - gvmd
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
-      nofile:
-        soft: 65535
-        hard: 65535
-      fsize: -1
-      as: -1
-    deploy:
-      mode: replicated
-      replicas: 1
-      placement:
-        max_replicas_per_node: 1
-        constraints:
-          # - "node.id==${NODE_ID}"
-          - "node.role==${NODE_ROLE:-manager}"
-          - node.platform.os == linux
-      restart_policy:
-        condition: on-failure
-      # labels:
-      #   - traefik.enable=true
-      #   - traefik.docker.lbswarm=${LB_SWARM:-true}
-      #   - traefik.docker.network=proxy
-      #   - traefik.http.routers.gsa.entrypoints=https
-      #   - traefik.http.routers.gsa.rule=Host(`${DOMAIN?domain variable not set}`)
-      #   - traefik.http.routers.gsa.tls=true
-      #   - traefik.http.routers.gsa.service=gsa
-      #   - traefik.http.services.gsa.loadbalancer.server.scheme=${PROTOCOL:-http}
-      #   - traefik.http.services.gsa.loadbalancer.server.port=${PORT:-9392}
-      #   - traefik.http.routers.gsa.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
-    ports:
-      - 9392:80
-    volumes:
-      - gvmd_socket_vol:/run/gvmd
-    networks:
-      default: {}
-      # proxy: {}
-    restart: on-failure
-
-  ospd-openvas:
-    image: greenbone/ospd-openvas:${VERSION:-stable}
-    depends_on:
-      redis-server:
-        condition: service_started
-      gpg-data:
-        condition: service_completed_successfully
-      vulnerability-tests:
-        condition: service_completed_successfully
-    cap_add:
-      - NET_ADMIN # for capturing packages in promiscuous mode
-      - NET_RAW # for raw sockets e.g. used for the boreas alive detection
-    security_opt:
-      - seccomp=unconfined
-      - apparmor=unconfined
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
-      nofile:
-        soft: 65535
-        hard: 65535
-      fsize: -1
-      as: -1
-    deploy:
-      mode: replicated
-      replicas: 1
-      placement:
-        max_replicas_per_node: 1
-        constraints:
-          # - "node.id==${NODE_ID}"
-          - "node.role==${NODE_ROLE:-manager}"
-          - node.platform.os == linux
-      restart_policy:
-        condition: on-failure
-    volumes:
-      - gpg_data_vol:/etc/openvas/gnupg
-      - vt_data_vol:/var/lib/openvas/plugins
-      - notus_data_vol:/var/lib/notus
-      - ospd_openvas_socket_vol:/run/ospd
-      - redis_socket_vol:/run/redis/
-    command:
-      [
-        "ospd-openvas",
-        "-f",
-        "--config",
-        "/etc/gvm/ospd-openvas.conf",
-        "--mqtt-broker-address",
-        "mqtt-broker",
-        "--notus-feed-dir",
-        "/var/lib/notus/advisories",
-        "-m",
-        "666",
-      ]
-    networks:
-      default: {}
-    restart: on-failure
-
-  mqtt-broker:
-    image: greenbone/mqtt-broker:${VERSION:-latest}
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
-      nofile:
-        soft: 65535
-        hard: 65535
-      fsize: -1
-      as: -1
-    deploy:
-      mode: replicated
-      replicas: 1
-      placement:
-        max_replicas_per_node: 1
-        constraints:
-          # - "node.id==${NODE_ID}"
-          - "node.role==${NODE_ROLE:-manager}"
-          - node.platform.os == linux
-      restart_policy:
-        condition: on-failure
-    ports:
-      - 1883:1883
-    networks:
-      default:
-        aliases:
-          - mqtt-broker
-          - broker
-      # proxy: {}
-    restart: on-failure
-
-  notus-scanner:
-    image: greenbone/notus-scanner:${VERSION:-stable}
-    depends_on:
-      - mqtt-broker
-      - gpg-data
-      - vulnerability-tests
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
-      nofile:
-        soft: 65535
-        hard: 65535
-      fsize: -1
-      as: -1
-    deploy:
-      mode: replicated
-      replicas: 1
-      placement:
-        max_replicas_per_node: 1
-        constraints:
-          # - "node.id==${NODE_ID}"
-          - "node.role==${NODE_ROLE:-manager}"
-          - node.platform.os == linux
-      restart_policy:
-        condition: on-failure
-    volumes:
-      - notus_data_vol:/var/lib/notus
-      - gpg_data_vol:/etc/openvas/gnupg
-    environment:
-      NOTUS_SCANNER_MQTT_BROKER_ADDRESS: mqtt-broker
-      NOTUS_SCANNER_PRODUCTS_DIRECTORY: /var/lib/notus/products
-    networks:
-      default: {}
-    restart: on-failure
-
-  gvm-tools:
-    image: greenbone/gvm-tools:${VERSION:-latest}
-    depends_on:
-      - gvmd
-      - ospd-openvas
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
-      nofile:
-        soft: 65535
-        hard: 65535
-      fsize: -1
-      as: -1
-    deploy:
-      mode: replicated
-      replicas: 1
-      placement:
-        max_replicas_per_node: 1
-        constraints:
-          # - "node.id==${NODE_ID}"
-          - "node.role==${NODE_ROLE:-manager}"
-          - node.platform.os == linux
-      restart_policy:
-        condition: on-failure
-    volumes:
-      - gvmd_socket_vol:/run/gvmd
-      - ospd_openvas_socket_vol:/run/ospd
-    networks:
-      default: {}
-    restart: on-failure

@@ -4,7 +4,6 @@
 
 !.dockerignore
 !docker-*
-!Dockerfile
 
 !CHANGELOG.md
 !LICENCE
