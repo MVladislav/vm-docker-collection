@@ -1,10 +1,5 @@
-ARG PHP_VERSION=7.4
-
-FROM ubuntu:18.04
-
-FROM php:${PHP_VERSION}-apache-stretch
-FROM php:${PHP_VERSION}-fpm-alpine
-FROM node:lts-alpine as frontend
+ARG VERSION_ALPINE=3.16.2
+FROM alpine:${VERSION_ALPINE}
 
 # ------------------------------------------------------------------------------
 
@@ -21,57 +16,9 @@ ENV PHP_EXTRA_CONFIGURE_ARGS --enable-fpm --with-fpm-user=www-data --with-fpm-gr
 
 # ------------------------------------------------------------------------------
 
-USER 1000:1000
-
-RUN apt-get -y update
-
-# ------------------------------------------------------------------------------
-ARG PHP_VERSION=7.4
-FROM php:${PHP_VERSION}-fpm-alpine
-
-# FROM ghcr.io/linuxserver/baseimage-ubuntu:bionic
-# FROM ghcr.io/linuxserver/baseimage-ubuntu:arm64v8-bionic
-# FROM ubuntu:latest
-
-# ------------------------------------------------------------------------------
-
-# set version label
-ARG BUILD_DATE
-ARG VERSION
-LABEL build_version="MVladislav version:- ${VERSION} Build-date:- ${BUILD_DATE}"
-LABEL maintainer="MVladislav"
-
-# ------------------------------------------------------------------------------
-
-ENV DEBIAN_FRONTEND noninteractive
-ENV PHP_EXTRA_CONFIGURE_ARGS --enable-fpm --with-fpm-user=www-data --with-fpm-group=www-data
-
-# ------------------------------------------------------------------------------
-
+RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections
 RUN \
-  echo "**** install packages ****" && \
-  apt-get update && \
-  apt-get install -y --no-install-recommends \
-  git \
-  wget \
-  curl \
-  ca-certificates \
-  make \
-  build-essential
-
-
-RUN \
-  echo "**** cleanup ****" && \
-  apt-get clean && \
-  rm -rf \
-  /tmp/* \
-  /var/lib/apt/lists/* \
-  /var/tmp/*
-
-# ------------------------------------------------------------------------------
-
-RUN \
-  echo "**** install packages ****" && \
+  echo "**** install MAIN packages ****" \
   apk update; \
   apk add --update \
   git \
@@ -81,7 +28,30 @@ RUN \
 
 
 RUN \
-  echo "**** cleanup ****" && \
-  rm -rf /var/cache/apk/* ;
+  echo "**** cleanup ****" \
+  && rm -rf \
+  /var/cache/apk/*
+
 
 # ------------------------------------------------------------------------------
+
+# ADD OTHER CODES HERE
+
+# ------------------------------------------------------------------------------
+
+USER 1000:1000
+
+# ------------------------------------------------------------------------------
+
+# configure working directory
+WORKDIR /app
+# expose tcp port
+EXPOSE 80/tcp
+# set volumes
+VOLUME ["/app", "/var/log"]
+
+# configure entry point
+COPY --chmod=750 config/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+COPY config/supervisord.conf /etc/supervisord.conf
+ENTRYPOINT [ "/usr/local/bin/docker-entrypoint.sh" ]
+CMD ["/bin/bash","-c","/usr/bin/supervisord -c /etc/supervisord.conf --nodaemon"]
