@@ -10,6 +10,7 @@
   - [basic](#basic)
     - [create `.env` file following:](#create-env-file-following)
   - [info](#info)
+  - [Errors](#errors)
   - [References](#references)
 
 ---
@@ -31,8 +32,8 @@ VERSION_LATEST=latest
 VERSION_PG_GVM=22.4.0
 VERSION_GVMD=22.4.0
 VERSION_GSA=22.4.0
-VERSION_OSPD_OPENVAS=22.4.1
-VERSION_NOTUS_SCANNER=22.4.1
+VERSION_OSPD_OPENVAS=22.4.0
+VERSION_NOTUS_SCANNER=22.4.0
 
 LB_SWARM=true
 DOMAIN=greenbone.home.local
@@ -54,6 +55,12 @@ change password:
 ```sh
 $docker-compose exec -u gvmd gvmd gvmd --user=admin --new-password=<PASSWORD>
 ```
+
+---
+
+## Errors
+
+un-check **save to assets** in **scan config**.
 
 ---
 

@@ -10,13 +10,13 @@ x-basic-deploy-labels:
     - traefik.enable=true
     - traefik.docker.lbswarm=${LB_SWARM:-true}
     - traefik.docker.network=proxy
-    - traefik.http.routers.gsa.entrypoints=https
-    - traefik.http.routers.gsa.rule=Host(`${DOMAIN?domain variable not set}`)
-    - traefik.http.routers.gsa.tls=true
-    - traefik.http.routers.gsa.service=gsa
-    - traefik.http.services.gsa.loadbalancer.server.scheme=${PROTOCOL:-http}
-    - traefik.http.services.gsa.loadbalancer.server.port=${PORT:-9392}
-    - traefik.http.routers.gsa.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.openvas.entrypoints=https
+    - traefik.http.routers.openvas.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.openvas.tls=true
+    - traefik.http.routers.openvas.service=openvas
+    - traefik.http.services.openvas.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.openvas.loadbalancer.server.port=${PORT:-9392}
+    - traefik.http.routers.openvas.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
 
 x-basic-deploy:
   &basic-deploy
@@ -29,9 +29,6 @@ x-basic-deploy:
       - node.platform.os == linux
   restart_policy:
     condition: on-failure
-  # resources:
-  #   limits:
-  #     memory: 1g
 
 x-basic:
   &basic
@@ -45,21 +42,21 @@ x-basic:
       hard: 65535
     fsize: -1
     as: -1
-  networks:
-    default: {}
-    proxy: {}
-  sysctls:
-    - net.ipv4.ip_forward=1
-    - net.ipv4.conf.all.src_valid_mark=1
-    - net.ipv4.conf.all.rp_filter=0
-    - net.ipv4.conf.default.rp_filter=0
-    - net.ipv4.conf.eth0.rp_filter=0
-    - net.ipv4.conf.lo.rp_filter=0
-  restart: always # always | on-failure
+    # networks:
+    #   default: {}
+    # proxy: {}
+    # sysctls:
+    #   - net.ipv4.ip_forward=1
+    #   - net.ipv4.conf.all.src_valid_mark=1
+    #   - net.ipv4.conf.all.rp_filter=0
+    #   - net.ipv4.conf.default.rp_filter=0
+    #   - net.ipv4.conf.eth0.rp_filter=0
+    #   - net.ipv4.conf.lo.rp_filter=0
+    # restart: on-failure # always | on-failure
 
-################################################################################
-################################################################################
-################################################################################
+    ################################################################################
+    ################################################################################
+    ################################################################################
 
 services:
   ##############################################################################
@@ -68,122 +65,100 @@ services:
 
   vulnerability-tests:
     image: greenbone/vulnerability-tests:${VERSION_LATEST:-latest}
-    <<: *basic
-    deploy:
-      <<: *basic-deploy
+    # <<: *basic
+    # deploy:
+    # <<: *basic-deploy
     environment:
       STORAGE_PATH: /var/lib/openvas/22.04/vt-data/nasl
     volumes:
-      # - /etc/timezone:/etc/timezone:ro
-      # - /etc/localtime:/etc/localtime:ro
       - vt_data_vol:/mnt
 
   notus-data:
     image: greenbone/notus-data:${VERSION_LATEST:-latest}
-    <<: *basic
-    deploy:
-      <<: *basic-deploy
+    # <<: *basic
+    # deploy:
+    # <<: *basic-deploy
     volumes:
-      # - /etc/timezone:/etc/timezone:ro
-      # - /etc/localtime:/etc/localtime:ro
       - notus_data_vol:/mnt
 
   scap-data:
     image: greenbone/scap-data:${VERSION_LATEST:-latest}
-    <<: *basic
-    deploy:
-      <<: *basic-deploy
+    # <<: *basic
+    # deploy:
+    # <<: *basic-deploy
     volumes:
-      # - /etc/timezone:/etc/timezone:ro
-      # - /etc/localtime:/etc/localtime:ro
       - scap_data_vol:/mnt
 
   cert-bund-data:
     image: greenbone/cert-bund-data:${VERSION_LATEST:-latest}
-    <<: *basic
-    deploy:
-      <<: *basic-deploy
+    # <<: *basic
+    # deploy:
+    # <<: *basic-deploy
     volumes:
-      # - /etc/timezone:/etc/timezone:ro
-      # - /etc/localtime:/etc/localtime:ro
       - cert_data_vol:/mnt
 
   dfn-cert-data:
     image: greenbone/dfn-cert-data:${VERSION_LATEST:-latest}
-    <<: *basic
-    deploy:
-      <<: *basic-deploy
+    # <<: *basic
+    # deploy:
+    # <<: *basic-deploy
     volumes:
-      # - /etc/timezone:/etc/timezone:ro
-      # - /etc/localtime:/etc/localtime:ro
       - cert_data_vol:/mnt
     depends_on:
       - cert-bund-data
 
   data-objects:
     image: greenbone/data-objects:${VERSION_LATEST:-latest}
-    <<: *basic
-    deploy:
-      <<: *basic-deploy
+    # <<: *basic
+    # deploy:
+    # <<: *basic-deploy
     volumes:
-      # - /etc/timezone:/etc/timezone:ro
-      # - /etc/localtime:/etc/localtime:ro
       - data_objects_vol:/mnt
 
   report-formats:
     image: greenbone/report-formats:${VERSION_LATEST:-latest}
-    <<: *basic
-    deploy:
-      <<: *basic-deploy
+    # <<: *basic
+    # deploy:
+    # <<: *basic-deploy
     volumes:
-      # - /etc/timezone:/etc/timezone:ro
-      # - /etc/localtime:/etc/localtime:ro
       - data_objects_vol:/mnt
     depends_on:
       - data-objects
 
   gpg-data:
     image: greenbone/gpg-data:${VERSION_LATEST:-latest}
-    <<: *basic
-    deploy:
-      <<: *basic-deploy
+    # <<: *basic
+    # deploy:
+    # <<: *basic-deploy
     volumes:
-      # - /etc/timezone:/etc/timezone:ro
-      # - /etc/localtime:/etc/localtime:ro
       - gpg_data_vol:/mnt
 
   redis-server:
     image: greenbone/redis-server:${VERSION_LATEST:-latest}
-    <<: *basic
-    deploy:
-      <<: *basic-deploy
+    # <<: *basic
+    # deploy:
+    # <<: *basic-deploy
     restart: on-failure
     volumes:
-      # - /etc/timezone:/etc/timezone:ro
-      # - /etc/localtime:/etc/localtime:ro
       - redis_socket_vol:/run/redis/
 
   pg-gvm:
-    image: greenbone/pg-gvm:${VERSION_PG_GVM:-22.4.0}
-    <<: *basic
-    deploy:
-      <<: *basic-deploy
+    image: greenbone/pg-gvm:${VERSION_PG_GVM:-stable}
+    # <<: *basic
+    # deploy:
+    # <<: *basic-deploy
     restart: on-failure
     volumes:
-      # - /etc/timezone:/etc/timezone:ro
-      # - /etc/localtime:/etc/localtime:ro
       - psql_data_vol:/var/lib/postgresql
       - psql_socket_vol:/var/run/postgresql
 
   gvmd:
-    image: greenbone/gvmd:${VERSION_GVMD:-22.4.0}
-    <<: *basic
-    deploy:
-      <<: *basic-deploy
+    image: greenbone/gvmd:${VERSION_GVMD:-stable}
+    # <<: *basic
+    # deploy:
+    # <<: *basic-deploy
     restart: on-failure
     volumes:
-      # - /etc/timezone:/etc/timezone:ro
-      # - /etc/localtime:/etc/localtime:ro
       - gvmd_data_vol:/var/lib/gvm
       - scap_data_vol:/var/lib/gvm/scap-data/
       - cert_data_vol:/var/lib/gvm/cert-data
@@ -208,27 +183,24 @@ services:
         condition: service_completed_successfully
 
   gsa:
-    image: greenbone/gsa:${VERSION_GSA:-22.4.0}
-    <<: *basic
-    deploy:
-      # <<: [ *basic-deploy, *basic-deploy-labels ]
-      <<: *basic-deploy
+    image: greenbone/gsa:${VERSION_GSA:-stable}
+    # <<: *basic
+    # deploy:
+    # <<: [ *basic-deploy, *basic-deploy-labels ]
     restart: on-failure
     ports:
       - 9392:80
     volumes:
-      # - /etc/timezone:/etc/timezone:ro
-      # - /etc/localtime:/etc/localtime:ro
       - gvmd_socket_vol:/run/gvmd
     depends_on:
       - gvmd
 
   ospd-openvas:
-    image: greenbone/ospd-openvas:${VERSION_OSPD_OPENVAS:-22.4.1}
-    <<: *basic
-    deploy:
-      <<: *basic-deploy
-    restart: on-failure
+    image: greenbone/ospd-openvas:${VERSION_OSPD_OPENVAS:-stable}
+    # <<: *basic
+    # deploy:
+    # <<: *basic-deploy
+    restart: unless-stopped
     init: true
     hostname: ospd-openvas.local
     cap_add:
@@ -251,8 +223,6 @@ services:
         "666"
       ]
     volumes:
-      # - /etc/timezone:/etc/timezone:ro
-      # - /etc/localtime:/etc/localtime:ro
       - gpg_data_vol:/etc/openvas/gnupg
       - vt_data_vol:/var/lib/openvas/plugins
       - notus_data_vol:/var/lib/notus
@@ -269,14 +239,11 @@ services:
   mqtt-broker:
     restart: on-failure
     image: greenbone/mqtt-broker:${VERSION_LATEST:-latest}
-    <<: *basic
-    deploy:
-      <<: *basic-deploy
-    ports:
-      - 1883:1883
-    # volumes:
-    #   - /etc/timezone:/etc/timezone:ro
-    #   - /etc/localtime:/etc/localtime:ro
+    # <<: *basic
+    # deploy:
+    # <<: *basic-deploy
+    # ports:
+    #   - 1883:1883
     networks:
       default:
         aliases:
@@ -286,12 +253,10 @@ services:
   notus-scanner:
     restart: on-failure
     image: greenbone/notus-scanner:${VERSION_NOTUS_SCANNER:-22.4.1}
-    <<: *basic
-    deploy:
-      <<: *basic-deploy
+    # <<: *basic
+    # deploy:
+    # <<: *basic-deploy
     volumes:
-      # - /etc/timezone:/etc/timezone:ro
-      # - /etc/localtime:/etc/localtime:ro
       - notus_data_vol:/var/lib/notus
       - gpg_data_vol:/etc/openvas/gnupg
     environment:
@@ -304,12 +269,10 @@ services:
 
   gvm-tools:
     image: greenbone/gvm-tools:${VERSION_LATEST:-latest}
-    <<: *basic
-    deploy:
-      <<: *basic-deploy
+    # <<: *basic
+    # deploy:
+    # <<: *basic-deploy
     volumes:
-      # - /etc/timezone:/etc/timezone:ro
-      # - /etc/localtime:/etc/localtime:ro
       - gvmd_socket_vol:/run/gvmd
       - ospd_openvas_socket_vol:/run/ospd
     depends_on:
@@ -323,8 +286,8 @@ networks:
   default:
     driver: ${NETWORK_MODE:-bridge}
     attachable: true
-  proxy:
-    external: true
+  # proxy:
+  #   external: true
 
 volumes:
   gpg_data_vol:
