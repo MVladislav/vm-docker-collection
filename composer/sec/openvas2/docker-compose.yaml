@@ -1,0 +1,121 @@
+---
+version: "3.8"
+
+################################################################################
+################################################################################
+################################################################################
+
+x-basic-deploy-labels:
+  &basic-deploy-labels
+  labels:
+    - traefik.enable=true
+    - traefik.docker.lbswarm=${LB_SWARM:-true}
+    - traefik.docker.network=proxy
+    - traefik.http.routers.openvas.entrypoints=https
+    - traefik.http.routers.openvas.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.openvas.tls=true
+    - traefik.http.routers.openvas.service=openvas
+    - traefik.http.services.openvas.loadbalancer.server.scheme=${PROTOCOL:-https}
+    - traefik.http.services.openvas.loadbalancer.server.port=${PORT:-9392}
+    - traefik.http.routers.openvas.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+
+x-basic-deploy:
+  &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  restart_policy:
+    condition: on-failure
+
+x-basic:
+  &basic
+  env_file: .env
+  cap_add:
+    - NET_ADMIN
+    - NET_RAW
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 65535
+      hard: 65535
+    fsize: -1
+    as: -1
+  networks:
+    default: {}
+    proxy: {}
+  tmpfs:
+    - /tmp
+  sysctls:
+    - net.ipv4.ip_forward=1
+    - net.ipv4.conf.all.src_valid_mark=1
+    - net.ipv4.conf.all.rp_filter=0
+    - net.ipv4.conf.default.rp_filter=0
+    - net.ipv4.conf.eth0.rp_filter=0
+    - net.ipv4.conf.lo.rp_filter=0
+  restart: always # always | on-failure
+
+################################################################################
+################################################################################
+################################################################################
+
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  openvas:
+    image: deineagenturug/gvm:${VERSION:-latest-full}
+    <<: *basic
+    deploy:
+      <<: [ *basic-deploy, *basic-deploy-labels ]
+    ports:
+      - target: 9392
+        published: ${PORT:-9392}
+        protocol: tcp
+        mode: host
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - postgres:/opt/database
+      - gvm:/var/lib/gvm
+      - openvas_plugins:/var/lib/openvas/plugins
+    environment:
+      USERNAME: ${USERNAME:-admin}
+      PASSWORD: ${PASSWORD:-admin}
+      RELAYHOST: ${RELAYHOST:-smtp}
+      SMTPPORT: ${SMTPPORT:-25}
+      AUTO_SYNC: ${AUTO_SYNC:-true}
+      HTTPS: ${HTTPS:-true}
+      TZ: ${TZ:-Europe/Berlin}
+      SSHD: ${SSHD:-false}
+      DB_PASSWORD: ${DB_PASSWORD:-none}
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "curl",
+          "-f",
+          "${PROTOCOL:-https}://localhost:${PORT:-9392}"
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      ################################################################################
+      ################################################################################
+      ################################################################################
+networks:
+  default:
+    driver: ${NETWORK_MODE:-bridge}
+    attachable: true
+  proxy:
+    external: true
+
+volumes:
+  postgres: {}
+  gvm: {}
+  openvas_plugins: {}
