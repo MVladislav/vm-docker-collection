@@ -39,6 +39,7 @@ x-basic:
   env_file: .env
   cap_add:
     - NET_ADMIN
+    - NET_RAW
   ulimits:
     memlock:
       soft: -1
