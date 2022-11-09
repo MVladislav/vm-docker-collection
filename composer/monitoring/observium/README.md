@@ -17,6 +17,10 @@
 
 ---
 
+**find source and docker-compose on [github](https://github.com/MVladislav/vm-docker-collection/tree/develop/composer/monitoring/observium)**
+
+---
+
 ## basic
 
 > defined to work with treafik
@@ -25,7 +29,7 @@ TODO: define source to start mysql
 
 ### create your `secrets`:
 
-> do not use hard passwort with example "$", they not work current
+> do not use hard passwort with special chars like "$", they not work current
 
 ```sh
 $echo "swordfish" > config/secrets/observium_admin_pass.txt
