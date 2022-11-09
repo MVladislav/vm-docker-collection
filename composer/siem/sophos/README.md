@@ -17,6 +17,8 @@
 
 **find source and docker-compose on [github](https://github.com/MVladislav/vm-docker-collection/tree/develop/composer/siem/sophos)**
 
+---
+
 ## basic
 
 > defined to work with treafik
