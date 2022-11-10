@@ -1,0 +1,82 @@
+---
+version: "3.8"
+
+################################################################################
+################################################################################
+################################################################################
+
+x-basic-deploy:
+  &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  restart_policy:
+    condition: on-failure
+  resources:
+    limits:
+      memory: 1g
+
+x-basic:
+  &basic
+  cap_add:
+    - NET_ADMIN
+    - NET_RAW
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 65535
+      hard: 65535
+    fsize: -1
+    as: -1
+  tmpfs:
+    - /tmp
+  restart: always # always | on-failure
+
+################################################################################
+################################################################################
+################################################################################
+
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  suricata:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+      args:
+        BUILD_DATE: ${BUILD_DATE:-2022}
+        VERSION: ${VERSION:-latest}
+    image: mvladislav/suricata:${VERSION:-7.0.0-beta1}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+    environment:
+      S_INTERFACE: ${S_INTERFACE:-eth0}
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - logs:/usr/local/var/log/suricata
+    # NOTE: when swarm
+    # networks:
+    #   - host
+    # NOTE: when not swarm
+    network_mode: host
+      ################################################################################
+      ################################################################################
+      ################################################################################
+
+# # NOTE: when swarm
+# networks:
+#   host:
+#     name: host
+#     external: true
+
+volumes:
+  logs: {}
