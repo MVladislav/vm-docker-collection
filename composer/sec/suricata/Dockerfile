@@ -182,7 +182,9 @@ ENV S_INTERFACE "${S_INTERFACE}"
 RUN echo '#!/bin/sh' > /entrypoint.sh
 RUN echo 'suricata -i "${S_INTERFACE}" -D' >> /entrypoint.sh
 RUN echo 'sleep 2' >> /entrypoint.sh
-RUN echo 'exec tail -f $( ls -Art /usr/local/var/log/suricata/fast*.log | tail -n 1 )' >> /entrypoint.sh
+# RUN echo 'exec tail -f $( ls -Art /usr/local/var/log/suricata/fast*.log | tail -n 1 )' >> /entrypoint.sh
+RUN echo "exec tail -f /usr/local/var/log/suricata/eve.json | jq --unbuffered -c 'select(.event_type==\"alert\")|[.timestamp,.in_iface,.src_ip,.src_port,.dest_ip,.dest_port,.proto,.alert.signature_id,.alert.signature,.alert.category,.alert.severity,.flow.pkts_toserver,.flow.pkts_toclient,.flow.bytes_toserver,.flow.bytes_toclient]'" >> /entrypoint.sh
+
 RUN chmod 755 /entrypoint.sh
 
 ## configure entry point

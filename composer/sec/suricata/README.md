@@ -45,3 +45,4 @@ $curl http://www.testmyids.ca/
 - <https://suricata.readthedocs.io/en/latest/install.html>
 - <https://github.com/OISF/suricata/pull/8128/commits/abeee13259a3ffa4448e0e30e2dc7551ee1bb9cf>
 - <https://suricata.readthedocs.io/en/suricata-6.0.0/command-line-options.html>
+- <https://suricata.readthedocs.io/en/suricata-6.0.0/output/eve/eve-json-examplesjq.html>
