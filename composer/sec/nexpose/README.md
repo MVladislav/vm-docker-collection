@@ -13,6 +13,10 @@
 
 ---
 
+**find source and docker-compose on [github](https://github.com/MVladislav/vm-docker-collection/tree/develop/composer/sec/nexpose)**
+
+---
+
 ## basic
 
 > defined to work with treafik
@@ -20,7 +24,6 @@
 ### create `.env` file following:
 
 ```env
-NODE_ID=
 NODE_ROLE=manager
 NETWORK_MODE=overlay
 
