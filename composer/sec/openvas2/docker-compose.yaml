@@ -15,7 +15,7 @@ x-basic-deploy-labels:
     - traefik.http.routers.openvas.rule=Host(`${DOMAIN?domain variable not set}`)
     - traefik.http.routers.openvas.tls=true
     - traefik.http.routers.openvas.service=openvas
-    - traefik.http.services.openvas.loadbalancer.server.scheme=${PROTOCOL:-https}
+    - traefik.http.services.openvas.loadbalancer.server.scheme=${PROTOCOL:-http}
     - traefik.http.services.openvas.loadbalancer.server.port=${PORT:-9392}
     - traefik.http.routers.openvas.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
 
@@ -69,7 +69,7 @@ services:
   ##############################################################################
   ##############################################################################
   openvas:
-    image: deineagenturug/gvm:${VERSION:-latest-full}
+    image: immauss/openvas:${VERSION:-22.4.03}
     <<: *basic
     deploy:
       <<: [ *basic-deploy, *basic-deploy-labels ]
@@ -78,29 +78,30 @@ services:
         published: ${PORT:-9392}
         protocol: tcp
         mode: host
+    environment:
+      GMP: ${GMP:-9390}
+      PASSWORD: ${ADMIN_PASSWORD:-admin}
+      USERNAME: ${ADMIN_USERNAME:-admin}
+      # RELAYHOST: ${RELAYHOST:-172.17.0.1}
+      SMTPPORT: ${SMTPPORT:-25}
+      REDISDBS: ${REDISDBS:-512} # number of Redis DBs to use
+      QUIET: ${QUIET:-false} # dump feed sync noise to /dev/null
+      NEWDB: ${NEWDB:-false} # only use this for creating a blank DB
+      SKIPSYNC: ${SKIPSYNC:-true} # Skips the feed sync on startup.
+      RESTORE: ${RESTORE:-false} # This probably not be used from compose... see docs.
+      DEBUG: ${DEBUG:-false} # This will cause the container to stop and not actually start gvmd
+      HTTPS: ${HTTPS:-false} # wether to use HTTPS or not
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-      - postgres:/opt/database
-      - gvm:/var/lib/gvm
-      - openvas_plugins:/var/lib/openvas/plugins
-    environment:
-      USERNAME: ${USERNAME:-admin}
-      PASSWORD: ${PASSWORD:-admin}
-      RELAYHOST: ${RELAYHOST:-smtp}
-      SMTPPORT: ${SMTPPORT:-25}
-      AUTO_SYNC: ${AUTO_SYNC:-true}
-      HTTPS: ${HTTPS:-true}
-      TZ: ${TZ:-Europe/Berlin}
-      SSHD: ${SSHD:-false}
-      DB_PASSWORD: ${DB_PASSWORD:-none}
+      - data:/data
     healthcheck:
       test:
         [
           "CMD",
           "curl",
           "-f",
-          "${PROTOCOL:-https}://localhost:${PORT:-9392}"
+          "${PROTOCOL:-http}://localhost:${PORT:-9392}"
         ]
       interval: 30s
       timeout: 10s
@@ -116,6 +117,4 @@ networks:
     external: true
 
 volumes:
-  postgres: {}
-  gvm: {}
-  openvas_plugins: {}
+  data: {}

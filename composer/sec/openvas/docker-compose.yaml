@@ -42,18 +42,20 @@ x-basic:
       hard: 65535
     fsize: -1
     as: -1
-    # networks:
-    #   default: {}
-    # proxy: {}
-    # sysctls:
-    #   - net.ipv4.ip_forward=1
-    #   - net.ipv4.conf.all.src_valid_mark=1
-    #   - net.ipv4.conf.all.rp_filter=0
-    #   - net.ipv4.conf.default.rp_filter=0
-    #   - net.ipv4.conf.eth0.rp_filter=0
-    #   - net.ipv4.conf.lo.rp_filter=0
-    # restart: on-failure # always | on-failure
-
+  networks:
+    default: {}
+    proxy: {}
+  sysctls:
+    - net.ipv4.ip_forward=1
+    - net.ipv4.conf.all.src_valid_mark=1
+    - net.ipv4.conf.all.rp_filter=0
+    - net.ipv4.conf.default.rp_filter=0
+    - net.ipv4.conf.eth0.rp_filter=0
+    - net.ipv4.conf.lo.rp_filter=0
+    - net.ipv6.conf.all.forwarding=1
+    - net.ipv6.conf.all.disable_ipv6=0
+  # always | on-failure
+  restart: on-failure
     ################################################################################
     ################################################################################
     ################################################################################
@@ -65,9 +67,9 @@ services:
 
   vulnerability-tests:
     image: greenbone/vulnerability-tests:${VERSION_LATEST:-latest}
-    # <<: *basic
-    # deploy:
-    # <<: *basic-deploy
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
     environment:
       STORAGE_PATH: /var/lib/openvas/22.04/vt-data/nasl
     volumes:
@@ -75,33 +77,33 @@ services:
 
   notus-data:
     image: greenbone/notus-data:${VERSION_LATEST:-latest}
-    # <<: *basic
-    # deploy:
-    # <<: *basic-deploy
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
     volumes:
       - notus_data_vol:/mnt
 
   scap-data:
     image: greenbone/scap-data:${VERSION_LATEST:-latest}
-    # <<: *basic
-    # deploy:
-    # <<: *basic-deploy
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
     volumes:
       - scap_data_vol:/mnt
 
   cert-bund-data:
     image: greenbone/cert-bund-data:${VERSION_LATEST:-latest}
-    # <<: *basic
-    # deploy:
-    # <<: *basic-deploy
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
     volumes:
       - cert_data_vol:/mnt
 
   dfn-cert-data:
     image: greenbone/dfn-cert-data:${VERSION_LATEST:-latest}
-    # <<: *basic
-    # deploy:
-    # <<: *basic-deploy
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
     volumes:
       - cert_data_vol:/mnt
     depends_on:
@@ -109,17 +111,17 @@ services:
 
   data-objects:
     image: greenbone/data-objects:${VERSION_LATEST:-latest}
-    # <<: *basic
-    # deploy:
-    # <<: *basic-deploy
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
     volumes:
       - data_objects_vol:/mnt
 
   report-formats:
     image: greenbone/report-formats:${VERSION_LATEST:-latest}
-    # <<: *basic
-    # deploy:
-    # <<: *basic-deploy
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
     volumes:
       - data_objects_vol:/mnt
     depends_on:
@@ -127,26 +129,26 @@ services:
 
   gpg-data:
     image: greenbone/gpg-data:${VERSION_LATEST:-latest}
-    # <<: *basic
-    # deploy:
-    # <<: *basic-deploy
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
     volumes:
       - gpg_data_vol:/mnt
 
   redis-server:
     image: greenbone/redis-server:${VERSION_LATEST:-latest}
-    # <<: *basic
-    # deploy:
-    # <<: *basic-deploy
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
     restart: on-failure
     volumes:
       - redis_socket_vol:/run/redis/
 
   pg-gvm:
     image: greenbone/pg-gvm:${VERSION_PG_GVM:-stable}
-    # <<: *basic
-    # deploy:
-    # <<: *basic-deploy
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
     restart: on-failure
     volumes:
       - psql_data_vol:/var/lib/postgresql
@@ -154,9 +156,9 @@ services:
 
   gvmd:
     image: greenbone/gvmd:${VERSION_GVMD:-stable}
-    # <<: *basic
-    # deploy:
-    # <<: *basic-deploy
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
     restart: on-failure
     volumes:
       - gvmd_data_vol:/var/lib/gvm
@@ -184,9 +186,9 @@ services:
 
   gsa:
     image: greenbone/gsa:${VERSION_GSA:-stable}
-    # <<: *basic
-    # deploy:
-    # <<: [ *basic-deploy, *basic-deploy-labels ]
+    <<: *basic
+    deploy:
+      <<: [ *basic-deploy, *basic-deploy-labels ]
     restart: on-failure
     ports:
       - 9392:80
@@ -197,12 +199,11 @@ services:
 
   ospd-openvas:
     image: greenbone/ospd-openvas:${VERSION_OSPD_OPENVAS:-stable}
-    # <<: *basic
-    # deploy:
-    # <<: *basic-deploy
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
     restart: unless-stopped
     init: true
-    hostname: ospd-openvas.local
     cap_add:
       - NET_ADMIN # for capturing packages in promiscuous mode
       - NET_RAW # for raw sockets e.g. used for the boreas alive detection
@@ -239,11 +240,11 @@ services:
   mqtt-broker:
     restart: on-failure
     image: greenbone/mqtt-broker:${VERSION_LATEST:-latest}
-    # <<: *basic
-    # deploy:
-    # <<: *basic-deploy
-    # ports:
-    #   - 1883:1883
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+    ports:
+      - 1883:1883
     networks:
       default:
         aliases:
@@ -253,9 +254,9 @@ services:
   notus-scanner:
     restart: on-failure
     image: greenbone/notus-scanner:${VERSION_NOTUS_SCANNER:-22.4.1}
-    # <<: *basic
-    # deploy:
-    # <<: *basic-deploy
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
     volumes:
       - notus_data_vol:/var/lib/notus
       - gpg_data_vol:/etc/openvas/gnupg
@@ -269,9 +270,9 @@ services:
 
   gvm-tools:
     image: greenbone/gvm-tools:${VERSION_LATEST:-latest}
-    # <<: *basic
-    # deploy:
-    # <<: *basic-deploy
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
     volumes:
       - gvmd_socket_vol:/run/gvmd
       - ospd_openvas_socket_vol:/run/ospd
@@ -286,8 +287,8 @@ networks:
   default:
     driver: ${NETWORK_MODE:-bridge}
     attachable: true
-  # proxy:
-  #   external: true
+  proxy:
+    external: true
 
 volumes:
   gpg_data_vol:
