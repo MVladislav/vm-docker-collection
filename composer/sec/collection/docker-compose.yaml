@@ -69,7 +69,8 @@ services:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - logs:/var/log
-    # command: whatweb <URL> -v -U='Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:106.0) Gecko/20100101 Firefox/106.0'
+    # command: whatweb <TARGET> -v -U='Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:106.0) Gecko/20100101 Firefox/106.0'
+    # command: nmap <TARGET> -T4 -n -Pn -v -sS -sV -O --script "nmap-vulners/,vulscan/"
     ################################################################################
     ################################################################################
     ################################################################################

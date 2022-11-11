@@ -64,6 +64,26 @@ WORKDIR /tmp
 RUN \
   echo "**** install additional packages ****"
 
+RUN \
+  echo "**** install: NMAP ****" \
+  && apt-get install nmap \
+  && cd /usr/share/nmap/scripts/ \
+  && git clone --recursive https://github.com/vulnersCom/nmap-vulners.git \
+  && git clone --recursive https://github.com/scipag/vulscan.git \
+  && cd vulscan/utilities/updater/ \
+  && chmod +x updateFiles.sh \
+  && ./updateFiles.sh
+
+# NOTE: ls vulscan/*.csv
+# vulscan/cve.csv
+# vulscan/exploitdb.csv
+# vulscan/openvas.csv
+# vulscan/osvdb.csv
+# vulscan/scipvuldb.csv
+# vulscan/securityfocus.csv
+# vulscan/securitytracker.csv
+# vulscan/xforce.csv
+
 # https://github.com/urbanadventurer/WhatWeb
 RUN \
   echo "**** install: WhatWeb ****" \
