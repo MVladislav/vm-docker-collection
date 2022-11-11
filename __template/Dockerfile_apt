@@ -85,7 +85,7 @@ RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selectio
 RUN \
   echo "**** install MAIN packages ****" \
   && apt-get install -y --no-install-recommends \
-  git \
+  git-core \
   wget \
   curl \
   supervisor \
