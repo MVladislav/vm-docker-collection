@@ -10,6 +10,7 @@
   - [basic](#basic)
     - [create your `secrets`:](#create-your-secrets)
     - [create `.env` file following:](#create-env-file-following)
+  - [Other](#other)
   - [References](#references)
 
 ---
@@ -45,6 +46,25 @@ MIDDLEWARE_SECURED=default-secured@file
 TZ=Europe/Berlin
 ME_CONFIG_BASICAUTH_USERNAME=admin
 MONGO_INITDB_ROOT_USERNAME=root
+```
+
+## Other
+
+create user with database access:
+
+```sh
+$docker exec -it "$(docker ps -q -f name=mongodb_mongodb)" mongosh --port 27017 --authenticationDatabase "admin" -u "root" -p
+```
+
+```mongodb
+use graylog
+db.createUser(
+  {
+    user: "graylog",
+    pwd:  passwordPrompt(),   // or cleartext password
+    roles: [ { role: "readWrite", db: "graylog" } ]
+  }
+)
 ```
 
 ---
