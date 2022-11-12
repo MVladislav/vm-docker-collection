@@ -69,10 +69,19 @@ services:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - logs:/var/log
-    # command: whatweb <TARGET> -v -U='Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:106.0) Gecko/20100101 Firefox/106.0'
-    # command: nmap <TARGET> -T4 -n -Pn -v -sS -sV -O --script "nmap-vulners/,vulscan/"
-    ################################################################################
-    ################################################################################
-    ################################################################################
+    command:
+      # - whatweb <TARGET> -v -U='Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:106.0) Gecko/20100101 Firefox/106.0'
+      # - nmap <TARGET> -T4 -n -Pn -v -sS -sV -O --script "nmap-vulners/,vulscan/"
+      # - echo <TARGET> | katana -jc -f qurl -d 5 -c 50 -kf robotstxt,sitemapxml -silent | dalfox pipe --skip-bav | grep "=" | egrep -iv ".(jpg|jpeg|gif|css|tif|tiff|png|ttf|woff|woff2|ico|pdf|svg|txt|js)" | unew
+      ## paths
+      # - echo <TARGET> | katana -jc -d 5 -c 50 -ef css,woff,woff2,eot,ttf,tiff,tif -kf robotstxt,sitemapxml | grep -v -e "="
+      ## fuzzing-parameters
+      # - echo <TARGET> | katana -jc -f qurl -d 5 -c 50 -kf robotstxt,sitemapxml
+      - echo <TARGET> | httpx -silent | katana -silent | dalfox pipe # --silence
+      # - subfinder -d <TARGET> -silent -all | httpx -silent | katana -d 5 silent -em js,jsp,json | grep -P "(?i).+\.js(?:on|p)?$"
+
+      ################################################################################
+      ################################################################################
+      ################################################################################
 volumes:
   logs: {}

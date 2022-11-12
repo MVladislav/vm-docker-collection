@@ -1,4 +1,4 @@
-ARG VERSION_UBUNTU=22.04
+ARG VERSION_UBUNTU=22.10
 FROM ubuntu:${VERSION_UBUNTU}
 
 # ------------------------------------------------------------------------------
@@ -12,7 +12,14 @@ LABEL maintainer="MVladislav"
 # ------------------------------------------------------------------------------
 
 ENV DEBIAN_FRONTEND noninteractive
-ENV PHP_EXTRA_CONFIGURE_ARGS --enable-fpm --with-fpm-user=www-data --with-fpm-group=www-data
+
+# ensure local python is preferred over distribution python
+ENV PATH /usr/local/bin:$PATH
+
+# set go path
+ENV PATH=$PATH:/root/go/bin
+# set cargo path
+# ENV PATH=$PATH:/root/.cargo/bin
 
 # ------------------------------------------------------------------------------
 
@@ -38,7 +45,7 @@ RUN \
 RUN \
   echo "**** install MAIN packages ****" \
   && apt-get install -y --no-install-recommends \
-  git \
+  git-core \
   wget \
   curl \
   iproute2 \
@@ -46,12 +53,34 @@ RUN \
   apt-transport-https \
   ca-certificates \
   make \
-  build-essential
+  build-essential \
+  autoconf \
+  g++ \
+  libssl3
+## nmap
+# openssl
+RUN \
+  echo "**** install COMP packages ****" \
+  && apt-get install -y --no-install-recommends \
+  python3 \
+  ruby \
+  ruby-dev \
+  golang
+# RUN \
+#   echo "**** install LIBS packages ****" \
+#   && apt-get install -y --no-install-recommends \
+#   ## nmap
+#   libtool \
+#   libssl-dev \
+#   libpcap-dev \
+#   liblua5.4-dev
 RUN \
   echo "**** install OTHER packages ****" \
   && apt-get install -y --no-install-recommends \
-  ruby \
-  ruby-dev
+  chromium-browser
+
+RUN \
+  update-ca-certificates
 
 RUN \
   echo "**** install GEM packages ****" \
@@ -64,9 +93,27 @@ WORKDIR /tmp
 RUN \
   echo "**** install additional packages ****"
 
+# ==============================================================================
+
+# https://github.com/nmap/nmap
+# RUN \
+#   echo "**** clone: NMAP ****" \
+#   && git clone --recursive https://github.com/nmap/nmap.git
 RUN \
   echo "**** install: NMAP ****" \
-  && apt-get install nmap \
+  # && cd nmap \
+  # && ./configure \
+  # --prefix=/usr \
+  # --sysconfdir=/etc \
+  # --mandir=/usr/share/man \
+  # --infodir=/usr/share/info \
+  # --without-zenmap \
+  # --without-nmap-update \
+  # --with-openssl=/usr/lib \
+  # --with-liblua=/usr/include \
+  # && make \
+  # && make install \
+  && apt-get install nmap -y \
   && cd /usr/share/nmap/scripts/ \
   && git clone --recursive https://github.com/vulnersCom/nmap-vulners.git \
   && git clone --recursive https://github.com/scipag/vulscan.git \
@@ -84,14 +131,46 @@ RUN \
 # vulscan/securitytracker.csv
 # vulscan/xforce.csv
 
+# ==============================================================================
+
 # https://github.com/urbanadventurer/WhatWeb
 RUN \
+  echo "**** clone: WhatWeb ****" \
+  && git clone --recursive https://github.com/urbanadventurer/WhatWeb.git
+RUN \
   echo "**** install: WhatWeb ****" \
-  && git clone https://github.com/urbanadventurer/WhatWeb.git \
   && cd WhatWeb/ \
   && bundle update \
   && bundle install \
   && make && make install
+
+# ==============================================================================
+
+# https://github.com/projectdiscovery/katana
+RUN \
+  echo "**** install: Katana ****" \
+  && go install github.com/projectdiscovery/katana/cmd/katana@latest
+
+# ==============================================================================
+
+# https://github.com/hahwul/dalfox
+RUN \
+  echo "**** install: DalFox ****" \
+  && go install github.com/hahwul/dalfox/v2@latest
+
+# ==============================================================================
+
+# https://github.com/projectdiscovery/httpx
+RUN \
+  echo "**** install: httpx ****" \
+  && go install github.com/projectdiscovery/httpx/cmd/httpx@latest
+
+# ==============================================================================
+
+# https://github.com/charmbracelet/gum
+RUN \
+  echo "**** install: gum ****" \
+  && go install github.com/charmbracelet/gum@latest
 
 # ------------------------------------------------------------------------------
 
@@ -124,4 +203,4 @@ RUN \
 
 # ------------------------------------------------------------------------------
 
-CMD [ "/usr/bin/bash" ]
+ENTRYPOINT [ "/bin/bash", "-c" ]
