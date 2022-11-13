@@ -49,6 +49,7 @@ RUN \
   wget \
   curl \
   iproute2 \
+  iputils-ping \
   nano \
   apt-transport-https \
   ca-certificates \
@@ -56,9 +57,10 @@ RUN \
   build-essential \
   autoconf \
   g++ \
-  libssl3
-## nmap
-# openssl
+  libssl3 \
+  bind9 \
+  bind9utils \
+  dnsutils
 RUN \
   echo "**** install COMP packages ****" \
   && apt-get install -y --no-install-recommends \
@@ -131,6 +133,13 @@ RUN \
 # vulscan/securitytracker.csv
 # vulscan/xforce.csv
 
+# https://github.com/honze-net/nmap-bootstrap-xsl
+RUN \
+  echo "**** install: NMAP to html ****" \
+  && apt-get install xsltproc -y --no-install-recommends \
+  && mkdir -p /opt/nmap && cd /opt/nmap \
+  && wget https://raw.githubusercontent.com/honze-net/nmap-bootstrap-xsl/master/nmap-bootstrap.xsl
+
 # ==============================================================================
 
 # https://github.com/urbanadventurer/WhatWeb
@@ -167,10 +176,49 @@ RUN \
 
 # ==============================================================================
 
+# https://github.com/ffuf/ffuf
+RUN \
+  echo "**** install: ffuf ****" \
+  && go install github.com/ffuf/ffuf@latest
+
+# https://github.com/danielmiessler/SecLists
+RUN \
+  echo "**** clone: SecLists ****" \
+  && cd /opt \
+  && git clone https://github.com/danielmiessler/SecLists.git
+# # https://wordlists.assetnote.io/
+# RUN \
+#   echo "**** clone: Assetnote Wordlists ****" \
+#   && mkdir -p /opt/assetnote cd /opt/assetnote \
+#   && wget -r --no-parent -R "index.html*" https://wordlists-cdn.assetnote.io/data/ -nH
+# https://github.com/fuzzdb-project/fuzzdb
+RUN \
+  echo "**** clone: fuzzdb ****" \
+  && cd /opt \
+  && git clone https://github.com/fuzzdb-project/fuzzdb.git --depth 1
+
+# ==============================================================================
+
+# https://github.com/projectdiscovery/subfinder
+RUN \
+  echo "**** install: subfinder ****" \
+  && go install github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest
+
+# ==============================================================================
+
 # https://github.com/charmbracelet/gum
 RUN \
   echo "**** install: gum ****" \
   && go install github.com/charmbracelet/gum@latest
+
+# ------------------------------------------------------------------------------
+
+RUN mkdir -p /var/log/nmap
+ARG NMAP_REPORT_ID=01
+ENV NMAP_REPORT_ID="$NMAP_REPORT_ID"
+RUN touch ~/.bash_functions
+RUN echo 'xsltproc() { /usr/bin/xsltproc -o "/var/log/nmap/report-$(date +'%Y-%m-%d')-${NMAP_REPORT_ID}.html" /opt/nmap/nmap-bootstrap.xsl "/var/log/nmap/report-$(date +'%Y-%m-%d')-${NMAP_REPORT_ID}.xml" "$@"; }' >> ~/.bash_functions
+RUN echo 'nmap-report() { /usr/bin/nmap -oA /var/log/nmap/report-$(date +'%Y-%m-%d')-${NMAP_REPORT_ID} "$@"; xsltproc; }' >> ~/.bash_functions
 
 # ------------------------------------------------------------------------------
 
@@ -199,8 +247,8 @@ RUN \
 
 # ------------------------------------------------------------------------------
 
-# ADD OTHER CODES HERE
-
-# ------------------------------------------------------------------------------
-
-ENTRYPOINT [ "/bin/bash", "-c" ]
+## configure entry point
+RUN echo '#!/bin/bash' > /entrypoint.sh
+RUN echo '/bin/bash -c "source ~/.bash_functions && $@"' >> /entrypoint.sh
+RUN chmod 755 /entrypoint.sh
+ENTRYPOINT [ "/entrypoint.sh" ]
