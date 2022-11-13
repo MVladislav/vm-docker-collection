@@ -1,47 +1,75 @@
+---
 version: "3.8"
+
+################################################################################
+################################################################################
+################################################################################
+
+x-basic-deploy:
+  &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  restart_policy:
+    condition: on-failure
+  resources:
+    limits:
+      memory: 1g
+
+x-basic:
+  &basic
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 65535
+      hard: 65535
+    fsize: -1
+    as: -1
+  # network_mode: host
+  tmpfs:
+    - /tmp
+  sysctls:
+    - net.ipv4.ip_forward=1
+    - net.ipv4.conf.all.src_valid_mark=1
+    - net.ipv4.conf.all.rp_filter=0
+    - net.ipv4.conf.default.rp_filter=0
+    - net.ipv4.conf.eth0.rp_filter=0
+    - net.ipv4.conf.lo.rp_filter=0
+    - net.ipv6.conf.all.forwarding=0
+    - net.ipv6.conf.all.disable_ipv6=1
+  restart: always # always | on-failure
+
+################################################################################
+################################################################################
+################################################################################
 
 services:
   ##############################################################################
   ##############################################################################
   ##############################################################################
-  snowflake-proxy:
+  snowflake:
     build:
       context: .
       dockerfile: ./Dockerfile
     image: thetorproject/snowflake-proxy:${VERSION:-latest}
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
-      nofile:
-        soft: 65535
-        hard: 65535
-      fsize: -1
-      as: -1
+    <<: *basic
     deploy:
-      mode: replicated
-      replicas: 1
-      placement:
-        max_replicas_per_node: 1
-        constraints:
-          - "node.role==${NODE_ROLE:-manager}"
-          - node.platform.os == linux
-      restart_policy:
-        condition: on-failure
+      <<: *basic-deploy
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-    network_mode: host
-    # command: [ "-broker" , "https://snowflake-broker.bamsoftware.com/" ]
-    # command: [ "-broker" , "https://snowflake-broker.torproject.net/" ]
-    restart: always
-
-################################################################################
-################################################################################
-################################################################################
-networks:
-  default:
-    driver: ${NETWORK_MODE:-bridge}
-    attachable: true
-  proxy:
-    external: true
+    command:
+      - -verbose
+      - -summary-interval
+      - 1m
+      # command: [ "-broker" , "https://snowflake-broker.bamsoftware.com/" ]
+      # command: [ "-broker" , "https://snowflake-broker.torproject.net/" ]
+      ################################################################################
+      ################################################################################
+      ################################################################################
