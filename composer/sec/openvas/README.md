@@ -36,7 +36,7 @@ VERSION_OSPD_OPENVAS=22.4.0
 VERSION_NOTUS_SCANNER=22.4.0
 
 LB_SWARM=true
-DOMAIN=greenbone.home.local
+DOMAIN=openvas.home.local
 PROTOCOL=http
 PORT=9392
 # default-secured@file | protected-secured@file | admin-secured@file
@@ -68,3 +68,8 @@ un-check **save to assets** in **scan config**.
 
 - <https://greenbone.github.io/docs/latest/22.4/container/index.html>
 - <https://hub.docker.com/r/greenbone/openvas-scanner>
+- info
+  - <https://greenbone.github.io/docs/latest/architecture.html>
+  - <https://www.greenbone.net/en/roadmap-lifecycle/>
+  - <https://www.greenbone.net/en/open-source-vulnerability-management/>
+  - <https://forum.greenbone.net/t/greenbone-community-edition-22-4-stable-initial-release-2022-07-25/12638>

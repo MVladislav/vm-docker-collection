@@ -42,7 +42,7 @@ SMTPPORT=25
 REDISDBS=512
 QUIET=false
 NEWDB=false
-SKIPSYNC=true
+SKIPSYNC=false
 RESTORE=false
 DEBUG=false
 HTTPS=false
@@ -58,7 +58,16 @@ default credentials:
 change password:
 
 ```sh
-$docker-compose exec openvas gvmd --user=admin --new-password=<PASSWORD>
+$docker exec $(docker container ls -f=name=openvas -q) gvmd --user=admin --new-password=<PASSWORD>
+```
+
+update feeds manual:
+
+```sh
+$docker exec $(docker container ls -f=name=openvas -q) runuser -l gvm -c "greenbone-nvt-sync"
+$docker exec $(docker container ls -f=name=openvas -q) greenbone-feed-sync --type SCAP
+$docker exec $(docker container ls -f=name=openvas -q) greenbone-feed-sync --type CERT
+$docker exec $(docker container ls -f=name=openvas -q) greenbone-feed-sync --type GVMD_DATA
 ```
 
 ---
@@ -67,3 +76,7 @@ $docker-compose exec openvas gvmd --user=admin --new-password=<PASSWORD>
 
 - <https://hub.docker.com/r/immauss/openvas>
 - <https://github.com/immauss/openvas>
+- info
+  - <https://greenbone.github.io/docs/latest/architecture.html>
+  - <https://www.greenbone.net/en/roadmap-lifecycle/>
+  - <https://www.greenbone.net/en/open-source-vulnerability-management/>
