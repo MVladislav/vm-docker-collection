@@ -16,7 +16,7 @@ RUN apt-get -y update && apt-get -y install nbtscan onesixtyone nmap
 # # RUN setcap cap_net_raw,cap_net_admin,cap_net_bind_service+eip $(which nmap)
 # RUN setcap cap_net_raw+eip $(which nmap)
 # RUN echo 'nmap="nmap --privileged"' >> ~/.bashrc
-
+# ENV NMAP_PRIVILEGED=1
 
 # Compile other tools from source
 RUN mkdir /tools || true
