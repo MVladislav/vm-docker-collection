@@ -50,6 +50,8 @@ x-basic:
   #   - NET_ADMIN
   #   - NET_RAW
   #   - SYS_MODULE
+  #   - AUDIT_CONTROL
+  #   - AUDIT_READ
   # cap_drop: ["ALL"]
   # security_opt:
   #   - no-new-privileges:true
