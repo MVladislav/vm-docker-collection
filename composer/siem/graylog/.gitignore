@@ -20,3 +20,6 @@ config/*
 !config/secrets/
 config/secrets/*
 !config/secrets/.gitempty
+!config/secrets/tls/
+config/secrets/tls/*
+!config/secrets/tls/.gitempty

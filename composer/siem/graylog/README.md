@@ -11,6 +11,7 @@
     - [first startup database container](#first-startup-database-container)
     - [create your `secrets`:](#create-your-secrets)
     - [create `.env` file following:](#create-env-file-following)
+  - [Optional: add TLS for syslog](#optional-add-tls-for-syslog)
   - [Graylog setup example](#graylog-setup-example)
     - [syslog](#syslog)
   - [References](#references)
@@ -55,7 +56,7 @@ NODE_ROLE=manager
 NETWORK_MODE=overlay
 
 VERSION_GRAYLOG=5.0.0-beta.4-1
-VERSION_OPENSEARCH=1.3.6
+VERSION_OPENSEARCH=2.4.0
 
 LB_SWARM=true
 DOMAIN=graylog.home.local
@@ -63,6 +64,11 @@ PROTOCOL=http
 PORT=9000
 # default-secured@file | protected-secured@file | admin-secured@file
 MIDDLEWARE_SECURED=default-secured@file
+
+OPENSEARCH_MEM_USE_GB=1g
+OPENSEARCH_MEM_USE_GB=1g
+
+CLUSTER_NAME=opensearch-cluster
 
 GRAYLOG_HTTP_EXTERNAL_URI=http://127.0.0.1:9000/
 GRAYLOG_TRANSPORT_EMAIL_ENABLED=true
@@ -72,6 +78,10 @@ GRAYLOG_TRANSPORT_EMAIL_USE_AUTH=true
 GRAYLOG_TRANSPORT_EMAIL_USE_TLS=true
 GRAYLOG_TRANSPORT_EMAIL_USE_SSL=false
 ```
+
+## Optional: add TLS for syslog
+
+add **pub-cert** file into folder `./config/secrets/tls`
 
 ## Graylog setup example
 

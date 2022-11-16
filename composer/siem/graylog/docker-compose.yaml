@@ -32,7 +32,7 @@ x-basic-deploy:
     condition: on-failure
   resources:
     limits:
-      memory: 1g
+      memory: 2g
 
 x-basic:
   &basic
@@ -58,6 +58,25 @@ x-basic:
     - net.ipv6.conf.all.forwarding=1
     - net.ipv6.conf.all.disable_ipv6=0
   restart: always # always | on-failure
+
+x-graylog-cluster:
+  # minimum and maximum Java heap size, recommend setting both to 50% of system RAM
+  &graylog-cluster
+  GRAYLOG_ELASTICSEARCH_HOSTS: "http://opensearch-node-1:9200,http://opensearch-node-2:9200"
+x-opensearch-cluster:
+  # minimum and maximum Java heap size, recommend setting both to 50% of system RAM
+  &opensearch-cluster
+  OPENSEARCH_JAVA_OPTS: -Xms${OPENSEARCH_MEM_USE_GB:-1g} -Xmx${OPENSEARCH_MEM_USE_GB:-1g} -Dlog4j2.formatMsgNoLookups=true
+  logger.deprecation.level: ${LOGGER_DEPRECATION_LEVEL:-warn}
+  action.auto_create_index: ${ACTION_AUTO_CREATE_INDEX:-false}
+  bootstrap.memory_lock: ${BOOTSTRAP_MEMORY_LOCK:-false} # along with the memlock settings below, disables swapping
+  plugins.security.ssl.http.enabled: ${PLUGINS_SECURITY_SSL_HTTP_ENABLED:-false}
+  plugins.security.disabled: ${PLUGINS_SECURITY_DISABLED:-true}
+
+  # discovery.type: ${DISCOVERY_TYPE:-single-node}
+  cluster.name: ${CLUSTER_NAME:-opensearch-cluster}
+  discovery.seed_hosts: opensearch-node-1,opensearch-node-2
+  cluster.initial_cluster_manager_nodes: opensearch-node-1,opensearch-node-2
 
 ################################################################################
 ################################################################################
@@ -87,6 +106,8 @@ services:
       - 12201:12201
       # GELF UDP
       - 12201:12201/udp
+      # BEATS TCP
+      - 5044:5044/udp
     secrets:
       - graylog_password_secret
       - graylog_root_password_sha2
@@ -102,39 +123,51 @@ services:
       GRAYLOG_TRANSPORT_EMAIL_USE_TLS: ${GRAYLOG_TRANSPORT_EMAIL_USE_TLS:-true}
       GRAYLOG_TRANSPORT_EMAIL_USE_SSL: ${GRAYLOG_TRANSPORT_EMAIL_USE_SSL:-false}
       GRAYLOG_MONGODB_URI__FILE: /run/secrets/graylog_mongodb_uri
-      GRAYLOG_ELASTICSEARCH_HOSTS: http://opensearch:9200/
+      <<: *graylog-cluster
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - graylog_data:/usr/share/graylog/data
       - ./config/plugins:/usr/share/graylog/plugin
       # - ./config/configs:/usr/share/graylog/data/config
+      - ./config/secrets/tls:/graylog-input-tls:ro
     entrypoint: /usr/bin/tini -- wait-for-it opensearch:9200 --  /docker-entrypoint.sh
     networks:
       default: {}
+      graylog: {}
       mongodb: {}
       proxy: {}
 
   ##############################################################################
   ##############################################################################
   ##############################################################################
-  opensearch:
-    image: opensearchproject/opensearch:${VERSION_OPENSEARCH:-1.3.6}
+  opensearch-node-1:
+    image: opensearchproject/opensearch:${VERSION_OPENSEARCH:-2.4.0}
     <<: *basic
     deploy:
       <<: *basic-deploy
     environment:
-      OPENSEARCH_JAVA_OPTS: ${OPENSEARCH_JAVA_OPTS:--Xms512m -Xmx512m -Dlog4j2.formatMsgNoLookups=true} # minimum and maximum Java heap size, recommend setting both to 50% of system RAM
-      discovery.type: ${DISCOVERY_TYPE:-single-node}
-      logger.deprecation.level: ${LOGGER_DEPRECATION_LEVEL:-warn}
-      action.auto_create_index: ${ACTION_AUTO_CREATE_INDEX:-false}
-      bootstrap.memory_lock: ${BOOTSTRAP_MEMORY_LOCK:-false} # along with the memlock settings below, disables swapping
-      plugins.security.ssl.http.enabled: ${PLUGINS_SECURITY_SSL_HTTP_ENABLED:-false}
-      plugins.security.disabled: ${PLUGINS_SECURITY_DISABLED:-true}
+      node.name: opensearch-node-1
+      <<: *opensearch-cluster
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-      - opensearch_data:/usr/share/opensearch/data
+      - opensearch_data_1:/usr/share/opensearch/data
+    networks:
+      default: {}
+
+  opensearch-node-2:
+    image: opensearchproject/opensearch:${VERSION_OPENSEARCH:-2.4.0}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+    environment:
+      node.name: opensearch-node-2
+      <<: *opensearch-cluster
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - opensearch_data_2:/usr/share/opensearch/data
     networks:
       default: {}
 
@@ -145,6 +178,10 @@ networks:
   default:
     driver: ${NETWORK_MODE:-bridge}
     attachable: true
+  graylog:
+    name: graylog
+    driver: ${NETWORK_MODE:-bridge}
+    attachable: true
   mongodb:
     external: true
   proxy:
@@ -152,7 +189,8 @@ networks:
 
 volumes:
   graylog_data: {}
-  opensearch_data: {}
+  opensearch_data_1: {}
+  opensearch_data_2: {}
 
 secrets:
   graylog_password_secret:
