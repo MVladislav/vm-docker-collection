@@ -22,7 +22,7 @@
 ```env
 NETWORK_MODE=overlay
 
-VERSION=latest
+VERSION=2.16.1
 
 LB_SWARM=true
 DOMAIN=portainer.home.local
