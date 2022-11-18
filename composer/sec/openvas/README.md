@@ -38,7 +38,7 @@ VERSION_NOTUS_SCANNER=22.4.0
 LB_SWARM=true
 DOMAIN=openvas.home.local
 PROTOCOL=http
-PORT=9392
+PORT=80
 # default-secured@file | protected-secured@file | admin-secured@file
 MIDDLEWARE_SECURED=default-secured@file
 ```

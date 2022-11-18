@@ -15,7 +15,11 @@ x-basic-deploy-labels:
     - traefik.http.routers.openvas.tls=true
     - traefik.http.routers.openvas.service=openvas
     - traefik.http.services.openvas.loadbalancer.server.scheme=${PROTOCOL:-http}
-    - traefik.http.services.openvas.loadbalancer.server.port=${PORT:-9392}
+    - traefik.http.services.openvas.loadbalancer.server.port=${PORT:-80}
+    - traefik.http.services.openvas.loadbalancer.sticky=true
+    - traefik.http.services.openvas.loadbalancer.sticky.cookie.name=stickycookie
+    - traefik.http.services.openvas.loadbalancer.sticky.cookie.secure=true
+    - traefik.http.services.openvas.loadbalancer.sticky.cookie.httpOnly=true
     - traefik.http.routers.openvas.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
 
 x-basic-deploy:
@@ -29,6 +33,9 @@ x-basic-deploy:
       - node.platform.os == linux
   restart_policy:
     condition: on-failure
+  resources:
+    limits:
+      memory: 4g
 
 x-basic:
   &basic
