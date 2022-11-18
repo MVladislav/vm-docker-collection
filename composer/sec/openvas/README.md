@@ -10,7 +10,7 @@
   - [basic](#basic)
     - [create `.env` file following:](#create-env-file-following)
   - [info](#info)
-  - [Errors](#errors)
+  - [FAQ](#faq)
   - [References](#references)
 
 ---
@@ -58,9 +58,12 @@ $docker-compose exec -u gvmd gvmd gvmd --user=admin --new-password=<PASSWORD>
 
 ---
 
-## Errors
+## FAQ
 
-un-check **save to assets** in **scan config**.
+- failure when show `0% interrupted`
+  - this was happen to me, because my host has disabled IPv6
+  - openvas needs the functionality for IPv6, also without connection
+  - else it will always fail
 
 ---
 
@@ -73,3 +76,5 @@ un-check **save to assets** in **scan config**.
   - <https://www.greenbone.net/en/roadmap-lifecycle/>
   - <https://www.greenbone.net/en/open-source-vulnerability-management/>
   - <https://forum.greenbone.net/t/greenbone-community-edition-22-4-stable-initial-release-2022-07-25/12638>
+  - <https://secinfo.greenbone.net>
+  - <https://forum.greenbone.net/t/about-greenbone-community-feed-gcf/1224>
