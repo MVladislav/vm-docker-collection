@@ -31,6 +31,8 @@ x-basic:
       hard: 65535
     fsize: -1
     as: -1
+  networks:
+    default: {}
   # network_mode: host
   tmpfs:
     - /tmp
@@ -67,9 +69,14 @@ services:
     command:
       - -verbose
       - -summary-interval
-      - 1m
-      # command: [ "-broker" , "https://snowflake-broker.bamsoftware.com/" ]
-      # command: [ "-broker" , "https://snowflake-broker.torproject.net/" ]
-      ################################################################################
-      ################################################################################
-      ################################################################################
+      - 1h
+    # command: [ "-broker" , "https://snowflake-broker.bamsoftware.com/" ]
+    # command: [ "-broker" , "https://snowflake-broker.torproject.net/" ]
+
+    ################################################################################
+    ################################################################################
+    ################################################################################
+networks:
+  default:
+    driver: ${NETWORK_MODE:-bridge}
+    attachable: true
