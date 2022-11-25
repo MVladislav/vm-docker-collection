@@ -1,0 +1,120 @@
+---
+version: "3.8"
+
+################################################################################
+################################################################################
+################################################################################
+
+x-basic-deploy-labels:
+  &basic-deploy-labels
+  labels:
+    - traefik.enable=true
+    - traefik.docker.lbswarm=${LB_SWARM:-true}
+    - traefik.docker.network=proxy
+    - traefik.http.routers.openvas.entrypoints=https
+    - traefik.http.routers.openvas.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.openvas.tls=true
+    - traefik.http.routers.openvas.service=openvas
+    - traefik.http.services.openvas.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.openvas.loadbalancer.server.port=${PORT:-9392}
+    - traefik.http.routers.openvas.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+
+x-basic-deploy:
+  &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  restart_policy:
+    condition: on-failure
+
+x-basic:
+  &basic
+  env_file: .env
+  cap_add:
+    - NET_ADMIN
+    - NET_RAW
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 65535
+      hard: 65535
+    fsize: -1
+    as: -1
+  networks:
+    default: {}
+    proxy: {}
+  tmpfs:
+    - /tmp
+  sysctls:
+    - net.ipv4.ip_forward=1
+    - net.ipv4.conf.all.src_valid_mark=1
+    - net.ipv4.conf.all.rp_filter=0
+    - net.ipv4.conf.default.rp_filter=0
+    - net.ipv4.conf.eth0.rp_filter=0
+    - net.ipv4.conf.lo.rp_filter=0
+  restart: always # always | on-failure
+
+################################################################################
+################################################################################
+################################################################################
+
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  openvas:
+    image: immauss/openvas:${VERSION:-22.4.03}
+    <<: *basic
+    deploy:
+      <<: [ *basic-deploy, *basic-deploy-labels ]
+    # ports:
+    #   - target: 9392
+    #     published: ${PORT:-9392}
+    #     protocol: tcp
+    #     mode: host
+    environment:
+      GMP: ${GMP:-9390}
+      PASSWORD: ${ADMIN_PASSWORD:-admin}
+      USERNAME: ${ADMIN_USERNAME:-admin}
+      # RELAYHOST: ${RELAYHOST:-172.17.0.1}
+      SMTPPORT: ${SMTPPORT:-25}
+      REDISDBS: ${REDISDBS:-512} # number of Redis DBs to use
+      QUIET: ${QUIET:-false} # dump feed sync noise to /dev/null
+      NEWDB: ${NEWDB:-false} # only use this for creating a blank DB
+      SKIPSYNC: ${SKIPSYNC:-false} # Skips the feed sync on startup.
+      RESTORE: ${RESTORE:-false} # This probably not be used from compose... see docs.
+      DEBUG: ${DEBUG:-false} # This will cause the container to stop and not actually start gvmd
+      HTTPS: ${HTTPS:-false} # wether to use HTTPS or not
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - data:/data
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "curl",
+          "-f",
+          "${PROTOCOL:-http}://localhost:${PORT:-9392}"
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      ################################################################################
+      ################################################################################
+      ################################################################################
+networks:
+  default:
+    driver: ${NETWORK_MODE:-bridge}
+    attachable: true
+  proxy:
+    external: true
+
+volumes:
+  data: {}

@@ -1,47 +1,103 @@
+---
 version: "3.8"
+
+################################################################################
+################################################################################
+################################################################################
+
+x-basic-deploy-labels:
+  &basic-deploy-labels
+  labels:
+    - traefik.enable=true
+    - traefik.docker.lbswarm=${LB_SWARM:-true}
+    - traefik.docker.network=proxy
+    - traefik.http.routers.graylog.entrypoints=https
+    - traefik.http.routers.graylog.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.graylog.tls=true
+    - traefik.http.routers.graylog.service=graylog
+    - traefik.http.services.graylog.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.graylog.loadbalancer.server.port=${PORT:-9000}
+    - traefik.http.routers.graylog.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+
+x-basic-deploy:
+  &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  restart_policy:
+    condition: on-failure
+  resources:
+    limits:
+      memory: 2g
+
+x-basic:
+  &basic
+  env_file: .env
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 65535
+      hard: 65535
+    fsize: -1
+    as: -1
+  tmpfs:
+    - /tmp
+  sysctls:
+    - net.ipv4.ip_forward=1
+    - net.ipv4.conf.all.src_valid_mark=1
+    - net.ipv4.conf.all.rp_filter=0
+    - net.ipv4.conf.default.rp_filter=0
+    - net.ipv4.conf.eth0.rp_filter=0
+    - net.ipv4.conf.lo.rp_filter=0
+    - net.ipv6.conf.all.forwarding=1
+    - net.ipv6.conf.all.disable_ipv6=0
+  restart: always # always | on-failure
+
+x-graylog-cluster:
+  # minimum and maximum Java heap size, recommend setting both to 50% of system RAM
+  &graylog-cluster
+  GRAYLOG_ELASTICSEARCH_HOSTS: "http://opensearch-node-1:9200,http://opensearch-node-2:9200"
+x-opensearch-cluster:
+  # minimum and maximum Java heap size, recommend setting both to 50% of system RAM
+  &opensearch-cluster
+  OPENSEARCH_JAVA_OPTS: -Xms${OPENSEARCH_MEM_USE_GB:-1g} -Xmx${OPENSEARCH_MEM_USE_GB:-1g} -Dlog4j2.formatMsgNoLookups=true
+  logger.deprecation.level: ${LOGGER_DEPRECATION_LEVEL:-warn}
+  action.auto_create_index: ${ACTION_AUTO_CREATE_INDEX:-false}
+  bootstrap.memory_lock: ${BOOTSTRAP_MEMORY_LOCK:-false} # along with the memlock settings below, disables swapping
+  plugins.security.ssl.http.enabled: ${PLUGINS_SECURITY_SSL_HTTP_ENABLED:-false}
+  plugins.security.disabled: ${PLUGINS_SECURITY_DISABLED:-true}
+
+  # discovery.type: ${DISCOVERY_TYPE:-single-node}
+  cluster.name: ${CLUSTER_NAME:-opensearch-cluster}
+  discovery.seed_hosts: opensearch-node-1,opensearch-node-2
+  cluster.initial_cluster_manager_nodes: opensearch-node-1,opensearch-node-2
+
+################################################################################
+################################################################################
+################################################################################
 
 services:
   ##############################################################################
   ##############################################################################
   ##############################################################################
-  # Graylog: https://hub.docker.com/r/graylog/graylog/
   graylog:
-    image: graylog/graylog:${VERSION:-latest}
-    env_file: .env
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
-      nofile:
-        soft: 65535
-        hard: 65535
-      fsize: -1
-      as: -1
+    # https://hub.docker.com/r/graylog/graylog
+    image: graylog/graylog:${VERSION_GRAYLOG:-5.0.0-beta.4-1}
+    <<: *basic
     deploy:
-      mode: replicated
-      replicas: 1
-      placement:
-        max_replicas_per_node: 1
-        constraints:
-          # - "node.id==${NODE_ID}"
-          - "node.role==${NODE_ROLE:-manager}"
-          - node.platform.os == linux
-      restart_policy:
-        condition: on-failure
-      labels:
-        - traefik.enable=true
-        - traefik.docker.lbswarm=${LB_SWARM:-true}
-        - traefik.docker.network=proxy
-        - traefik.http.routers.graylog.entrypoints=https
-        - traefik.http.routers.graylog.rule=Host(`${DOMAIN?domain variable not set}`)
-        - traefik.http.routers.graylog.tls=true
-        - traefik.http.routers.graylog.service=graylog
-        - traefik.http.services.graylog.loadbalancer.server.scheme=${PROTOCOL:-https}
-        - traefik.http.services.graylog.loadbalancer.server.port=${PORT:-9000}
-        - traefik.http.routers.graylog.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+      <<: [ *basic-deploy, *basic-deploy-labels ]
     ports:
       # Graylog web interface and REST API
-      # - 9000:9000
+      - target: 9000
+        published: ${PORT:-9000}
+        protocol: tcp
+        mode: host
       # Syslog TCP
       - 1514:1514
       # Syslog UDP
@@ -50,12 +106,14 @@ services:
       - 12201:12201
       # GELF UDP
       - 12201:12201/udp
+      # BEATS TCP
+      - 5044:5044/udp
     secrets:
-      # - graylog_password_secret
+      - graylog_password_secret
       - graylog_root_password_sha2
+      - graylog_mongodb_uri
     environment:
-      # GRAYLOG_PASSWORD_SECRET_FILE: /run/secrets/graylog_password_secret
-      GRAYLOG_PASSWORD_SECRET: ${GRAYLOG_PASSWORD_SECRET:-swordfishswordfish}
+      GRAYLOG_PASSWORD_SECRET__FILE: /run/secrets/graylog_password_secret
       GRAYLOG_ROOT_PASSWORD_SHA2__FILE: /run/secrets/graylog_root_password_sha2
       GRAYLOG_HTTP_EXTERNAL_URI: ${GRAYLOG_HTTP_EXTERNAL_URI:-http://127.0.0.1:9000/}
       GRAYLOG_TRANSPORT_EMAIL_ENABLED: ${GRAYLOG_TRANSPORT_EMAIL_ENABLED:-true}
@@ -64,37 +122,80 @@ services:
       GRAYLOG_TRANSPORT_EMAIL_USE_AUTH: ${GRAYLOG_TRANSPORT_EMAIL_USE_AUTH:-true}
       GRAYLOG_TRANSPORT_EMAIL_USE_TLS: ${GRAYLOG_TRANSPORT_EMAIL_USE_TLS:-true}
       GRAYLOG_TRANSPORT_EMAIL_USE_SSL: ${GRAYLOG_TRANSPORT_EMAIL_USE_SSL:-false}
+      GRAYLOG_MONGODB_URI__FILE: /run/secrets/graylog_mongodb_uri
+      <<: *graylog-cluster
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - graylog_data:/usr/share/graylog/data
       - ./config/plugins:/usr/share/graylog/plugin
       # - ./config/configs:/usr/share/graylog/data/config
-    entrypoint: /usr/bin/tini -- wait-for-it elasticsearch:9200 --  /docker-entrypoint.sh
+      - ./config/secrets/tls:/graylog-input-tls:ro
+    entrypoint: /usr/bin/tini -- wait-for-it opensearch:9200 --  /docker-entrypoint.sh
     networks:
-      elasticsearch: {}
+      default: {}
+      graylog: {}
       mongodb: {}
       proxy: {}
-    restart: always
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  opensearch-node-1:
+    image: opensearchproject/opensearch:${VERSION_OPENSEARCH:-2.4.0}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+    environment:
+      node.name: opensearch-node-1
+      <<: *opensearch-cluster
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - opensearch_data_1:/usr/share/opensearch/data
+    networks:
+      default: {}
+
+  opensearch-node-2:
+    image: opensearchproject/opensearch:${VERSION_OPENSEARCH:-2.4.0}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+    environment:
+      node.name: opensearch-node-2
+      <<: *opensearch-cluster
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - opensearch_data_2:/usr/share/opensearch/data
+    networks:
+      default: {}
 
 ################################################################################
 ################################################################################
 ################################################################################
 networks:
-  elasticsearch:
-    external: true
+  default:
+    driver: ${NETWORK_MODE:-bridge}
+    attachable: true
+  graylog:
+    name: graylog
+    driver: ${NETWORK_MODE:-bridge}
+    attachable: true
   mongodb:
     external: true
   proxy:
     external: true
 
 volumes:
-  mongo_data: {}
-  es_data: {}
   graylog_data: {}
+  opensearch_data_1: {}
+  opensearch_data_2: {}
 
 secrets:
-  # graylog_password_secret:
-  #   file: config/secrets/graylog_password_secret.txt
+  graylog_password_secret:
+    file: config/secrets/graylog_password_secret.txt
   graylog_root_password_sha2:
     file: config/secrets/graylog_root_password_sha2.txt
+  graylog_mongodb_uri:
+    file: config/secrets/graylog_mongodb_uri.txt

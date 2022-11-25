@@ -1,5 +1,6 @@
 # original from: https://github.com/somsakc/docker-observium
-FROM ubuntu:22.04
+ARG VERSION_UBUNTU=22.10
+FROM ubuntu:${VERSION_UBUNTU}
 
 # ------------------------------------------------------------------------------
 

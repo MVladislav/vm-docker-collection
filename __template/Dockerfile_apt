@@ -1,7 +1,7 @@
 ARG VERSION_PHP=7.4
-ARG VERSION_UBUNTU=22.04
+ARG VERSION_UBUNTU=22.10
 
-FROM ubuntu:${VERSION_PHP}
+FROM ubuntu:${VERSION_UBUNTU}
 # FROM ghcr.io/linuxserver/baseimage-ubuntu:bionic
 # FROM ghcr.io/linuxserver/baseimage-ubuntu:arm64v8-bionic
 # FROM ubuntu:latest
@@ -24,6 +24,9 @@ LABEL maintainer="MVladislav"
 ENV DEBIAN_FRONTEND noninteractive
 ENV PHP_EXTRA_CONFIGURE_ARGS --enable-fpm --with-fpm-user=www-data --with-fpm-group=www-data
 
+# ensure local python is preferred over distribution python
+ENV PATH /usr/local/bin:$PATH
+
 # ------------------------------------------------------------------------------
 
 ## Fix some issues with APT packages.
@@ -38,7 +41,17 @@ RUN ln -sf /bin/true /sbin/initctl
 RUN dpkg-divert --local --rename --add /usr/bin/ischroot
 RUN ln -sf /bin/true /usr/bin/ischroot
 
+# http://bugs.python.org/issue19846
+# > At the moment, setting "LANG=C" on a Linux system *fundamentally breaks Python 3*, and that's not OK.
+ENV LANG C.UTF-8
+
 # ------------------------------------------------------------------------------
+
+
+RUN \
+  echo "**** UPDATE - UPGRADE ****" \
+  && apt-get update -q \
+  && apt-get upgrade -y -q
 
 # LANG SETUP
 ENV LANG en_US.UTF-8
@@ -46,8 +59,6 @@ ENV LANGUAGE en_US.UTF-8
 ENV LC_ALL C.UTF-8
 RUN \
   echo "**** install LANG packages ****" \
-  && apt-get update -q \
-  && apt-get upgrade -y -q \
   && apt-get install -y --no-install-recommends \
   locales \
   apt-utils \
@@ -74,7 +85,7 @@ RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selectio
 RUN \
   echo "**** install MAIN packages ****" \
   && apt-get install -y --no-install-recommends \
-  git \
+  git-core \
   wget \
   curl \
   supervisor \

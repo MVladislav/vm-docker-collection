@@ -6,9 +6,10 @@
 
 ---
 
-- [TEMPLATE](#template)
-  - [start here](#start-here)
-  - [sources](#sources)
+- [Docker Collection](#docker-collection)
+  - [more description](#more-description)
+    - [best practice start-up](#best-practice-start-up)
+  - [References](#references)
 
 ---
 
@@ -51,13 +52,15 @@ to start this configuration with all supportings between docker-stack and docker
 run it with following commando:
 
 ```sh
-$docker-compose config | docker stack deploy --compose-file - <STACK_NAME>
+$DOCKER_BUILDKIT=1 docker-compose config | CONFIG_VERSION=1 docker stack deploy --resolve-image=never --with-registry-auth --compose-file - <STACK_NAME>
 ```
 
 or create directly an alias for it:
 
 ```sh
-$alias docker-swarm-compose="docker-compose config | docker stack deploy --compose-file -"
+$alias docker='DOCKER_BUILDKIT=1 docker'
+$alias docker-compose='DOCKER_BUILDKIT=1 docker-compose'
+$alias docker-swarm-compose='docker-compose config | CONFIG_VERSION=1 docker stack deploy --resolve-image=never --with-registry-auth --compose-file -'
 ```
 
 and run:
@@ -65,27 +68,6 @@ and run:
 ```sh
 $docker-swarm-compose <STACK_NAME>
 ```
-
----
-
-## TODOs
-
-- cleanups and fixes:
-  - [ ] composer/helper/cloudflare-tunnel
-  - [ ] composer/helper/heimdall
-  - ...
-  - [ ] composer/infra/netbox
-  - [ ] composer/infra/paperless
-  - [ ] composer/infra/snipe-it
-  - ...
-  - [ ] composer/monitoring/pandorafms
-  - [ ] composer/monitoring/prometheus
-  - ...
-  - [ ] composer/sec/ngrok
-  - [ ] composer/sec/portspoof
-  - [ ] composer/sec/teleport
-  - ...
-  - [ ] composer/siem/crowdsec
 
 ---
 

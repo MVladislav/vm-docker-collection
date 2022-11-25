@@ -1,0 +1,110 @@
+---
+version: "3.8"
+
+################################################################################
+################################################################################
+################################################################################
+
+x-basic-deploy-labels:
+  &basic-deploy-labels
+  labels:
+    - traefik.enable=true
+    - traefik.docker.lbswarm=${LB_SWARM:-true}
+    - traefik.docker.network=proxy
+    - traefik.http.routers.nessus.entrypoints=https
+    - traefik.http.routers.nessus.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.nessus.tls=true
+    - traefik.http.routers.nessus.service=nessus
+    - traefik.http.services.nessus.loadbalancer.server.scheme=${PROTOCOL:-https}
+    - traefik.http.services.nessus.loadbalancer.server.port=${PORT:-8834}
+    - traefik.http.routers.nessus.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+
+x-basic-deploy:
+  &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  restart_policy:
+    condition: on-failure
+  resources:
+    limits:
+      memory: 1g
+
+x-basic:
+  &basic
+  env_file: .env
+  cap_add:
+    - NET_ADMIN
+    - NET_RAW
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 65535
+      hard: 65535
+    fsize: -1
+    as: -1
+  networks:
+    default: {}
+    proxy: {}
+  tmpfs:
+    - /tmp
+  sysctls:
+    - net.ipv4.ip_forward=1
+    - net.ipv4.conf.all.src_valid_mark=1
+    - net.ipv4.conf.all.rp_filter=0
+    - net.ipv4.conf.default.rp_filter=0
+    - net.ipv4.conf.eth0.rp_filter=0
+    - net.ipv4.conf.lo.rp_filter=0
+  restart: always # always | on-failure
+
+################################################################################
+################################################################################
+################################################################################
+
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  app:
+    image: tenableofficial/nessus:${VERSION:-latest}
+    <<: *basic
+    deploy:
+      <<: [ *basic-deploy, *basic-deploy-labels ]
+    ports:
+      - target: 8834
+        published: ${PORT:-8834}
+        protocol: tcp
+        mode: host
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - data:/opt/nessus/
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "curl",
+          "-f",
+          "${PROTOCOL:-https}://localhost:${PORT:-8834}"
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      ################################################################################
+      ################################################################################
+      ################################################################################
+networks:
+  default:
+    driver: ${NETWORK_MODE:-bridge}
+    attachable: true
+  proxy:
+    external: true
+
+volumes:
+  data: {}

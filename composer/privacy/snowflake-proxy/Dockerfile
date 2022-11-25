@@ -1,4 +1,4 @@
-FROM docker.io/library/golang:1.18 AS builder
+FROM --platform=$BUILDPLATFORM docker.io/library/golang:1.18 AS builder
 
 ARG VERSION=main
 
@@ -7,7 +7,9 @@ RUN git clone --depth=1 -b ${VERSION} https://gitlab.torproject.org/tpo/anti-cen
 
 WORKDIR /builder/snowflake/proxy
 RUN go mod download
-RUN CGO_ENABLED=0 go build -o proxy -ldflags '-extldflags "-static" -w -s'  .
+ARG TARGETOS
+ARG TARGETARCH
+RUN GOOS=$TARGETOS GOARCH=$TARGETARCH CGO_ENABLED=0 go build -o proxy -ldflags '-extldflags "-static" -w -s'  .
 
 FROM scratch
 

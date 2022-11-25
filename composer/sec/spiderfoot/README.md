@@ -27,9 +27,9 @@ NETWORK_MODE=overlay
 VERSION=latest
 
 LB_SWARM=true
-DOMAIN=<HOST>.home.local
-PROTOCOL=https
-PORT=443
+DOMAIN=spider.home.local
+PROTOCOL=http
+PORT=5001
 # default-secured@file | protected-secured@file | admin-secured@file
 MIDDLEWARE_SECURED=default-secured@file
 ```
@@ -39,3 +39,4 @@ MIDDLEWARE_SECURED=default-secured@file
 ## References
 
 - <https://github.com/smicallef/spiderfoot>
+- <https://serverfault.com/questions/1056213/run-nmap-in-a-docker-container-as-a-non-admin-user>

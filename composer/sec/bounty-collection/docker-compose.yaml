@@ -1,0 +1,94 @@
+version: "3.8"
+
+################################################################################
+################################################################################
+################################################################################
+
+x-basic-deploy:
+  &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  restart_policy:
+    condition: on-failure
+  resources:
+    limits:
+      memory: 1g
+
+x-basic:
+  &basic
+  stdin_open: true # docker run -i
+  tty: true # docker run -t
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 65535
+      hard: 65535
+    fsize: -1
+    as: -1
+  tmpfs:
+    - /tmp
+  # network_mode: host
+  sysctls:
+    - net.ipv4.ip_forward=1
+    - net.ipv4.conf.all.src_valid_mark=1
+    - net.ipv4.conf.all.rp_filter=0
+    - net.ipv4.conf.default.rp_filter=0
+    - net.ipv4.conf.eth0.rp_filter=0
+    - net.ipv4.conf.lo.rp_filter=0
+  restart: always # always | on-failure
+
+################################################################################
+################################################################################
+################################################################################
+
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  app:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+      args:
+        BUILD_DATE: ${BUILD_DATE:-2022}
+        VERSION: ${VERSION:-latest}
+    image: collection:${VERSION:-latest}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - logs:/var/log
+      - ./logs:/var/log/nmap
+    environment:
+      NMAP_REPORT_ID: 4
+    command:
+      # - bash
+      ## abc ...................................................................
+      # - whatweb <TARGET> -v -U='Mozilla/5.0 (Wayland; Ubuntu; Linux x86_64; rv:106.0) Linux Firefox/106.0 iwashere'
+      ## nmap ..................................................................
+      # - nmap-report 192.168.111.130 -T4 -n -Pn -v -sS -sV -O --script "nmap-vulners/,vulscan/"
+      ## abc ...................................................................
+      # - echo <TARGET> | katana -jc -f qurl -d 5 -c 50 -kf robotstxt,sitemapxml -silent | dalfox pipe --skip-bav | grep "=" | egrep -iv ".(jpg|jpeg|gif|css|tif|tiff|png|ttf|woff|woff2|ico|pdf|svg|txt|js)" | unew
+      - echo https://laurora.de | katana -jc -f qurl -d 5 -c 50 -kf robotstxt,sitemapxml -silent | dalfox pipe --skip-bav | grep "=" | egrep -iv ".(jpg|jpeg|gif|css|tif|tiff|png|ttf|woff|woff2|ico|pdf|svg|txt|js)"
+      ## paths .................................................................
+      # - echo https://laurora.de | katana -jc -d 5 -c 50 -ef css,woff,woff2,eot,ttf,tiff,tif -kf robotstxt,sitemapxml | grep -v -e "="
+      ## fuzzing-parameters ....................................................
+      # - echo https://laurora.de | katana -jc -f qurl -d 5 -c 50 -kf robotstxt,sitemapxml
+      # - echo https://laurora.de | httpx -silent | katana -silent | dalfox pipe -silent
+      ## Extract .js .jsp .json to files .......................................
+      # - subfinder -d <TARGET> -silent -all | httpx -silent | katana -d 5 silent -em js,jsp,json | grep -P "(?i).+\.js(?:on|p)?$"
+
+      ################################################################################
+      ################################################################################
+      ################################################################################
+volumes:
+  logs: {}
