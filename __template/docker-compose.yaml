@@ -103,11 +103,11 @@ services:
     <<: *basic
     deploy:
       <<: [ *basic-deploy, *basic-deploy-labels ]
-      # ports:
-      #   - target: ...
-      #     published: ${PORT:-...}
-      #     protocol: tcp
-      #     mode: host
+    # ports:
+    #   - target: ${PORT:-...}
+    #     published: ${PORT_PUBLISH:-...}
+    #     protocol: tcp
+    #     mode: host
     secrets:
       - my_external_secret
       - my_file_secret
