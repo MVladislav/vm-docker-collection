@@ -63,3 +63,4 @@ create api-token permission like this:
 ## References
 
 - <https://hub.docker.com/r/oznu/cloudflare-ddns/>
+- <https://developers.cloudflare.com/fundamentals/get-started/reference/network-ports/>
