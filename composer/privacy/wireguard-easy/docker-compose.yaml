@@ -1,0 +1,137 @@
+---
+version: "3.8"
+
+################################################################################
+################################################################################
+################################################################################
+
+x-basic-deploy-labels:
+  &basic-deploy-labels
+  labels:
+    - traefik.enable=true
+    - traefik.docker.lbswarm=${LB_SWARM:-true}
+    - traefik.docker.network=proxy
+    - traefik.http.routers.wg-easy.entrypoints=https
+    - traefik.http.routers.wg-easy.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.wg-easy.tls=true
+    - traefik.http.routers.wg-easy.service=wg-easy
+    - traefik.http.services.wg-easy.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.wg-easy.loadbalancer.server.port=${PORT:-51821}
+    - traefik.http.routers.wg-easy.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+
+x-basic-deploy:
+  &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  restart_policy:
+    condition: on-failure
+  resources:
+    limits:
+      memory: 1g
+
+x-basic:
+  &basic
+  env_file: .env
+  cap_drop: [ "ALL" ]
+  cap_add:
+    - NET_ADMIN
+    - NET_RAW
+    - SYS_MODULE
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 65535
+      hard: 65535
+    fsize: -1
+    as: -1
+  networks:
+    default: {}
+    proxy: {}
+  tmpfs:
+    - /tmp
+  sysctls:
+    - net.ipv4.ip_forward=1
+    - net.ipv4.conf.all.src_valid_mark=1
+    - net.ipv4.conf.all.rp_filter=0
+    - net.ipv4.conf.default.rp_filter=0
+    - net.ipv4.conf.eth0.rp_filter=0
+    - net.ipv4.conf.lo.rp_filter=0
+    # - net.ipv6.conf.all.forwarding=1
+    # - net.ipv6.conf.all.disable_ipv6=0
+  restart: always # always | on-failure
+
+################################################################################
+################################################################################
+################################################################################
+
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  wg-easy:
+    # https://hub.docker.com/r/weejewel/wg-easy
+    image: weejewel/wg-easy:${VERSION:-7-nightly}
+    <<: [ *basic, *basic-deploy-labels ]
+    deploy:
+      <<: [ *basic-deploy, *basic-deploy-labels ]
+    ports:
+      - target: ${WG_PORT:-51820}
+        published: ${WG_PORT_PUBLISH:-51820}
+        protocol: udp
+        mode: host
+      - target: ${PORT:-51821}
+        published: ${PORT_PUBLISH:-51821}
+        protocol: tcp
+        mode: host
+    environment:
+      # ⚠️ Required:
+      # Change this to your host's public address
+      WG_HOST: ${DOMAIN?domain variable not set} # can be WAN-IP or DNS
+      # Optional:
+      PASSWORD: ${PASSWORD}
+      #
+      # WG_PORT: ${WG_PORT:-51820}
+      # WG_DEFAULT_ADDRESS: ${WG_DEFAULT_ADDRESS:-10.6.6.x}
+      # WG_DEFAULT_DNS: ${WG_DEFAULT_DNS:-1.1.1.1}
+      # WG_MTU: ${WG_MTU:-null}
+      # WG_ALLOWED_IPS: ${WG_ALLOWED_IPS:-0.0.0.0/0,::/0}
+      # WG_PERSISTENT_KEEPALIVE: ${WG_PERSISTENT_KEEPALIVE:-0}
+      #
+      # WG_PRE_UP: ${WG_PRE_UP:-echo "Pre Up" > /etc/wireguard/pre-up.txt}
+      # WG_POST_UP: ${WG_POST_UP:-echo "Post Up" > /etc/wireguard/post-up.txt}
+      # WG_PRE_DOWN: ${WG_PRE_DOWN:-echo "Pre Down" > /etc/wireguard/pre-down.txt}
+      # WG_POST_DOWN: ${WG_POST_DOWN:-echo "Post Down" > /etc/wireguard/post-down.txt}
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - data:/etc/wireguard
+      # healthcheck:
+      #   test:
+      #     [
+      #       "CMD",
+      #       "curl",
+      #       "-f",
+      #       "${PROTOCOL:-http}://localhost:${PORT:-51821}"
+      #     ]
+      #   interval: 30s
+      #   timeout: 10s
+      #   retries: 5
+      ################################################################################
+      ################################################################################
+      ################################################################################
+networks:
+  default:
+    driver: bridge
+    attachable: true
+  proxy:
+    driver: bridge
+
+volumes:
+  data: {}
