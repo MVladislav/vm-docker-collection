@@ -1,75 +1,4 @@
----
 version: "3.8"
-
-################################################################################
-################################################################################
-################################################################################
-
-x-basic-deploy-labels:
-  &basic-deploy-labels
-  labels:
-    - traefik.enable=true
-    - traefik.docker.lbswarm=${LB_SWARM:-true}
-    - traefik.docker.network=proxy
-    - traefik.http.routers.traefik.entrypoints=https
-    - traefik.http.routers.traefik.rule=Host(`${DOMAIN?domain variable not set}`)
-    - traefik.http.routers.traefik.tls=true
-    - traefik.http.routers.traefik.service=api@internal
-    - traefik.http.services.traefik.loadbalancer.server.scheme=${PROTOCOL:-http}
-    - traefik.http.services.traefik.loadbalancer.server.port=${PORT:-8080}
-    - traefik.http.routers.traefik.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
-    # admin-auth middleware with HTTP Basic auth
-    # Using the environment variables ADMIN_USERNAME and HASHED_PASSWORD
-    - traefik.http.routers.traefik.middlewares=admin-auth
-    - traefik.http.middlewares.admin-auth.basicauth.users=${ADMIN_USERNAME?username variable not set}:${HASHED_PASSWORD?password hash variable not set}
-
-x-basic-deploy:
-  &basic-deploy
-  mode: replicated
-  replicas: 1
-  placement:
-    max_replicas_per_node: 1
-    constraints:
-      - "node.role==${NODE_ROLE:-manager}"
-      - node.platform.os == linux
-  restart_policy:
-    condition: on-failure
-  resources:
-    limits:
-      memory: 1g
-
-x-basic:
-  &basic
-  env_file: .env
-  # cap_add:
-  #   - CHOWN
-  #   - DAC_OVERRIDE
-  #   - SETGID
-  #   - SETUID
-  #   - NET_ADMIN
-  #   - NET_RAW
-  #   - SYS_MODULE
-  #   - AUDIT_CONTROL
-  #   - AUDIT_READ
-  cap_drop: [ "ALL" ]
-  ulimits:
-    memlock:
-      soft: -1
-      hard: -1
-    nofile:
-      soft: 65535
-      hard: 65535
-    fsize: -1
-    as: -1
-  networks:
-    proxy: {}
-  tmpfs:
-    - /tmp
-  restart: always
-
-################################################################################
-################################################################################
-################################################################################
 
 services:
   ##############################################################################
@@ -77,10 +6,42 @@ services:
   ##############################################################################
   traefik:
     # https://hub.docker.com/_/traefik
-    image: traefik:${VERSION:-v2.9.5}
-    <<: [ *basic, *basic-deploy-labels ]
+    image: traefik:${VERSION:-latest}
+    env_file: .env
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65535
+        hard: 65535
+      fsize: -1
+      as: -1
     deploy:
-      <<: [ *basic-deploy, *basic-deploy-labels ]
+      mode: replicated
+      replicas: 1
+      placement:
+        max_replicas_per_node: 1
+        constraints:
+          - "node.role==${NODE_ROLE:-manager}"
+      restart_policy:
+        condition: on-failure
+      labels:
+        - traefik.enable=true
+        - traefik.docker.lbswarm=${LB_SWARM:-true}
+        - traefik.docker.network=proxy
+
+        - traefik.http.routers.traefik.entrypoints=https
+        - traefik.http.routers.traefik.rule=Host(`${DOMAIN?domain variable not set}`)
+        - traefik.http.routers.traefik.tls=true
+        - traefik.http.routers.traefik.service=api@internal
+        - traefik.http.services.traefik.loadbalancer.server.scheme=${PROTOCOL:-http}
+        - traefik.http.services.traefik.loadbalancer.server.port=${PORT:-8080}
+        - traefik.http.routers.traefik.middlewares=${MIDDLEWARE_SECURED:-admin-secured@file}
+        # admin-auth middleware with HTTP Basic auth
+        # Using the environment variables ADMIN_USERNAME and HASHED_PASSWORD
+        - traefik.http.routers.traefik.middlewares=admin-auth
+        - traefik.http.middlewares.admin-auth.basicauth.users=${ADMIN_USERNAME?username variable not set}:${HASHED_PASSWORD?password hash variable not set}
     ports:
       - target: 80 # http
         published: 80
@@ -168,21 +129,13 @@ services:
       - /etc/localtime:/etc/localtime:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - traefik_logs:/var/log/traefik
-      # healthcheck:
-      #   test:
-      #     [
-      #       "CMD",
-      #       "curl",
-      #       "-f",
-      #       "${PROTOCOL:-https}://localhost:${PORT:-443}"
-      #     ]
-      #   interval: 30s
-      #   timeout: 10s
-      #   retries: 5
+    networks:
+      proxy: {}
+    restart: always
 
-      ################################################################################
-      ################################################################################
-      ################################################################################
+################################################################################
+################################################################################
+################################################################################
 networks:
   proxy:
     name: proxy

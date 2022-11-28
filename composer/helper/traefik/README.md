@@ -8,15 +8,31 @@
 
 - [SETUP](#setup)
   - [basic](#basic)
+    - [traefik setup](#traefik-setup)
+    - [config setup](#config-setup)
     - [create `.env` file following:](#create-env-file-following)
   - [label setup](#label-setup)
-  - [traefik setup](#traefik-setup)
-  - [config setup](#config-setup)
   - [References](#references)
 
 ---
 
 ## basic
+
+### traefik setup
+
+> copy and update the general traefik setup
+
+```sh
+$cp ./config/traefik_template.yml ./config/traefik.yml
+```
+
+### config setup
+
+> instead or byside to labels you can also define a config.yml
+
+```sh
+$cp ./config/config_template.yml ./config/config.yml
+```
 
 ### create `.env` file following:
 
@@ -25,7 +41,7 @@ NODE_ID=
 NODE_ROLE=manager
 NETWORK_MODE=overlay
 
-VERSION=v2.9.1
+VERSION=v2.9.5
 
 LB_SWARM=true
 DOMAIN=traefik.home.local
@@ -67,22 +83,6 @@ networks:
 networks:
   proxy:
     external: true
-```
-
-## traefik setup
-
-> copy and update the general traefik setup
-
-```sh
-$cp ./config/traefik_template.yml ./config/traefik.yml
-```
-
-## config setup
-
-> instead or byside to labels you can also define a config.yml
-
-```sh
-$cp ./config/config_template.yml ./config/config.yml
 ```
 
 ---

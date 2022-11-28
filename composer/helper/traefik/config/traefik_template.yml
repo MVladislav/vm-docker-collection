@@ -41,38 +41,35 @@ entryPoints:
         - default-secured@file
         # - bouncer-crowdsec
   # -------------------------------------
-  mysql:
-    address: :3306
-  postgress:
-    address: :5432
-  influxdb:
-    address: :8086
-  prometheus:
-    address: :9090
+  # mysql:
+  #   address: :3306
+  # postgress:
+  #   address: :5432
+  # influxdb:
+  #   address: :8086
+  # prometheus:
+  #   address: :9090
   # -------------------------------------
-  smb-139:
-    address: :139/tcp
-  smb-445:
-    address: :445/tcp
-  spice:
-    address: :3128/tcp
+  # smb-139:
+  #   address: :139/tcp
+  # smb-445:
+  #   address: :445/tcp
+  # spice:
+  #   address: :3128/tcp
   # -------------------------------------
-  elastic: # send metrics direct to elastic
-    address: :9200
-  elastic-agent: # access elastic over installed agent
-    address: :8220
-  elastic-beats: # logtash used for example sysmon
-    address: :5044
+  # elastic: # send metrics direct to elastic
+  #   address: :9200
+  # elastic-agent: # access elastic over installed agent
+  #   address: :8220
+  # elastic-beats: # logtash used for example sysmon
+  #   address: :5044
   # -------------------------------------
-  syslog-opnsense: # logstash syslogs opnsense collector
-    address: :5140
-  syslog-unifi: # logstash syslogs unifi collector
-    address: :5145
-  netflow: # filebeat netflow collector
-    address: :2055/udp
-  # -------------------------------------
-  fritz-monit: # fritzbox phone monitoring
-    address: :1012/tcp
+  # syslog-opnsense: # logstash syslogs opnsense collector
+  #   address: :5140
+  # syslog-unifi: # logstash syslogs unifi collector
+  #   address: :5145
+  # netflow: # filebeat netflow collector
+  #   address: :2055/udp
   # -------------------------------------
 
 serversTransport:
