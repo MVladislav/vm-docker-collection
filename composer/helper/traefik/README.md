@@ -10,6 +10,7 @@
   - [basic](#basic)
     - [traefik setup](#traefik-setup)
     - [config setup](#config-setup)
+    - [cert setup](#cert-setup)
     - [create `.env` file following:](#create-env-file-following)
   - [label setup](#label-setup)
   - [References](#references)
@@ -34,6 +35,14 @@ $cp ./config/traefik_template.yml ./config/traefik.yml
 $cp ./config/config_template.yml ./config/config.yml
 ```
 
+### cert setup
+
+copy/create following files:
+
+- config/ssl/ca.pem
+- config/ssl/cert.pem
+- config/ssl/cert-key.pem
+
 ### create `.env` file following:
 
 ```env
@@ -50,7 +59,8 @@ PORT=8080
 # default-secured@file | protected-secured@file | admin-secured@file
 MIDDLEWARE_SECURED=admin-secured@file
 
-ADMIN_USERNAME=traefik=traefik
+#ADMIN_USERNAME=traefik=traefik
+ADMIN_USERNAME=traefik
 # $(openssl passwd -apr1 $PASSWORD) or $(openssl passwd -apr1)
 # new echo $(htpasswd -nB traefik)
 HASHED_PASSWORD=
