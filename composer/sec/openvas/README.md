@@ -60,7 +60,7 @@ $docker-compose exec -u gvmd gvmd gvmd --user=admin --new-password=<PASSWORD>
 
 ## FAQ
 
-- failure when show `0% interrupted`
+- IPv6:: failure when show `0% interrupted`
   - this was happen to me, because my host has disabled IPv6
   - openvas needs the functionality for IPv6, also without connection
   - else it will always fail

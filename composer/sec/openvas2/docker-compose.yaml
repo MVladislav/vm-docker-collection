@@ -17,6 +17,10 @@ x-basic-deploy-labels:
     - traefik.http.routers.openvas.service=openvas
     - traefik.http.services.openvas.loadbalancer.server.scheme=${PROTOCOL:-http}
     - traefik.http.services.openvas.loadbalancer.server.port=${PORT:-9392}
+    - traefik.http.services.openvas.loadbalancer.sticky=true
+    - traefik.http.services.openvas.loadbalancer.sticky.cookie.name=stickycookie
+    - traefik.http.services.openvas.loadbalancer.sticky.cookie.secure=true
+    - traefik.http.services.openvas.loadbalancer.sticky.cookie.httpOnly=true
     - traefik.http.routers.openvas.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
 
 x-basic-deploy:
@@ -30,6 +34,13 @@ x-basic-deploy:
       - node.platform.os == linux
   restart_policy:
     condition: on-failure
+  resources:
+    limits:
+      cpus: 0.8
+      memory: 3G
+    reservations:
+      cpus: 0.001
+      memory: 1G
 
 x-basic:
   &basic
@@ -58,6 +69,8 @@ x-basic:
     - net.ipv4.conf.default.rp_filter=0
     - net.ipv4.conf.eth0.rp_filter=0
     - net.ipv4.conf.lo.rp_filter=0
+    - net.ipv6.conf.all.forwarding=1
+    - net.ipv6.conf.all.disable_ipv6=0
   restart: always # always | on-failure
 
 ################################################################################
@@ -69,7 +82,7 @@ services:
   ##############################################################################
   ##############################################################################
   openvas:
-    image: immauss/openvas:${VERSION:-22.4.03}
+    image: immauss/openvas:${VERSION:-22.4.04}
     <<: *basic
     deploy:
       <<: [ *basic-deploy, *basic-deploy-labels ]
@@ -83,7 +96,7 @@ services:
       PASSWORD: ${ADMIN_PASSWORD:-admin}
       USERNAME: ${ADMIN_USERNAME:-admin}
       # RELAYHOST: ${RELAYHOST:-172.17.0.1}
-      SMTPPORT: ${SMTPPORT:-25}
+      # SMTPPORT: ${SMTPPORT:-25}
       REDISDBS: ${REDISDBS:-512} # number of Redis DBs to use
       QUIET: ${QUIET:-false} # dump feed sync noise to /dev/null
       NEWDB: ${NEWDB:-false} # only use this for creating a blank DB

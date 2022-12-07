@@ -10,6 +10,7 @@
   - [basic](#basic)
     - [create `.env` file following:](#create-env-file-following)
   - [info](#info)
+  - [FAQ](#faq)
   - [References](#references)
 
 ---
@@ -25,7 +26,7 @@ NODE_ID=
 NODE_ROLE=manager
 NETWORK_MODE=overlay
 
-VERSION=22.4.03
+VERSION=22.4.04
 
 LB_SWARM=true
 DOMAIN=openvas.home.local
@@ -37,8 +38,8 @@ MIDDLEWARE_SECURED=default-secured@file
 GMP=9390
 ADMIN_PASSWORD=admin
 ADMIN_USERNAME=admin
-RELAYHOST=172.17.0.1
-SMTPPORT=25
+#RELAYHOST=172.17.0.1
+#SMTPPORT=25
 REDISDBS=512
 QUIET=false
 NEWDB=false
@@ -69,6 +70,15 @@ $docker exec $(docker container ls -f=name=openvas -q) greenbone-feed-sync --typ
 $docker exec $(docker container ls -f=name=openvas -q) greenbone-feed-sync --type CERT
 $docker exec $(docker container ls -f=name=openvas -q) greenbone-feed-sync --type GVMD_DATA
 ```
+
+---
+
+## FAQ
+
+- IPv6:: failure when show `0% interrupted`
+  - this was happen to me, because my host has disabled IPv6
+  - openvas needs the functionality for IPv6, also without connection
+  - else it will always fail
 
 ---
 

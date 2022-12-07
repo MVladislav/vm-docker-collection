@@ -1,3 +1,4 @@
+---
 version: "3.8"
 
 ################################################################################
@@ -35,7 +36,11 @@ x-basic-deploy:
     condition: on-failure
   resources:
     limits:
-      memory: 4g
+      cpus: 1.5
+      memory: 2G
+    reservations:
+      cpus: 0.0001
+      memory: 100M
 
 x-basic:
   &basic
@@ -51,7 +56,8 @@ x-basic:
     as: -1
   networks:
     default: {}
-    proxy: {}
+  tmpfs:
+    - /tmp
   sysctls:
     - net.ipv4.ip_forward=1
     - net.ipv4.conf.all.src_valid_mark=1
@@ -61,11 +67,11 @@ x-basic:
     - net.ipv4.conf.lo.rp_filter=0
     - net.ipv6.conf.all.forwarding=1
     - net.ipv6.conf.all.disable_ipv6=0
-  # always | on-failure
   restart: on-failure
-    ################################################################################
-    ################################################################################
-    ################################################################################
+
+################################################################################
+################################################################################
+################################################################################
 
 services:
   ##############################################################################
@@ -123,8 +129,6 @@ services:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - cert_data_vol:/mnt
-    # depends_on:
-    #   - cert-bund-data
 
   data-objects:
     image: greenbone/data-objects:${VERSION_LATEST:-latest}
@@ -145,8 +149,6 @@ services:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - data_objects_vol:/mnt
-    # depends_on:
-    #   - data-objects
 
   gpg-data:
     image: greenbone/gpg-data:${VERSION_LATEST:-latest}
@@ -199,19 +201,6 @@ services:
       - gvmd_socket_vol:/run/gvmd
       - ospd_openvas_socket_vol:/run/ospd
       - psql_socket_vol:/var/run/postgresql
-    # depends_on:
-    #   pg-gvm:
-    #     condition: service_started
-    #   scap-data:
-    #     condition: service_completed_successfully
-    #   cert-bund-data:
-    #     condition: service_completed_successfully
-    #   dfn-cert-data:
-    #     condition: service_completed_successfully
-    #   data-objects:
-    #     condition: service_completed_successfully
-    #   report-formats:
-    #     condition: service_completed_successfully
 
   gsa:
     image: greenbone/gsa:${VERSION_GSA:-stable}
@@ -219,14 +208,15 @@ services:
     deploy:
       <<: [ *basic-deploy, *basic-deploy-labels ]
     restart: on-failure
-    ports:
-      - 9392:80
+    # ports:
+    #   - 9392:80
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - gvmd_socket_vol:/run/gvmd
-    # depends_on:
-    #   - gvmd
+    networks:
+      default: {}
+      proxy: {}
 
   ospd-openvas:
     image: greenbone/ospd-openvas:${VERSION_OSPD_OPENVAS:-stable}
@@ -262,13 +252,6 @@ services:
       - notus_data_vol:/var/lib/notus
       - ospd_openvas_socket_vol:/run/ospd
       - redis_socket_vol:/run/redis/
-    # depends_on:
-    #   redis-server:
-    #     condition: service_started
-    #   gpg-data:
-    #     condition: service_completed_successfully
-    #   vulnerability-tests:
-    #     condition: service_completed_successfully
 
   mqtt-broker:
     restart: on-failure
@@ -276,20 +259,19 @@ services:
     <<: *basic
     deploy:
       <<: *basic-deploy
-    ports:
-      - 1883:1883
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
     networks:
-      default:
+      default: {}
+      default-mqtt:
         aliases:
           - mqtt-broker
           - broker
 
   notus-scanner:
     restart: on-failure
-    image: greenbone/notus-scanner:${VERSION_NOTUS_SCANNER:-22.4.1}
+    image: greenbone/notus-scanner:${VERSION_NOTUS_SCANNER:-stable}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -301,10 +283,6 @@ services:
     environment:
       NOTUS_SCANNER_MQTT_BROKER_ADDRESS: mqtt-broker
       NOTUS_SCANNER_PRODUCTS_DIRECTORY: /var/lib/notus/products
-    # depends_on:
-    #   - mqtt-broker
-    #   - gpg-data
-    #   - vulnerability-tests
 
   gvm-tools:
     image: greenbone/gvm-tools:${VERSION_LATEST:-latest}
@@ -316,13 +294,10 @@ services:
       - /etc/localtime:/etc/localtime:ro
       - gvmd_socket_vol:/run/gvmd
       - ospd_openvas_socket_vol:/run/ospd
-    # depends_on:
-    #   - gvmd
-    #   - ospd-openvas
 
-    ################################################################################
-    ################################################################################
-    ################################################################################
+################################################################################
+################################################################################
+################################################################################
 networks:
   default:
     driver: ${NETWORK_MODE:-bridge}
