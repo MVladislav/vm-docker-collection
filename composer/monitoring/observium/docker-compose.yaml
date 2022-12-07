@@ -1,4 +1,79 @@
+---
 version: "3.8"
+
+################################################################################
+################################################################################
+################################################################################
+
+x-basic-deploy-labels:
+  &basic-deploy-labels
+  labels:
+    - traefik.enable=true
+    - traefik.docker.lbswarm=${LB_SWARM:-true}
+    - traefik.docker.network=proxy
+    - traefik.http.routers.observium.entrypoints=https
+    - traefik.http.routers.observium.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.observium.tls=true
+    - traefik.http.routers.observium.service=observium
+    - traefik.http.services.observium.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.observium.loadbalancer.server.port=${PORT:-80}
+    - traefik.http.routers.observium.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+
+x-basic-deploy:
+  &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  restart_policy:
+    condition: on-failure
+  resources:
+    limits:
+      cpus: "1.5"
+      memory: 2g
+    reservations:
+      cpus: "0.0001"
+      memory: 50M
+
+x-basic:
+  &basic
+  env_file: .env
+  cap_add:
+    - NET_ADMIN
+    - NET_RAW
+  cap_drop: [ "ALL" ]
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 65535
+      hard: 65535
+    fsize: -1
+    as: -1
+  networks:
+    default: {}
+    mysql: {}
+    proxy: {}
+  tmpfs:
+    - /tmp
+  sysctls:
+    - net.ipv4.ip_forward=1
+    - net.ipv4.conf.all.src_valid_mark=1
+    - net.ipv4.conf.all.rp_filter=0
+    - net.ipv4.conf.default.rp_filter=0
+    - net.ipv4.conf.eth0.rp_filter=0
+    - net.ipv4.conf.lo.rp_filter=0
+    - net.ipv6.conf.all.forwarding=1
+    - net.ipv6.conf.all.disable_ipv6=0
+  restart: always
+
+################################################################################
+################################################################################
+################################################################################
 
 services:
   ##############################################################################
@@ -13,38 +88,9 @@ services:
         BUILD_DATE: ${BUILD_DATE:-2022}
         VERSION: ${VERSION:-latest}
     image: mvladislav/observium:${VERSION:-latest}
-    env_file: .env
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
-      nofile:
-        soft: 65535
-        hard: 65535
-      fsize: -1
-      as: -1
+    <<: *basic
     deploy:
-      mode: replicated
-      replicas: 1
-      placement:
-        max_replicas_per_node: 1
-        constraints:
-          # - "node.id==${NODE_ID}"
-          - "node.role==${NODE_ROLE:-manager}"
-          - node.platform.os == linux
-      restart_policy:
-        condition: on-failure
-      labels:
-        - traefik.enable=true
-        - traefik.docker.lbswarm=${LB_SWARM:-true}
-        - traefik.docker.network=proxy
-        - traefik.http.routers.observium.entrypoints=https
-        - traefik.http.routers.observium.rule=Host(`${DOMAIN?domain variable not set}`)
-        - traefik.http.routers.observium.tls=true
-        - traefik.http.routers.observium.service=observium
-        - traefik.http.services.observium.loadbalancer.server.scheme=${PROTOCOL:-http}
-        - traefik.http.services.observium.loadbalancer.server.port=${PORT:-80}
-        - traefik.http.routers.observium.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+      <<: [ *basic-deploy, *basic-deploy-labels ]
     ports:
       # - target: 80
       #   published: ${PORT:-80}
@@ -77,15 +123,25 @@ services:
       - logs_sys:/var/log
       - rrd:/opt/observium/rrd
       - html:/opt/observium/html
-    networks:
-      mysql: {}
-      proxy: {}
-    restart: always
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "curl",
+          "-f",
+          "${PROTOCOL:-http}://localhost:${PORT:-80}"
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
 ################################################################################
 ################################################################################
 ################################################################################
 networks:
+  default:
+    driver: ${NETWORK_MODE:-bridge}
+    attachable: true
   mysql:
     external: true
   proxy:
