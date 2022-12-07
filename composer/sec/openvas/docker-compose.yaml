@@ -36,10 +36,10 @@ x-basic-deploy:
     condition: on-failure
   resources:
     limits:
-      cpus: 1.5
+      cpus: "1.5"
       memory: 2G
     reservations:
-      cpus: 0.0001
+      cpus: "0.0001"
       memory: 100M
 
 x-basic:

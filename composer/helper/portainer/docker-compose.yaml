@@ -35,7 +35,7 @@ x-basic-deploy:
       cpus: "0.3"
       memory: 50M
     reservations:
-      cpus: '0.0001'
+      cpus: "0.0001"
       memory: 10M
 
 x-basic:
@@ -107,7 +107,7 @@ services:
           cpus: "0.3"
           memory: 50M
         reservations:
-          cpus: '0.0001'
+          cpus: "0.0001"
           memory: 10M
     environment:
       # REQUIRED: Should be equal to the service name prefixed by "tasks." when
