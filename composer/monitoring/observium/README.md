@@ -66,6 +66,8 @@ OBSERVIUM_DB_USER = observium
 ## Hint
 
 - Mail alert send, works with `Mail backend = SMTP`
+- Rename hostname/IP of an existing device
+  - `./rename_device.php <old hostname> <new hostname>`
 
 ## client setup
 
@@ -82,8 +84,8 @@ load extend scripts:
 
 ```sh
 $sudo curl https://raw.githubusercontent.com/librenms/librenms-agent/master/snmp/distro -o /usr/local/lib/snmpd/distro
+#$sudo curl https://www.observium.org/files/distro -o /usr/local/lib/snmpd/distro
 $sudo curl https://raw.githubusercontent.com/librenms/librenms-agent/master/snmp/osupdate -o /usr/local/lib/snmpd/osupdate
-$sudo curl https://www.observium.org/files/distro -o /usr/local/bin/distro
 $sudo apt install libsnmp-extension-passpersist-perl
 
 : 'for proxmox'
@@ -107,17 +109,17 @@ sysServices 72
 
 includeDir /etc/snmp/snmpd.conf.d
 
+## This line allows Observium to detect the host OS if the distro script is installed
 ## wget https://raw.githubusercontent.com/librenms/librenms-agent/master/snmp/distro
+## or wget https://www.observium.org/files/distro
 extend .1.3.6.1.4.1.2021.7890.1 distro /usr/local/lib/snmpd/distro
+
+## This line allows Observium to detect the host OSUPDATE if the osupdate script is installed
 ## wget https://raw.githubusercontent.com/librenms/librenms-agent/master/snmp/osupdate
 extend osupdate /usr/local/lib/snmpd/osupdate
 
 ## Disk Monitoring
 includeAllDisks  10%
-
-## This line allows Observium to detect the host OS if the distro script is installed
-## wget https://www.observium.org/files/distro
-#extend .1.3.6.1.4.1.2021.7890.1 distro /usr/local/bin/distro
 
 # This lines allows Observium to detect hardware, vendor and serial
 # Common Linux:
