@@ -1,0 +1,81 @@
+---
+version: "3.8"
+
+################################################################################
+################################################################################
+################################################################################
+
+x-basic-deploy:
+  &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  restart_policy:
+    condition: on-failure
+  resources:
+    limits:
+      # cpus: "1.0"
+      memory: 500M
+    reservations:
+      cpus: "0.0001"
+      memory: 20M
+
+x-basic:
+  &basic
+  cap_add:
+    - NET_ADMIN
+    - NET_RAW
+  cap_drop: [ "ALL" ]
+  # stdin_open: true # docker run -i
+  # tty: true # docker run -t
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 65535
+      hard: 65535
+    fsize: -1
+    as: -1
+  network_mode: host
+  tmpfs:
+    - /tmp
+  restart: on-failure
+
+################################################################################
+################################################################################
+################################################################################
+
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  zeek:
+    image: zeekurity/zeek:${VERSION:-5.1.1}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+    # configs:
+    #   - source: node_cfg_config
+    #     target: /usr/local/zeek/etc/node.cfg
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - ./config/logs:/usr/local/zeek/logs/
+      - ./config/node.cfg:/usr/local/zeek/etc/node.cfg
+    # HINT: start with "docker-compose run zeek" when you finished with sniffing, type "stop" to let zeek write logs
+    command: bash -c "zeekctl install && zeekctl start && zeekctl"
+
+################################################################################
+################################################################################
+################################################################################
+volumes:
+  data: {}
+
+# configs:
+#   node_cfg_config:
+#     file: $PWD/config/node.cfg
