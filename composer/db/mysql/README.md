@@ -27,18 +27,17 @@ $echo "swordfish" > config/secrets/mysql_root_password.txt
 ### create `.env` file following:
 
 ```env
-NODE_ID=
 NODE_ROLE=manager
 NETWORK_MODE=overlay
 
-VERSION_MYSQL=8.0.30
+VERSION_MYSQL=8.0.31
 VERSION_PHPMYADMIN=5.2.0-apache
 VERSION_ADMINER=4.8.1-standalone
 
 LB_SWARM=true
 DOMAIN=mysql.home.local
 PROTOCOL=http
-PORT=8080
+PORT=8080 # 8080 (adminer) | 80 (phpmyadmin)
 # default-secured@file | protected-secured@file | admin-secured@file
 MIDDLEWARE_SECURED=default-secured@file
 
