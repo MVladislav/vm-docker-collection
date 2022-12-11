@@ -38,7 +38,7 @@ x-basic-deploy:
       memory: 1g # 500M
     reservations:
       cpus: "0.001"
-      memory: 20M
+      memory: 32M
 
 x-basic:
   &basic
