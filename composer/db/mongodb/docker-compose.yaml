@@ -33,7 +33,7 @@ x-basic-deploy:
   resources:
     limits:
       # cpus: "0.5"
-      memory: 500M
+      memory: 100M
     reservations:
       cpus: "0.001"
       memory: 32M
