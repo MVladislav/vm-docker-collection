@@ -18,7 +18,11 @@ x-basic-deploy:
     condition: on-failure
   resources:
     limits:
-      memory: 1g
+      # cpus: "0.75"
+      memory: 500M
+    reservations:
+      cpus: "0.001"
+      memory: 32M
 
 x-basic:
   &basic
@@ -33,7 +37,6 @@ x-basic:
     as: -1
   networks:
     default: {}
-  # network_mode: host
   tmpfs:
     - /tmp
   sysctls:
@@ -45,7 +48,7 @@ x-basic:
     - net.ipv4.conf.lo.rp_filter=0
     - net.ipv6.conf.all.forwarding=0
     - net.ipv6.conf.all.disable_ipv6=1
-  restart: always # always | on-failure
+  restart: on-failure
 
 ################################################################################
 ################################################################################
