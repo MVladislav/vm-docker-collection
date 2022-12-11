@@ -1,37 +1,97 @@
+---
 version: "3.8"
+
+################################################################################
+################################################################################
+################################################################################
+
+x-basic-deploy-labels:
+  &basic-deploy-labels
+  labels:
+    - traefik.enable=true
+    - traefik.docker.lbswarm=${LB_SWARM:-true}
+    - traefik.docker.network=proxy
+    - traefik.http.routers.mongo-express.entrypoints=https
+    - traefik.http.routers.mongo-express.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.mongo-express.tls=true
+    - traefik.http.routers.mongo-express.service=mongo-express
+    - traefik.http.services.mongo-express.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.mongo-express.loadbalancer.server.port=${PORT:-8081}
+    - traefik.http.routers.mongo-express.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+
+x-basic-deploy:
+  &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  restart_policy:
+    condition: on-failure
+  resources:
+    limits:
+      # cpus: "0.5"
+      memory: 500M
+    reservations:
+      cpus: "0.001"
+      memory: 32M
+
+x-basic:
+  &basic
+  env_file: .env
+  # cap_add:
+  #   - CHOWN
+  #   - DAC_OVERRIDE
+  #   - SETGID
+  #   - SETUID
+  #   - NET_ADMIN
+  #   - NET_RAW
+  #   - SYS_MODULE
+  #   - AUDIT_CONTROL
+  #   - AUDIT_READ
+  # cap_drop: ["ALL"]
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 65535
+      hard: 65535
+    fsize: -1
+    as: -1
+  networks:
+    mongodb: {}
+    proxy: {}
+  tmpfs:
+    - /tmp
+  restart: always # always | on-failure
+
+################################################################################
+################################################################################
+################################################################################
 
 services:
   ##############################################################################
   ##############################################################################
   ##############################################################################
   mongodb:
-    image: mongo:${VERSION_MONGODB:-latest}
-    env_file: .env
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
-      nofile:
-        soft: 65535
-        hard: 65535
-      fsize: -1
-      as: -1
+    # https://hub.docker.com/_/mongo
+    image: mongo:${VERSION_MONGODB:-6.0.3}
+    <<: *basic
     deploy:
-      mode: replicated
-      replicas: 1
-      placement:
-        max_replicas_per_node: 1
-        constraints:
-          - "node.role==${NODE_ROLE:-manager}"
-          - node.platform.os == linux
+      <<: *basic-deploy
       resources:
         limits:
-          memory: 1g
-      restart_policy:
-        condition: on-failure
+          # cpus: "1.5"
+          memory: 1G
+        reservations:
+          cpus: "0.001"
+          memory: 20M
     # ports:
-    #   - target: 27017
-    #     published: ${PORT_MONGO:-27017}
+    #   - target: ${PORT_MONGO:-27017}
+    #     published: ${PORT_MONGO_PUBLISH:-27017}
     #     protocol: tcp
     #     mode: host
     secrets:
@@ -46,50 +106,19 @@ services:
       - db:/data/db
     networks:
       mongodb: {}
-    restart: always
 
   ##############################################################################
   ##############################################################################
   ##############################################################################
   mongo-express:
-    image: mongo-express:${VERSION_EXPRESS:-latest}
-    env_file: .env
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
-      nofile:
-        soft: 65535
-        hard: 65535
-      fsize: -1
-      as: -1
+    # https://hub.docker.com/_/mongo-express
+    image: mongo-express:${VERSION_EXPRESS:-0.54.0}
+    <<: *basic
     deploy:
-      mode: replicated
-      replicas: 1
-      placement:
-        max_replicas_per_node: 1
-        constraints:
-          - "node.role==${NODE_ROLE:-manager}"
-          - node.platform.os == linux
-      restart_policy:
-        condition: on-failure
-      labels:
-        - traefik.enable=true
-        - traefik.docker.lbswarm=${LB_SWARM:-true}
-        - traefik.docker.network=proxy
-        - traefik.http.routers.mongo-express.entrypoints=https
-        - traefik.http.routers.mongo-express.rule=Host(`${DOMAIN?domain variable not set}`)
-        - traefik.http.routers.mongo-express.tls=true
-        - traefik.http.routers.mongo-express.service=mongo-express
-        - traefik.http.services.mongo-express.loadbalancer.server.scheme=${PROTOCOL:-http}
-        - traefik.http.services.mongo-express.loadbalancer.server.port=${PORT:-8081}
-        - traefik.http.routers.mongo-express.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
-      resources:
-        limits:
-          memory: 1g
+      <<: [ *basic-deploy, *basic-deploy-labels ]
     # ports:
-    #   - target: 8081
-    #     published: ${PORT:-8081}
+    #   - target: ${PORT:-8081}
+    #     published: ${PORT_PUBLISH:-8081}
     #     protocol: tcp
     #     mode: host
     secrets:
@@ -106,10 +135,6 @@ services:
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-    networks:
-      mongodb: {}
-      proxy: {}
-    restart: always
 
 ################################################################################
 ################################################################################

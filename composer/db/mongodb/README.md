@@ -29,12 +29,11 @@ $echo "swordfish" > config/secrets/mongo_initdb_root_password.txt
 ### create `.env` file following:
 
 ```env
-NODE_ID=
 NODE_ROLE=manager
 NETWORK_MODE=overlay
 
-VERSION_MONGODB=4.2
-VERSION_EXPRESS=latest
+VERSION_MONGODB=6.0.3
+VERSION_EXPRESS=0.54.0
 
 LB_SWARM=true
 DOMAIN=mongodb.home.local
