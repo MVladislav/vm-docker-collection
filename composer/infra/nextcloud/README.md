@@ -47,3 +47,4 @@ MIDDLEWARE_SECURED=default-secured@file
 ## References
 
 - <https://hub.docker.com/_/nextcloud>
+- <https://github.com/nextcloud/all-in-one#how-to-use-this>
