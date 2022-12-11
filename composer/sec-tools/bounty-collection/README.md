@@ -31,6 +31,4 @@ VERSION=latest
 
 ## References
 
-- <https://docs.docker.com/compose/compose-file/compose-file-v3/#configs>
-- <https://docs.docker.com/engine/swarm/secrets/>
-- <https://...>
+- <>
