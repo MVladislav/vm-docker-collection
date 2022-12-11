@@ -32,10 +32,10 @@ x-basic-deploy:
     condition: on-failure
   resources:
     limits:
-      cpus: "0.3"
+      # cpus: "0.3"
       memory: 50M
     reservations:
-      cpus: "0.0001"
+      cpus: "0.001"
       memory: 10M
 
 x-basic:
@@ -53,6 +53,8 @@ x-basic:
   networks:
     default: {}
     proxy: {}
+  tmpfs:
+    - /tmp
   restart: always # always | on-failure
 
 ################################################################################
@@ -65,21 +67,21 @@ services:
   ##############################################################################
   portainer:
     # https://hub.docker.com/r/portainer/portainer-ce
-    image: portainer/portainer-ce:${VERSION:-2.16.1}
+    image: portainer/portainer-ce:${VERSION_PORTAINER:-2.16.1}
     <<: *basic
     deploy:
       <<: [ *basic-deploy, *basic-deploy-labels ]
     # ports:
-    #   - target: 9000
-    #     published: ${PORT_HTTP:-9000}
+    #   - target: ${PORT:-9000}
+    #     published: ${PORT_PUBLISH:-9000}
     #     protocol: tcp
     #     mode: host
-    #   - target: 9443
-    #     published: ${PORT_HTTPS:-9443}
+    #   - target: ${PORT_HTTPS:-9443}
+    #     published: ${PORT_HTTPS_PUBLISH:-9443}
     #     protocol: tcp
     #     mode: host
-    #   - target: 8000
-    #     published: ${PORT_OTHER:-8000}
+    #   - target: ${PORT_OTHER:-8000}
+    #     published: ${PORT_OTHER_PUBLISH:-8000}
     #     protocol: tcp
     #     mode: host
     volumes:
@@ -93,7 +95,7 @@ services:
   ##############################################################################
   agent:
     # https://hub.docker.com/r/portainer/agent
-    image: portainer/agent:${VERSION:-2.16.1}
+    image: portainer/agent:${VERSION_AGENT:-2.16.1}
     <<: *basic
     deploy:
       mode: global
@@ -104,10 +106,10 @@ services:
         condition: on-failure
       resources:
         limits:
-          cpus: "0.3"
+          # cpus: "0.3"
           memory: 50M
         reservations:
-          cpus: "0.0001"
+          cpus: "0.001"
           memory: 10M
     environment:
       # REQUIRED: Should be equal to the service name prefixed by "tasks." when
