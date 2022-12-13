@@ -8,7 +8,7 @@
 
 - [SETUP](#setup)
   - [basic](#basic)
-    - [first startup database container](#first-startup-database-container)
+    - [first startup database container (mongodb)](#first-startup-database-container-mongodb)
     - [create your `secrets`:](#create-your-secrets)
     - [create `.env` file following:](#create-env-file-following)
   - [Optional: add TLS for syslog](#optional-add-tls-for-syslog)
@@ -22,18 +22,22 @@
 
 > defined to work with treafik
 
-### first startup database container
+### first startup database container (mongodb)
 
-run mongodb from example here: <https://github.com/MVladislav/vm-docker-collection/tree/develop/composer/db/mongodb>
+run mongodb from example here: <https://github.com/MVladislav/vm-docker-collection/tree/main/composer/db/mongodb>
 
-and create new user with database for graylog:
+and create new user with database for graylog
 
-```mongodb
-use graylog
-db.createUser(
+over command-line:
+
+```sh
+$mongosh "mongodb://<USERNAME>:<PASSWORD>@127.0.0.1:27017/?authMechanism=DEFAULT"
+# $mongosh "mongodb://root:swordfish@127.0.0.1:27017/?authMechanism=DEFAULT"
+$use graylog
+$db.createUser(
   {
     user: "graylog",
-    pwd:  passwordPrompt(),   // or cleartext password
+    pwd:  passwordPrompt(),
     roles: [ { role: "readWrite", db: "graylog" } ]
   }
 )
@@ -55,7 +59,7 @@ NODE_ID=
 NODE_ROLE=manager
 NETWORK_MODE=overlay
 
-VERSION_GRAYLOG=5.0.0-beta.4-1
+VERSION_GRAYLOG=5.0.0
 VERSION_OPENSEARCH=2.4.0
 
 LB_SWARM=true
@@ -65,8 +69,11 @@ PORT=9000
 # default-secured@file | protected-secured@file | admin-secured@file
 MIDDLEWARE_SECURED=default-secured@file
 
-OPENSEARCH_MEM_USE_GB=1g
-OPENSEARCH_MEM_USE_GB=1g
+GRAYLOG_MEM_USE_LIMIT=2G
+GRAYLOG_MEM_USE=2G
+
+OPENSEARCH_MEM_USE_LIMIT=1.5G
+OPENSEARCH_MEM_USE=1G
 
 CLUSTER_NAME=opensearch-cluster
 
@@ -130,4 +137,7 @@ under page `streams`, do not forget to activate the stream by click on **start s
 - <https://docs.graylog.org/docs/docker>
 - <https://www.youtube.com/watch?v=rtfj6W5X0YA>
 - <https://github.com/Graylog2/graylog-docker/blob/261b48d65b48a7c35f8934e6a6b4a13a67ab6fbe/test/docker-compose.tpl>
-- <https://hub.docker.com/r/opensearchproject/opensearch>
+- opensearch
+  - <https://hub.docker.com/r/opensearchproject/opensearch>
+- infos:
+  - <https://www.youtube.com/watch?v=wZxwwQ1gchI>

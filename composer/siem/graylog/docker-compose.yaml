@@ -32,7 +32,11 @@ x-basic-deploy:
     condition: on-failure
   resources:
     limits:
-      memory: 2g
+      # cpus: "1.5"
+      memory: ${GRAYLOG_MEM_USE_LIMIT:-2g}
+    reservations:
+      cpus: "0.001"
+      memory: 32M
 
 x-basic:
   &basic
@@ -62,11 +66,13 @@ x-basic:
 x-graylog-cluster:
   # minimum and maximum Java heap size, recommend setting both to 50% of system RAM
   &graylog-cluster
-  GRAYLOG_ELASTICSEARCH_HOSTS: "http://opensearch-node-1:9200,http://opensearch-node-2:9200"
+  GRAYLOG_SERVER_JAVA_OPTS: -Xms${GRAYLOG_MEM_USE:-2g} -Xmx${GRAYLOG_MEM_USE:-2g} -XX:NewRatio=1 -server -XX:+ResizeTLAB -XX:-OmitStackTraceInFastThrow
+  GRAYLOG_ELASTICSEARCH_HOSTS: "http://opensearch-node-1:9200,http://opensearch-node-2:9200,http://opensearch-node-3:9200"
+
 x-opensearch-cluster:
   # minimum and maximum Java heap size, recommend setting both to 50% of system RAM
   &opensearch-cluster
-  OPENSEARCH_JAVA_OPTS: -Xms${OPENSEARCH_MEM_USE_GB:-1g} -Xmx${OPENSEARCH_MEM_USE_GB:-1g} -Dlog4j2.formatMsgNoLookups=true
+  OPENSEARCH_JAVA_OPTS: -Xms${OPENSEARCH_MEM_USE:-1g} -Xmx${OPENSEARCH_MEM_USE:-1g} -Dlog4j2.formatMsgNoLookups=true
   logger.deprecation.level: ${LOGGER_DEPRECATION_LEVEL:-warn}
   action.auto_create_index: ${ACTION_AUTO_CREATE_INDEX:-false}
   bootstrap.memory_lock: ${BOOTSTRAP_MEMORY_LOCK:-false} # along with the memlock settings below, disables swapping
@@ -75,8 +81,8 @@ x-opensearch-cluster:
 
   # discovery.type: ${DISCOVERY_TYPE:-single-node}
   cluster.name: ${CLUSTER_NAME:-opensearch-cluster}
-  discovery.seed_hosts: opensearch-node-1,opensearch-node-2
-  cluster.initial_cluster_manager_nodes: opensearch-node-1,opensearch-node-2
+  discovery.seed_hosts: opensearch-node-1,opensearch-node-2,opensearch-node-3
+  cluster.initial_cluster_manager_nodes: opensearch-node-1,opensearch-node-2,opensearch-node-3
 
 ################################################################################
 ################################################################################
@@ -88,7 +94,7 @@ services:
   ##############################################################################
   graylog:
     # https://hub.docker.com/r/graylog/graylog
-    image: graylog/graylog:${VERSION_GRAYLOG:-5.0.0-beta.4-1}
+    image: graylog/graylog:${VERSION_GRAYLOG:-5.0.0}
     <<: *basic
     deploy:
       <<: [ *basic-deploy, *basic-deploy-labels ]
@@ -130,8 +136,8 @@ services:
       - graylog_data:/usr/share/graylog/data
       - ./config/plugins:/usr/share/graylog/plugin
       # - ./config/configs:/usr/share/graylog/data/config
-      - ./config/secrets/tls:/graylog-input-tls:ro
-    entrypoint: /usr/bin/tini -- wait-for-it opensearch:9200 --  /docker-entrypoint.sh
+      # - ./config/secrets/tls:/graylog-input-tls:ro
+    entrypoint: /usr/bin/tini -- wait-for-it opensearch:9200 -- /docker-entrypoint.sh
     networks:
       default: {}
       graylog: {}
@@ -142,12 +148,21 @@ services:
   ##############################################################################
   ##############################################################################
   opensearch-node-1:
+    # https://hub.docker.com/r/opensearchproject/opensearch
     image: opensearchproject/opensearch:${VERSION_OPENSEARCH:-2.4.0}
     <<: *basic
     deploy:
       <<: *basic-deploy
+      resources:
+        limits:
+          # cpus: "1.5"
+          memory: ${OPENSEARCH_MEM_USE_LIMIT:-1.5G}
+        reservations:
+          cpus: "0.001"
+          memory: 32M
     environment:
       node.name: opensearch-node-1
+      discovery.seed_hosts: opensearch-node-2,opensearch-node-3
       <<: *opensearch-cluster
     volumes:
       - /etc/timezone:/etc/timezone:ro
@@ -157,17 +172,50 @@ services:
       default: {}
 
   opensearch-node-2:
+    # https://hub.docker.com/r/opensearchproject/opensearch
     image: opensearchproject/opensearch:${VERSION_OPENSEARCH:-2.4.0}
     <<: *basic
     deploy:
       <<: *basic-deploy
+      resources:
+        limits:
+          # cpus: "1.5"
+          memory: ${OPENSEARCH_MEM_USE_LIMIT:-1.5G}
+        reservations:
+          cpus: "0.001"
+          memory: 32M
     environment:
       node.name: opensearch-node-2
+      discovery.seed_hosts: opensearch-node-1,opensearch-node-3
       <<: *opensearch-cluster
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - opensearch_data_2:/usr/share/opensearch/data
+    networks:
+      default: {}
+
+  opensearch-node-3:
+    # https://hub.docker.com/r/opensearchproject/opensearch
+    image: opensearchproject/opensearch:${VERSION_OPENSEARCH:-2.4.0}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+      resources:
+        limits:
+          # cpus: "1.5"
+          memory: ${OPENSEARCH_MEM_USE_LIMIT:-1.5G}
+        reservations:
+          cpus: "0.001"
+          memory: 32M
+    environment:
+      node.name: opensearch-node-3
+      discovery.seed_hosts: opensearch-node-1,opensearch-node-2
+      <<: *opensearch-cluster
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - opensearch_data_3:/usr/share/opensearch/data
     networks:
       default: {}
 
@@ -191,6 +239,7 @@ volumes:
   graylog_data: {}
   opensearch_data_1: {}
   opensearch_data_2: {}
+  opensearch_data_3: {}
 
 secrets:
   graylog_password_secret:
