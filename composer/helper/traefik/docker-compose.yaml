@@ -45,17 +45,9 @@ x-basic-deploy:
 x-basic:
   &basic
   env_file: .env
-  # cap_add:
-  #   - CHOWN
-  #   - DAC_OVERRIDE
-  #   - SETGID
-  #   - SETUID
-  #   - NET_ADMIN
-  #   - NET_RAW
-  #   - SYS_MODULE
-  #   - AUDIT_CONTROL
-  #   - AUDIT_READ
   cap_drop: [ "ALL" ]
+  security_opt:
+    - no-new-privileges:true
   ulimits:
     memlock:
       soft: -1
@@ -172,26 +164,22 @@ services:
       - /etc/localtime:/etc/localtime:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - traefik_logs:/var/log/traefik
-      # healthcheck:
-      #   test:
-      #     [
-      #       "CMD",
-      #       "curl",
-      #       "-f",
-      #       "${PROTOCOL:-https}://localhost:${PORT:-443}"
-      #     ]
-      #   interval: 30s
-      #   timeout: 10s
-      #   retries: 5
+    healthcheck:
+      test: "traefik healthcheck --ping"
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
-      ################################################################################
-      ################################################################################
-      ################################################################################
+################################################################################
+################################################################################
+################################################################################
 networks:
   proxy:
     name: proxy
     driver: ${NETWORK_MODE:-bridge}
     attachable: true
+    driver_opts:
+      encrypted: "true"
 
 volumes:
   config: {}

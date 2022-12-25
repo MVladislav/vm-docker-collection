@@ -197,13 +197,13 @@ api:
 ################################################################
 
 # Enable ping
-#ping:
-# Name of the related entry point
-#
-# Optional
-# Default: "traefik"
-#
-#  entryPoint: traefik
+ping: {}
+#   # Name of the related entry point
+
+#   # Optional
+#   # Default: "traefik"
+
+#   entryPoint: traefik
 
 ################################################################
 # Docker configuration backend

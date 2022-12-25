@@ -46,7 +46,6 @@ copy/create following files:
 ### create `.env` file following:
 
 ```env
-NODE_ID=
 NODE_ROLE=manager
 NETWORK_MODE=overlay
 
@@ -61,8 +60,8 @@ MIDDLEWARE_SECURED=admin-secured@file
 
 #ADMIN_USERNAME=traefik=traefik
 ADMIN_USERNAME=traefik
-# $(openssl passwd -apr1 $PASSWORD) or $(openssl passwd -apr1)
-# new echo $(htpasswd -nB traefik)
+# old: echo $(openssl passwd -apr1 $PASSWORD) or echo $(openssl passwd -apr1)
+# new: echo $(htpasswd -nB traefik)
 HASHED_PASSWORD=
 ```
 
