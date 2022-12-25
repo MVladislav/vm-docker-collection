@@ -10,6 +10,8 @@
   - [basic](#basic)
     - [create your `secrets`:](#create-your-secrets)
     - [create `.env` file following:](#create-env-file-following)
+  - [Helper](#helper)
+    - [verify healthcheck](#verify-healthcheck)
   - [References](#references)
 
 ---
@@ -40,6 +42,16 @@ PROTOCOL=https
 PORT=443
 # default-secured@file | protected-secured@file | admin-secured@file
 MIDDLEWARE_SECURED=default-secured@file
+```
+
+---
+
+## Helper
+
+### verify healthcheck
+
+```sh
+$docker inspect --format "{{json .State.Health }}" <CONTAINER_NAME> | jq
 ```
 
 ---

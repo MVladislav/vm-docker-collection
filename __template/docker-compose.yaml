@@ -47,15 +47,46 @@ x-basic:
   # stdin_open: true # docker run -i
   # tty: true # docker run -t
   # cap_add:
+  #   # https://dockerlabs.collabnix.com/advanced/security/capabilities/
   #   - CHOWN
   #   - DAC_OVERRIDE
+  #   - DAC_READ_SEARCH
   #   - SETGID
   #   - SETUID
   #   - NET_ADMIN
   #   - NET_RAW
+  #   - NET_BIND_SERVICE
+  #   - NET_BROADCAST
   #   - SYS_MODULE
+  #   - SYS_NICE
   #   - AUDIT_CONTROL
   #   - AUDIT_READ
+  #   # --------------------------
+  #   - FOWNER
+  #   - FSETID
+  #   - KILL
+  #   - SETPCAP
+  #   - LINUX_IMMUTABLE
+  #   - IPC_LOCK
+  #   - IPC_OWNER
+  #   - SYS_RAWIO
+  #   - SYS_CHROOT
+  #   - SYS_PTRACE
+  #   - SYS_PACCT
+  #   - SYS_ADMIN
+  #   - SYS_BOOT
+  #   - SYS_RESOURCE
+  #   - SYS_TIME
+  #   - SYS_TTY_CONFIG
+  #   - MKNOD
+  #   - LEASE
+  #   - AUDIT_WRITE
+  #   - SETFCAP
+  #   - MAC_OVERRIDE
+  #   - MAC_ADMIN
+  #   - SYSLOG
+  #   - WAKE_ALARM
+  #   - BLOCK_SUSPEND
   # cap_drop: ["ALL"]
   # security_opt:
   #   - no-new-privileges:true
@@ -137,18 +168,29 @@ services:
       #   target: /usr/share/logstash/config/logstash.yml
       #   read_only: true
       # command: >
-      #   ...
+      # ...
       # healthcheck:
       #   test:
       #     [
       #       "CMD",
       #       "curl",
       #       "-f",
-      #       "${PROTOCOL:-https}://localhost:${PORT:-443}"
+      #       "${PROTOCOL:-https}://127.0.0.1:${PORT:-443}",
+      #       ".......................",
+      #       "CMD",
+      #       "wget",
+      #       "--no-verbose",
+      #       "--tries=1",
+      #       "--spider",
+      #       "--no-check-certificate",
+      #       "${PROTOCOL:-https}://127.0.0.1:${PORT:-443}",
+      #       "CMD-SHELL",
+      #       "wget --no-verbose --tries=1 --spider --no-check-certificate ${PROTOCOL:-https}://127.0.0.1:${PORT:-443} || exit 1"
       #     ]
       #   interval: 30s
       #   timeout: 10s
       #   retries: 5
+
       ################################################################################
       ################################################################################
       ################################################################################
@@ -156,6 +198,8 @@ networks:
   default:
     driver: ${NETWORK_MODE:-bridge}
     attachable: true
+    driver_opts:
+      encrypted: "true"
   proxy:
     external: true
   nas-data:
