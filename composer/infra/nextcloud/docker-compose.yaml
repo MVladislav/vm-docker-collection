@@ -1,54 +1,98 @@
+---
 version: "3.8"
+
+################################################################################
+################################################################################
+################################################################################
+
+x-basic-deploy-labels:
+  &basic-deploy-labels
+  labels:
+    - traefik.enable=true
+    - traefik.docker.lbswarm=${LB_SWARM:-true}
+    - traefik.docker.network=proxy
+    - traefik.http.routers.nextcloud.entrypoints=https
+    - traefik.http.routers.nextcloud.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.nextcloud.tls=true
+    - traefik.http.routers.nextcloud.service=nextcloud
+    - traefik.http.services.nextcloud.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.nextcloud.loadbalancer.server.port=${PORT:-80}
+    - traefik.http.routers.nextcloud.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+
+x-basic-deploy:
+  &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  restart_policy:
+    condition: on-failure
+  resources:
+    limits:
+      # cpus: "1.5"
+      memory: 1G
+    reservations:
+      cpus: "0.001"
+      memory: 100M
+
+x-basic:
+  &basic
+  env_file: .env
+  user: "100:100"
+  cap_drop: [ "ALL" ]
+  security_opt:
+    - no-new-privileges:true
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 65535
+      hard: 65535
+    fsize: -1
+    as: -1
+  networks:
+    default: {}
+    mysql: {}
+    proxy: {}
+  tmpfs:
+    - /tmp
+  restart: always # always | on-failure
+
+################################################################################
+################################################################################
+################################################################################
 
 services:
   ##############################################################################
   ##############################################################################
   ##############################################################################
   nextcloud:
-    image: nextcloud:${VERSION:-apache}
-    env_file: .env
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
-      nofile:
-        soft: 65535
-        hard: 65535
-      fsize: -1
-      as: -1
+    # https://hub.docker.com/_/nextcloud
+    image: nextcloud:${VERSION_NEXTCLOUD:-25.0.2-apache}
+    <<: *basic
+    cap_add:
+      - MKNOD
+    # read_only: true
+    # tmpfs:
+    #   - /run:mode=1777
+    #   - /tmp:mode=1777
     deploy:
-      mode: replicated
-      replicas: 1
-      placement:
-        max_replicas_per_node: 1
-        constraints:
-          - "node.role==${NODE_ROLE:-manager}"
-          - node.platform.os == linux
-      restart_policy:
-        condition: on-failure
-      resources:
-        limits:
-          memory: 1g
-      labels:
-        - traefik.enable=true
-        - traefik.docker.lbswarm=${LB_SWARM:-true}
-        - traefik.docker.network=proxy
-        - traefik.http.routers.nextcloud.entrypoints=https
-        - traefik.http.routers.nextcloud.rule=Host(`${DOMAIN?domain variable not set}`)
-        - traefik.http.routers.nextcloud.tls=true
-        - traefik.http.routers.nextcloud.service=nextcloud
-        - traefik.http.services.nextcloud.loadbalancer.server.scheme=${PROTOCOL:-http}
-        - traefik.http.services.nextcloud.loadbalancer.server.port=${PORT:-80}
-        - traefik.http.routers.nextcloud.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+      <<: [ *basic-deploy, *basic-deploy-labels ]
     # ports:
-    #   - target: 80
-    #     published: ${PORT:-80}
+    #   - target: ${PORT:-80}
+    #     published: ${PORT_PUBLISH:-80}
     #     protocol: tcp
     #     mode: host
     secrets:
       - nextcloud_admin_password
       - mysql_password
     environment:
+      VIRTUAL_HOST:
+
       NEXTCLOUD_ADMIN_USER: ${NEXTCLOUD_ADMIN_USER:-admin}
       NEXTCLOUD_ADMIN_PASSWORD_FILE: /run/secrets/nextcloud_admin_password
 
@@ -57,39 +101,94 @@ services:
       MYSQL_USER: ${MYSQL_USER:-nextcloud}
       MYSQL_PASSWORD_FILE: /run/secrets/mysql_password
 
-      # REDIS_HOST: redis
+      PHP_MEMORY_LIMIT: "512M"
+      PHP_UPLOAD_LIMIT: "512M"
+
+      TRUSTED_PROXIES: ${TRUSTED_PROXIES:-10.0.0.0/8}
+      OVERWRITEPROTOCOL: https
+      OVERWRITEHOST: ${DOMAIN?domain variable not set}
+      OVERWRITECLIURL: https://${DOMAIN?domain variable not set}
+
+      # SMTP_SECURE: "ssl" # (empty by default): Set to ssl to use SSL, or tls to use STARTTLS.
+      # SMTP_PORT: 465 # (default: 465 for SSL and 25 for non-secure connections): Optional port for the SMTP connection. Use 587 for an alternative port for STARTTLS.
+      # SMTP_AUTHTYPE: "LOGIN" # (default: LOGIN): The method used for authentication. Use PLAIN if no authentication is required.
+      # SMTP_HOST: "" # (not set by default): The hostname of the SMTP server.
+      # SMTP_NAME: "" # (empty by default): The username for the authentication.
+      # SMTP_PASSWORD: "" # (empty by default): The password for the authentication.
+      # MAIL_FROM_ADDRESS: "" # (not set by default): Use this address for the 'from' field in the emails sent by Nextcloud.
+      # MAIL_DOMAIN: "" # (not set by default): Set a different domain for the emails than the domain where Nextcloud is installed.
+
+      REDIS_HOST: redis
+      REDIS_HOST_PORT: 6379
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - nextcloud:/var/www/html
-    networks:
-      # default: {}
-      mysql: {}
-      proxy: {}
     healthcheck:
-      test: ["CMD", "curl", "-f", "${PROTOCOL:-http}://localhost:${PORT:-80}"]
+      test:
+        [
+          "CMD",
+          "curl",
+          "-f",
+          "${PROTOCOL:-http}://127.0.0.1:${PORT:-80}"
+        ]
       interval: 30s
       timeout: 10s
       retries: 5
-    restart: always
 
   ##############################################################################
   ##############################################################################
   ##############################################################################
-  # redis:
-  #   image: redis:alpine
-  #   networks:
-  #     default: {}
-  #   restart: always
+  redis:
+    # https://hub.docker.com/_/redis
+    image: redis:${VERSION_REDIS:-7.0.7}
+    <<: *basic
+    user: "999:999"
+    cap_add:
+      - SETUID
+      - SETGID
+      # - DAC_OVERRIDE
+    deploy:
+      <<: *basic-deploy
+      resources:
+        limits:
+          # cpus: "1.5"
+          memory: 2G
+        reservations:
+          cpus: "0.001"
+          memory: 32M
+    volumes:
+      - redis:/data
+    command: redis-server --save 60 1 --loglevel warning
+    # --requirepass ${REDIS_PASSWORD:-}
+    networks:
+      default: {}
 
-  # cron:
-  #   image: nextcloud:apache
-  #   volumes:
-  #     - nextcloud:/var/www/html
-  #   entrypoint: /cron.sh
-  #   networks:
-  #     default: {}
-  #   restart: always
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  cron:
+    # https://hub.docker.com/_/nextcloud
+    image: nextcloud:${VERSION_NEXTCLOUD:-25.0.2-apache}
+    <<: *basic
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+    deploy:
+      <<: *basic-deploy
+      resources:
+        limits:
+          # cpus: "1.5"
+          memory: 100M
+        reservations:
+          cpus: "0.001"
+          memory: 32M
+    volumes:
+      - nextcloud:/var/www/html
+    entrypoint: /cron.sh
+    networks:
+      default: {}
 
 ################################################################################
 ################################################################################
@@ -98,6 +197,8 @@ networks:
   default:
     driver: ${NETWORK_MODE:-bridge}
     attachable: true
+    driver_opts:
+      encrypted: "true"
   mysql:
     external: true
   proxy:
@@ -105,6 +206,7 @@ networks:
 
 volumes:
   nextcloud: {}
+  redis: {}
 
 secrets:
   nextcloud_admin_password:
