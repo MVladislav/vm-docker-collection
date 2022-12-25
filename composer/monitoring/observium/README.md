@@ -8,6 +8,7 @@
 
 - [SETUP](#setup)
   - [basic](#basic)
+    - [database setup](#database-setup)
     - [create your `secrets`:](#create-your-secrets)
     - [create `.env` file following:](#create-env-file-following)
   - [Hint](#hint)
@@ -25,7 +26,11 @@
 
 > defined to work with treafik
 
-TODO: define source to start mysql
+### database setup
+
+setup mysql from [here](https://github.com/MVladislav/vm-docker-collection/tree/main/composer/db/mysql)
+
+and add new space for observium in mysql, see `OBSERVIUM_DB_*` below for namings.
 
 ### create your `secrets`:
 
@@ -39,28 +44,27 @@ $echo "swordfish" > config/secrets/observium_db_pass.txt
 ### create `.env` file following:
 
 ```env
-NODE_ID=
 NODE_ROLE=manager
 NETWORK_MODE=overlay
 
-VERSION=latest
+VERSION=ce-22.5.12042
 
 LB_SWARM=true
 DOMAIN=observium.home.local
 PROTOCOL=http
 PORT=80
 # default-secured@file | protected-secured@file | admin-secured@file
-MIDDLEWARE_SECURED=protected-secured@file
+MIDDLEWARE_SECURED=default-secured@file
 
 TZ=Europe/Berlin
 
-OBSERVIUM_ADMIN_USER=admin
+OBSERVIUM_ADMIN_USER=groot
 
-OBSERVIUM_DB_HOST = mysql
-OBSERVIUM_DB_PORT = 3306
+OBSERVIUM_DB_HOST=mysql
+OBSERVIUM_DB_PORT=3306
 
-OBSERVIUM_DB_NAME = observium
-OBSERVIUM_DB_USER = observium
+OBSERVIUM_DB_NAME=observium
+OBSERVIUM_DB_USER=observium
 ```
 
 ## Hint
