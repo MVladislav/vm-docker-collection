@@ -1,63 +1,95 @@
+---
 version: "3.8"
+
+################################################################################
+################################################################################
+################################################################################
+
+x-basic-deploy-labels:
+  &basic-deploy-labels
+  labels:
+    - traefik.enable=true
+    - traefik.docker.lbswarm=${LB_SWARM:-true}
+    - traefik.docker.network=proxy
+    - traefik.http.routers.uptime-kuma.entrypoints=https
+    - traefik.http.routers.uptime-kuma.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.uptime-kuma.tls=true
+    - traefik.http.routers.uptime-kuma.service=uptime-kuma
+    - traefik.http.services.uptime-kuma.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.uptime-kuma.loadbalancer.server.port=${PORT:-3001}
+    - traefik.http.routers.uptime-kuma.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+
+x-basic-deploy:
+  &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  restart_policy:
+    condition: on-failure
+  resources:
+    limits:
+      # cpus: "1.5"
+      memory: 500M
+    reservations:
+      cpus: "0.001"
+      memory: 32M
+
+x-basic:
+  &basic
+  env_file: .env
+  cap_add:
+    - SETGID
+  cap_drop: [ "ALL" ]
+  security_opt:
+    - no-new-privileges:true
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 65535
+      hard: 65535
+    fsize: -1
+    as: -1
+  networks:
+    proxy: {}
+  tmpfs:
+    - /tmp
+  restart: always
+
+################################################################################
+################################################################################
+################################################################################
 
 services:
   ##############################################################################
   ##############################################################################
   ##############################################################################
-  uptime_kuma:
-    image: louislam/uptime-kuma:${VERSION:-latest}
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
-      nofile:
-        soft: 65535
-        hard: 65535
-      fsize: -1
-      as: -1
+  uptime-kuma:
+    # https://hub.docker.com/r/louislam/uptime-kuma
+    image: louislam/uptime-kuma:${VERSION:-1.18.5}
+    <<: *basic
     deploy:
-      mode: replicated
-      replicas: 1
-      placement:
-        max_replicas_per_node: 1
-        constraints:
-          # - "node.id==${NODE_ID}"
-          - "node.role==${NODE_ROLE:-manager}"
-      restart_policy:
-        condition: on-failure
-      labels:
-        - traefik.enable=true
-        - traefik.docker.lbswarm=${LB_SWARM:-true}
-        - traefik.docker.network=proxy
-        - traefik.http.routers.kuma.entrypoints=https
-        - traefik.http.routers.kuma.rule=Host(`${DOMAIN?domain variable not set}`)
-        - traefik.http.routers.kuma.tls=true
-        - traefik.http.routers.kuma.service=kuma
-        - traefik.http.services.kuma.loadbalancer.server.scheme=${PROTOCOL:-http}
-        - traefik.http.services.kuma.loadbalancer.server.port=${PORT:-3001}
-        - traefik.http.middlewares.frameOptionsFromSmart.headers.framedeny=true
-        - traefik.http.routers.kuma.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+      <<: [ *basic-deploy, *basic-deploy-labels ]
     # ports:
-    #   - target: 3001
-    #     published: ${PORT:-3001}
+    #   - target: ${PORT:-3001}
+    #     published: ${PORT_PUBLISH:-3001}
     #     protocol: tcp
     #     mode: host
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
+      # - /var/run/docker.sock:/var/run/docker.sock:ro
       - data:/app/data
-    networks:
-      # default: {}
-      proxy: {}
-    restart: always
 
 ################################################################################
 ################################################################################
 ################################################################################
 networks:
-  # default:
-  #   driver: ${NETWORK_MODE:-bridge}
-  #   attachable: true
   proxy:
     external: true
 
