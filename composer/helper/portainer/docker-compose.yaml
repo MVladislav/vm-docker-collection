@@ -41,6 +41,9 @@ x-basic-deploy:
 x-basic:
   &basic
   env_file: .env
+  cap_drop: [ "ALL" ]
+  security_opt:
+    - no-new-privileges:true
   ulimits:
     memlock:
       soft: -1
@@ -67,7 +70,7 @@ services:
   ##############################################################################
   portainer:
     # https://hub.docker.com/r/portainer/portainer-ce
-    image: portainer/portainer-ce:${VERSION_PORTAINER:-2.16.1}
+    image: portainer/portainer-ce:${VERSION_PORTAINER:-2.16.2-alpine}
     <<: *basic
     deploy:
       <<: [ *basic-deploy, *basic-deploy-labels ]
@@ -89,13 +92,27 @@ services:
       - /etc/localtime:/etc/localtime:ro
       - data:/data
     command: -H tcp://tasks.agent:9001 --tlsskipverify
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "--no-check-certificate",
+          "${PROTOCOL:-http}://127.0.0.1:${PORT:-9000}"
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
   ##############################################################################
   ##############################################################################
   ##############################################################################
   agent:
     # https://hub.docker.com/r/portainer/agent
-    image: portainer/agent:${VERSION_AGENT:-2.16.1}
+    image: portainer/agent:${VERSION_AGENT:-2.16.2-alpine}
     <<: *basic
     deploy:
       mode: global
@@ -124,14 +141,30 @@ services:
       - /var/lib/docker/volumes:/var/lib/docker/volumes
     networks:
       default: {}
+    # healthcheck:
+    #   test:
+    #     [
+    #       "CMD",
+    #       "wget",
+    #       "--no-verbose",
+    #       "--tries=1",
+    #       "--spider",
+    #       "--no-check-certificate",
+    #       "https://127.0.0.1:9001/ping"
+    #     ]
+    #   interval: 30s
+    #   timeout: 10s
+    #   retries: 5
 
-################################################################################
-################################################################################
-################################################################################
+    ################################################################################
+    ################################################################################
+    ################################################################################
 networks:
   default:
     driver: ${NETWORK_MODE:-bridge}
     attachable: true
+    driver_opts:
+      encrypted: "true"
   proxy:
     external: true
 
