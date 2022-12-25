@@ -41,17 +41,9 @@ x-basic-deploy:
 x-basic:
   &basic
   env_file: .env
-  # cap_add:
-  #   - CHOWN
-  #   - DAC_OVERRIDE
-  #   - SETGID
-  #   - SETUID
-  #   - NET_ADMIN
-  #   - NET_RAW
-  #   - SYS_MODULE
-  #   - AUDIT_CONTROL
-  #   - AUDIT_READ
-  # cap_drop: ["ALL"]
+  cap_drop: [ "ALL" ]
+  security_opt:
+    - no-new-privileges:true
   ulimits:
     memlock:
       soft: -1
@@ -80,6 +72,11 @@ services:
     # https://hub.docker.com/_/mysql
     image: mysql:${VERSION_MYSQL:-8.0.31}
     <<: *basic
+    cap_add:
+      - SYS_NICE
+      - DAC_OVERRIDE
+      - SETGID
+      - SETUID
     deploy:
       <<: *basic-deploy
       resources:
@@ -131,6 +128,15 @@ services:
       - --host_cache_size=0
     networks:
       mysql: {}
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "mysqladmin ping -h 127.0.0.1 -u $$(echo $$MYSQL_ROOT_USER) -p$$(cat $$MYSQL_ROOT_PASSWORD_FILE) | grep 'mysqld is alive' || exit 1"
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
   ##############################################################################
   ##############################################################################
@@ -184,6 +190,8 @@ networks:
     name: mysql
     driver: ${NETWORK_MODE:-bridge}
     attachable: true
+    driver_opts:
+      encrypted: "true"
   proxy:
     external: true
 
