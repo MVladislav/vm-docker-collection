@@ -62,6 +62,38 @@ x-basic:
     - /tmp
   restart: always # always | on-failure
 
+x-nextcloud-env:
+  &nextcloud-env
+  VIRTUAL_HOST:
+
+  NEXTCLOUD_ADMIN_USER: ${NEXTCLOUD_ADMIN_USER:-admin}
+  NEXTCLOUD_ADMIN_PASSWORD_FILE: /run/secrets/nextcloud_admin_password
+
+  MYSQL_HOST: ${MYSQL_HOST:-mysql}
+  MYSQL_DATABASE: ${MYSQL_DATABASE:-nextcloud}
+  MYSQL_USER: ${MYSQL_USER:-nextcloud}
+  MYSQL_PASSWORD_FILE: /run/secrets/mysql_password
+
+  PHP_MEMORY_LIMIT: "512M"
+  PHP_UPLOAD_LIMIT: "512M"
+
+  TRUSTED_PROXIES: ${TRUSTED_PROXIES:-10.0.0.0/8}
+  OVERWRITEPROTOCOL: https
+  OVERWRITEHOST: ${DOMAIN?domain variable not set}
+  OVERWRITECLIURL: https://${DOMAIN?domain variable not set}
+
+  # SMTP_SECURE: "ssl" # (empty by default): Set to ssl to use SSL, or tls to use STARTTLS.
+  # SMTP_PORT: 465 # (default: 465 for SSL and 25 for non-secure connections): Optional port for the SMTP connection. Use 587 for an alternative port for STARTTLS.
+  # SMTP_AUTHTYPE: "LOGIN" # (default: LOGIN): The method used for authentication. Use PLAIN if no authentication is required.
+  # SMTP_HOST: "" # (not set by default): The hostname of the SMTP server.
+  # SMTP_NAME: "" # (empty by default): The username for the authentication.
+  # SMTP_PASSWORD: "" # (empty by default): The password for the authentication.
+  # MAIL_FROM_ADDRESS: "" # (not set by default): Use this address for the 'from' field in the emails sent by Nextcloud.
+  # MAIL_DOMAIN: "" # (not set by default): Set a different domain for the emails than the domain where Nextcloud is installed.
+
+  REDIS_HOST: redis
+  REDIS_HOST_PORT: 6379
+
 ################################################################################
 ################################################################################
 ################################################################################
@@ -91,39 +123,12 @@ services:
       - nextcloud_admin_password
       - mysql_password
     environment:
-      VIRTUAL_HOST:
-
-      NEXTCLOUD_ADMIN_USER: ${NEXTCLOUD_ADMIN_USER:-admin}
-      NEXTCLOUD_ADMIN_PASSWORD_FILE: /run/secrets/nextcloud_admin_password
-
-      MYSQL_HOST: ${MYSQL_HOST:-mysql}
-      MYSQL_DATABASE: ${MYSQL_DATABASE:-nextcloud}
-      MYSQL_USER: ${MYSQL_USER:-nextcloud}
-      MYSQL_PASSWORD_FILE: /run/secrets/mysql_password
-
-      PHP_MEMORY_LIMIT: "512M"
-      PHP_UPLOAD_LIMIT: "512M"
-
-      TRUSTED_PROXIES: ${TRUSTED_PROXIES:-10.0.0.0/8}
-      OVERWRITEPROTOCOL: https
-      OVERWRITEHOST: ${DOMAIN?domain variable not set}
-      OVERWRITECLIURL: https://${DOMAIN?domain variable not set}
-
-      # SMTP_SECURE: "ssl" # (empty by default): Set to ssl to use SSL, or tls to use STARTTLS.
-      # SMTP_PORT: 465 # (default: 465 for SSL and 25 for non-secure connections): Optional port for the SMTP connection. Use 587 for an alternative port for STARTTLS.
-      # SMTP_AUTHTYPE: "LOGIN" # (default: LOGIN): The method used for authentication. Use PLAIN if no authentication is required.
-      # SMTP_HOST: "" # (not set by default): The hostname of the SMTP server.
-      # SMTP_NAME: "" # (empty by default): The username for the authentication.
-      # SMTP_PASSWORD: "" # (empty by default): The password for the authentication.
-      # MAIL_FROM_ADDRESS: "" # (not set by default): Use this address for the 'from' field in the emails sent by Nextcloud.
-      # MAIL_DOMAIN: "" # (not set by default): Set a different domain for the emails than the domain where Nextcloud is installed.
-
-      REDIS_HOST: redis
-      REDIS_HOST_PORT: 6379
+      <<: *nextcloud-env
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - nextcloud:/var/www/html
+      - nextcloud_data:/var/www/data
     healthcheck:
       test:
         [
@@ -158,6 +163,8 @@ services:
           cpus: "0.001"
           memory: 32M
     volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
       - redis:/data
     command: redis-server --save 60 1 --loglevel warning
     # --requirepass ${REDIS_PASSWORD:-}
@@ -172,7 +179,7 @@ services:
     image: nextcloud:${VERSION_NEXTCLOUD:-25.0.2-apache}
     <<: *basic
     cap_add:
-      - CHOWN
+      - NET_BIND_SERVICE
       - SETUID
       - SETGID
     deploy:
@@ -184,11 +191,20 @@ services:
         reservations:
           cpus: "0.001"
           memory: 32M
+    secrets:
+      - nextcloud_admin_password
+      - mysql_password
+    environment:
+      <<: *nextcloud-env
     volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
       - nextcloud:/var/www/html
+      - nextcloud_data:/var/www/data
     entrypoint: /cron.sh
     networks:
       default: {}
+      mysql: {}
 
 ################################################################################
 ################################################################################
@@ -206,6 +222,7 @@ networks:
 
 volumes:
   nextcloud: {}
+  nextcloud_data: {}
   redis: {}
 
 secrets:
