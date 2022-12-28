@@ -1,0 +1,124 @@
+---
+version: "3.8"
+
+################################################################################
+################################################################################
+################################################################################
+
+x-basic-deploy-labels:
+  &basic-deploy-labels
+  labels:
+    - traefik.enable=true
+    - traefik.docker.lbswarm=${LB_SWARM:-true}
+    - traefik.docker.network=proxy
+    - traefik.http.routers.splunk.entrypoints=https
+    - traefik.http.routers.splunk.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.splunk.tls=true
+    - traefik.http.routers.splunk.service=splunk
+    - traefik.http.services.splunk.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.splunk.loadbalancer.server.port=${PORT:-8000}
+    - traefik.http.routers.splunk.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+
+x-basic-deploy:
+  &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  restart_policy:
+    condition: on-failure
+  resources:
+    limits:
+      # cpus: "1.5"
+      memory: 2g
+    reservations:
+      cpus: "0.001"
+      memory: 32M
+
+x-basic:
+  &basic
+  env_file: .env
+  # cap_add:
+  #   - NET_ADMIN
+  #   - NET_RAW
+  cap_drop: [ "ALL" ]
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 65535
+      hard: 65535
+    fsize: -1
+    as: -1
+  networks:
+    default: {}
+    proxy: {}
+  tmpfs:
+    - /tmp
+  restart: always
+
+################################################################################
+################################################################################
+################################################################################
+
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  splunk:
+    # https://hub.docker.com/r/splunk/splunk/
+    image: splunk/splunk:${VERSION:-8.1}
+    <<: *basic
+    deploy:
+      <<: [ *basic-deploy, *basic-deploy-labels ]
+    # ports:
+    #   - target: ${PORT:-8000}
+    #     published: ${PORT_PUBLISH:-8000}
+    #     protocol: tcp
+    #     mode: host
+    # secrets:
+    #   - splunk_password_secret
+    environment:
+      # SPLUNK_PASSWORD_FILE: /run/secrets/splunk_password_secret
+      SPLUNK_START_ARGS: --accept-license
+      SPLUNK_PASSWORD: swordfish
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "curl",
+          "-f",
+          "${PROTOCOL:-http}://localhost:${PORT:-8000}"
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  default:
+    driver: ${NETWORK_MODE:-bridge}
+    attachable: true
+  proxy:
+    external: true
+
+#
+# volumes:
+#   data: {}
+#
+# configs:
+#   xx_config:
+#     file: $PWD/config/...
+#
+# secrets:
+#   splunk_password_secret:
+#     file: config/secrets/splunk_password_secret.txt
