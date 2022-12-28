@@ -33,7 +33,7 @@ x-basic-deploy:
   resources:
     limits:
       # cpus: "1.5"
-      memory: 1G
+      memory: 1.5G
     reservations:
       cpus: "0.001"
       memory: 100M
@@ -41,7 +41,7 @@ x-basic-deploy:
 x-basic:
   &basic
   env_file: .env
-  user: "100:100"
+  user: "www-data:www-data"
   cap_drop: [ "ALL" ]
   security_opt:
     - no-new-privileges:true
@@ -74,8 +74,8 @@ x-nextcloud-env:
   MYSQL_USER: ${MYSQL_USER:-nextcloud}
   MYSQL_PASSWORD_FILE: /run/secrets/mysql_password
 
-  PHP_MEMORY_LIMIT: "512M"
-  PHP_UPLOAD_LIMIT: "512M"
+  PHP_MEMORY_LIMIT: "1G"
+  PHP_UPLOAD_LIMIT: "1G"
 
   TRUSTED_PROXIES: ${TRUSTED_PROXIES:-10.0.0.0/8}
   OVERWRITEPROTOCOL: https
@@ -106,8 +106,8 @@ services:
     # https://hub.docker.com/_/nextcloud
     image: nextcloud:${VERSION_NEXTCLOUD:-25.0.2-apache}
     <<: *basic
-    cap_add:
-      - MKNOD
+    # cap_add:
+    #   - MKNOD
     # read_only: true
     # tmpfs:
     #   - /run:mode=1777
@@ -127,7 +127,7 @@ services:
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-      - nextcloud:/var/www/html
+      - nextcloud_html:/var/www/html
       - nextcloud_data:/var/www/data
     healthcheck:
       test:
@@ -176,10 +176,9 @@ services:
   ##############################################################################
   cron:
     # https://hub.docker.com/_/nextcloud
-    image: nextcloud:${VERSION_NEXTCLOUD:-25.0.2-apache}
+    image: nextcloud:${VERSION_NEXTCLOUD_CRON:-25.0.2-fpm}
     <<: *basic
     cap_add:
-      - NET_BIND_SERVICE
       - SETUID
       - SETGID
     deploy:
@@ -199,7 +198,7 @@ services:
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-      - nextcloud:/var/www/html
+      - nextcloud_html:/var/www/html
       - nextcloud_data:/var/www/data
     entrypoint: /cron.sh
     networks:
@@ -221,7 +220,7 @@ networks:
     external: true
 
 volumes:
-  nextcloud: {}
+  nextcloud_html: {}
   nextcloud_data: {}
   redis: {}
 

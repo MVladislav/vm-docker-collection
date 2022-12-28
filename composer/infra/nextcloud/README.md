@@ -11,6 +11,7 @@
     - [database setup](#database-setup)
     - [create your `secrets`:](#create-your-secrets)
     - [create `.env` file following:](#create-env-file-following)
+  - [FAQ](#faq)
   - [References](#references)
 
 ---
@@ -39,6 +40,7 @@ NODE_ROLE=manager
 NETWORK_MODE=overlay
 
 VERSION_NEXTCLOUD=25.0.2-apache
+VERSION_NEXTCLOUD_CRON=25.0.2-fpm
 VERSION_REDIS=7.0.7
 
 LB_SWARM=true
@@ -54,6 +56,13 @@ MYSQL_HOST=mysql
 MYSQL_DATABASE=nextcloud
 MYSQL_USER=nextcloud
 ```
+
+---
+
+## FAQ
+
+- redis
+  - redis needs to have ipv6 turned on, check grub for entry with `ipv6.disable=1`
 
 ---
 
