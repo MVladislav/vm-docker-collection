@@ -1,6 +1,12 @@
 # original from: https://github.com/somsakc/docker-observium
-ARG VERSION_UBUNTU=22.10
-FROM ubuntu:${VERSION_UBUNTU}
+
+# # https://hub.docker.com/_/ubuntu
+# ARG VERSION_UBUNTU=22.10
+# FROM ubuntu:${VERSION_UBUNTU}
+
+# https://hub.docker.com/_/debian
+ARG VERSION_DEBIAN=11.6-slim
+FROM debian:${VERSION_DEBIAN}
 
 # ------------------------------------------------------------------------------
 
@@ -25,7 +31,9 @@ ENV OBSERVIUM_DB_HOST=$OBSERVIUM_DB_HOST
 ENV OBSERVIUM_DB_NAME=$OBSERVIUM_DB_NAME
 ENV OBSERVIUM_DB_USER=$OBSERVIUM_DB_USER
 
-ENV UBUNTU_PHP_VERSION="8.1"
+# ENV UBUNTU_PHP_VERSION="8.1"
+ENV UBUNTU_PHP_VERSION="7.4"
+ENV PHP_EXTRA_CONFIGURE_ARGS --enable-fpm --with-fpm-user=www-data --with-fpm-group=www-data
 
 # ------------------------------------------------------------------------------
 
@@ -41,32 +49,16 @@ RUN ln -sf /bin/true /sbin/initctl
 RUN dpkg-divert --local --rename --add /usr/bin/ischroot
 RUN ln -sf /bin/true /usr/bin/ischroot
 
+# http://bugs.python.org/issue19846
+# > At the moment, setting "LANG=C" on a Linux system *fundamentally breaks Python 3*, and that's not OK.
+ENV LANG C.UTF-8
+
 # ------------------------------------------------------------------------------
 
-# LANG SETUP
-ENV LANG en_US.UTF-8
-ENV LANGUAGE en_US.UTF-8
-ENV LC_ALL C.UTF-8
 RUN \
-  echo "**** install packages ****" \
+  echo "**** UPDATE - UPGRADE ****" \
   && apt-get update -q \
-  && apt-get upgrade -y -q \
-  && apt-get install -y --no-install-recommends \
-  locales \
-  apt-utils \
-  language-pack-en
-# Install locales
-RUN locale-gen cs_CZ.UTF-8
-RUN locale-gen de_DE.UTF-8
-RUN locale-gen en_US.UTF-8
-RUN locale-gen es_ES.UTF-8
-RUN locale-gen fr_FR.UTF-8
-RUN locale-gen it_IT.UTF-8
-RUN locale-gen pl_PL.UTF-8
-RUN locale-gen pt_BR.UTF-8
-RUN locale-gen ru_RU.UTF-8
-RUN locale-gen sl_SI.UTF-8
-RUN locale-gen uk_UA.UTF-8
+  && apt-get upgrade -y -q
 
 # ------------------------------------------------------------------------------
 
@@ -92,8 +84,8 @@ RUN \
   pwgen \
   snmp \
   fping \
-  # mysql-server \
-  mysql-client \
+  # mysql-client \
+  mariadb-client \
   rrdcached \
   rrdtool \
   subversion \
@@ -170,10 +162,9 @@ RUN \
 
 # ------------------------------------------------------------------------------
 
-# set locale
-RUN locale-gen en_US.UTF-8
-
-# ------------------------------------------------------------------------------
+RUN \
+  useradd -r -M -d /opt/observium observium \
+  && usermod -a -G observium www-data
 
 # install observium package
 RUN mkdir -p \
@@ -193,20 +184,19 @@ RUN wget https://www.observium.org/files/wmic_1.3.16_static_64bit.tar.gz \
   && mv wmic winexe /usr/bin
 
 # Patch schema upgrade SQL
-COPY config/184.sql /opt/observium/update/184.sql
+COPY --chmod=755 config/184.sql /opt/observium/update/184.sql
 # ...
-COPY config/observium/observium-init.sh /opt/observium/observium-init.sh
+COPY --chmod=755 config/observium/observium-init.sh /opt/observium/observium-init.sh
 # rddchached config
-COPY config/observium/rrdcached /etc/default/rrdcached
+COPY --chmod=744 config/observium/rrdcached /etc/default/rrdcached
 # default observium config
-COPY config/observium/config.php /opt/observium/config.php
+COPY --chmod=744 config/observium/config.php /opt/observium/config.php
 # nmap discover script
-COPY config/observium/observium-nmap-autodiscover.sh /opt/observium/observium-nmap-autodiscover.sh
+COPY --chmod=755 config/observium/observium-nmap-autodiscover.sh /opt/observium/observium-nmap-autodiscover.sh
 
-# set rights and own
-RUN chmod 755 /opt/observium/observium-init.sh \
-  && chmod 755 /opt/observium/update/184.sql \
-  && chmod 755 /opt/observium/observium-nmap-autodiscover.sh \
+# set mod and own
+RUN \
+  chmod 755 /opt/observium \
   && chown -R www-data:www-data /opt/observium
 
 # check version and installed files
@@ -215,42 +205,39 @@ RUN [ -f /opt/observium/VERSION ] && cat /opt/observium/VERSION
 # ------------------------------------------------------------------------------
 
 # configure apache configuration and modules
-COPY config/observium/observium-apache24 /etc/apache2/sites-available/000-default.conf
+COPY --chmod=644 config/observium/observium-000-default /etc/apache2/sites-available/000-default.conf
 RUN \
   echo "**** conf apache & activate modules ****" \
   && a2dismod mpm_event \
   && a2enmod mpm_prefork \
   && a2enmod "php${UBUNTU_PHP_VERSION}" \
   && a2enmod rewrite \
-  && chmod 644 /etc/apache2/sites-available/000-default.conf \
-  && sed -i -e "s/\${APACHE_LOG_DIR}\//\/opt\/observium\/logs\/apache2-/g" /etc/apache2/apache2.conf
+  && sed -i -e "s/\${APACHE_LOG_DIR}\//\/opt\/observium\/logs\/apache2-/g" /etc/apache2/apache2.conf \
+  && echo "ServerName localhost" >> /etc/apache2/apache2.conf
+
+
 
 # configure cron, syslog & logrotate
 RUN mkdir -p \
   /var/lib/syslog-ng \
   /etc/logrotate.d \
   /etc/cron.d
-# syslog-ng
-RUN touch /var/log/syslog
-COPY config/syslog-ng/syslog-ng.conf /etc/syslog-ng/syslog-ng.conf
-# syslog config
-COPY config/syslog-ng/observium.conf /etc/syslog-ng/conf.d/observium.conf
-# logrotate
-COPY config/logrotate/logrotate.conf /etc/logrotate.conf
-COPY config/logrotate/logrotate_syslogng /etc/logrotate.d/syslogng
-COPY config/logrotate/logrotate_observium /etc/logrotate.d/observium
-# cron
-COPY config/logrotate/logrotate-cron /etc/cron.d/logrotate
-COPY config/observium/observium-cron /etc/cron.d/observium
 # set rights
 RUN \
   chown root:root /var/log \
-  && chmod 0755 /var/log \
-  && chmod 640 /var/log/syslog \
-  && chmod 644 \
-  /etc/logrotate.conf /etc/logrotate.d/syslogng /etc/logrotate.d/observium \
-  /etc/syslog-ng/syslog-ng.conf /etc/syslog-ng/conf.d/observium.conf \
-  /etc/cron.d/logrotate /etc/cron.d/observium
+  && chmod 0755 /var/log
+# syslog-ng
+RUN touch /var/log/syslog && chmod 640 /var/log/syslog
+COPY --chmod=644 config/syslog-ng/syslog-ng.conf /etc/syslog-ng/syslog-ng.conf
+# syslog config
+COPY --chmod=644 config/syslog-ng/observium.conf /etc/syslog-ng/conf.d/observium.conf
+# logrotate
+COPY --chmod=644 config/logrotate/logrotate.conf /etc/logrotate.conf
+COPY --chmod=644 config/logrotate/logrotate_syslogng /etc/logrotate.d/syslogng
+COPY --chmod=644 config/logrotate/logrotate_observium /etc/logrotate.d/observium
+# cron
+COPY --chmod=644 config/logrotate/logrotate-cron /etc/cron.d/logrotate
+COPY --chmod=644 config/observium/observium-cron /etc/cron.d/observium
 
 # ------------------------------------------------------------------------------
 
@@ -259,9 +246,9 @@ WORKDIR /opt/observium
 # expose tcp port
 EXPOSE 80/tcp
 # set volumes
-VOLUME ["/opt/observium/logs","/opt/observium/rrd"]
+VOLUME ["/opt/observium/logs","/opt/observium/rrd", "/opt/observium/html", "/var/log"]
 
 # configure entry point
-COPY --chmod=750 config/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+COPY --chmod=755 config/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 COPY config/supervisord.conf /etc/supervisord.conf
 ENTRYPOINT [ "/usr/local/bin/docker-entrypoint.sh" ]

@@ -3,9 +3,6 @@
 count=0
 rc=1
 
-sed -i "s#\;date\.timezone\ \=#date\.timezone\ \=\ $TZ#g" "/etc/php/${UBUNTU_PHP_VERSION}/cli/php.ini"
-sed -i "s#\;date\.timezone\ \=#date\.timezone\ \=\ $TZ#g" "/etc/php/${UBUNTU_PHP_VERSION}/apache2/php.ini"
-
 while [ $rc -ne 0 ]; do
   let count++
   echo "[$count] Verifying coonection to observium database."
@@ -21,6 +18,7 @@ tables=$(mysql -h "${OBSERVIUM_DB_HOST}" -u "${OBSERVIUM_DB_USER}" --password="$
 if [ -z "$tables" ]; then
   echo "Setting /opt/observium/rrd directory to www-data:www-data."
   chown -v www-data:www-data /opt/observium/rrd
+  chown -v www-data:www-data /opt/observium/logs
   echo "Initializing database schema in first time running for observium."
   /opt/observium/discovery.php -u
   /opt/observium/adduser.php "${OBSERVIUM_ADMIN_USER}" "${OBSERVIUM_ADMIN_PASS}" 10

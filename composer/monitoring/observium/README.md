@@ -114,12 +114,12 @@ sysServices 72
 includeDir /etc/snmp/snmpd.conf.d
 
 ## This line allows Observium to detect the host OS if the distro script is installed
-## wget https://raw.githubusercontent.com/librenms/librenms-agent/master/snmp/distro
-## or wget https://www.observium.org/files/distro
+## sudo curl https://raw.githubusercontent.com/librenms/librenms-agent/master/snmp/distro -o /usr/local/lib/snmpd/distro
+## or sudo curl https://www.observium.org/files/distro -o /usr/local/lib/snmpd/distro
 extend .1.3.6.1.4.1.2021.7890.1 distro /usr/local/lib/snmpd/distro
 
 ## This line allows Observium to detect the host OSUPDATE if the osupdate script is installed
-## wget https://raw.githubusercontent.com/librenms/librenms-agent/master/snmp/osupdate
+## sudo curl https://raw.githubusercontent.com/librenms/librenms-agent/master/snmp/osupdate -o /usr/local/lib/snmpd/osupdate
 extend osupdate /usr/local/lib/snmpd/osupdate
 
 ## Disk Monitoring
@@ -139,7 +139,7 @@ extend .1.3.6.1.4.1.2021.7890.4 serial   /bin/cat /sys/devices/virtual/dmi/id/pr
 extend uptime /bin/cat /proc/uptime
 
 ## This line enables Observium's ifAlias description injection
-## apt install libsnmp-extension-passpersist-perl
+## sudo apt install libsnmp-extension-passpersist-perl
 pass_persist .1.3.6.1.2.1.31.1.1.1.18 /usr/local/bin/ifAlias_persist
 
 ## proxmox

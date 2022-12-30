@@ -2,6 +2,9 @@
 set -eo pipefail
 shopt -s nullglob
 
+sed -i "s#\;date\.timezone\ \=#date\.timezone\ \=\ $TZ#g" "/etc/php/${UBUNTU_PHP_VERSION}/cli/php.ini"
+sed -i "s#\;date\.timezone\ \=#date\.timezone\ \=\ $TZ#g" "/etc/php/${UBUNTU_PHP_VERSION}/apache2/php.ini"
+
 # logging functions
 docker_log() {
   local type="$1"
