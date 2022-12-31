@@ -2,15 +2,8 @@
 !.gitignore
 !.gitempty
 
-!.dockerignore
 !docker-*
-!Dockerfile
 
 !CHANGELOG.md
 !LICENCE
 !README.md
-
-!config/
-config/*
-
-!config/.gitempty
