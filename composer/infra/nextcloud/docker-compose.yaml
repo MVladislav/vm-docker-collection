@@ -152,7 +152,6 @@ services:
     cap_add:
       - SETUID
       - SETGID
-      # - DAC_OVERRIDE
     deploy:
       <<: *basic-deploy
       resources:
@@ -166,10 +165,23 @@ services:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - redis:/data
-    command: redis-server --save 60 1 --loglevel warning
-    # --requirepass ${REDIS_PASSWORD:-}
+    # command: [ "--databases", "1" ]
+    command:
+      [
+        "redis-server",
+        "--save",
+        "60",
+        "1",
+        "--loglevel",
+        "warning"
+      ]
     networks:
       default: {}
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   ##############################################################################
   ##############################################################################
