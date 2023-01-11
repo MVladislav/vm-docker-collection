@@ -35,19 +35,19 @@ http:
 
     # --------------------------------------------------------------------------
     default-whitelist:
-      ipWhiteList:
+      IPAllowList:
         sourceRange:
           - 10.0.0.0/8
           - 192.168.0.0/16
           - 172.16.0.0/12
 
     admin-whitelist:
-      ipWhiteList:
+      IPAllowList:
         sourceRange:
           - 192.168.xx.0/24
 
     protected-whitelist:
-      ipWhiteList:
+      IPAllowList:
         sourceRange:
           - 192.168.xx.0/24
           - 192.168.xx.0/24

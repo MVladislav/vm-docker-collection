@@ -27,19 +27,19 @@ entryPoints:
     # (Optional) Redirect to HTTPS
     # ---
     http:
-      middlewares:
-        - default-secured@file
-        # - bouncer-crowdsec
+      # middlewares:
+      #   - default-secured@file
+      #   # - bouncer-crowdsec
       redirections:
         entryPoint:
           to: https
           scheme: https
   https:
     address: :443
-    http:
-      middlewares:
-        - default-secured@file
-        # - bouncer-crowdsec
+    # http:
+    #   middlewares:
+    #     - default-secured@file
+    #     # - bouncer-crowdsec
   # -------------------------------------
   # mysql:
   #   address: :3306
@@ -92,7 +92,7 @@ log:
   # Optional
   # Default: "ERROR"
   #
-  level: WARNING # DEBUG, INFO, WARNING, ERROR, CRITICAL
+  level: WARN # TRACE, DEBUG, PANIC, FATAL, ERROR, WARN, INFO
 
   # Sets the filepath for the traefik log. If not specified, stdout will be used.
   # Intermediate directories are created if necessary.

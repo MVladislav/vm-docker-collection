@@ -49,7 +49,7 @@ copy/create following files:
 NODE_ROLE=manager
 NETWORK_MODE=overlay
 
-VERSION=v2.9.5
+VERSION=v3.0
 
 LB_SWARM=true
 DOMAIN=traefik.home.local
