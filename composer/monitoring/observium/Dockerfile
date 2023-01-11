@@ -31,8 +31,10 @@ ENV OBSERVIUM_DB_HOST=$OBSERVIUM_DB_HOST
 ENV OBSERVIUM_DB_NAME=$OBSERVIUM_DB_NAME
 ENV OBSERVIUM_DB_USER=$OBSERVIUM_DB_USER
 
-# ENV UBUNTU_PHP_VERSION="8.1"
-ENV UBUNTU_PHP_VERSION="7.4"
+# "7.4" | "8.1"
+ENV USED_PHP_VERSION="7.4"
+# "20190902" | "20210902"
+ENV USED_PHP_MCRYPT_F="20190902"
 ENV PHP_EXTRA_CONFIGURE_ARGS --enable-fpm --with-fpm-user=www-data --with-fpm-group=www-data
 
 # ------------------------------------------------------------------------------
@@ -66,16 +68,16 @@ RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selectio
 RUN \
   echo "**** install packages ****" \
   && apt-get install -y --no-install-recommends \
-  "libapache2-mod-php${UBUNTU_PHP_VERSION}" \
-  "php${UBUNTU_PHP_VERSION}-cli" \
-  "php${UBUNTU_PHP_VERSION}-mysql" \
-  "php${UBUNTU_PHP_VERSION}-bcmath" \
-  "php${UBUNTU_PHP_VERSION}-gd" \
-  "php${UBUNTU_PHP_VERSION}-bz2" \
-  "php${UBUNTU_PHP_VERSION}-ldap" \
-  "php${UBUNTU_PHP_VERSION}-mbstring" \
-  "php${UBUNTU_PHP_VERSION}-opcache" \
-  "php${UBUNTU_PHP_VERSION}-curl" \
+  "libapache2-mod-php${USED_PHP_VERSION}" \
+  "php${USED_PHP_VERSION}-cli" \
+  "php${USED_PHP_VERSION}-mysql" \
+  "php${USED_PHP_VERSION}-bcmath" \
+  "php${USED_PHP_VERSION}-gd" \
+  "php${USED_PHP_VERSION}-bz2" \
+  "php${USED_PHP_VERSION}-ldap" \
+  "php${USED_PHP_VERSION}-mbstring" \
+  "php${USED_PHP_VERSION}-opcache" \
+  "php${USED_PHP_VERSION}-curl" \
   php-apcu \
   php-pear \
   # ......................................
@@ -121,7 +123,7 @@ RUN \
 RUN \
   echo "install & configure php modules" \
   && apt-get install -y --no-install-recommends \
-  "php${UBUNTU_PHP_VERSION}-dev" \
+  "php${USED_PHP_VERSION}-dev" \
   gcc \
   make \
   autoconf \
@@ -129,13 +131,11 @@ RUN \
   pkg-config \
   libmcrypt-dev
 RUN pecl install mcrypt-1.0.5
-RUN bash -c "echo extension=/usr/lib/php/20210902/mcrypt.so > /etc/php/${UBUNTU_PHP_VERSION}/cli/conf.d/mcrypt.ini"
-RUN bash -c "echo extension=/usr/lib/php/20210902/mcrypt.so > /etc/php/${UBUNTU_PHP_VERSION}/apache2/conf.d/mcrypt.ini"
+RUN bash -c "echo extension=/usr/lib/php/${USED_PHP_MCRYPT_F}/mcrypt.so > /etc/php/${USED_PHP_VERSION}/cli/conf.d/mcrypt.ini"
+RUN bash -c "echo extension=/usr/lib/php/${USED_PHP_MCRYPT_F}/mcrypt.so > /etc/php/${USED_PHP_VERSION}/apache2/conf.d/mcrypt.ini"
 RUN \
-  echo "#######################################################################" \
-  && echo "Verify MCrypt" \
-  && php -i | grep "mcrypt" \
-  && echo "#######################################################################"
+  echo "**** Verify MCrypt ****" \
+  && php -i | grep "mcrypt"
 
 RUN \
   echo "**** cleanup ****" \
@@ -210,12 +210,10 @@ RUN \
   echo "**** conf apache & activate modules ****" \
   && a2dismod mpm_event \
   && a2enmod mpm_prefork \
-  && a2enmod "php${UBUNTU_PHP_VERSION}" \
+  && a2enmod "php${USED_PHP_VERSION}" \
   && a2enmod rewrite \
   && sed -i -e "s/\${APACHE_LOG_DIR}\//\/opt\/observium\/logs\/apache2-/g" /etc/apache2/apache2.conf \
   && echo "ServerName localhost" >> /etc/apache2/apache2.conf
-
-
 
 # configure cron, syslog & logrotate
 RUN mkdir -p \

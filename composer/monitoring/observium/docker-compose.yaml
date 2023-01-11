@@ -47,6 +47,8 @@ x-basic:
     - DAC_READ_SEARCH
     - DAC_OVERRIDE
     - CHOWN
+    - SETUID
+    - SETGID
     - SYSLOG
   cap_drop: [ "ALL" ]
   security_opt:
@@ -90,9 +92,10 @@ services:
       context: .
       dockerfile: ./Dockerfile
       args:
-        BUILD_DATE: ${BUILD_DATE:-2022}
-        VERSION: ${VERSION:-ce-22.5.12042}
-    image: mvladislav/observium:${VERSION:-ce-22.5.12042}
+        VERSION_DEBIAN: 11.6-slim
+        BUILD_DATE: ${BUILD_DATE:-2023}
+        VERSION: ${VERSION:-ce-22.12.12447}
+    image: mvladislav/observium:${VERSION:-ce-22.12.12447}
     <<: *basic
     deploy:
       <<: [ *basic-deploy, *basic-deploy-labels ]
@@ -127,7 +130,7 @@ services:
       - logs_observium:/opt/observium/logs
       - logs_sys:/var/log
       - rrd:/opt/observium/rrd
-      - html:/opt/observium/html
+      # - html:/opt/observium/html
     healthcheck:
       test:
         [
@@ -153,7 +156,7 @@ volumes:
   logs_observium: {}
   logs_sys: {}
   rrd: {}
-  html: {}
+  # html: {}
 
 secrets:
   observium_admin_pass:

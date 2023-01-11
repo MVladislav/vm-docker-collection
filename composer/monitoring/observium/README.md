@@ -47,7 +47,7 @@ $echo "swordfish" > config/secrets/observium_db_pass.txt
 NODE_ROLE=manager
 NETWORK_MODE=overlay
 
-VERSION=ce-22.5.12042
+VERSION=ce-22.12.12447
 
 LB_SWARM=true
 DOMAIN=observium.home.local
@@ -65,6 +65,10 @@ OBSERVIUM_DB_PORT=3306
 
 OBSERVIUM_DB_NAME=observium
 OBSERVIUM_DB_USER=observium
+
+# for build
+VERSION_DEBIAN=11.6-slim
+BUILD_DATE=2023
 ```
 
 ## Hint
