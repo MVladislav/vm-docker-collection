@@ -75,6 +75,7 @@ services:
     cap_add:
       - SYS_NICE
       - DAC_OVERRIDE
+      - CHOWN
       - SETGID
       - SETUID
     deploy:

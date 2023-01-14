@@ -44,7 +44,6 @@ x-basic:
     as: -1
   networks:
     default: {}
-    proxy: {}
   # network_mode: host
   tmpfs:
     - /tmp
@@ -86,9 +85,8 @@ services:
 ################################################################################
 networks:
   default:
+    name: cloudflare-tunnel
     driver: ${NETWORK_MODE:-bridge}
     attachable: true
     driver_opts:
       encrypted: "true"
-  proxy:
-    external: true

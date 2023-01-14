@@ -111,7 +111,6 @@ services:
 
       OWNCLOUD_REDIS_ENABLED: true
       OWNCLOUD_REDIS_HOST: redis
-
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
