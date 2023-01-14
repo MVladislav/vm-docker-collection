@@ -196,6 +196,7 @@ services:
       ################################################################################
 networks:
   default:
+    # name: proxy
     driver: ${NETWORK_MODE:-bridge}
     attachable: true
     driver_opts:
