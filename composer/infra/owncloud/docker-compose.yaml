@@ -45,7 +45,7 @@ x-basic:
     - CHOWN
     - SETGID
     - SETUID
-    # - DAC_OVERRIDE
+    - DAC_OVERRIDE
   cap_drop: [ "ALL" ]
   security_opt:
     - no-new-privileges:true
