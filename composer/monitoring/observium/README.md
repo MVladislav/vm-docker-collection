@@ -85,7 +85,8 @@ install snmp:
 
 ```sh
 $sudo apt install snmp snmpd
-$sudo mkdir /usr/local/lib/snmpd/
+$sudo mkdir -p /usr/local/lib/snmpd/
+$sudo mkdir -p /etc/snmp/snmpd.conf.d/
 ```
 
 load extend scripts:
@@ -98,6 +99,22 @@ $sudo apt install libsnmp-extension-passpersist-perl
 
 : 'for proxmox'
 $sudo curl https://raw.githubusercontent.com/librenms/librenms-agent/master/agent-local/proxmox -o /usr/local/lib/snmpd/proxmox
+
+: 'for debian'
+$chmod o+r \
+  /usr/local/lib/snmpd/distro \
+  /usr/local/lib/snmpd/osupdate \
+  /sys/devices/virtual/dmi/id/product_name \
+  /sys/devices/virtual/dmi/id/sys_vendor \
+  /sys/devices/virtual/dmi/id/product_serial \
+  /proc/device-tree/model \
+  /proc/device-tree/serial \
+  /proc/uptime
+
+$chgrp Debian-snmp \
+  /usr/local/lib/snmpd/proxmox
+$chmod g+rx \
+  /usr/local/lib/snmpd/proxmox
 ```
 
 configure `sudo nano /etc/snmp/snmpd.conf`:
@@ -147,8 +164,8 @@ extend uptime /bin/cat /proc/uptime
 pass_persist .1.3.6.1.2.1.31.1.1.1.18 /usr/local/bin/ifAlias_persist
 
 ## proxmox
-## wget https://raw.githubusercontent.com/librenms/librenms-agent/master/agent-local/proxmox
-#extend proxmox /usr/bin/sudo /usr/local/lib/snmpd/proxmox
+## sudo curl https://raw.githubusercontent.com/librenms/librenms-agent/master/agent-local/proxmox -o /usr/local/lib/snmpd/proxmox
+#extend proxmox /usr/bin/perl /usr/local/lib/snmpd/proxmox
 ```
 
 enable and restart:
