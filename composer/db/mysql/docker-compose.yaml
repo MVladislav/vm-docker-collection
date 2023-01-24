@@ -155,6 +155,7 @@ services:
   #   environment:
   #     PMA_HOST: mysql
   #     PMA_PORT: 3306
+  #     UPLOAD_LIMIT: 1G
   #   volumes:
   #     - /etc/timezone:/etc/timezone:ro
   #     - /etc/localtime:/etc/localtime:ro
@@ -175,7 +176,7 @@ services:
     #     mode: host
     environment:
       ADMINER_DEFAULT_SERVER: mysql
-      ADMINER_PLUGINS: "tables-filter tinymce"
+      ADMINER_PLUGINS: "tables-filter tinymce file-upload"
       ADMINER_DESIGN: "hydra"
     volumes:
       - /etc/timezone:/etc/timezone:ro
