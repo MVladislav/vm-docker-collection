@@ -1,0 +1,123 @@
+---
+version: "3.8"
+
+################################################################################
+################################################################################
+################################################################################
+
+x-basic-deploy-labels:
+  &basic-deploy-labels
+  labels:
+    - traefik.enable=true
+    - traefik.docker.lbswarm=${LB_SWARM:-true}
+    - traefik.docker.network=proxy
+    - traefik.http.routers.typo3.entrypoints=https
+    - traefik.http.routers.typo3.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.typo3.tls=true
+    - traefik.http.routers.typo3.service=typo3
+    - traefik.http.services.typo3.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.typo3.loadbalancer.server.port=${PORT:-80}
+    - traefik.http.routers.typo3.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+
+x-basic-deploy:
+  &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  restart_policy:
+    condition: on-failure
+  resources:
+    limits:
+      # cpus: "1.5"
+      memory: 1g # 500M
+    reservations:
+      cpus: "0.001"
+      memory: 32M
+
+x-basic:
+  &basic
+  env_file: .env
+  # user: "33:33"
+  # cap_add: [ "ALL" ]
+  # cap_drop: [ "ALL" ]
+  security_opt:
+    - no-new-privileges:true
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 65535
+      hard: 65535
+    fsize: -1
+    as: -1
+  networks:
+    mysql: {}
+    proxy: {}
+  restart: always
+
+################################################################################
+################################################################################
+################################################################################
+
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  typo3:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+      args:
+        BUILD_DATE: ${BUILD_DATE:-2022}
+        VERSION: ${VERSION:-11.5.21}
+        VERSION_PHP: ${VERSION_PHP:-8.0}
+        TYPO3_VERSION: ${TYPO3_VERSION:-11.5.21}
+        TYPO3_SHA256: ${TYPO3_SHA256:-babb6cba545691e30353c6d3cd5d14017685eeb650e638b660ce570cbb6f6f77}
+    image: typo3:${VERSION:-11.5.21}
+    <<: *basic
+    deploy:
+      <<: [ *basic-deploy, *basic-deploy-labels ]
+    # ports:
+    #   - target: ${PORT:-80}
+    #     published: ${PORT_PUBLISH:-80}
+    #     protocol: tcp
+    #     mode: host
+    environment:
+      MY_EXTERNAL_SECRET_FILE: /run/secrets/my_external_secret
+      MY_FILE_SECRET_FILE: /run/secrets/my_file_secret
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      # - fileadmin:/var/www/html/fileadmin
+      # - typo3conf:/var/www/html/typo3conf
+      # - uploads:/var/www/html/uploads
+      - ./config/ext/:/var/www/html/typo3conf/ext/
+      # healthcheck:
+      #   test:
+      #     [
+      #       "CMD",
+      #       "curl",
+      #       "-f",
+      #       "${PROTOCOL:-http}://127.0.0.1:${PORT:-80}"
+      #     ]
+      #   interval: 30s
+      #   timeout: 10s
+      #   retries: 5
+      ################################################################################
+      ################################################################################
+      ################################################################################
+networks:
+  proxy:
+    external: true
+  mysql:
+    external: true
+
+volumes:
+  fileadmin: {}
+  typo3conf: {}
+  uploads: {}
