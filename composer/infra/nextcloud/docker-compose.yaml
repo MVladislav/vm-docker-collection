@@ -186,6 +186,7 @@ services:
   ##############################################################################
   ##############################################################################
   ##############################################################################
+
   cron:
     # https://hub.docker.com/_/nextcloud
     image: nextcloud:${VERSION_NEXTCLOUD_CRON:-25.0.2-fpm}
@@ -212,7 +213,8 @@ services:
       - /etc/localtime:/etc/localtime:ro
       - nextcloud_html:/var/www/html
       - nextcloud_data:/var/www/data
-    entrypoint: /cron.sh
+    # entrypoint: /cron.sh
+    entrypoint: sh -c 'while true; do php -f /var/www/html/cron.php; sleep 5m; done'
     networks:
       default: {}
       mysql: {}

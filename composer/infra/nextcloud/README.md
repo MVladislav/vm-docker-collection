@@ -71,3 +71,4 @@ MYSQL_USER=nextcloud
 - <https://hub.docker.com/_/nextcloud>
 - <https://github.com/nextcloud/all-in-one#how-to-use-this>
 - <https://github.com/nextcloud/docker/issues/1028>
+- <https://github.com/nextcloud/docker/issues/1740>

@@ -41,21 +41,11 @@ x-basic-deploy:
 x-basic:
   &basic
   env_file: .env
-  # cap_add:
-  #   # https://dockerlabs.collabnix.com/advanced/security/capabilities/
-  #   - CHOWN
-  #   - DAC_OVERRIDE
-  #   - DAC_READ_SEARCH
-  #   - SETGID
-  #   - SETUID
-  #   - NET_ADMIN
-  #   - NET_RAW
-  #   - NET_BIND_SERVICE
-  #   - NET_BROADCAST
-  #   - SYS_MODULE
-  #   - SYS_NICE
-  #   - AUDIT_CONTROL
-  #   - AUDIT_READ
+  cap_add:
+    - CHOWN
+    - SETGID
+    - SETUID
+    - DAC_OVERRIDE
   cap_drop: [ "ALL" ]
   security_opt:
     - no-new-privileges:true
@@ -70,6 +60,7 @@ x-basic:
     as: -1
   networks:
     default: {}
+    mysql: {}
     proxy: {}
   restart: on-failure
 
@@ -92,26 +83,23 @@ services:
     #     published: ${PORT_PUBLISH:-8080}
     #     protocol: tcp
     #     mode: host
-    secrets:
-      - owncloud_db_password
     environment:
-      HTTP_PORT: ${HTTP_PORT:-8080}
+      HTTP_PORT: ${PORT:-8080}
       OWNCLOUD_TRUSTED_DOMAINS: ${OWNCLOUD_TRUSTED_DOMAINS:-localhost}
       OWNCLOUD_DOMAIN: ${OWNCLOUD_DOMAIN:-localhost:8080}
       OWNCLOUD_ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
       OWNCLOUD_ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin}
 
-      OWNCLOUD_DB_TYPE: mysql
-      OWNCLOUD_MYSQL_UTF8MB4: true
-      OWNCLOUD_DB_HOST: mysql
-      OWNCLOUD_DB_PORT: 3306
-      OWNCLOUD_DB_NAME: owncloud
-      OWNCLOUD_DB_USERNAME: owncloud
-      OWNCLOUD_DB_PASSWORD_FILE: /run/secrets/owncloud_db_password
+      OWNCLOUD_DB_TYPE: ${OWNCLOUD_DB_TYPE:-mysql}
+      OWNCLOUD_MYSQL_UTF8MB4: ${OWNCLOUD_MYSQL_UTF8MB4:-true}
+      OWNCLOUD_DB_HOST: ${OWNCLOUD_DB_HOST:-mysql}
+      OWNCLOUD_DB_PORT: ${OWNCLOUD_DB_PORT:-3306}
+      OWNCLOUD_DB_NAME: ${OWNCLOUD_DB_NAME:-owncloud}
+      OWNCLOUD_DB_USERNAME: ${OWNCLOUD_DB_USERNAME:-owncloud}
+      OWNCLOUD_DB_PASSWORD: ${OWNCLOUD_DB_PASSWORD:-owncloud}
 
-      OWNCLOUD_REDIS_ENABLED: true
-      OWNCLOUD_REDIS_HOST: redis
-
+      OWNCLOUD_REDIS_ENABLED: ${OWNCLOUD_REDIS_ENABLED:-true}
+      OWNCLOUD_REDIS_HOST: ${OWNCLOUD_REDIS_HOST:-redis}
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
@@ -166,12 +154,11 @@ networks:
     attachable: true
     driver_opts:
       encrypted: "true"
+  mysql:
+    external: true
   proxy:
     external: true
 
 volumes:
   data: {}
-
-secrets:
-  owncloud_db_password:
-    file: config/secrets/owncloud_db_password.txt
+  redis: {}
