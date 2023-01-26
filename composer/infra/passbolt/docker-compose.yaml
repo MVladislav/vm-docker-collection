@@ -1,0 +1,135 @@
+---
+version: "3.8"
+
+################################################################################
+################################################################################
+################################################################################
+
+x-basic-deploy-labels:
+  &basic-deploy-labels
+  labels:
+    - traefik.enable=true
+    - traefik.docker.lbswarm=${LB_SWARM:-true}
+    - traefik.docker.network=proxy
+    - traefik.http.routers.passbolt.entrypoints=https
+    - traefik.http.routers.passbolt.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.passbolt.tls=true
+    - traefik.http.routers.passbolt.service=passbolt
+    - traefik.http.services.passbolt.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.passbolt.loadbalancer.server.port=${PORT:-80}
+    - traefik.http.routers.passbolt.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+
+x-basic-deploy:
+  &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  restart_policy:
+    condition: on-failure
+  resources:
+    limits:
+      # cpus: "1.5"
+      memory: 1g
+    reservations:
+      # cpus: "0.001"
+      memory: 32M
+
+x-basic:
+  &basic
+  env_file: .env
+  cap_add:
+    - CHOWN
+    - DAC_OVERRIDE
+    - SETGID
+    - SETUID
+  cap_drop: [ "ALL" ]
+  security_opt:
+    - no-new-privileges:true
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 65535
+      hard: 65535
+    fsize: -1
+    as: -1
+  networks:
+    proxy: {}
+    mysql: {}
+  restart: unless-stopped
+
+################################################################################
+################################################################################
+################################################################################
+
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  passbolt:
+    # https://hub.docker.com/r/passbolt/passbolt
+    image: passbolt/passbolt:${VERSION:-3.9.0-2-ce}
+    # image: passbolt/passbolt:${VERSION:-3.9.0-2-ce-non-root}
+    <<: *basic
+    deploy:
+      <<: [ *basic-deploy, *basic-deploy-labels ]
+    # ports:
+    #   - target: ${PORT:-80}
+    #     published: ${PORT_PUBLISH:-80}
+    #     protocol: tcp
+    #     mode: host
+    secrets:
+      - db_password_file_secret
+    environment:
+      APP_FULL_BASE_URL: https://${DOMAIN?domain variable not set}
+      DATASOURCES_DEFAULT_HOST: ${DB_HOST:-mysql}
+      DATASOURCES_DEFAULT_DATABASE: ${DB_DATABASE:-passbolt}
+      DATASOURCES_DEFAULT_USERNAME: ${DB_USERNAME:-passbolt}
+      DATASOURCES_DEFAULT_PASSWORD_FILE: /run/secrets/db_password_file_secret
+
+      EMAIL_DEFAULT_FROM: ${EMAIL_DEFAULT_FROM}
+      EMAIL_TRANSPORT_DEFAULT_HOST: ${EMAIL_TRANSPORT_DEFAULT_HOST}
+      EMAIL_TRANSPORT_DEFAULT_PORT: ${EMAIL_TRANSPORT_DEFAULT_PORT:-587}
+      EMAIL_TRANSPORT_DEFAULT_USERNAME: ${EMAIL_TRANSPORT_DEFAULT_USERNAME}
+      EMAIL_TRANSPORT_DEFAULT_PASSWORD: ${EMAIL_TRANSPORT_DEFAULT_PASSWORD}
+      EMAIL_TRANSPORT_DEFAULT_TLS: ${EMAIL_TRANSPORT_DEFAULT_TLS:-true}
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - gpg:/etc/passbolt/gpg
+      - jwt:/etc/passbolt/jwt
+    # healthcheck:
+    #   test: [ "CMD", "bin/cake", "passbolt", "healthcheck" ]
+    #   interval: 30s
+    #   timeout: 10s
+    #   retries: 5
+    command:
+      - "/usr/bin/wait-for.sh"
+      - "-t"
+      - "0"
+      - "${DB_HOST:-mysql}:3306"
+      - "--"
+      - "/docker-entrypoint.sh"
+
+################################################################################
+################################################################################
+################################################################################
+
+networks:
+  mysql:
+    external: true
+  proxy:
+    external: true
+
+volumes:
+  gpg: {}
+  jwt: {}
+
+secrets:
+  db_password_file_secret:
+    file: config/secrets/db_password_file_secret.txt
