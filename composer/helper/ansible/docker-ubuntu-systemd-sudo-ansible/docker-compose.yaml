@@ -40,9 +40,9 @@ x-basic:
     as: -1
   networks:
     default: {}
-  # tmpfs:
-  #   - /tmp
-  #   - /run
+  tmpfs:
+    - /tmp
+    - /run
   restart: on-failure
 
 ################################################################################
