@@ -58,6 +58,15 @@ RUN \
   software-properties-common \
   rsyslog iproute2
 
+RUN  \
+  echo "**** update python pip's ****" \
+  && python3 -m pip list -o \
+  | cut -f1 -d" " \
+  | tr " " "\n" \
+  | awk "{if(NR>=3)print}" \
+  | cut -d" " -f1 \
+  | xargs -n1 python3 -m pip install -U
+
 RUN \
   echo "**** cleanup ****" \
   && apt-get clean \
