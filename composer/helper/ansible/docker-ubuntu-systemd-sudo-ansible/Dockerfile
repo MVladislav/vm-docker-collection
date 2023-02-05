@@ -77,7 +77,8 @@ RUN \
   /var/log/* \
   /var/www \
   /usr/share/doc \
-  /usr/share/man
+  /usr/share/man \
+  /root/.cache
 
 # ------------------------------------------------------------------------------
 
@@ -93,6 +94,11 @@ RUN python3 -m pip install ansible
 # Install Ansible inventory file.
 RUN mkdir -p /etc/ansible
 RUN echo "[local]\nlocalhost ansible_connection=local" > /etc/ansible/hosts
+
+# ------------------------------------------------------------------------------
+
+# create folder for install java (openjdk-11-jre-headless) without error
+RUN mkdir -p /usr/share/man/man1
 
 # ------------------------------------------------------------------------------
 
