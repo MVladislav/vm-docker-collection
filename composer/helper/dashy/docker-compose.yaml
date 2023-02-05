@@ -1,0 +1,99 @@
+---
+version: "3.8"
+
+################################################################################
+################################################################################
+################################################################################
+
+x-basic-deploy-labels:
+  &basic-deploy-labels
+  labels:
+    - traefik.enable=true
+    - traefik.docker.lbswarm=${LB_SWARM:-true}
+    - traefik.docker.network=proxy
+    - traefik.http.routers.dashy.entrypoints=https
+    - traefik.http.routers.dashy.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.dashy.tls=true
+    - traefik.http.routers.dashy.service=dashy
+    - traefik.http.services.dashy.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.dashy.loadbalancer.server.port=${PORT:-80}
+    - traefik.http.routers.dashy.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+
+x-basic-deploy:
+  &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  restart_policy:
+    condition: on-failure
+  resources:
+    limits:
+      # cpus: "1.5"
+      memory: 500M
+    reservations:
+      cpus: "0.001"
+      memory: 32M
+
+x-basic:
+  &basic
+  env_file: .env
+  cap_drop: [ "ALL" ]
+  security_opt:
+    - no-new-privileges:true
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 65535
+      hard: 65535
+    fsize: -1
+    as: -1
+  networks:
+    proxy: {}
+  restart: always
+
+################################################################################
+################################################################################
+################################################################################
+
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  dashy:
+    image: lissy93/dashy:${VERSION:-2.1.1}
+    <<: *basic
+    deploy:
+      <<: [ *basic-deploy, *basic-deploy-labels ]
+    # ports:
+    #   - target: ${PORT:-80}
+    #     published: ${PORT_PUBLISH:-80}
+    #     protocol: tcp
+    #     mode: host
+    environment:
+      - NODE_ENV=production
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - conf:/app/public
+    healthcheck:
+      test: [ 'CMD', 'node', '/app/services/healthcheck' ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  proxy:
+    external: true
+
+volumes:
+  conf: {}
