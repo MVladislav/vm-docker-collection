@@ -232,7 +232,7 @@ providers:
   file:
     # watch for dynamic configuration changes
     directory: /etc/traefik
-    watch: true
+    watch: false
 
 ################################################################
 # TLS
