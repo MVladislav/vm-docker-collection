@@ -9,33 +9,31 @@ x-basic-deploy-labels:
   &basic-deploy-labels
   labels:
     - traefik.enable=true
-    - traefik.docker.lbswarm=false
-    # - traefik.docker.network=proxy
-    - traefik.http.routers.netmaker-ui.entrypoints=websecure
+    - traefik.docker.lbswarm=${LB_SWARM:-true}
+    - traefik.docker.network=proxy
+    - traefik.http.routers.netmaker-ui.entrypoints=https
     - traefik.http.routers.netmaker-ui.rule=Host(`dashboard.${DOMAIN?domain variable not set}`)
-    - traefik.http.routers.netmaker-ui.tls=true
-    - traefik.http.routers.netmaker-ui.tls.certresolver=cloudflare-staging
+
     - traefik.http.routers.netmaker-ui.service=netmaker-ui
     - traefik.http.services.netmaker-ui.loadbalancer.server.scheme=${PROTOCOL_NETMAKER_UI:-http}
     - traefik.http.services.netmaker-ui.loadbalancer.server.port=${PORT_NETMAKER_UI:-80}
+
     - traefik.http.routers.netmaker-ui.middlewares=nmui-security@docker
     - traefik.http.middlewares.nmui-security.headers.accessControlAllowOriginList=*.${DOMAIN}
     - traefik.http.middlewares.nmui-security.headers.stsSeconds=31536000
     - traefik.http.middlewares.nmui-security.headers.browserXssFilter=true
     - traefik.http.middlewares.nmui-security.headers.customFrameOptionsValue=SAMEORIGIN
     - traefik.http.middlewares.nmui-security.headers.customResponseHeaders.X-Robots-Tag=none
-    - traefik.http.middlewares.nmui-security.headers.customResponseHeaders.Server= # Remove the server name
+    - traefik.http.middlewares.nmui-security.headers.customResponseHeaders.Server=
 
 x-basic-deploy-labels-api:
   &basic-deploy-labels-api
   labels:
     - traefik.enable=true
-    - traefik.docker.lbswarm=false
-    # - traefik.docker.network=proxy
-    - traefik.http.routers.netmaker-api.entrypoints=websecure
+    - traefik.docker.lbswarm=${LB_SWARM:-true}
+    - traefik.docker.network=proxy
+    - traefik.http.routers.netmaker-api.entrypoints=https
     - traefik.http.routers.netmaker-api.rule=Host(`api.${DOMAIN?domain variable not set}`)
-    - traefik.http.routers.netmaker-api.tls=true
-    - traefik.http.routers.netmaker-api.tls.certresolver=cloudflare-staging
     - traefik.http.routers.netmaker-api.service=netmaker-api
     - traefik.http.services.netmaker-api.loadbalancer.server.scheme=${PROTOCOL_NETMAKER_API:-http}
     - traefik.http.services.netmaker-api.loadbalancer.server.port=${PORT_NETMAKER_API:-8081}
@@ -44,18 +42,36 @@ x-basic-deploy-labels-mq:
   &basic-deploy-labels-mq
   labels:
     - traefik.enable=true
-    - traefik.docker.lbswarm=false
-    # - traefik.docker.network=proxy
-    - traefik.tcp.routers.mqtt.entrypoints=websecure
+    - traefik.docker.lbswarm=${LB_SWARM:-true}
+    - traefik.docker.network=proxy
+    - traefik.tcp.routers.mqtt.entrypoints=https
     - traefik.tcp.routers.mqtt.rule=HostSNI(`broker.${DOMAIN?domain variable not set}`)
-    - traefik.tcp.routers.mqtt.tls.certresolver=cloudflare-staging
     - traefik.tcp.services.mqtt.loadbalancer.server.scheme=${PROTOCOL_MQTT:-http}
     - traefik.tcp.services.mqtt.loadbalancer.server.port=${PORT_MQTT:-8883}
+
+x-basic-deploy:
+  &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  restart_policy:
+    condition: on-failure
+  resources:
+    limits:
+      # cpus: "1.5"
+      memory: 1g # 500M
+    reservations:
+      cpus: "0.001"
+      memory: 32M
 
 x-basic:
   &basic
   env_file: .env
-  # cap_drop: [ "ALL" ]
+  cap_drop: [ "ALL" ]
   ulimits:
     memlock:
       soft: -1
@@ -81,8 +97,11 @@ services:
   ##############################################################################
   ##############################################################################
   netmaker:
-    image: gravitl/netmaker:${VERSION_NETMAKER:-v0.16.3}
+    # https://hub.docker.com/r/gravitl/netmaker
+    image: gravitl/netmaker:${VERSION_NETMAKER:-v0.18.0}
     <<: [ *basic, *basic-deploy-labels-api ]
+    deploy:
+      <<: [ *basic-deploy, *basic-deploy-labels-api ]
     cap_add:
       - NET_ADMIN
       - NET_RAW
@@ -113,8 +132,8 @@ services:
       MQ_ADMIN_PASSWORD: "${MQ_ADMIN_PASSWORD}"
       TELEMETRY: "off"
       AUTH_PROVIDER: "github"
-      CLIENT_ID: "${AUTH_PROVIDER_CLIENT_ID}"
-      CLIENT_SECRET: "${AUTH_PROVIDER_CLIENT_SECRET}"
+      # CLIENT_ID: "${AUTH_PROVIDER_CLIENT_ID}"
+      # CLIENT_SECRET: "${AUTH_PROVIDER_CLIENT_SECRET}"
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
@@ -124,8 +143,8 @@ services:
     sysctls:
       - net.ipv4.ip_forward=1
       - net.ipv4.conf.all.src_valid_mark=1
-      # - net.ipv6.conf.all.disable_ipv6=0
-      # - net.ipv6.conf.all.forwarding=1
+      - net.ipv6.conf.all.disable_ipv6=0
+      - net.ipv6.conf.all.forwarding=1
     networks:
       default: {}
       proxy: {}
@@ -134,8 +153,17 @@ services:
   ##############################################################################
   ##############################################################################
   netmaker-ui:
-    image: gravitl/netmaker-ui:${VERSION_NETMAKER_UI:-v0.16.3}
+    # https://hub.docker.com/r/gravitl/netmaker-ui
+    image: gravitl/netmaker-ui:${VERSION_NETMAKER_UI:-v0.18.0}
     <<: [ *basic, *basic-deploy-labels ]
+    deploy:
+      <<: [ *basic-deploy, *basic-deploy-labels ]
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - SETGID
+      - SETUID
+      - NET_BIND_SERVICE
     environment:
       BACKEND_URL: "https://api.${DOMAIN}"
     volumes:
@@ -149,7 +177,8 @@ services:
   ##############################################################################
   ##############################################################################
   coredns:
-    image: coredns/coredns:${VERSION_COREDNS:-latest}
+    # https://hub.docker.com/r/coredns/coredns
+    image: coredns/coredns:${VERSION_COREDNS:-1.10.1}
     <<: *basic
     volumes:
       - /etc/timezone:/etc/timezone:ro
@@ -162,8 +191,15 @@ services:
   ##############################################################################
   ##############################################################################
   mq:
-    image: eclipse-mosquitto:${VERSION_MQTT:-2.0.11-openssl}
+    # https://hub.docker.com/_/eclipse-mosquitto
+    image: eclipse-mosquitto:${VERSION_MQTT:-2.0.15-openssl}
     <<: [ *basic, *basic-deploy-labels-mq ]
+    deploy:
+      <<: [ *basic-deploy, *basic-deploy-labels-mq ]
+    cap_add:
+      - CHOWN
+      - SETGID
+      - SETUID
     environment:
       NETMAKER_SERVER_HOST: "https://api.${DOMAIN}"
     volumes:
@@ -174,58 +210,8 @@ services:
       - mosquitto_data:/mosquitto/data
       - mosquitto_logs:/mosquitto/log
     command: [ "/mosquitto/config/wait.sh" ]
-
-  ##############################################################################
-  ##############################################################################
-  ##############################################################################
-  traefik:
-    image: traefik:${VERSION_TRAEFIK:-v2.6}
-    <<: *basic
-    ports:
-      - target: 443
-        published: 8443
-        protocol: tcp
-        mode: host
-    volumes:
-      - /etc/timezone:/etc/timezone:ro
-      - /etc/localtime:/etc/localtime:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - traefik_certs:/letsencrypt
-    environment:
-      # you may choose to use secrets instead of environment variables like this
-      # - CF_API_EMAIL=${CF_API_EMAIL}
-      - CF_DNS_API_TOKEN=${CF_DNS_API_TOKEN}
-    command:
-      - --log.level=INFO
-      - --providers.docker=true
-      - --providers.docker.exposedByDefault=false
-      - --serverstransport.insecureskipverify=true
-      - --entrypoints.websecure.address=:443
-      - --entrypoints.websecure.http.tls=true
-      - --entrypoints.websecure.http.tls.certResolver=cloudflare-staging
-      - --entrypoints.web.address=:80
-      - --entryPoints.web.http.redirections.entryPoint.to=websecure
-      - --entryPoints.web.http.redirections.entryPoint.scheme=https
-      - --entryPoints.web.http.redirections.entrypoint.permanent=true
-
-      - --certificatesresolvers.cloudflare.acme.email=${ACME_MAIL}
-      - --certificatesresolvers.cloudflare.acme.storage=/letsencrypt/acme.json
-      - --certificatesresolvers.cloudflare.acme.tlschallenge=true
-      - --certificatesresolvers.cloudflare.acme.caServer=https://acme-v02.api.letsencrypt.org/directory
-      - --certificatesresolvers.cloudflare.acme.dnsChallenge=true
-      - --certificatesresolvers.cloudflare.acme.dnsChallenge.provider=cloudflare
-      - --certificatesresolvers.cloudflare.acme.dnsChallenge.resolvers=192.168.1.1:53
-      - --certificatesresolvers.cloudflare.acme.httpChallenge.entryPoint=websecure
-
-      - --certificatesresolvers.cloudflare-staging.acme.email=${ACME_MAIL}
-      - --certificatesresolvers.cloudflare-staging.acme.storage=/letsencrypt/acme.json
-      - --certificatesresolvers.cloudflare-staging.acme.tlschallenge=true
-      - --certificatesresolvers.cloudflare-staging.acme.caServer=https://acme-staging-v02.api.letsencrypt.org/directory
-      - --certificatesresolvers.cloudflare-staging.acme.dnsChallenge=true
-      - --certificatesresolvers.cloudflare-staging.acme.dnsChallenge.provider=cloudflare
-      - --certificatesresolvers.cloudflare-staging.acme.dnsChallenge.resolvers=192.168.1.1:53
-      - --certificatesresolvers.cloudflare-staging.acme.httpChallenge.entryPoint=websecure
     networks:
+      default: {}
       proxy: {}
 
 ################################################################################
@@ -234,9 +220,12 @@ services:
 
 networks:
   default:
-    driver: bridge
+    driver: ${NETWORK_MODE:-bridge}
+    attachable: true
+    driver_opts:
+      encrypted: "true"
   proxy:
-    driver: bridge
+    external: true
 
 volumes:
   traefik_certs: {}

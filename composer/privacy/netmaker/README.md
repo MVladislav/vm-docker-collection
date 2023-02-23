@@ -32,11 +32,16 @@ $sudo iptables --policy FORWARD ACCEPT
 ### create `.env` file following:
 
 ```env
-VERSION_NETMAKER=v0.16.3
-VERSION_NETMAKER_UI=v0.16.3
-VERSION_COREDNS=latest
-VERSION_MQTT=2.0.11-openssl
+NODE_ROLE=manager
+NETWORK_MODE=overlay
 
+VERSION_NETMAKER=v0.18.0
+VERSION_NETMAKER_UI=v0.18.0
+VERSION_COREDNS=1.10.1
+VERSION_MQTT=2.0.15-openssl
+VERSION_TRAEFIK=v3.0
+
+LB_SWARM=true
 DOMAIN=netmaker.home.local
 
 PROTOCOL_NETMAKER_API=http
