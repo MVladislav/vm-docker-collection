@@ -1,68 +1,134 @@
+---
 version: "3.8"
+
+################################################################################
+################################################################################
+################################################################################
+
+x-basic-deploy-labels:
+  &basic-deploy-labels
+  labels:
+    - traefik.enable=true
+    - traefik.docker.lbswarm=${LB_SWARM:-true}
+    - traefik.docker.network=proxy
+    - traefik.http.routers.<router_name>.entrypoints=https
+    - traefik.http.routers.<router_name>.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.<router_name>.tls=true
+    - traefik.http.routers.<router_name>.service=<router_name>
+    - traefik.http.services.<router_name>.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.<router_name>.loadbalancer.server.port=${PORT:-9090}
+    - traefik.http.routers.<router_name>.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+
+x-basic-deploy:
+  &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  restart_policy:
+    condition: on-failure
+  resources:
+    limits:
+      # cpus: "1.5"
+      memory: 2g # 500M
+    reservations:
+      cpus: "0.001"
+      memory: 32M
+
+x-basic:
+  &basic
+  env_file: .env
+  # cap_add:
+  #   # https://dockerlabs.collabnix.com/advanced/security/capabilities/
+  #   - CHOWN
+  #   - DAC_OVERRIDE
+  #   - DAC_READ_SEARCH
+  #   - SETGID
+  #   - SETUID
+  #   - NET_ADMIN
+  #   - NET_RAW
+  #   - NET_BIND_SERVICE
+  #   - NET_BROADCAST
+  #   - SYS_MODULE
+  #   - SYS_NICE
+  #   - AUDIT_CONTROL
+  #   - AUDIT_READ
+  cap_drop: [ "ALL" ]
+  security_opt:
+    - no-new-privileges:true
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 65535
+      hard: 65535
+    fsize: -1
+    as: -1
+  networks:
+    proxy: {}
+  restart: always
+
+################################################################################
+################################################################################
+################################################################################
 
 services:
   ##############################################################################
   ##############################################################################
   ##############################################################################
   prometheus:
-    image: prom/prometheus:${VERSION:-latest}
-    env_file: .env
-    privileged: true
-    stdin_open: true # docker run -i
-    tty: true # docker run -t
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
-      nofile:
-        soft: 65535
-        hard: 65535
-      fsize: -1
-      as: -1
+    # https://hub.docker.com/r/prom/prometheus
+    image: prom/prometheus:${VERSION:-v2.43.0-rc.0}
+    <<: *basic
     deploy:
-      mode: replicated
-      replicas: 1
-      placement:
-        max_replicas_per_node: 1
-        constraints:
-          # - "node.id==${NODE_ID}"
-          - "node.role==${NODE_ROLE:-manager}"
-      restart_policy:
-        condition: on-failure
-    ports:
-      - target: 9090
-        published: ${PORT:-9090}
-        protocol: tcp
-        mode: host
-    # environment:
-    #   VAR: ...
+      <<: [ *basic-deploy, *basic-deploy-labels ]
+    # ports:
+    #   - target: ${PORT:-9090}
+    #     published: ${PORT_PUBLISH:-9090}
+    #     protocol: tcp
+    #     mode: host
     configs:
       - source: prom_config
         target: /etc/prometheus/prometheus.yml
+      # - source: prom_web
+      #   target: /etc/prometheus/web.yml
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - prometheus-data:/prometheus
       - prometheus-conf:/etc/prometheus
     command:
+      - --storage.tsdb.path=/prometheus
       - --storage.tsdb.retention.time=30d
       - --config.file=/etc/prometheus/prometheus.yml
-    networks:
-      default: {}
-    restart: always
+      # - --web.config.file=/etc/prometheus/web.yml
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget --quiet --no-verbose --tries=1 --spider --no-check-certificate ${PROTOCOL:-http}://127.0.0.1:${PORT:-9090} || exit 1"
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
 ################################################################################
 ################################################################################
 ################################################################################
 networks:
-  default:
-    driver: ${NETWORK_MODE:-bridge}
-    attachable: true
-#
+  proxy:
+    external: true
+
 volumes:
   prometheus-data: {}
   prometheus-conf: {}
-#
+
 configs:
   prom_config:
     file: $PWD/config/prometheus.yml
+  prom_web:
+    file: $PWD/config/web.yml

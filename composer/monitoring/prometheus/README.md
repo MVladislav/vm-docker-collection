@@ -8,6 +8,7 @@
 
 - [SETUP](#setup)
   - [basic](#basic)
+    - [base auth setup](#base-auth-setup)
     - [create `.env` file following:](#create-env-file-following)
   - [node exporter](#node-exporter)
     - [script](#script)
@@ -15,11 +16,26 @@
 
 ---
 
-An open-source service monitoring system and time series database, developed by SoundCloud.
-Prometheus is a systems and service monitoring system.
-It collects metrics from configured targets at given intervals, evaluates rule expressions, displays the results, and can trigger alerts if some condition is observed to be true.
+An open-source service monitoring system and time series database, developed by SoundCloud. \
+Prometheus is a systems and service monitoring system. \
+It collects metrics from configured targets at given \
+intervals, evaluates rule expressions, displays the results \
+and can trigger alerts if some condition is observed to be true.
 
 ## basic
+
+> defined to work with treafik
+
+### base auth setup
+
+> copy and update the `web.yml` for web auth
+
+_optional, need than also be un-commit un docker-compose_ \
+_else base auth from traefik is used._
+
+```sh
+$cp ./config/web_template.yml ./config/web.yml
+```
 
 ### create `.env` file following:
 
@@ -28,9 +44,14 @@ NODE_ID=
 NODE_ROLE=manager
 NETWORK_MODE=overlay
 
-PORT=9090
+VERSION=v2.43.0-rc.0
 
-VERSION=latest
+LB_SWARM=true
+DOMAIN=prometheus.home.local
+PROTOCOL=http
+PORT=9090
+# default-secured@file | protected-secured@file | admin-secured@file
+MIDDLEWARE_SECURED=default-secured@file
 ```
 
 ## node exporter
@@ -84,4 +105,7 @@ $systemctl status node_exporter
 
 ## References
 
+- <https://hub.docker.com/r/prom/prometheus>
 - <https://schroederdennis.de/allgemein/prometheus-mit-docker-installieren-und-einrichten-anleitung/>
+- <https://prometheus.io/docs/guides/basic-auth/>
+- <https://snapcraft.io/install/bcrypt-tool/ubuntu>

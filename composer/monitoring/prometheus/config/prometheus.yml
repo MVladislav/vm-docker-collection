@@ -1,27 +1,23 @@
-### Die Globalen Informationen
+# global config
 global:
-  scrape_interval: 15s
-  evaluation_interval: 15s
+  scrape_interval: 15s # scrape targets every 15 seconds
+  evaluation_interval: 15s # scrape targets every 15 seconds
+  # scrape_timeout is set to the global default (10s).
 
-### Alertmanager Konfiguration ## Standard abgeschaltet. Anderes Thema
-alerting:
-  alertmanagers:
-    - static_configs:
-        - targets:
-          # - alertmanager:9093
+# alerting:
+#   alertmanagers:
+#     - static_configs:
+#         - targets:
+#           # - alertmanager:9093
 
-### Hier werden die Konfigurationen für die Zielhosts angegeben.
 scrape_configs:
-  # Damit überwacht sich Prometheus selbst
   - job_name: "prometheus"
+    scrape_interval: 5s
     static_configs:
       - targets: ["localhost:9090"]
-
-  ### So sieht eine Beispiel Konfiguration aus. Alle 5 Sekunden wird hier abgefragt.
-
-  # - job_name: <SYSTEM-NAMEN>
-  #   scrape_interval: 5s
-  #   static_configs:
-  #     - targets: ["<DEINE-IPs-DER-SYSTEME:9100"]
-### Es können im selben Format viele weitere Hosts angelegt werden.
-### Einfach alles ab job_name Kopieren
+  - job_name: "traefik"
+    # scrape_interval: 5s
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+          - traefik:8080
