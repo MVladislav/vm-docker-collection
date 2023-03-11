@@ -4,6 +4,9 @@ global:
   evaluation_interval: 15s # scrape targets every 15 seconds
   # scrape_timeout is set to the global default (10s).
 
+rule_files:
+  - "alert.rules"
+
 # alerting:
 #   alertmanagers:
 #     - static_configs:

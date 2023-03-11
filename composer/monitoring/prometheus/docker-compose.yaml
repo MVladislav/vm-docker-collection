@@ -85,7 +85,8 @@ services:
     image: prom/prometheus:${VERSION:-v2.43.0-rc.0}
     <<: *basic
     deploy:
-      <<: [ *basic-deploy, *basic-deploy-labels ]
+      # <<: [ *basic-deploy, *basic-deploy-labels ]
+      <<: *basic-deploy
     # ports:
     #   - target: ${PORT:-9090}
     #     published: ${PORT_PUBLISH:-9090}
@@ -94,6 +95,8 @@ services:
     configs:
       - source: prom_config
         target: /etc/prometheus/prometheus.yml
+      - source: prom_alert
+        target: /etc/prometheus/alert.rules
       # - source: prom_web
       #   target: /etc/prometheus/web.yml
     volumes:
@@ -130,5 +133,7 @@ volumes:
 configs:
   prom_config:
     file: $PWD/config/prometheus.yml
+  prom_alert:
+    file: $PWD/config/alert.rules
   prom_web:
     file: $PWD/config/web.yml
