@@ -9,6 +9,7 @@
 - [SETUP](#setup)
   - [basic](#basic)
     - [traefik setup](#traefik-setup)
+    - [certificates setup](#certificates-setup)
     - [config setup](#config-setup)
     - [cert setup](#cert-setup)
     - [create `.env` file following:](#create-env-file-following)
@@ -25,6 +26,14 @@
 
 ```sh
 $cp ./config/traefik_template.yml ./config/traefik.yml
+```
+
+### certificates setup
+
+> copy and update the certificates setup as needed or not change if self signed works for you
+
+```sh
+$cp ./config/certificates_template.yml ./config/certificates.yml
 ```
 
 ### config setup
@@ -102,3 +111,4 @@ networks:
 - <https://github.com/xcad2k/boilerplates/tree/main/docker-compose/traefik>
 - <https://doc.traefik.io/traefik/routing/providers/docker/#tcp-services>
 - <https://doc.traefik.io/traefik/reference/dynamic-configuration/file/>
+- <https://traefik.io/blog/traefik-2-tls-101-23b4fbee81f1/>

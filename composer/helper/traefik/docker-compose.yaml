@@ -145,8 +145,11 @@ services:
       - source: traefik_config
         target: /etc/traefik/traefik.yml
         mode: 440
+      - source: traefik_config_certificates
+        target: /etc/traefik/config/certificates.yml
+        mode: 440
       - source: traefik_config_http
-        target: /etc/traefik/config.yml
+        target: /etc/traefik/config/config.yml
         mode: 440
       - source: traefik_ca_config
         target: /etc/traefik/certs/ca.pem
@@ -187,6 +190,8 @@ volumes:
 configs:
   traefik_config:
     file: $PWD/config/traefik.yml
+  traefik_config_certificates:
+    file: $PWD/config/certificates.yml
   traefik_config_http:
     file: $PWD/config/config.yml
   traefik_ca_config:

@@ -73,11 +73,6 @@ entryPoints:
   #   address: :2055/udp
   # -------------------------------------
 
-serversTransport:
-  insecureSkipVerify: true
-  rootCAs:
-    - "/etc/traefik/certs/ca.pem"
-
 ################################################################
 # Traefik logs configuration
 ################################################################
@@ -231,39 +226,5 @@ providers:
     watch: true
   file:
     # watch for dynamic configuration changes
-    directory: /etc/traefik
-    watch: false
-
-################################################################
-# TLS
-################################################################
-
-# Configure your CertificateResolver here...
-# ---
-# certificatesResolvers:
-#   staging:
-#     acme:
-#       email: your-email@example.com
-#       storage: /etc/traefik/certs/acme.json
-#       caServer: "https://acme-staging-v02.api.letsencrypt.org/directory"
-#       httpChallenge:
-#         entryPoint: web
-#
-#   production:
-#     acme:
-#       email: your-email@example.com
-#       storage: /etc/traefik/certs/acme.json
-#       caServer: "https://acme-v02.api.letsencrypt.org/directory"
-#       httpChallenge:
-#         entryPoint: web
-
-# (Optional) Overwrite Default Certificates
-tls:
-  certificates:
-    - certFile: /etc/traefik/certs/cert.pem
-      keyFile: /etc/traefik/certs/cert-key.pem
-  stores:
-    default:
-      defaultCertificate:
-        certFile: /etc/traefik/certs/cert.pem
-        keyFile: /etc/traefik/certs/cert-key.pem
+    directory: /etc/traefik/config
+    watch: true
