@@ -12,3 +12,4 @@
 config/*
 !config/*_template.yml
 !config/prometheus.yml
+!config/alert.rules
