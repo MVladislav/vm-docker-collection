@@ -8,6 +8,7 @@
 
 - [SETUP](#setup)
   - [basic](#basic)
+    - [base config setup](#base-config-setup)
     - [base auth setup](#base-auth-setup)
     - [create `.env` file following:](#create-env-file-following)
   - [node exporter](#node-exporter)
@@ -25,6 +26,14 @@ and can trigger alerts if some condition is observed to be true.
 ## basic
 
 > defined to work with treafik
+
+### base config setup
+
+> copy and update the `prometheus.yml`
+
+```sh
+$cp ./config/prometheus_template.yml ./config/prometheus.yml
+```
 
 ### base auth setup
 
