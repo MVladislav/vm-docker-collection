@@ -52,6 +52,11 @@ PROTOCOL=http
 PORT=9090
 # default-secured@file | protected-secured@file | admin-secured@file
 MIDDLEWARE_SECURED=default-secured@file
+
+ADMIN_USERNAME=groot
+# old: echo $(openssl passwd -apr1 $PASSWORD) or echo $(openssl passwd -apr1)
+# new: echo $(htpasswd -nB groot)
+HASHED_PASSWORD=
 ```
 
 ## node exporter
