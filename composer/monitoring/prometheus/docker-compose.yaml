@@ -18,8 +18,8 @@ x-basic-deploy-labels:
     - traefik.http.services.prometheus.loadbalancer.server.scheme=${PROTOCOL:-http}
     - traefik.http.services.prometheus.loadbalancer.server.port=${PORT:-9090}
     - traefik.http.routers.prometheus.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
-    - traefik.http.routers.prometheus.middlewares=admin-auth
-    - traefik.http.middlewares.admin-auth.basicauth.users=${ADMIN_USERNAME?username variable not set}:${HASHED_PASSWORD?password hash variable not set}
+    - traefik.http.routers.prometheus.middlewares=admin-auth-prometheus
+    - traefik.http.middlewares.admin-auth-prometheus.basicauth.users=${ADMIN_USERNAME?username variable not set}:${HASHED_PASSWORD?password hash variable not set}
 
 x-basic-deploy:
   &basic-deploy
