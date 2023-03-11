@@ -1,5 +1,5 @@
 serversTransport:
-  insecureSkipVerify: true
+  insecureSkipVerify: false
   rootCAs:
     - "/etc/traefik/certs/ca.pem"
 
