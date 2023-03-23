@@ -41,8 +41,10 @@ x-basic-deploy:
 x-basic:
   &basic
   env_file: .env
-  # cap_add:
-  #   - NET_ADMIN
+  cap_add:
+    - SETGID
+    - SETUID
+    - NET_ADMIN
   #   - NET_RAW
   cap_drop: [ "ALL" ]
   ulimits:
@@ -71,24 +73,32 @@ services:
   ##############################################################################
   splunk:
     # https://hub.docker.com/r/splunk/splunk/
-    image: splunk/splunk:${VERSION:-8.1}
+    image: splunk/splunk:${VERSION:-8.2}
     <<: *basic
     deploy:
       <<: [ *basic-deploy, *basic-deploy-labels ]
     # ports:
-    #   - target: ${PORT:-8000}
+    #   - target: ${PORT:-8000} # SplunkWeb UI
     #     published: ${PORT_PUBLISH:-8000}
+    #     protocol: tcp
+    #     mode: host
+    #   - target: ${PORT:-8089} # SplunkD management port (REST API access)
+    #     published: ${PORT_PUBLISH:-8089}
     #     protocol: tcp
     #     mode: host
     # secrets:
     #   - splunk_password_secret
     environment:
       # SPLUNK_PASSWORD_FILE: /run/secrets/splunk_password_secret
-      SPLUNK_START_ARGS: --accept-license
-      SPLUNK_PASSWORD: swordfish
+      SPLUNK_LICENSE_URI: ${SPLUNK_LICENSE_URI:-Free}
+      SPLUNK_START_ARGS: ${SPLUNK_START_ARGS:---accept-license}
+      SPLUNK_PASSWORD: ${SPLUNK_PASSWORD:-swordfish}
+      SPLUNK_UPGRADE: ${SPLUNK_UPGRADE:-true}
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
+      - so1-var:/opt/splunk/var
+      - so1-etc:/opt/splunk/etc
     healthcheck:
       test:
         [
@@ -111,10 +121,10 @@ networks:
   proxy:
     external: true
 
-#
-# volumes:
-#   data: {}
-#
+volumes:
+  so1-var: {}
+  so1-etc: {}
+
 # configs:
 #   xx_config:
 #     file: $PWD/config/...

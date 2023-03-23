@@ -31,7 +31,7 @@ $echo "swordfish" > config/secrets/my_file_secret.txt
 NODE_ROLE=manager
 NETWORK_MODE=overlay
 
-VERSION=8.1
+VERSION=8.2
 
 LB_SWARM=true
 DOMAIN=splunk.home.local
