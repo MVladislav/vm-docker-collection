@@ -33,7 +33,7 @@ x-basic-deploy:
   resources:
     limits:
       # cpus: "1.5"
-      memory: 2g
+      memory: 1g
     reservations:
       cpus: "0.001"
       memory: 32M
@@ -41,21 +41,6 @@ x-basic-deploy:
 x-basic:
   &basic
   env_file: .env
-  # cap_add:
-  #   # https://dockerlabs.collabnix.com/advanced/security/capabilities/
-  #   - CHOWN
-  #   - DAC_OVERRIDE
-  #   - DAC_READ_SEARCH
-  #   - SETGID
-  #   - SETUID
-  #   - NET_ADMIN
-  #   - NET_RAW
-  #   - NET_BIND_SERVICE
-  #   - NET_BROADCAST
-  #   - SYS_MODULE
-  #   - SYS_NICE
-  #   - AUDIT_CONTROL
-  #   - AUDIT_READ
   cap_drop: [ "ALL" ]
   security_opt:
     - no-new-privileges:true
