@@ -1,0 +1,188 @@
+---
+version: "3.8"
+
+################################################################################
+################################################################################
+################################################################################
+
+x-basic-deploy-labels:
+  &basic-deploy-labels
+  labels:
+    - traefik.enable=true
+    - traefik.docker.lbswarm=${LB_SWARM:-true}
+    - traefik.docker.network=proxy
+    - traefik.http.routers.bitwarden.entrypoints=https
+    - traefik.http.routers.bitwarden.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.bitwarden.tls=true
+    - traefik.http.routers.bitwarden.service=bitwarden
+    - traefik.http.services.bitwarden.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.bitwarden.loadbalancer.server.port=${PORT:-8080}
+    - traefik.http.routers.bitwarden.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+
+x-basic-deploy:
+  &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  restart_policy:
+    condition: on-failure
+  resources:
+    limits:
+      # cpus: "1.5"
+      memory: 500M
+    reservations:
+      cpus: "0.001"
+      memory: 32M
+
+x-basic:
+  &basic
+  env_file: .env
+  cap_drop: [ "ALL" ]
+  security_opt:
+    - no-new-privileges:true
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 65535
+      hard: 65535
+    fsize: -1
+    as: -1
+  networks:
+    default: {}
+    proxy: {}
+  restart: always
+
+################################################################################
+################################################################################
+################################################################################
+
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  bitwarden:
+    image: bitwarden/self-host:${VERSION:-beta}
+    <<: *basic
+    cap_add:
+      #   - SYS_NICE
+      #   - DAC_OVERRIDE
+      - CHOWN
+      - SETGID
+      - SETUID
+    deploy:
+      <<: [ *basic-deploy, *basic-deploy-labels ]
+    # ports:
+    #   - target: ${PORT:-80}
+    #     published: ${PORT_PUBLISH:-80}
+    #     protocol: tcp
+    #     mode: host
+    #   - target: ${PORT:-443}
+    #     published: ${PORT_PUBLISH:-443}
+    #     protocol: tcp
+    #     mode: host
+    secrets:
+      - mariadb_user_password
+    environment:
+      BW_DOMAIN: ${DOMAIN?domain variable not set}
+      BW_PORT_HTTP: ${PORT:-8080}
+      BW_PORT_HTTPS: ${BW_PORT_HTTPS:-8443}
+      BW_DB_PROVIDER: mysql
+      BW_DB_SERVER: mariadb-bitwarden
+      BW_DB_DATABASE: ${MARIADB_DATABASE:-bitwarden_vault}
+      BW_DB_USERNAME: ${MARIADB_USER:-bitwarden}
+      BW_DB_PASSWORD_FILE: /run/secrets/mariadb_user_password
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - bitwarden:/etc/bitwarden
+      - logs:/var/log/bitwarden
+    # healthcheck:
+    #   test:
+    #     [
+    #       "CMD",
+    #       "curl",
+    #       "-f",
+    #       "${PROTOCOL:-https}://127.0.0.1:${PORT:-443}"
+    #     ]
+    #   interval: 30s
+    #   timeout: 10s
+    #   retries: 5
+
+    ##############################################################################
+    ##############################################################################
+    ##############################################################################
+  mariadb-bitwarden:
+    # https://hub.docker.com/_/mariadb
+    image: mariadb:${VERSION_MARIADB:-10.7.8}
+    <<: *basic
+    cap_add:
+      - SYS_NICE
+      - DAC_OVERRIDE
+      - CHOWN
+      - SETGID
+      - SETUID
+    deploy:
+      <<: *basic-deploy
+      resources:
+        limits:
+          # cpus: "1.5"
+          memory: 1G
+        reservations:
+          cpus: "0.001"
+          memory: 32M
+    secrets:
+      - mariadb_root_password
+      - mariadb_user_password
+    environment:
+      TZ: ${TZ:-Europe/Berlin}
+      MARIADB_ROOT_PASSWORD_FILE: /run/secrets/mariadb_root_password
+      MARIADB_DATABASE: ${MARIADB_DATABASE:-bitwarden_vault}
+      MARIADB_USER: ${MARIADB_USER:-bitwarden}
+      MARIADB_PASSWORD_FILE: /run/secrets/mariadb_user_password
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - db:/var/lib/mysql
+    command:
+      - --log-bin=mysql-bin
+      - --expire-logs-days=90
+    networks:
+      default: {}
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "mysqladmin ping -h 127.0.0.1 -P 3306 -u root -p$$(cat $$MARIADB_ROOT_PASSWORD_FILE) | grep 'mysqld is alive' || exit 1"
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  default:
+    driver: ${NETWORK_MODE:-bridge}
+    attachable: false
+    driver_opts:
+      encrypted: "true"
+  proxy:
+    external: true
+
+volumes:
+  bitwarden: {}
+  logs: {}
+  db: {}
+
+secrets:
+  mariadb_root_password:
+    file: config/secrets/mariadb_root_password.txt
+  mariadb_user_password:
+    file: config/secrets/mariadb_user_password.txt
