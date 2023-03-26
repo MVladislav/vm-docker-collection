@@ -1,0 +1,118 @@
+---
+version: "3.8"
+
+################################################################################
+################################################################################
+################################################################################
+
+x-basic-deploy-labels:
+  &basic-deploy-labels
+  labels:
+    - traefik.enable=true
+    - traefik.docker.lbswarm=${LB_SWARM:-true}
+    - traefik.docker.network=proxy
+    - traefik.http.routers.excalidraw.entrypoints=https
+    - traefik.http.routers.excalidraw.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.excalidraw.tls=true
+    - traefik.http.routers.excalidraw.service=excalidraw
+    - traefik.http.services.excalidraw.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.excalidraw.loadbalancer.server.port=${PORT:-80}
+    - traefik.http.routers.excalidraw.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+
+x-basic-deploy:
+  &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  restart_policy:
+    condition: on-failure
+  resources:
+    limits:
+      # cpus: "1.5"
+      memory: 500M
+    reservations:
+      cpus: "0.001"
+      memory: 32M
+
+x-basic:
+  &basic
+  env_file: .env
+  stdin_open: true # docker run -i
+  cap_add:
+    - CHOWN
+    - SETGID
+    - SETUID
+  cap_drop: ["ALL"]
+  security_opt:
+    - no-new-privileges:true
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 65535
+      hard: 65535
+    fsize: -1
+    as: -1
+  networks:
+    proxy: {}
+  restart: always
+
+################################################################################
+################################################################################
+################################################################################
+
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  excalidraw:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+      args:
+        BUILD_DATE: ${BUILD_DATE:-2022}
+        VERSION: ${VERSION:-latest}
+        NODE_ENV: development
+    image: excalidraw:${VERSION:-latest}
+    <<: *basic
+    deploy:
+      <<: [ *basic-deploy, *basic-deploy-labels ]
+    # ports:
+    #   - target: ${PORT:-80}
+    #     published: ${PORT_PUBLISH:-80}
+    #     protocol: tcp
+    #     mode: host
+    environment:
+      NODE_ENV: development
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      # - ./:/opt/node_app/app:delegated
+      # - ./package.json:/opt/node_app/package.json
+      # - ./yarn.lock:/opt/node_app/yarn.lock
+      - notused:/opt/node_app/app/node_modules
+    healthcheck:
+      # test:
+      #   [
+      #       "CMD-SHELL",
+      #       "wget --no-check-certificate -q -O /dev/null ${PROTOCOL:-http}://127.0.0.1:${PORT:-80} || exit 1"
+      #   ]
+      # interval: 30s
+      # timeout: 10s
+      # retries: 5
+      disable: true
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  proxy:
+    external: true
+
+volumes:
+  notused: {}
