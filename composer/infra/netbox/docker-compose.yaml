@@ -1,90 +1,214 @@
+---
 version: "3.8"
+
+################################################################################
+################################################################################
+################################################################################
+
+x-basic-deploy-labels:
+  &basic-deploy-labels
+  labels:
+    - traefik.enable=true
+    - traefik.docker.lbswarm=${LB_SWARM:-true}
+    - traefik.docker.network=proxy
+    - traefik.http.routers.netbox.entrypoints=https
+    - traefik.http.routers.netbox.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.netbox.tls=true
+    - traefik.http.routers.netbox.service=netbox
+    - traefik.http.services.netbox.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.netbox.loadbalancer.server.port=${PORT:-8080}
+    - traefik.http.routers.netbox.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+
+x-basic-deploy:
+  &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  restart_policy:
+    condition: on-failure
+  resources:
+    limits:
+      # cpus: "1.5"
+      memory: 500M
+    reservations:
+      cpus: "0.001"
+      memory: 32M
+
+x-basic:
+  &basic
+  env_file: .env
+  # cap_add:
+  #   # https://dockerlabs.collabnix.com/advanced/security/capabilities/
+  #   - CHOWN
+  #   - DAC_OVERRIDE
+  #   - DAC_READ_SEARCH
+  #   - SETGID
+  #   - SETUID
+  #   - NET_ADMIN
+  #   - NET_RAW
+  #   - NET_BIND_SERVICE
+  #   - NET_BROADCAST
+  #   - SYS_MODULE
+  #   - SYS_NICE
+  #   - AUDIT_CONTROL
+  #   - AUDIT_READ
+  # cap_drop: ["ALL"]
+  # security_opt:
+  #   - no-new-privileges:true
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 65535
+      hard: 65535
+    fsize: -1
+    as: -1
+  networks:
+    default: {}
+  restart: always # always | on-failure
+
+x-basic-netbox:
+  # https://hub.docker.com/r/netboxcommunity/netbox
+  &basic-netbox
+  image: netboxcommunity/netbox:${VERSION:-v3.4}
+  user: 'unit:root'
+  volumes:
+    - /etc/timezone:/etc/timezone:ro
+    - /etc/localtime:/etc/localtime:ro
+    - netbox-media-files:/opt/netbox/netbox/media:z
+  # secrets:
+  #   - superuser_api_token
+  #   - superuser_password
+  environment:
+    DB_PASSWORD: ${POSTGRES_PASSWORD}
+    REDIS_CACHE_PASSWORD: ${REDIS_PASSWORD}
+    REDIS_PASSWORD: ${REDIS_PASSWORD}
+    SECRET_KEY: ${SECRET_KEY}
+    # SUPERUSER_API_TOKEN: ${SUPERUSER_API_TOKEN}
+    # SUPERUSER_API_TOKEN_FILE: /run/secrets/superuser_api_token
+    SUPERUSER_PASSWORD: ${SUPERUSER_PASSWORD}
+    # SUPERUSER_PASSWORD_FILE: /run/secrets/superuser_password
+
+    CORS_ORIGIN_ALLOW_ALL: ${CORS_ORIGIN_ALLOW_ALL:-true}
+    DB_HOST: ${DB_HOST:-postgres}
+    DB_NAME: ${DB_NAME:-netbox}
+    DB_USER: ${DB_USER:-netbox}
+    GRAPHQL_ENABLED: ${GRAPHQL_ENABLED:-true}
+    HOUSEKEEPING_INTERVAL: ${HOUSEKEEPING_INTERVAL:-86400}
+    MEDIA_ROOT: ${MEDIA_ROOT:-/opt/netbox/netbox/media}
+    METRICS_ENABLED: ${METRICS_ENABLED:-false}
+    REDIS_CACHE_DATABASE: ${REDIS_CACHE_DATABASE:-1}
+    REDIS_CACHE_HOST: ${REDIS_CACHE_HOST:-redis-cache}
+    REDIS_CACHE_INSECURE_SKIP_TLS_VERIFY: ${REDIS_CACHE_INSECURE_SKIP_TLS_VERIFY:-false}
+    REDIS_CACHE_SSL: ${REDIS_CACHE_SSL:-false}
+    REDIS_DATABASE: ${REDIS_DATABASE:-0}
+    REDIS_HOST: ${REDIS_HOST:-redis}
+    REDIS_INSECURE_SKIP_TLS_VERIFY: ${REDIS_INSECURE_SKIP_TLS_VERIFY:-false}
+    REDIS_SSL: ${REDIS_SSL:-false}
+    RELEASE_CHECK_URL: ${RELEASE_CHECK_URL:-https://api.github.com/repos/netbox-community/netbox/releases}
+    WEBHOOKS_ENABLED: ${WEBHOOKS_ENABLED:-true}
+    SKIP_SUPERUSER: ${SKIP_SUPERUSER:-true}
+    SUPERUSER_EMAIL: ${SUPERUSER_EMAIL:-}
+    SUPERUSER_NAME: ${SUPERUSER_NAME:-}
+
+################################################################################
+################################################################################
+################################################################################
 
 services:
   ##############################################################################
   ##############################################################################
   ##############################################################################
   netbox:
-    &netbox
-    image: netboxcommunity/netbox:${VERSION:-v3.0}
+    <<: [ *basic, *basic-netbox ]
     deploy:
-      mode: replicated
-      replicas: 1
-      placement:
-        max_replicas_per_node: 1
-        constraints:
-          # - "node.id==${NODE_ID}"
-          - "node.role==${NODE_ROLE:-manager}"
-      restart_policy:
-        condition: on-failure
-    env_file: $PWD/config/env/netbox.env
-    user: "101"
-    volumes:
-      - /etc/localtime:/etc/localtime:ro
-      - $PWD/config/startup_scripts:/opt/netbox/startup_scripts:z,ro
-      - $PWD/config/initializers:/opt/netbox/initializers:z,ro
-      - $PWD/config/configuration:/etc/netbox/config:z,ro
-      - $PWD/config/reports:/etc/netbox/reports:z,ro
-      - $PWD/config/scripts:/etc/netbox/scripts:z,ro
-      - netbox-media-files:/opt/netbox/netbox/media:z
+      <<: [ *basic-deploy, *basic-deploy-labels ]
+    # ports:
+    #   - target: ${PORT:-8080}
+    #     published: ${PORT_PUBLISH:-8080}
+    #     protocol: tcp
+    #     mode: host
     networks:
       default: {}
-    restart: always
+      proxy: {}
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -f ${PROTOCOL:-http}://127.0.0.1:${PORT:-8080}/api/ || exit 1"
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
   netbox-worker:
-    <<: *netbox
+    <<: [ *basic, *basic-netbox ]
+    deploy:
+      <<: *basic-deploy
     command:
       - /opt/netbox/venv/bin/python
       - /opt/netbox/netbox/manage.py
       - rqworker
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "ps -aux | grep -v grep | grep -q rqworker || exit 1"
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
   netbox-housekeeping:
-    <<: *netbox
+    <<: [ *basic, *basic-netbox ]
+    deploy:
+      <<: *basic-deploy
     command:
       - /opt/netbox/housekeeping.sh
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "ps -aux | grep -v grep | grep -q housekeeping || exit 1"
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
   ##############################################################################
   ##############################################################################
   ##############################################################################
-  # postgres
   postgres:
-    image: postgres:13-alpine
+    # https://hub.docker.com/_/postgres
+    image: postgres:${VERSION_POSTGRES:-15.2-alpine}
+    <<: *basic
     deploy:
-      mode: replicated
-      replicas: 1
-      placement:
-        max_replicas_per_node: 1
-        constraints:
-          # - "node.id==${NODE_ID}"
-          - "node.role==${NODE_ROLE:-manager}"
-      restart_policy:
-        condition: on-failure
-    env_file: $PWD/config/env/postgres.env
+      <<: *basic-deploy
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-netbox}
+      POSTGRES_USER: ${POSTGRES_USER:-netbox}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
+      - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-      # - $PWD/dump.sql:/docker-entrypoint-initdb.d/dump.sql
       - netbox-postgres-data:/var/lib/postgresql/data
-    networks:
-      default: {}
-    restart: always
 
   ##############################################################################
   ##############################################################################
   ##############################################################################
-  # redis
   redis:
-    image: redis:6-alpine
+    # https://hub.docker.com/_/redis
+    image: redis:${VERSION_REDIS:-7-alpine}
+    <<: *basic
     deploy:
-      mode: replicated
-      replicas: 1
-      placement:
-        max_replicas_per_node: 1
-        constraints:
-          # - "node.id==${NODE_ID}"
-          - "node.role==${NODE_ROLE:-manager}"
-      restart_policy:
-        condition: on-failure
-    env_file: $PWD/config/env/redis.env
+      <<: *basic-deploy
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
@@ -93,30 +217,23 @@ services:
       - sh
       - -c # this is to evaluate the $REDIS_PASSWORD from the env
       - redis-server --appendonly yes --requirepass $$REDIS_PASSWORD ## $$ because of docker-compose
-    networks:
-      default: {}
-    restart: always
 
   redis-cache:
-    image: redis:6-alpine
+    # https://hub.docker.com/_/redis
+    image: redis:${VERSION_REDIS:-7-alpine}
+    <<: *basic
     deploy:
-      mode: replicated
-      replicas: 1
-      placement:
-        max_replicas_per_node: 1
-        constraints:
-          # - "node.id==${NODE_ID}"
-          - "node.role==${NODE_ROLE:-manager}"
-      restart_policy:
-        condition: on-failure
-    env_file: $PWD/config/env/redis-cache.env
+      <<: *basic-deploy
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - netbox-redis-cache-data:/data
     command:
       - sh
       - -c # this is to evaluate the $REDIS_PASSWORD from the env
       - redis-server --requirepass $$REDIS_PASSWORD ## $$ because of docker-compose
-    networks:
-      default: {}
-    restart: always
 
 ################################################################################
 ################################################################################
@@ -125,20 +242,25 @@ networks:
   default:
     driver: ${NETWORK_MODE:-bridge}
     attachable: true
+    driver_opts:
+      encrypted: "true"
+  proxy:
+    external: true
 
 volumes:
   netbox-media-files: {}
   netbox-postgres-data: {}
   netbox-redis-data: {}
+  netbox-redis-cache-data: {}
 
-# configs:
-#   startup_scripts_config:
-#     file: $PWD/config/startup_scripts
-#   initializers_config:
-#     file: $PWD/config/initializers
-#   configuration_config:
-#     file: $PWD/config/configuration
-#   reports_config:
-#     file: $PWD/config/reports
-#   scripts_config:
-#     file: $PWD/config/scripts
+# secrets:
+#   secret_key_secret:
+#     file: config/secrets/secret_key_secret.txt
+#   postgres_password_secret:
+#     file: config/secrets/postgres_password_secret.txt
+#   redis_password_secret:
+#     file: config/secrets/redis_password_secret.txt
+#   superuser_password:
+#     file: config/secrets/superuser_password.txt
+#   superuser_api_token:
+#     file: config/secrets/superuser_api_token.txt

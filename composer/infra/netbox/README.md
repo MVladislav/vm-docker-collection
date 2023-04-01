@@ -8,63 +8,56 @@
 
 - [SETUP](#setup)
   - [basic](#basic)
-    - [copy config file from git](#copy-config-file-from-git)
-    - [overwrite default `.env` files under folder `config/env/*`:](#overwrite-default-env-files-under-folder-configenv)
+    - [create your `secrets`:](#create-your-secrets)
+    - [create `.env` file following:](#create-env-file-following)
   - [References](#references)
 
 ---
 
 ## basic
 
-### copy config file from git
+> defined to work with treafik
+
+### create your `secrets`:
 
 ```sh
-$git clone https://github.com/netbox-community/netbox-docker.git && mv netbox-docker/startup_scripts netbox-docker/initializers netbox-docker/configuration netbox-docker/reports netbox-docker/scripts netbox-docker/env config && rm netbox-docker -rf
+$echo "swordfish" > config/secrets/secret_key_secret.txt
+$echo "swordfish" > config/secrets/postgres_password_secret.txt
+$echo "swordfish" > config/secrets/redis_password_secret.txt
+$echo "swordfish" > config/secrets/superuser_password_secret.txt
 ```
 
-### overwrite default `.env` files under folder `config/env/*`:
-
-create `.env` file following:
+### create `.env` file following:
 
 ```env
-NODE_ID=
 NODE_ROLE=manager
 NETWORK_MODE=overlay
-```
 
-specific files:
+VERSION=v3.4
+VERSION_POSTGRES=15.2-alpine
+VERSION_REDIS=7-alpine
 
-`netbox.env`
+LB_SWARM=true
+DOMAIN=netbox.home.local
+PROTOCOL=http
+PORT=8080
+# default-secured@file | protected-secured@file | admin-secured@file
+MIDDLEWARE_SECURED=default-secured@file
 
-```env
-DB_PASSWORD=AWF4nID7jP0RsRotMzEEI
-REDIS_CACHE_PASSWORD=AWF4nID7jP0RsRotMzEEI
-REDIS_PASSWORD=AWF4nID7jP0RsRotMzEEI
-SECRET_KEY=8QSX6wEqH3w+fdQth2z1FgOZF13RqTjbsv5YqFqqTMVmqMKmg
-SUPERUSER_API_TOKEN=fzaqA0HdFxnbHLUAwWlt6q99JcbNxg2W5dKaJJF3
-SUPERUSER_PASSWORD=swordfish
-```
+SECRET_KEY=
+POSTGRES_PASSWORD=
+REDIS_PASSWORD=
 
-`postgres.env`
-
-```env
-POSTGRES_PASSWORD=AWF4nID7jP0RsRotMzEEI
-```
-
-`redis-cache.env`
-
-```env
-REDIS_PASSWORD=AWF4nID7jP0RsRotMzEEI
-```
-
-`redis.env`
-
-```env
-REDIS_PASSWORD=AWF4nID7jP0RsRotMzEEI
+SKIP_SUPERUSER=false
+#SUPERUSER_API_TOKEN=
+#SUPERUSER_EMAIL=
+SUPERUSER_NAME=groot
+SUPERUSER_PASSWORD=
 ```
 
 ---
 
 ## References
 
+- <https://hub.docker.com/r/netboxcommunity/netbox>
 - <https://github.com/netbox-community/netbox-docker>
