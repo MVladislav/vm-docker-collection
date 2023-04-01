@@ -26,7 +26,7 @@ NETWORK_MODE=overlay
 VERSION=2.1.1
 
 LB_SWARM=true
-DOMAIN=info.home.local
+DOMAIN=services.home.local
 PROTOCOL=http
 PORT=80
 # default-secured@file | protected-secured@file | admin-secured@file
