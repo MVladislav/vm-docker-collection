@@ -71,7 +71,7 @@ services:
   ##############################################################################
   uptime-kuma:
     # https://hub.docker.com/r/louislam/uptime-kuma
-    image: louislam/uptime-kuma:${VERSION:-1.18.5}
+    image: louislam/uptime-kuma:${VERSION:-1.21.1-alpine}
     <<: *basic
     deploy:
       <<: [ *basic-deploy, *basic-deploy-labels ]
@@ -83,7 +83,7 @@ services:
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-      # - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
       - data:/app/data
 
 ################################################################################

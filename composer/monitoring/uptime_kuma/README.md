@@ -23,7 +23,7 @@
 NODE_ROLE=manager
 NETWORK_MODE=overlay
 
-VERSION=1.18.5
+VERSION=1.21.1-alpine
 
 LB_SWARM=true
 DOMAIN=uptime-kuma.home.local
