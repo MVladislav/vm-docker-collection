@@ -33,7 +33,7 @@ x-basic-deploy:
   resources:
     limits:
       # cpus: "1.5"
-      memory: 2g
+      memory: 1g
     reservations:
       cpus: "0.001"
       memory: 50M
@@ -65,19 +65,7 @@ x-basic:
     fsize: -1
     as: -1
   networks:
-    mysql: {}
     proxy: {}
-  tmpfs:
-    - /tmp
-  sysctls:
-    - net.ipv4.ip_forward=1
-    - net.ipv4.conf.all.src_valid_mark=1
-    - net.ipv4.conf.all.rp_filter=0
-    - net.ipv4.conf.default.rp_filter=0
-    - net.ipv4.conf.eth0.rp_filter=0
-    - net.ipv4.conf.lo.rp_filter=0
-    - net.ipv6.conf.all.forwarding=1
-    - net.ipv6.conf.all.disable_ipv6=0
   restart: always
 
 ################################################################################
@@ -89,6 +77,13 @@ services:
   ##############################################################################
   ##############################################################################
   observium:
+    # NOTE: get current version to replace $VERSION
+    # wget https://www.observium.org/observium-community-latest.tar.gz \
+    # -O /tmp/observium-community-latest.tar.gz \
+    # && tar zxf /tmp/observium-community-latest.tar.gz --checkpoint=.1000 -C /tmp \
+    # && rm /tmp/observium-community-latest.tar.gz \
+    # && cat /tmp/observium/VERSION | tr ' ' '-' | cut -d '-' -f2- | tr '[:upper:]' '[:lower:]' \
+    # && rm /tmp/observium -rf
     hostname: observium
     build:
       context: .
@@ -96,8 +91,8 @@ services:
       args:
         VERSION_DEBIAN: 11.6-slim
         BUILD_DATE: ${BUILD_DATE:-2023}
-        VERSION: ${VERSION:-ce-22.12.12447}
-    image: mvladislav/observium:${VERSION:-ce-22.12.12447}
+        VERSION: ${VERSION:-ce-23.1}
+    image: mvladislav/observium:${VERSION:-ce-23.1}
     <<: *basic
     deploy:
       <<: [ *basic-deploy, *basic-deploy-labels ]
@@ -120,7 +115,7 @@ services:
       OBSERVIUM_ADMIN_PASS_FILE: /run/secrets/observium_admin_pass
       OBSERVIUM_BASE_URL: https://${DOMAIN?domain variable not set}
 
-      OBSERVIUM_DB_HOST: ${OBSERVIUM_DB_HOST:-mysql}
+      OBSERVIUM_DB_HOST: ${OBSERVIUM_DB_HOST:-observium-mariadb}
       OBSERVIUM_DB_PORT: ${OBSERVIUM_DB_PORT:-3306}
 
       OBSERVIUM_DB_NAME: ${OBSERVIUM_DB_NAME:-observium}
@@ -133,6 +128,20 @@ services:
       - logs_sys:/var/log
       - rrd:/opt/observium/rrd
       # - html:/opt/observium/html
+    networks:
+      default: {}
+      proxy: {}
+    tmpfs:
+      - /tmp
+    sysctls:
+      - net.ipv4.ip_forward=1
+      - net.ipv4.conf.all.src_valid_mark=1
+      - net.ipv4.conf.all.rp_filter=0
+      - net.ipv4.conf.default.rp_filter=0
+      - net.ipv4.conf.eth0.rp_filter=0
+      - net.ipv4.conf.lo.rp_filter=0
+      - net.ipv6.conf.all.forwarding=1
+      - net.ipv6.conf.all.disable_ipv6=0
     healthcheck:
       test:
         [
@@ -145,12 +154,93 @@ services:
       timeout: 10s
       retries: 5
 
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  observium-mariadb:
+    # https://hub.docker.com/_/mariadb
+    image: mariadb:${VERSION_MARIADB:-10.7.8}
+    <<: *basic
+    cap_add:
+      - SYS_NICE
+      - DAC_OVERRIDE
+      - CHOWN
+      - SETGID
+      - SETUID
+    secrets:
+      - mariadb_root_password
+      - observium_db_pass
+    environment:
+      TZ: ${TZ:-Europe/Berlin}
+      MARIADB_ROOT_PASSWORD_FILE: /run/secrets/mariadb_root_password
+      MARIADB_DATABASE: ${OBSERVIUM_DB_NAME:-observium}
+      MARIADB_USER: ${OBSERVIUM_DB_USER:-observium}
+      MARIADB_PASSWORD_FILE: /run/secrets/observium_db_pass
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - db:/var/lib/mysql
+    command:
+      - --log-bin=mysql-bin
+      - --expire-logs-days=7
+    networks:
+      default: {}
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "mysqladmin ping -h 127.0.0.1 -P 3306 -u root -p$$(cat $$MARIADB_ROOT_PASSWORD_FILE) | grep 'mysqld is alive' || exit 1"
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  # phpmyadmin:
+  #   # https://hub.docker.com/_/phpmyadmin
+  #   image: phpmyadmin:${VERSION_PHPMYADMIN:-5.2.0-apache}
+  #   <<: *basic
+  #   deploy:
+  #     <<: *basic-deploy
+  #     labels:
+  #       - traefik.enable=true
+  #       - traefik.docker.lbswarm=${LB_SWARM:-true}
+  #       - traefik.docker.network=proxy
+  #       - traefik.http.routers.phpmyadmin.entrypoints=https
+  #       - traefik.http.routers.phpmyadmin.rule=Host(`${DOMAIN_PHPMYADMIN?domain variable not set}`)
+  #       - traefik.http.routers.phpmyadmin.tls=true
+  #       - traefik.http.routers.phpmyadmin.service=phpmyadmin
+  #       - traefik.http.services.phpmyadmin.loadbalancer.server.scheme=${PROTOCOL_PHPMYADMIN:-http}
+  #       - traefik.http.services.phpmyadmin.loadbalancer.server.port=${PORT_PHPMYADMIN:-8080}
+  #       - traefik.http.routers.phpmyadmin.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+  #   # ports:
+  #   #   - target: ${PORT:-80}
+  #   #     published: ${PORT_PUBLISH:-80}
+  #   #     protocol: tcp
+  #   #     mode: host
+  #   environment:
+  #     PMA_HOST: observium-mariadb
+  #     PMA_PORT: 3306
+  #     UPLOAD_LIMIT: 5G
+  #     APACHE_PORT: 8080
+  #   volumes:
+  #     - /etc/timezone:/etc/timezone:ro
+  #     - /etc/localtime:/etc/localtime:ro
+  #   networks:
+  #     default: {}
+  #     proxy: {}
+
 ################################################################################
 ################################################################################
 ################################################################################
 networks:
-  mysql:
-    external: true
+  default:
+    driver: ${NETWORK_MODE:-bridge}
+    attachable: true
+    driver_opts:
+      encrypted: "true"
   proxy:
     external: true
 
@@ -159,9 +249,12 @@ volumes:
   logs_sys: {}
   rrd: {}
   # html: {}
+  db: {}
 
 secrets:
   observium_admin_pass:
     file: config/secrets/observium_admin_pass.txt
   observium_db_pass:
     file: config/secrets/observium_db_pass.txt
+  mariadb_root_password:
+    file: config/secrets/mariadb_root_password.txt

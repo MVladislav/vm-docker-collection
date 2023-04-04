@@ -8,7 +8,6 @@
 
 - [SETUP](#setup)
   - [basic](#basic)
-    - [database setup](#database-setup)
     - [create your `secrets`:](#create-your-secrets)
     - [create `.env` file following:](#create-env-file-following)
   - [Hint](#hint)
@@ -26,12 +25,6 @@
 
 > defined to work with treafik
 
-### database setup
-
-setup mysql from [here](https://github.com/MVladislav/vm-docker-collection/tree/main/composer/db/mysql)
-
-and add new space for observium in mysql, see `OBSERVIUM_DB_*` below for namings.
-
 ### create your `secrets`:
 
 > do not use hard passwort with special chars like "$", they not work current
@@ -39,6 +32,7 @@ and add new space for observium in mysql, see `OBSERVIUM_DB_*` below for namings
 ```sh
 $echo "swordfish" > config/secrets/observium_admin_pass.txt
 $echo "swordfish" > config/secrets/observium_db_pass.txt
+$echo "swordfish" > config/secrets/mariadb_root_password.txt
 ```
 
 ### create `.env` file following:
@@ -47,7 +41,7 @@ $echo "swordfish" > config/secrets/observium_db_pass.txt
 NODE_ROLE=manager
 NETWORK_MODE=overlay
 
-VERSION=ce-22.12.12447
+VERSION=ce-23.1
 
 LB_SWARM=true
 DOMAIN=observium.home.local
@@ -60,7 +54,7 @@ TZ=Europe/Berlin
 
 OBSERVIUM_ADMIN_USER=groot
 
-OBSERVIUM_DB_HOST=mysql
+OBSERVIUM_DB_HOST=observium-mariadb
 OBSERVIUM_DB_PORT=3306
 
 OBSERVIUM_DB_NAME=observium
@@ -69,6 +63,12 @@ OBSERVIUM_DB_USER=observium
 # for build
 VERSION_DEBIAN=11.6-slim
 BUILD_DATE=2023
+
+# for phpmyadmin
+VERSION_PHPMYADMIN=5.2.0-apache
+DOMAIN_PHPMYADMIN=phpmyadmin.home.local
+PROTOCOL_PHPMYADMIN=http
+PORT_PHPMYADMIN=8080
 ```
 
 ## Hint
