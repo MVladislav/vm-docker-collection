@@ -161,6 +161,8 @@ services:
     # https://hub.docker.com/_/mariadb
     image: mariadb:${VERSION_MARIADB:-10.7.8}
     <<: *basic
+    deploy:
+      <<: *basic-deploy
     cap_add:
       - SYS_NICE
       - DAC_OVERRIDE
