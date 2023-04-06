@@ -1,13 +1,14 @@
 *
-!.git
-!.github
 !.gitignore
 !.gitempty
 
-!.dockerignore
-!docker-*
-!Dockerfile
+!docker-compose.yaml
 
 !CHANGELOG.md
 !LICENCE
 !README.md
+
+!config/
+config/*
+
+!config/teleport.yaml

@@ -1,83 +1,120 @@
+---
 version: "3.8"
+
+################################################################################
+################################################################################
+################################################################################
+
+x-basic-deploy-labels:
+  &basic-deploy-labels
+  labels:
+    - traefik.enable=true
+    - traefik.docker.lbswarm=${LB_SWARM:-true}
+    - traefik.docker.network=proxy
+    - traefik.http.routers.teleport.entrypoints=https
+    - traefik.http.routers.teleport.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.teleport.tls=true
+    - traefik.http.routers.teleport.service=teleport
+    - traefik.http.services.teleport.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.teleport.loadbalancer.server.port=${PORT:-3080}
+    - traefik.http.routers.teleport.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+
+x-basic-deploy:
+  &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  restart_policy:
+    condition: on-failure
+  resources:
+    limits:
+      # cpus: "1.5"
+      memory: 500M
+    reservations:
+      cpus: "0.001"
+      memory: 32M
+
+x-basic:
+  &basic
+  env_file: .env
+  cap_drop: [ "ALL" ]
+  security_opt:
+    - no-new-privileges:true
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 65535
+      hard: 65535
+    fsize: -1
+    as: -1
+  networks:
+    proxy: {}
+  restart: always
+
+################################################################################
+################################################################################
+################################################################################
 
 services:
   ##############################################################################
   ##############################################################################
   ##############################################################################
   teleport:
-    image: quay.io/gravitational/teleport-lab:${VERSION:-9}
-    env_file: .env
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
-      nofile:
-        soft: 65535
-        hard: 65535
-      fsize: -1
-      as: -1
+    # https://gallery.ecr.aws/gravitational/teleport
+    image: public.ecr.aws/gravitational/teleport:${VERSION:-12}
+    <<: *basic
     deploy:
-      mode: replicated
-      replicas: 1
-      placement:
-        max_replicas_per_node: 1
-        constraints:
-          - "node.role==${NODE_ROLE:-manager}"
-          - node.platform.os == linux
-      restart_policy:
-        condition: on-failure
-      labels:
-        - traefik.enable=true
-        - traefik.docker.lbswarm=${LB_SWARM:-true}
-        - traefik.docker.network=proxy
-        - traefik.http.routers.teleport.entrypoints=https
-        - traefik.http.routers.teleport.rule=Host(`${DOMAIN?domain variable not set}`)
-        - traefik.http.routers.teleport.tls=true
-        - traefik.http.routers.teleport.service=teleport
-        - traefik.http.services.teleport.loadbalancer.server.scheme=${PROTOCOL:-https}
-        - traefik.http.services.teleport.loadbalancer.server.port=${PORT:-443}
-        - traefik.http.routers.teleport.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
-    # ports:
-    #   # - target: 3023
-    #   #   published: ${PORT_23:-3023}
-    #   #   protocol: tcp
-    #   #   mode: host
-    #   # - target: 3024
-    #   #   published: ${PORT_24:-3024}
-    #   #   protocol: tcp
-    #   #   mode: host
-    #   # - target: 3025
-    #   #   published: ${PORT_25:-3025}
-    #   #   protocol: tcp
-    #   #   mode: host
-    #   - target: 443
-    #     published: ${PORT:-443}
-    #     protocol: tcp
-    #     mode: host
+      <<: [ *basic-deploy, *basic-deploy-labels ]
+    ports:
+      # - target: 443
+      #   published: ${PORT:-443}
+      #   protocol: tcp
+      #   mode: host
+      # - target: 3023
+      #   published: ${PORT_23:-3023}
+      #   protocol: tcp
+      #   mode: host
+      - target: 3024
+        published: ${PORT_24:-3024}
+        protocol: tcp
+        mode: host
+      # - target: 3025
+      #   published: ${PORT_25:-3025}
+      #   protocol: tcp
+      #   mode: host
+      # - target: 3080
+      #   published: ${PORT_80:-3080}
+      #   protocol: tcp
+      #   mode: host
+    configs:
+      - source: teleport_config
+        target: /etc/teleport/teleport.yaml
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - config:/etc/teleport
       - data:/var/lib/teleport
-    command: >
-      -c "/usr/bin/dumb-init teleport start -d -c /etc/teleport.d/teleport.yaml"
     entrypoint: /bin/sh
-    networks:
-      default: {}
-      proxy: {}
-    hostname: "${DOMAIN?domain variable not set}"
-    restart: always
+    command: >
+      -c "teleport start -d --insecure-no-tls --config /etc/teleport/teleport.yaml"
 
 ################################################################################
 ################################################################################
 ################################################################################
 networks:
-  default:
-    driver: ${NETWORK_MODE:-bridge}
-    attachable: true
   proxy:
     external: true
 
 volumes:
   data: {}
   config: {}
+
+configs:
+  teleport_config:
+    file: $PWD/config/teleport.yaml

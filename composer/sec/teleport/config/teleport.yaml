@@ -1,0 +1,3 @@
+---
+proxy_service:
+  public_addr: teleport.home.local:443

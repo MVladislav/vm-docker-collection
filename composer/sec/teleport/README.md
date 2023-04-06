@@ -16,29 +16,34 @@
 
 ## basic
 
+> defined to work with treafik
+
 ### create `.env` file following:
 
 ```env
-NODE_ID=
 NODE_ROLE=manager
 NETWORK_MODE=overlay
 
-VERSION=9
+VERSION=12
 
 LB_SWARM=true
 DOMAIN=teleport.home.local
-PROTOCOL=https
-PORT=443
+PROTOCOL=http
+PORT=3080
 # default-secured@file | protected-secured@file | admin-secured@file
 MIDDLEWARE_SECURED=default-secured@file
 ```
 
 ## conf
 
-create a user for login:
+create a user `groot` for allowed login as `root,groot,ubuntu`:
 
 ```sh
-$docker exec "$(docker ps -q -f name=teleport)" tctl users add teleuser --roles=editor,access --logins=root,ubuntu,ansible-admin
+# create the new user with specific logins
+$docker exec "$(docker ps -q -f name=teleport_teleport)" tctl users add groot --roles=editor,access --logins=root
+
+# update specific user with changed logins
+$docker exec "$(docker ps -q -f name=teleport_teleport)" tctl users update groot --set-logins root,ubuntu
 ```
 
 ---
@@ -47,3 +52,6 @@ $docker exec "$(docker ps -q -f name=teleport)" tctl users add teleuser --roles=
 
 - <https://goteleport.com/>
 - <https://goteleport.com/docs/getting-started/docker-compose/>
+- <https://gallery.ecr.aws/gravitational/teleport>
+- <https://goteleport.com/docs/management/guides/docker/>
+- <https://goteleport.com/docs/management/admin/users/>
