@@ -11,6 +11,8 @@ LABEL maintainer="MVladislav"
 
 # ------------------------------------------------------------------------------
 
+ARG PYTHON_ARGS
+
 ENV DEBIAN_FRONTEND noninteractive
 
 # ensure local python is preferred over distribution python
@@ -56,7 +58,15 @@ RUN \
   python3-pip \
   python3-yaml \
   software-properties-common \
-  rsyslog iproute2
+  rsyslog iproute2 \
+  pkg-config \
+  libcairo2-dev \
+  libgirepository1.0-dev \
+  meson \
+  libdbus-1-dev \
+  patchelf \
+  apparmor \
+  apparmor-utils
 
 RUN  \
   echo "**** update python pip's ****" \
@@ -65,7 +75,7 @@ RUN  \
   | tr " " "\n" \
   | awk "{if(NR>=3)print}" \
   | cut -d" " -f1 \
-  | xargs -n1 python3 -m pip install -U
+  | xargs -n1 python3 -m pip install -U ${PYTHON_ARGS}
 
 RUN \
   echo "**** cleanup ****" \
@@ -89,7 +99,7 @@ RUN systemctl set-default multi-user.target
 # ------------------------------------------------------------------------------
 
 # Install Ansible via Pip.
-RUN python3 -m pip install ansible
+RUN python3 -m pip install ansible ${PYTHON_ARGS}
 
 # Install Ansible inventory file.
 RUN mkdir -p /etc/ansible

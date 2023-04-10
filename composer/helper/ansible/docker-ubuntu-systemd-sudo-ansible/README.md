@@ -22,8 +22,10 @@ find source and docker-compose on [github](https://github.com/MVladislav/vm-dock
 ### create `.env` file following:
 
 ```env
-VERSION=latest
+BUILD_DATE=2023
 VERSION_UBUNTU=23.04
+# for python 3.11 with ubuntu 23.04
+PYTHON_ARGS=--break-system-packages
 ```
 
 ---

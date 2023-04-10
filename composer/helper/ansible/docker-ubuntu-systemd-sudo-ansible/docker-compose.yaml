@@ -58,10 +58,11 @@ services:
       context: .
       dockerfile: ./Dockerfile
       args:
-        BUILD_DATE: ${BUILD_DATE:-2022}
-        VERSION: ${VERSION:-23.04}
+        BUILD_DATE: ${BUILD_DATE:-2023}
+        VERSION: ${VERSION_UBUNTU:-23.04}
         VERSION_UBUNTU: ${VERSION_UBUNTU:-23.04}
-    image: mvladislav/docker-ubuntu-systemd-sudo-ansible:${VERSION:-23.04}
+        PYTHON_ARGS: ${PYTHON_ARGS:-}
+    image: mvladislav/docker-ubuntu-systemd-sudo-ansible:${VERSION_UBUNTU:-23.04}
     <<: *basic
     deploy:
       <<: *basic-deploy
