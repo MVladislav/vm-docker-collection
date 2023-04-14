@@ -33,7 +33,7 @@ x-basic-deploy:
   resources:
     limits:
       # cpus: "0.5"
-      memory: 100M
+      memory: 1G
     reservations:
       cpus: "0.001"
       memory: 32M
@@ -54,10 +54,7 @@ x-basic:
     fsize: -1
     as: -1
   networks:
-    mysql: {}
-    proxy: {}
-  tmpfs:
-    - /tmp
+    mariadb: {}
   restart: always
 
 ################################################################################
@@ -72,21 +69,14 @@ services:
     # https://hub.docker.com/_/mariadb
     image: mariadb:${VERSION_MARIADB:-10.7.8}
     <<: *basic
+    deploy:
+      <<: *basic-deploy
     cap_add:
       - SYS_NICE
       - DAC_OVERRIDE
       - CHOWN
       - SETGID
       - SETUID
-    deploy:
-      <<: *basic-deploy
-      resources:
-        limits:
-          # cpus: "1.5"
-          memory: 1G
-        reservations:
-          cpus: "0.001"
-          memory: 32M
     secrets:
       - mariadb_root_password
     environment:
@@ -99,8 +89,6 @@ services:
     command:
       - --log-bin=mysql-bin
       - --expire-logs-days=7
-    networks:
-      default: {}
     healthcheck:
       test:
         [
@@ -114,47 +102,35 @@ services:
   ##############################################################################
   ##############################################################################
   ##############################################################################
-  # phpmyadmin:
-  #   # https://hub.docker.com/_/phpmyadmin
-  #   image: phpmyadmin:${VERSION_PHPMYADMIN:-5.2.0-apache}
-  #   <<: *basic
-  #   deploy:
-  #     <<: [ *basic-deploy, *basic-deploy-labels ]
-  #   # ports:
-  #   #   - target: ${PORT:-80}
-  #   #     published: ${PORT_PUBLISH:-80}
-  #   #     protocol: tcp
-  #   #     mode: host
-  #   environment:
-  #     PMA_HOST: mysql
-  #     PMA_PORT: 3306
-  #     UPLOAD_LIMIT: 1G
-  #   volumes:
-  #     - /etc/timezone:/etc/timezone:ro
-  #     - /etc/localtime:/etc/localtime:ro
-
-  ##############################################################################
-  ##############################################################################
-  ##############################################################################
-  adminer:
-    # https://hub.docker.com/_/adminer
-    image: adminer:${VERSION_ADMINER:-4.8.1-standalone}
+  phpmyadmin:
+    # https://hub.docker.com/_/phpmyadmin
+    image: phpmyadmin:${VERSION_PHPMYADMIN:-5.2.0-apache}
     <<: *basic
     deploy:
       <<: [ *basic-deploy, *basic-deploy-labels ]
+      resources:
+        limits:
+          # cpus: "1.5"
+          memory: 100M
+        reservations:
+          cpus: "0.001"
+          memory: 32M
     # ports:
-    #   - target: ${PORT:-8080}
-    #     published: ${PORT_PUBLISH:-8080}
+    #   - target: ${PORT:-80}
+    #     published: ${PORT_PUBLISH:-80}
     #     protocol: tcp
     #     mode: host
     environment:
-      ADMINER_DEFAULT_SERVER: mysql
-      ADMINER_PLUGINS: "tables-filter tinymce file-upload"
-      ADMINER_DESIGN: "hydra"
+      PMA_HOST: mariadb
+      PMA_PORT: 3306
+      UPLOAD_LIMIT: 1G
+      APACHE_PORT: 8080
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-    command: php -S 0.0.0.0:8080 -t /var/www/html
+    networks:
+      mariadb: {}
+      proxy: {}
 
 ################################################################################
 ################################################################################

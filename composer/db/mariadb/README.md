@@ -32,12 +32,11 @@ NETWORK_MODE=overlay
 
 VERSION_MARIADB=8.0.31
 VERSION_PHPMYADMIN=5.2.0-apache
-VERSION_ADMINER=4.8.1-standalone
 
 LB_SWARM=true
 DOMAIN=mariadb.home.local
 PROTOCOL=http
-PORT=8080 # 8080 (adminer) | 80 (phpmyadmin)
+PORT=8080
 # default-secured@file | protected-secured@file | admin-secured@file
 MIDDLEWARE_SECURED=default-secured@file
 
