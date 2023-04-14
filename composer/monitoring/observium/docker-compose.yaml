@@ -65,7 +65,8 @@ x-basic:
     fsize: -1
     as: -1
   networks:
-    proxy: {}
+      default: {}
+      proxy: {}
   restart: always
 
 ################################################################################
@@ -128,9 +129,6 @@ services:
       - logs_sys:/var/log
       - rrd:/opt/observium/rrd
       # - html:/opt/observium/html
-    networks:
-      default: {}
-      proxy: {}
     tmpfs:
       - /tmp
     sysctls:
@@ -218,8 +216,8 @@ services:
   #       - traefik.http.services.phpmyadmin.loadbalancer.server.port=${PORT_PHPMYADMIN:-8080}
   #       - traefik.http.routers.phpmyadmin.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
   #   # ports:
-  #   #   - target: ${PORT:-80}
-  #   #     published: ${PORT_PUBLISH:-80}
+  #   #   - target: ${PORT:-8080}
+  #   #     published: ${PORT_PUBLISH:-8080}
   #   #     protocol: tcp
   #   #     mode: host
   #   environment:
@@ -230,9 +228,6 @@ services:
   #   volumes:
   #     - /etc/timezone:/etc/timezone:ro
   #     - /etc/localtime:/etc/localtime:ro
-  #   networks:
-  #     default: {}
-  #     proxy: {}
 
 ################################################################################
 ################################################################################
