@@ -131,6 +131,8 @@ services:
     build:
       context: .
       dockerfile: ./Dockerfile
+      # context: https://github.com/FreshRSS/FreshRSS.git#latest
+      # dockerfile: Docker/Dockerfile-Alpine
       args:
         BUILD_DATE: ${BUILD_DATE:-2022}
         VERSION: ${VERSION:-latest}
