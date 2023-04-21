@@ -1,0 +1,180 @@
+---
+version: "3.8"
+
+################################################################################
+################################################################################
+################################################################################
+
+x-basic-deploy-labels:
+  &basic-deploy-labels
+  labels:
+    - traefik.enable=true
+    - traefik.docker.lbswarm=${LB_SWARM:-true}
+    - traefik.docker.network=proxy
+    - traefik.http.routers.freshrss.entrypoints=https
+    - traefik.http.routers.freshrss.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.freshrss.tls=true
+    - traefik.http.routers.freshrss.service=freshrss
+    - traefik.http.services.freshrss.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.freshrss.loadbalancer.server.port=${PORT:-8080}
+    - traefik.http.routers.freshrss.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+
+x-basic-deploy:
+  &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  restart_policy:
+    condition: on-failure
+  resources:
+    limits:
+      # cpus: "1.5"
+      memory: 500M
+    reservations:
+      cpus: "0.001"
+      memory: 32M
+
+x-basic:
+  &basic
+  env_file: .env
+  cap_add:
+    - CHOWN
+    - SETGID
+    - SETUID
+  cap_drop: [ "ALL" ]
+  security_opt:
+    - no-new-privileges:true
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 65535
+      hard: 65535
+    fsize: -1
+    as: -1
+  networks:
+    default: {}
+    proxy: {}
+  restart: always # always | on-failure
+
+################################################################################
+################################################################################
+################################################################################
+
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  freshrss:
+    # https://hub.docker.com/r/freshrss/freshrss
+    image: freshrss/freshrss:${VERSION:-1.21.0}
+    <<: *basic
+    deploy:
+      <<: [ *basic-deploy, *basic-deploy-labels ]
+    # ports:
+    #   - target: ${PORT:-8080}
+    #     published: ${PORT_PUBLISH:-8080}
+    #     protocol: tcp
+    #     mode: host
+    environment:
+      TZ: ${TZ:-Europe/Berlin}
+
+      # Cron job to refresh feeds at specified minutes
+      CRON_MIN: ${CRON_MIN:-3,33}
+
+      # Published port if running locally
+      PUBLISHED_PORT: ${PUBLISHED_PORT:-8080}
+      LISTEN: 0.0.0.0:${PUBLISHED_PORT:-8080}
+      FRESHRSS_ENV: production
+    volumes:
+      # - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - data:/var/www/FreshRSS/data
+      - extensions:/var/www/FreshRSS/extensions
+    healthcheck:
+      #   test:
+      #     [
+      #       "CMD",
+      #       "curl",
+      #       "-f",
+      #       "${PROTOCOL:-https}://127.0.0.1:${PORT:-443}",
+      #     ]
+      #   interval: 30s
+      #   timeout: 10s
+      #   retries: 5
+      disable: true
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  # freshrss-mariadb:
+  #   # https://hub.docker.com/_/mariadb
+  #   image: mariadb:${VERSION_MARIADB:-10.7.8}
+  #   <<: *basic
+  #   deploy:
+  #     <<: *basic-deploy
+  #   cap_add:
+  #     - SYS_NICE
+  #     - DAC_OVERRIDE
+  #     - CHOWN
+  #     - SETGID
+  #     - SETUID
+  #   secrets:
+  #     - mariadb_root_password
+  #     - freshrss_db_pass
+  #   environment:
+  #     TZ: ${TZ:-Europe/Berlin}
+  #     MARIADB_ROOT_PASSWORD_FILE: /run/secrets/mariadb_root_password
+  #     MARIADB_DATABASE: ${FRESHRSS_DB_NAME:-freshrss}
+  #     MARIADB_USER: ${FRESHRSS_DB_USER:-freshrss}
+  #     MARIADB_PASSWORD_FILE: /run/secrets/freshrss_db_pass
+  #   volumes:
+  #     - /etc/timezone:/etc/timezone:ro
+  #     - /etc/localtime:/etc/localtime:ro
+  #     - db:/var/lib/mysql
+  #   command:
+  #     - --log-bin=mysql-bin
+  #     - --expire-logs-days=7
+  #   networks:
+  #     default: {}
+  #   healthcheck:
+  #     test:
+  #       [
+  #         "CMD-SHELL",
+  #         "mysqladmin ping -h 127.0.0.1 -P 3306 -u root -p$$(cat $$MARIADB_ROOT_PASSWORD_FILE) | grep 'mysqld is alive' || exit 1"
+  #       ]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 5
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  default:
+    driver: ${NETWORK_MODE:-bridge}
+    attachable: true
+    driver_opts:
+      encrypted: "true"
+  proxy:
+    external: true
+
+volumes:
+  data: {}
+  extensions: {}
+  db: {}
+
+secrets:
+  freshrss_admin_pass:
+    file: config/secrets/freshrss_admin_pass.txt
+  freshrss_admin_api_pass:
+    file: config/secrets/freshrss_admin_api_pass.txt
+  freshrss_db_pass:
+    file: config/secrets/freshrss_db_pass.txt
+  mariadb_root_password:
+    file: config/secrets/mariadb_root_password.txt
