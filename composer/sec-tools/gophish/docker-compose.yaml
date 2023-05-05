@@ -1,63 +1,135 @@
+---
 version: "3.8"
+
+################################################################################
+################################################################################
+################################################################################
+
+x-basic-deploy-labels:
+  &basic-deploy-labels
+  labels:
+    - traefik.enable=true
+    - traefik.docker.lbswarm=${LB_SWARM:-true}
+    - traefik.docker.network=proxy
+    - traefik.http.routers.gophish.entrypoints=https
+    - traefik.http.routers.gophish.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.gophish.tls=true
+    - traefik.http.routers.gophish.service=gophish
+    - traefik.http.services.gophish.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.gophish.loadbalancer.server.port=${PORT:-3333}
+    - traefik.http.routers.gophish.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+
+x-basic-deploy:
+  &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  restart_policy:
+    condition: on-failure
+  resources:
+    limits:
+      # cpus: "1.5"
+      memory: 1g # 500M
+    reservations:
+      cpus: "0.001"
+      memory: 32M
+
+x-basic:
+  &basic
+  env_file: .env
+  # cap_add:
+  #   # https://dockerlabs.collabnix.com/advanced/security/capabilities/
+  #   - CHOWN
+  #   - DAC_OVERRIDE
+  #   - DAC_READ_SEARCH
+  #   - SETGID
+  #   - SETUID
+  #   - NET_ADMIN
+  #   - NET_RAW
+  #   - NET_BIND_SERVICE
+  #   - NET_BROADCAST
+  #   - SYS_MODULE
+  #   - SYS_NICE
+  #   - AUDIT_CONTROL
+  #   - AUDIT_READ
+  cap_drop: [ "ALL" ]
+  security_opt:
+    - no-new-privileges:true
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 65535
+      hard: 65535
+    fsize: -1
+    as: -1
+  networks:
+    default: {}
+    proxy: {}
+  tmpfs:
+    - /tmp
+  sysctls:
+    - net.ipv4.ip_forward=1
+    - net.ipv4.conf.all.src_valid_mark=1
+    - net.ipv4.conf.all.rp_filter=0
+    - net.ipv4.conf.default.rp_filter=0
+    - net.ipv4.conf.eth0.rp_filter=0
+    - net.ipv4.conf.lo.rp_filter=0
+    - net.ipv6.conf.all.forwarding=1
+    - net.ipv6.conf.all.disable_ipv6=0
+  restart: always # always | on-failure
+
+################################################################################
+################################################################################
+################################################################################
 
 services:
   ##############################################################################
   ##############################################################################
   ##############################################################################
   gophish:
-    image: gophish/gophish:${VERSION:-latest}
-    env_file: .env
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
-      nofile:
-        soft: 65535
-        hard: 65535
-      fsize: -1
-      as: -1
+    # https://hub.docker.com/r/gophish/gophish
+    image: gophish/gophish:${VERSION:-0.12.1}
+    <<: *basic
     deploy:
-      mode: replicated
-      replicas: 1
-      placement:
-        max_replicas_per_node: 1
-        constraints:
-          # - "node.id==${NODE_ID}"
-          - "node.role==${NODE_ROLE:-manager}"
-          - node.platform.os == linux
-      restart_policy:
-        condition: on-failure
-      labels:
-        - traefik.enable=true
-        - traefik.docker.lbswarm=${LB_SWARM:-true}
-        - traefik.docker.network=proxy
-        - traefik.http.routers.gophish.entrypoints=https
-        - traefik.http.routers.gophish.rule=Host(`${DOMAIN?domain variable not set}`)
-        - traefik.http.routers.gophish.tls=true
-        - traefik.http.routers.gophish.service=gophish
-        - traefik.http.services.gophish.loadbalancer.server.scheme=${PROTOCOL:-http}
-        - traefik.http.services.gophish.loadbalancer.server.port=${PORT:-3333}
-        - traefik.http.routers.gophish.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+      <<: [ *basic-deploy, *basic-deploy-labels ]
     # ports:
-    #   - target: 3333
-    #     published: ${PORT:-3333}
+    #   - target: ${PORT:-3333}
+    #     published: ${PORT_PUBLISH:-3333}
     #     protocol: tcp
     #     mode: host
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-    networks:
-      proxy: {}
+      - data:/opt/gophish
     healthcheck:
-      test: ["CMD", "curl", "-f", "${PROTOCOL:-http}://localhost:${PORT:-3333}"]
+      test:
+        [
+          "CMD",
+          "curl",
+          "-f",
+          "${PROTOCOL:-http}://localhost:${PORT:-3333}"
+        ]
       interval: 30s
       timeout: 10s
       retries: 5
-    restart: always
 
 ################################################################################
 ################################################################################
 ################################################################################
 networks:
+  default:
+    driver: ${NETWORK_MODE:-bridge}
+    attachable: true
+    driver_opts:
+      encrypted: "true"
   proxy:
     external: true
+
+volumes:
+  data: {}

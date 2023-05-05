@@ -25,14 +25,14 @@ NODE_ID=
 NODE_ROLE=manager
 NETWORK_MODE=overlay
 
-VERSION=latest
+VERSION=0.12.1
 
 LB_SWARM=true
 DOMAIN=gophish.home.local
 PROTOCOL=http
 PORT=3333
 # default-secured@file | protected-secured@file | admin-secured@file
-MIDDLEWARE_SECURED=admin-secured@file
+MIDDLEWARE_SECURED=default-secured@file
 ```
 
 ## login credentials
