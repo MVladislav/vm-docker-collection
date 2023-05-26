@@ -3,7 +3,7 @@
 !.gitempty
 
 !.dockerignore
-!docker-*
+!docker-compose.yaml
 !Dockerfile
 !Dockerfile_*
 
