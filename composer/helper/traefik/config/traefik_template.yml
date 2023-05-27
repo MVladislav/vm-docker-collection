@@ -1,6 +1,7 @@
 ################################################################
 #
 # Configuration sample for Traefik v2.
+# Schema: https://json.schemastore.org/traefik-v2.json
 #
 # For Traefik v1: https://github.com/traefik/traefik/blob/v1.7/traefik.sample.toml
 #
@@ -152,9 +153,9 @@ accesslog:
 #     token: <token>
 #     org: <org>
 #     bucket: traefik
-#   addEntryPointsLabels: true
-#   addRoutersLabels: true
-#   addServicesLabels: true
+#     addEntryPointsLabels: true
+#     addRoutersLabels: true
+#     addServicesLabels: true
 
 ################################################################
 # Tracing logs configuration
@@ -228,3 +229,46 @@ providers:
     # watch for dynamic configuration changes
     directory: /etc/traefik/config
     watch: true
+
+################################################################
+# TLS
+################################################################
+
+serversTransport:
+  insecureSkipVerify: false
+  rootCAs:
+    - "/etc/traefik/certs/ca.pem"
+#
+# Configure your CertificateResolver here...
+# https://doc.traefik.io/traefik/https/acme
+# certificatesResolvers:
+#   staging:
+#     acme:
+#       email: your-email@example.com
+#       storage: /resolver-certs/acme.json
+#       caServer: "https://acme-staging-v02.api.letsencrypt.org/directory"
+#       tlschallenge: {}
+#   #
+#   # production: # tls-challange
+#   #   acme:
+#   #     email: your-email@example.com
+#   #     storage: /resolver-certs/acme.json
+#   #     caServer: "https://acme-v02.api.letsencrypt.org/directory"
+#   #     tlschallenge: {}
+#   #
+#   # production: # dns-challange
+#   #   acme:
+#   #     email: your-email@example.com
+#   #     storage: /resolver-certs/acme.json
+#   #     caServer: "https://acme-v02.api.letsencrypt.org/directory"
+#   #     dnsChallenge:
+#   #       provider: "cloudflare"
+#   #       delayBeforeCheck: 0
+#   #
+#   # production: # http-challange
+#   #   acme:
+#   #     email: your-email@example.com
+#   #     storage: /resolver-certs/acme.json
+#   #     caServer: "https://acme-v02.api.letsencrypt.org/directory"
+#   #     httpChallenge:
+#   #       entryPoint: http

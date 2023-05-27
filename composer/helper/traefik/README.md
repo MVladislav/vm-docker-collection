@@ -9,7 +9,7 @@
 - [SETUP](#setup)
   - [basic](#basic)
     - [traefik setup](#traefik-setup)
-    - [certificates setup](#certificates-setup)
+    - [traefik_dynamic setup](#traefik_dynamic-setup)
     - [config setup](#config-setup)
     - [cert setup](#cert-setup)
     - [create `.env` file following:](#create-env-file-following)
@@ -28,12 +28,12 @@
 $cp ./config/traefik_template.yml ./config/traefik.yml
 ```
 
-### certificates setup
+### traefik_dynamic setup
 
-> copy and update the certificates setup as needed or not change if self signed works for you
+> copy and update the traefik_dynamic setup
 
 ```sh
-$cp ./config/certificates_template.yml ./config/certificates.yml
+$cp ./config/traefik_dynamic_template.yml ./config/traefik_dynamic.yml
 ```
 
 ### config setup

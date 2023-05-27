@@ -145,8 +145,8 @@ services:
       - source: traefik_config
         target: /etc/traefik/traefik.yml
         mode: 440
-      - source: traefik_config_certificates
-        target: /etc/traefik/config/certificates.yml
+      - source: traefik_config_traefik_dynamic
+        target: /etc/traefik/config/traefik_dynamic.yml
         mode: 440
       - source: traefik_config_http
         target: /etc/traefik/config/config.yml
@@ -164,6 +164,8 @@ services:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
+      - certs:/etc/traefik/certs
+      - resolver_certs:/resolver-certs
       - traefik_logs:/var/log/traefik
     healthcheck:
       test: "traefik healthcheck --ping"
@@ -183,15 +185,16 @@ networks:
       encrypted: "true"
 
 volumes:
-  config: {}
+  certs: {}
+  resolver_certs: {}
   traefik_logs:
     name: traefik_logs
 
 configs:
   traefik_config:
     file: $PWD/config/traefik.yml
-  traefik_config_certificates:
-    file: $PWD/config/certificates.yml
+  traefik_config_traefik_dynamic:
+    file: $PWD/config/traefik_dynamic.yml
   traefik_config_http:
     file: $PWD/config/config.yml
   traefik_ca_config:
