@@ -1,0 +1,319 @@
+---
+version: "3.8"
+
+################################################################################
+################################################################################
+################################################################################
+
+x-basic-deploy-labels:
+  &basic-deploy-labels
+  labels:
+    - traefik.enable=true
+    - traefik.docker.lbswarm=${LB_SWARM:-true}
+    - traefik.docker.network=proxy
+    - traefik.http.routers.librenms.entrypoints=https
+    - traefik.http.routers.librenms.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.librenms.tls=true
+    - traefik.http.routers.librenms.service=librenms
+    - traefik.http.services.librenms.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.librenms.loadbalancer.server.port=${PORT:-8000}
+    - traefik.http.routers.librenms.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+
+x-basic-deploy:
+  &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  restart_policy:
+    condition: on-failure
+  resources:
+    limits:
+      cpus: "2"
+      memory: 2g
+    reservations:
+      cpus: "0.001"
+      memory: 32M
+
+x-basic:
+  &basic
+  env_file: .env
+  cap_drop: [ "ALL" ]
+  security_opt:
+    - no-new-privileges:true
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 65535
+      hard: 65535
+    fsize: -1
+    as: -1
+  networks:
+    default: {}
+  restart: always
+
+################################################################################
+################################################################################
+################################################################################
+
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  librenms:
+    image: librenms/librenms:${VERSION_LIBRENMS:-23.2.0}
+    <<: *basic
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+      - FOWNER
+      - CHOWN
+      - DAC_OVERRIDE
+      - SETUID
+      - SETGID
+    deploy:
+      <<: [ *basic-deploy, *basic-deploy-labels ]
+    # ports:
+    #   - target: ${PORT:-8000}
+    #     published: ${PORT_PUBLISH:-8000}
+    #     protocol: tcp
+    #     mode: host
+    secrets:
+      - librenms_db_pass
+    environment:
+      TZ: ${TZ:-Europe/Berlin}
+      PUID: ${PUID:-1000}
+      PGID: ${PGID:-1000}
+
+      LISTEN_IPV6: ${LISTEN_IPV6:-false}
+      LIBRENMS_SNMP_COMMUNITY: ${LIBRENMS_SNMP_COMMUNITY:-}
+
+      MEMORY_LIMIT: ${MEMORY_LIMIT:-256M}
+      MAX_INPUT_VARS: ${MAX_INPUT_VARS:-1000}
+      UPLOAD_MAX_SIZE: ${UPLOAD_MAX_SIZE:-16M}
+      OPCACHE_MEM_SIZE: ${OPCACHE_MEM_SIZE:-128}
+      REAL_IP_FROM: ${REAL_IP_FROM:-0.0.0.0/32}
+      REAL_IP_HEADER: ${REAL_IP_HEADER:-X-Forwarded-For}
+      LOG_IP_VAR: ${LOG_IP_VAR:-http_x_forwarded_for}
+
+      CACHE_DRIVER: ${CACHE_DRIVER:-redis}
+      SESSION_DRIVER: ${SESSION_DRIVER:-redis}
+      REDIS_HOST: ${REDIS_HOST:-librenms-redis}
+
+      LIBRENMS_WEATHERMAP: ${LIBRENMS_WEATHERMAP:-false}
+      LIBRENMS_WEATHERMAP_SCHEDULE: ${LIBRENMS_WEATHERMAP_SCHEDULE:-*/5 * * * *}
+
+      DB_HOST: ${DB_HOST:-librenms-mariadb}
+      DB_PORT: ${DB_PORT:-3306}
+
+      DB_NAME: ${DB_NAME:-librenms}
+      DB_USER: ${DB_USER:-librenms}
+      DB_PASSWORD_FILE: /run/secrets/librenms_db_pass
+
+      DB_TIMEOUT: ${DB_TIMEOUT:-60}
+    volumes:
+      - data:/data
+      - cron:/var/spool/cron
+    tmpfs:
+      - /tmp
+    sysctls:
+      - net.ipv4.ip_forward=1
+      - net.ipv4.conf.all.src_valid_mark=1
+      - net.ipv4.conf.all.rp_filter=0
+      - net.ipv4.conf.default.rp_filter=0
+      - net.ipv4.conf.eth0.rp_filter=0
+      - net.ipv4.conf.lo.rp_filter=0
+      - net.ipv6.conf.all.forwarding=1
+      - net.ipv6.conf.all.disable_ipv6=0
+    networks:
+      default: {}
+      proxy: {}
+    healthcheck:
+      disable: true
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  dispatcher:
+    image: librenms/librenms:${VERSION_LIBRENMS:-23.2.0}
+    <<: *basic
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+      - FOWNER
+      - CHOWN
+      - DAC_OVERRIDE
+      - SETUID
+      - SETGID
+    deploy:
+      <<: *basic-deploy
+    secrets:
+      - librenms_db_pass
+    environment:
+      TZ: ${TZ:-Europe/Berlin}
+      PUID: ${PUID:-1000}
+      PGID: ${PGID:-1000}
+
+      LISTEN_IPV6: ${LISTEN_IPV6:-false}
+      LIBRENMS_SNMP_COMMUNITY: ${LIBRENMS_SNMP_COMMUNITY:-}
+
+      MEMORY_LIMIT: ${MEMORY_LIMIT:-256M}
+      MAX_INPUT_VARS: ${MAX_INPUT_VARS:-1000}
+      UPLOAD_MAX_SIZE: ${UPLOAD_MAX_SIZE:-16M}
+      OPCACHE_MEM_SIZE: ${OPCACHE_MEM_SIZE:-128}
+      REAL_IP_FROM: ${REAL_IP_FROM:-0.0.0.0/32}
+      REAL_IP_HEADER: ${REAL_IP_HEADER:-X-Forwarded-For}
+      LOG_IP_VAR: ${LOG_IP_VAR:-http_x_forwarded_for}
+
+      CACHE_DRIVER: ${CACHE_DRIVER:-redis}
+      SESSION_DRIVER: ${SESSION_DRIVER:-redis}
+      REDIS_HOST: ${REDIS_HOST:-librenms-redis}
+
+      LIBRENMS_WEATHERMAP: ${LIBRENMS_WEATHERMAP:-false}
+      LIBRENMS_WEATHERMAP_SCHEDULE: ${LIBRENMS_WEATHERMAP_SCHEDULE:-*/5 * * * *}
+
+      DB_HOST: ${DB_HOST:-librenms-mariadb}
+      DB_PORT: ${DB_PORT:-3306}
+
+      DB_NAME: ${DB_NAME:-librenms}
+      DB_USER: ${DB_USER:-librenms}
+      DB_PASSWORD_FILE: /run/secrets/librenms_db_pass
+
+      DB_TIMEOUT: ${DB_TIMEOUT:-60}
+
+      DISPATCHER_NODE_ID: ${DISPATCHER_NODE_ID:-dispatcher1}
+      SIDECAR_DISPATCHER: ${SIDECAR_DISPATCHER:-1}
+    volumes:
+      - data:/data
+    tmpfs:
+      - /tmp
+    sysctls:
+      - net.ipv4.ip_forward=1
+      - net.ipv4.conf.all.src_valid_mark=1
+      - net.ipv4.conf.all.rp_filter=0
+      - net.ipv4.conf.default.rp_filter=0
+      - net.ipv4.conf.eth0.rp_filter=0
+      - net.ipv4.conf.lo.rp_filter=0
+      - net.ipv6.conf.all.forwarding=1
+      - net.ipv6.conf.all.disable_ipv6=0
+    networks:
+      default: {}
+    healthcheck:
+      disable: true
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  librenms-mariadb:
+    # https://hub.docker.com/_/mariadb
+    image: mariadb:${VERSION_MARIADB:-10.7.8}
+    <<: *basic
+    cap_add:
+      - SYS_NICE
+      - DAC_OVERRIDE
+      - CHOWN
+      - SETGID
+      - SETUID
+    deploy:
+      <<: *basic-deploy
+      resources:
+        limits:
+          cpus: "1"
+          memory: 1G
+        reservations:
+          cpus: "0.001"
+          memory: 32M
+    secrets:
+      - mariadb_root_password
+      - librenms_db_pass
+    environment:
+      TZ: ${TZ:-Europe/Berlin}
+      MARIADB_ROOT_PASSWORD_FILE: /run/secrets/mariadb_root_password
+      MARIADB_DATABASE: ${DB_NAME:-librenms}
+      MARIADB_USER: ${DB_USER:-librenms}
+      MARIADB_PASSWORD_FILE: /run/secrets/librenms_db_pass
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - db:/var/lib/mysql
+    command:
+      - --log-bin=mysql-bin
+      - --expire-logs-days=7
+      - --innodb-file-per-table=1
+      - --lower-case-table-names=0
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "mysqladmin ping -h 127.0.0.1 -P 3306 -u root -p$$(cat $$MARIADB_ROOT_PASSWORD_FILE) | grep 'mysqld is alive' || exit 1"
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  librenms-redis:
+    # https://hub.docker.com/_/redis
+    image: redis:${VERSION_REDIS:-7.0.7}
+    <<: *basic
+    cap_add:
+      - SETUID
+      - SETGID
+    deploy:
+      <<: *basic-deploy
+      resources:
+        limits:
+          cpus: "1"
+          memory: 1G
+        reservations:
+          cpus: "0.001"
+          memory: 32M
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    command:
+      [
+        "redis-server",
+        "--save",
+        "60",
+        "1",
+        "--loglevel",
+        "warning"
+      ]
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  default:
+    driver: ${NETWORK_MODE:-bridge}
+    attachable: true
+    driver_opts:
+      encrypted: "true"
+  proxy:
+    external: true
+
+volumes:
+  data: {}
+  cron: {}
+  db: {}
+
+secrets:
+  librenms_db_pass:
+    file: config/secrets/librenms_db_pass.txt
+  mariadb_root_password:
+    file: config/secrets/mariadb_root_password.txt
