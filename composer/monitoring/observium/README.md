@@ -99,6 +99,7 @@ $sudo apt install libsnmp-extension-passpersist-perl
 
 : 'for proxmox'
 $sudo curl https://raw.githubusercontent.com/librenms/librenms-agent/master/agent-local/proxmox -o /usr/local/lib/snmpd/proxmox
+$sudo sed -i "s/TIMEZONE => 'Europe\/Amsterdam'/TIMEZONE => 'Europe\/Berlin'/g" /usr/local/lib/snmpd/proxmox
 
 : 'for debian'
 $chmod o+r \
@@ -132,6 +133,15 @@ sysContact  <NAME> <MAIL>
 sysName     <FQDN>.home.local
 sysServices 72
 
+# dont log connection from UDP:
+dontLogTCPWrappersConnects yes
+
+# fix for disks larger then 2TB
+realStorageUnits 0
+
+## Disk Monitoring
+includeAllDisks  10%
+
 includeDir /etc/snmp/snmpd.conf.d
 
 ## This line allows Observium to detect the host OS if the distro script is installed
@@ -142,9 +152,6 @@ extend .1.3.6.1.4.1.2021.7890.1 distro /usr/local/lib/snmpd/distro
 ## This line allows Observium to detect the host OSUPDATE if the osupdate script is installed
 ## sudo curl https://raw.githubusercontent.com/librenms/librenms-agent/master/snmp/osupdate -o /usr/local/lib/snmpd/osupdate
 extend osupdate /usr/local/lib/snmpd/osupdate
-
-## Disk Monitoring
-includeAllDisks  10%
 
 # This lines allows Observium to detect hardware, vendor and serial
 # Common Linux:
@@ -161,7 +168,7 @@ extend uptime /bin/cat /proc/uptime
 
 ## This line enables Observium's ifAlias description injection
 ## sudo apt install libsnmp-extension-passpersist-perl
-pass_persist .1.3.6.1.2.1.31.1.1.1.18 /usr/local/bin/ifAlias_persist
+pass_persist .1.3.6.1.2.1.31.1.1.1.18 /usr/bin/ifAlias_persist
 
 ## proxmox
 ## sudo curl https://raw.githubusercontent.com/librenms/librenms-agent/master/agent-local/proxmox -o /usr/local/lib/snmpd/proxmox
