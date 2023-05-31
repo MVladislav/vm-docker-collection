@@ -22,6 +22,7 @@ x-basic-deploy-labels:
     - traefik.http.routers.gophish-phish.entrypoints=https
     - traefik.http.routers.gophish-phish.rule=${DOMAINS_PHISH?domains phishing variable not set}
     - traefik.http.routers.gophish-phish.tls=true
+    - traefik.http.routers.gophish-phish.tls.certresolver=${CERT_RESOLVER_PHISH:-staging}
     - traefik.http.routers.gophish-phish.service=gophish-phish
     - traefik.http.services.gophish-phish.loadbalancer.server.scheme=${PROTOCOL_PHISH:-http}
     - traefik.http.services.gophish-phish.loadbalancer.server.port=${PORT_PHISH:-80}
