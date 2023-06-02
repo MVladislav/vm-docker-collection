@@ -55,17 +55,22 @@ $echo "mongodb://graylog:swordfish@mongodb:27017/graylog" > config/secrets/grayl
 ### create `.env` file following:
 
 ```env
-NODE_ID=
 NODE_ROLE=manager
 NETWORK_MODE=overlay
 
-VERSION_GRAYLOG=5.0.0
-VERSION_OPENSEARCH=2.4.0
+VERSION_GRAYLOG=5.1.1
+VERSION_OPENSEARCH=2.7.0
 
 LB_SWARM=true
+
 DOMAIN=graylog.home.local
 PROTOCOL=http
 PORT=9000
+
+DOMAIN_SYSLOG=syslog.home.local
+PROTOCOL_SYSLOG=http
+PORT_SYSLOG=1515
+
 # default-secured@file | protected-secured@file | admin-secured@file
 MIDDLEWARE_SECURED=default-secured@file
 

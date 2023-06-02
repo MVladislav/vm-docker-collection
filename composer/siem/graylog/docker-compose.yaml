@@ -19,6 +19,11 @@ x-basic-deploy-labels:
     - traefik.http.services.graylog.loadbalancer.server.port=${PORT:-9000}
     - traefik.http.routers.graylog.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
 
+    - traefik.tcp.routers.graylog.entrypoints=https
+    - traefik.tcp.routers.graylog.rule=HostSNI(`${DOMAIN_SYSLOG?domain variable not set}`)
+    - traefik.tcp.services.graylog.loadbalancer.server.scheme=${PROTOCOL_SYSLOG:-http}
+    - traefik.tcp.services.graylog.loadbalancer.server.port=${PORT_SYSLOG:-1515}
+
 x-basic-deploy:
   &basic-deploy
   mode: replicated
@@ -32,7 +37,7 @@ x-basic-deploy:
     condition: on-failure
   resources:
     limits:
-      # cpus: "1.5"
+      cpus: "1.5"
       memory: ${GRAYLOG_MEM_USE_LIMIT:-2g}
     reservations:
       cpus: "0.001"
@@ -50,18 +55,7 @@ x-basic:
       hard: 65535
     fsize: -1
     as: -1
-  tmpfs:
-    - /tmp
-  sysctls:
-    - net.ipv4.ip_forward=1
-    - net.ipv4.conf.all.src_valid_mark=1
-    - net.ipv4.conf.all.rp_filter=0
-    - net.ipv4.conf.default.rp_filter=0
-    - net.ipv4.conf.eth0.rp_filter=0
-    - net.ipv4.conf.lo.rp_filter=0
-    - net.ipv6.conf.all.forwarding=1
-    - net.ipv6.conf.all.disable_ipv6=0
-  restart: always # always | on-failure
+  restart: always
 
 x-graylog-cluster:
   # minimum and maximum Java heap size, recommend setting both to 50% of system RAM
@@ -94,7 +88,7 @@ services:
   ##############################################################################
   graylog:
     # https://hub.docker.com/r/graylog/graylog
-    image: graylog/graylog:${VERSION_GRAYLOG:-5.0.0}
+    image: graylog/graylog:${VERSION_GRAYLOG:-5.1.1}
     <<: *basic
     deploy:
       <<: [ *basic-deploy, *basic-deploy-labels ]
@@ -105,15 +99,30 @@ services:
         protocol: tcp
         mode: host
       # Syslog TCP
-      - 1514:1514
+      - target: 1514
+        published: ${PORT:-1514}
+        protocol: tcp
+        mode: host
       # Syslog UDP
-      - 1514:1514/udp
+      - target: 1514
+        published: ${PORT:-1514}
+        protocol: udp
+        mode: host
       # GELF TCP
-      - 12201:12201
+      - target: 12201
+        published: ${PORT:-12201}
+        protocol: tcp
+        mode: host
       # GELF UDP
-      - 12201:12201/udp
+      - target: 12201
+        published: ${PORT:-12201}
+        protocol: udp
+        mode: host
       # BEATS TCP
-      - 5044:5044/udp
+      - target: 5044
+        published: ${PORT:-5044}
+        protocol: udp
+        mode: host
     secrets:
       - graylog_password_secret
       - graylog_root_password_sha2
@@ -149,13 +158,13 @@ services:
   ##############################################################################
   opensearch-node-1:
     # https://hub.docker.com/r/opensearchproject/opensearch
-    image: opensearchproject/opensearch:${VERSION_OPENSEARCH:-2.4.0}
+    image: opensearchproject/opensearch:${VERSION_OPENSEARCH:-2.7.0}
     <<: *basic
     deploy:
       <<: *basic-deploy
       resources:
         limits:
-          # cpus: "1.5"
+          cpus: "1"
           memory: ${OPENSEARCH_MEM_USE_LIMIT:-1.5G}
         reservations:
           cpus: "0.001"
@@ -173,13 +182,13 @@ services:
 
   opensearch-node-2:
     # https://hub.docker.com/r/opensearchproject/opensearch
-    image: opensearchproject/opensearch:${VERSION_OPENSEARCH:-2.4.0}
+    image: opensearchproject/opensearch:${VERSION_OPENSEARCH:-2.7.0}
     <<: *basic
     deploy:
       <<: *basic-deploy
       resources:
         limits:
-          # cpus: "1.5"
+          cpus: "1"
           memory: ${OPENSEARCH_MEM_USE_LIMIT:-1.5G}
         reservations:
           cpus: "0.001"
@@ -197,13 +206,13 @@ services:
 
   opensearch-node-3:
     # https://hub.docker.com/r/opensearchproject/opensearch
-    image: opensearchproject/opensearch:${VERSION_OPENSEARCH:-2.4.0}
+    image: opensearchproject/opensearch:${VERSION_OPENSEARCH:-2.7.0}
     <<: *basic
     deploy:
       <<: *basic-deploy
       resources:
         limits:
-          # cpus: "1.5"
+          cpus: "1"
           memory: ${OPENSEARCH_MEM_USE_LIMIT:-1.5G}
         reservations:
           cpus: "0.001"
