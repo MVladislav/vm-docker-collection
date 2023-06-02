@@ -32,8 +32,8 @@ x-basic-deploy:
     condition: on-failure
   resources:
     limits:
-      # cpus: "0.5"
-      memory: 100M
+      cpus: "1"
+      memory: 1G
     reservations:
       cpus: "0.001"
       memory: 32M
@@ -41,17 +41,13 @@ x-basic-deploy:
 x-basic:
   &basic
   env_file: .env
-  # cap_add:
-  #   - CHOWN
-  #   - DAC_OVERRIDE
-  #   - SETGID
-  #   - SETUID
-  #   - NET_ADMIN
-  #   - NET_RAW
-  #   - SYS_MODULE
-  #   - AUDIT_CONTROL
-  #   - AUDIT_READ
-  # cap_drop: ["ALL"]
+  cap_add:
+    - CHOWN
+    - SETGID
+    - SETUID
+  cap_drop: [ "ALL" ]
+  security_opt:
+    - no-new-privileges:true
   ulimits:
     memlock:
       soft: -1
@@ -63,10 +59,7 @@ x-basic:
     as: -1
   networks:
     mongodb: {}
-    proxy: {}
-  tmpfs:
-    - /tmp
-  restart: always # always | on-failure
+  restart: always
 
 ################################################################################
 ################################################################################
@@ -78,17 +71,10 @@ services:
   ##############################################################################
   mongodb:
     # https://hub.docker.com/_/mongo
-    image: mongo:${VERSION_MONGODB:-6.0.3}
+    image: mongo:${VERSION_MONGODB:-6.0.6}
     <<: *basic
     deploy:
       <<: *basic-deploy
-      resources:
-        limits:
-          # cpus: "1.5"
-          memory: 1G
-        reservations:
-          cpus: "0.001"
-          memory: 20M
     # ports:
     #   - target: ${PORT_MONGO:-27017}
     #     published: ${PORT_MONGO_PUBLISH:-27017}
@@ -104,8 +90,6 @@ services:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - db:/data/db
-    networks:
-      mongodb: {}
 
   ##############################################################################
   ##############################################################################
@@ -116,6 +100,13 @@ services:
     <<: *basic
     deploy:
       <<: [ *basic-deploy, *basic-deploy-labels ]
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 100M
+        reservations:
+          cpus: "0.001"
+          memory: 32M
     # ports:
     #   - target: ${PORT:-8081}
     #     published: ${PORT_PUBLISH:-8081}
@@ -135,6 +126,9 @@ services:
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
+    networks:
+      mongodb: {}
+      proxy: {}
 
 ################################################################################
 ################################################################################
@@ -144,6 +138,8 @@ networks:
     name: mongodb
     driver: ${NETWORK_MODE:-bridge}
     attachable: true
+    driver_opts:
+      encrypted: "true"
   proxy:
     external: true
 

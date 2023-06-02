@@ -32,7 +32,7 @@ $echo "swordfish" > config/secrets/mongo_initdb_root_password.txt
 NODE_ROLE=manager
 NETWORK_MODE=overlay
 
-VERSION_MONGODB=6.0.3
+VERSION_MONGODB=6.0.6
 VERSION_EXPRESS=0.54.0
 
 LB_SWARM=true
