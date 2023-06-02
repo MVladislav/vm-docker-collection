@@ -31,8 +31,8 @@ and create new user with database for graylog
 over command-line:
 
 ```sh
-$mongosh "mongodb://<USERNAME>:<PASSWORD>@127.0.0.1:27017/?authMechanism=DEFAULT"
-# $mongosh "mongodb://root:swordfish@127.0.0.1:27017/?authMechanism=DEFAULT"
+$mongosh 'mongodb://<USERNAME>:<PASSWORD>@127.0.0.1:27017/?authMechanism=DEFAULT'
+# $mongosh 'mongodb://root:swordfish@127.0.0.1:27017/?authMechanism=DEFAULT'
 $use graylog
 $db.createUser(
   {
@@ -47,9 +47,9 @@ $db.createUser(
 
 ```sh
 #: 'must be at least 16 characters!'
-$echo "swordfishswordfish" > config/secrets/graylog_password_secret.txt
+$echo 'swordfishswordfish' > config/secrets/graylog_password_secret.txt
 $echo -n 'swordfish' | sha256sum | awk '{ print $1 }' > config/secrets/graylog_root_password_sha2.txt
-$echo "mongodb://graylog:swordfish@mongodb:27017/graylog" > config/secrets/graylog_mongodb_uri.txt
+$echo 'mongodb://graylog:swordfish@mongodb:27017/graylog' > config/secrets/graylog_mongodb_uri.txt
 ```
 
 ### create `.env` file following:
