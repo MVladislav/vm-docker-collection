@@ -20,9 +20,9 @@ x-basic-deploy-labels:
     - traefik.http.routers.graylog.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
 
     - traefik.tcp.routers.graylog.entrypoints=https
-    - traefik.tcp.routers.graylog.rule=HostSNI(`${DOMAIN_SYSLOG?domain variable not set}`)
-    - traefik.tcp.services.graylog.loadbalancer.server.scheme=${PROTOCOL_SYSLOG:-http}
-    - traefik.tcp.services.graylog.loadbalancer.server.port=${PORT_SYSLOG:-1515}
+    - traefik.tcp.routers.graylog.rule=HostSNI(`${DOMAIN_SYSLOG_TLS?domain variable not set}`)
+    - traefik.tcp.services.graylog.loadbalancer.server.scheme=${PROTOCOL_SYSLOG_TLS:-http}
+    - traefik.tcp.services.graylog.loadbalancer.server.port=${PORT_SYSLOG_TLS:-1515}
 
 x-basic-deploy:
   &basic-deploy
@@ -109,27 +109,32 @@ services:
       #   mode: host
       # Syslog TCP
       - target: 1514
-        published: ${PORT:-1514}
+        published: ${PORT_SYSLOG:-1514}
         protocol: tcp
         mode: host
       # Syslog UDP
       - target: 1514
-        published: ${PORT:-1514}
+        published: ${PORT_SYSLOG:-1514}
         protocol: udp
         mode: host
       # GELF TCP
       - target: 12201
-        published: ${PORT:-12201}
+        published: ${PORT_GELF:-12201}
         protocol: tcp
         mode: host
       # GELF UDP
       - target: 12201
-        published: ${PORT:-12201}
+        published: ${PORT_GELF:-12201}
         protocol: udp
         mode: host
       # BEATS TCP
       - target: 5044
-        published: ${PORT:-5044}
+        published: ${PORT_BEATS:-5044}
+        protocol: tcp
+        mode: host
+      # BEATS UDP
+      - target: 5044
+        published: ${PORT_BEATS:-5044}
         protocol: udp
         mode: host
     secrets:

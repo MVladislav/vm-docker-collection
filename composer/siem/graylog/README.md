@@ -67,9 +67,9 @@ DOMAIN=graylog.home.local
 PROTOCOL=http
 PORT=9000
 
-DOMAIN_SYSLOG=syslog.home.local
-PROTOCOL_SYSLOG=http
-PORT_SYSLOG=1515
+DOMAIN_SYSLOG_TLS=syslog.home.local
+PROTOCOL_SYSLOG_TLS=http
+PORT_SYSLOG_TLS=1515
 
 # default-secured@file | protected-secured@file | admin-secured@file
 MIDDLEWARE_SECURED=default-secured@file
