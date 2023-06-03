@@ -42,6 +42,12 @@ PROTOCOL=https
 PORT=443
 # default-secured@file | protected-secured@file | admin-secured@file
 MIDDLEWARE_SECURED=default-secured@file
+
+RESOURCES_LIMITS_CPUS="1"
+# 500m | 1g | ...
+RESOURCES_LIMITS_MEMORY=1g
+RESOURCES_RESERVATIONS_CPUS="0.001"
+RESOURCES_RESERVATIONS_MEMORY=32m
 ```
 
 ---
