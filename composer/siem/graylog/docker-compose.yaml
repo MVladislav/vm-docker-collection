@@ -4,7 +4,6 @@ version: "3.8"
 ################################################################################
 ################################################################################
 ################################################################################
-
 x-basic-deploy-labels:
   &basic-deploy-labels
   labels:
@@ -19,7 +18,7 @@ x-basic-deploy-labels:
     - traefik.http.services.graylog.loadbalancer.server.port=${PORT:-9000}
     - traefik.http.routers.graylog.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
 
-    - traefik.tcp.routers.graylog-syslog.entrypoints=https
+    - traefik.tcp.routers.graylog-syslog.entrypoints=syslog-tls
     - traefik.tcp.routers.graylog-syslog.rule=HostSNI(`${DOMAIN_SYSLOG_TLS?domain variable not set}`)
     - traefik.tcp.routers.graylog-syslog.tls=true
     - traefik.tcp.services.graylog-syslog.loadbalancer.server.port=${PORT_SYSLOG_TLS:-1515}
@@ -90,7 +89,6 @@ x-opensearch-cluster:
 ################################################################################
 ################################################################################
 ################################################################################
-
 services:
   ##############################################################################
   ##############################################################################
@@ -158,6 +156,7 @@ services:
       - /etc/localtime:/etc/localtime:ro
       - graylog_data:/usr/share/graylog/data
       - ./config/plugins:/usr/share/graylog/plugin
+      - ./config/maxmind:/etc/graylog/maxmind
       # - ./config/configs:/usr/share/graylog/data/config
       # - ./config/secrets/tls:/graylog-input-tls:ro
     entrypoint: /usr/bin/tini -- wait-for-it opensearch:9200 -- /docker-entrypoint.sh
@@ -166,6 +165,8 @@ services:
       graylog: {}
       mongodb: {}
       proxy: {}
+    healthcheck:
+      disable: true
 
   ##############################################################################
   ##############################################################################
@@ -191,6 +192,8 @@ services:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - opensearch_data_1:/usr/share/opensearch/data
+    healthcheck:
+      disable: true
 
   opensearch-node-2:
     # https://hub.docker.com/r/opensearchproject/opensearch
@@ -213,6 +216,8 @@ services:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - opensearch_data_2:/usr/share/opensearch/data
+    healthcheck:
+      disable: true
 
   opensearch-node-3:
     # https://hub.docker.com/r/opensearchproject/opensearch
@@ -235,6 +240,8 @@ services:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - opensearch_data_3:/usr/share/opensearch/data
+    healthcheck:
+      disable: true
 
 ################################################################################
 ################################################################################

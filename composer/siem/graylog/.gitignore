@@ -23,3 +23,5 @@ config/secrets/*
 !config/secrets/tls/
 config/secrets/tls/*
 !config/secrets/tls/.gitempty
+!config/maxmind/
+config/maxmind/*
