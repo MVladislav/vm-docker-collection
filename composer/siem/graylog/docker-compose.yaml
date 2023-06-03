@@ -19,10 +19,10 @@ x-basic-deploy-labels:
     - traefik.http.services.graylog.loadbalancer.server.port=${PORT:-9000}
     - traefik.http.routers.graylog.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
 
-    - traefik.tcp.routers.graylog.entrypoints=https
-    - traefik.tcp.routers.graylog.rule=HostSNI(`${DOMAIN_SYSLOG_TLS?domain variable not set}`)
-    - traefik.tcp.services.graylog.loadbalancer.server.scheme=${PROTOCOL_SYSLOG_TLS:-http}
-    - traefik.tcp.services.graylog.loadbalancer.server.port=${PORT_SYSLOG_TLS:-1515}
+    - traefik.tcp.routers.graylog-syslog.entrypoints=https
+    - traefik.tcp.routers.graylog-syslog.rule=HostSNI(`${DOMAIN_SYSLOG_TLS?domain variable not set}`)
+    - traefik.tcp.services.graylog-syslog.loadbalancer.server.scheme=${PROTOCOL_SYSLOG_TLS:-http}
+    - traefik.tcp.services.graylog-syslog.loadbalancer.server.port=${PORT_SYSLOG_TLS:-1515}
 
 x-basic-deploy:
   &basic-deploy
