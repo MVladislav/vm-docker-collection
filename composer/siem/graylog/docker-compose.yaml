@@ -21,7 +21,7 @@ x-basic-deploy-labels:
 
     - traefik.tcp.routers.graylog-syslog.entrypoints=https
     - traefik.tcp.routers.graylog-syslog.rule=HostSNI(`${DOMAIN_SYSLOG_TLS?domain variable not set}`)
-    - traefik.tcp.services.graylog-syslog.loadbalancer.server.scheme=${PROTOCOL_SYSLOG_TLS:-http}
+    - traefik.tcp.routers.graylog-syslog.tls=true
     - traefik.tcp.services.graylog-syslog.loadbalancer.server.port=${PORT_SYSLOG_TLS:-1515}
 
 x-basic-deploy:
