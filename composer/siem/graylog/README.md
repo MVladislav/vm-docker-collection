@@ -68,7 +68,7 @@ PROTOCOL=http
 PORT=9000
 
 DOMAIN_SYSLOG_TLS=syslog.home.local
-PORT_SYSLOG_TLS=1515
+PORT_SYSLOG_TLS=1514
 
 # default-secured@file | protected-secured@file | admin-secured@file
 MIDDLEWARE_SECURED=default-secured@file
