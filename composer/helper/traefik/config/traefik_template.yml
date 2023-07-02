@@ -208,22 +208,15 @@ ping: {}
 ################################################################
 
 providers:
-  # Enable Docker configuration backend
-  docker:
-    # Docker server endpoint. Can be a tcp or a unix socket endpoint.
-    #
-    # Required
-    # Default: "unix:///var/run/docker.sock"
-    #
+  # # Enable Docker configuration backend
+  # docker:
+  #   endpoint: "unix:///var/run/docker.sock"
+  #   exposedByDefault: false
+  #   watch: true
+  # Enable Docker configuration backend (swarm)
+  swarm:
     endpoint: "unix:///var/run/docker.sock"
-
-    # Expose containers by default in traefik
-    #
-    # Optional
-    # Default: true
-    #
     exposedByDefault: false
-    swarmMode: true
     watch: true
   file:
     # watch for dynamic configuration changes
