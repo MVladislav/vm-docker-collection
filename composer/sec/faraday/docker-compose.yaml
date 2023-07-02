@@ -1,0 +1,157 @@
+---
+version: "3.8"
+
+################################################################################
+################################################################################
+################################################################################
+
+x-basic-deploy-labels:
+  &basic-deploy-labels
+  labels:
+    - traefik.enable=true
+    - traefik.docker.lbswarm=${LB_SWARM:-true}
+    - traefik.docker.network=proxy
+    - traefik.http.routers.faraday.entrypoints=https
+    - traefik.http.routers.faraday.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.faraday.tls=true
+    - traefik.http.routers.faraday.service=faraday
+    - traefik.http.services.faraday.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.faraday.loadbalancer.server.port=${PORT:-5985}
+    - traefik.http.routers.faraday.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+
+x-basic-deploy:
+  &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  restart_policy:
+    condition: on-failure
+  resources:
+    limits:
+      cpus: ${RESOURCES_LIMITS_CPUS:-"1"}
+      memory: ${RESOURCES_LIMITS_MEMORY:-500m}
+    reservations:
+      cpus: ${RESOURCES_RESERVATIONS_CPUS:-"0.001"}
+      memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
+
+x-basic:
+  &basic
+  env_file: .env
+  cap_add:
+    - DAC_READ_SEARCH
+    - FOWNER
+    - FSETID
+    - SETGID
+    - SETUID
+  cap_drop: [ "ALL" ]
+  security_opt:
+    - no-new-privileges:true
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 65535
+      hard: 65535
+    fsize: -1
+    as: -1
+  networks:
+    default: {}
+    proxy: {}
+  restart: always
+
+################################################################################
+################################################################################
+################################################################################
+
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  faraday:
+    # https://hub.docker.com/r/faradaysec/faraday/tags
+    image: faradaysec/faraday:${VERSION_FARADAY:-4.4.0}
+    <<: *basic
+    deploy:
+      <<: [ *basic-deploy, *basic-deploy-labels ]
+    # ports:
+    #   - target: ${PORT:-5985}
+    #     published: ${PORT_PUBLISH:-5985}
+    #     protocol: tcp
+    #     mode: host
+    # ports:
+    #   - target: ${PORT_9000:-9000}
+    #     published: ${PORT_PUBLISH_9000:-9000}
+    #     protocol: tcp
+    #     mode: host
+    environment:
+      PGSQL_DBNAME: ${POSTGRES_DB:-faraday}
+      PGSQL_USER: ${POSTGRES_USER:-postgres}
+      PGSQL_PASSWD: ${POSTGRES_PASSWORD:-postgres}
+      PGSQL_HOST: ${POSTGRES_HOST:-faraday_postgres}
+      REDIS_SERVER: ${REDIS_SERVER:-faraday_redis}
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - data:/home/faraday/.faraday
+    healthcheck:
+      disable: true
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  faraday_postgres:
+    # https://hub.docker.com/_/postgres/tags
+    image: postgres:${VERSION_POSTGRES:-15.3-alpine}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-faraday}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - db:/var/lib/postgresql/data
+    networks:
+      default: {}
+    healthcheck:
+      disable: true
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  faraday_redis:
+    # https://hub.docker.com/_/redis/tags
+    image: redis:${VERSION_REDIS:-7.0.11-alpine}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    networks:
+      default: {}
+    healthcheck:
+      disable: true
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  default:
+    driver: ${NETWORK_MODE:-bridge}
+    attachable: true
+    driver_opts:
+      encrypted: "true"
+  proxy:
+    external: true
+
+volumes:
+  data: {}
+  db: {}
