@@ -1,0 +1,122 @@
+---
+version: "3.8"
+
+################################################################################
+################################################################################
+################################################################################
+
+x-basic-deploy-labels:
+  &basic-deploy-labels
+  labels:
+    - traefik.enable=true
+    - traefik.docker.lbswarm=${LB_SWARM:-true}
+    - traefik.docker.network=proxy
+    - traefik.http.routers.homepage.entrypoints=https
+    - traefik.http.routers.homepage.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.homepage.tls=true
+    - traefik.http.routers.homepage.service=homepage
+    - traefik.http.services.homepage.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.homepage.loadbalancer.server.port=${PORT:-3000}
+    - traefik.http.routers.homepage.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+
+x-basic-deploy:
+  &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  restart_policy:
+    condition: on-failure
+  resources:
+    limits:
+      cpus: ${RESOURCES_LIMITS_CPUS:-1}
+      memory: ${RESOURCES_LIMITS_MEMORY:-250m}
+    reservations:
+      cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
+      memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
+
+x-basic:
+  &basic
+  env_file: .env
+  # cap_add:
+  #   # https://dockerlabs.collabnix.com/advanced/security/capabilities/
+  #   - CHOWN
+  #   - DAC_OVERRIDE
+  #   - DAC_READ_SEARCH
+  #   - SETGID
+  #   - SETUID
+  #   - NET_ADMIN
+  #   - NET_RAW
+  #   - NET_BIND_SERVICE
+  #   - NET_BROADCAST
+  #   - SYS_MODULE
+  #   - SYS_NICE
+  #   - AUDIT_CONTROL
+  #   - AUDIT_READ
+  cap_drop: ["ALL"]
+  security_opt:
+    - no-new-privileges:true
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 65535
+      hard: 65535
+    fsize: -1
+    as: -1
+  networks:
+    default: {}
+    proxy: {}
+  restart: always
+  healthcheck:
+    disable: true
+
+x-logging:
+  &logging
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"     # Set maximum log file size
+      max-file: 3         # Set maximum number of log files
+      compress: "true"    # Enable log file compression
+
+################################################################################
+################################################################################
+################################################################################
+
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  homepage:
+    image: ghcr.io/benphelps/homepage:${VERSION:-latest}
+    <<: [*basic, *logging]
+    deploy:
+      <<: [ *basic-deploy, *basic-deploy-labels ]
+    environment:
+      MY_EXTERNAL_SECRET_FILE: /run/secrets/my_external_secret
+      MY_FILE_SECRET_FILE: /run/secrets/my_file_secret
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - config:/app/config
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  default:
+    driver: ${NETWORK_MODE:-bridge}
+    attachable: true
+    driver_opts:
+      encrypted: "true"
+  proxy:
+    external: true
+
+volumes:
+  config: {}
