@@ -118,26 +118,28 @@ x-basic:
     - net.ipv6.conf.all.forwarding=1
     - net.ipv6.conf.all.disable_ipv6=0
   restart: always # always | on-failure
+  healthcheck:
+    disable: true
 
 x-logging:
   &logging
   logging:
-  # https://docs.docker.com/config/containers/logging/configure/#supported-logging-drivers
-  driver: json-file # none|local|json-file|syslog|journald|gelf|fluentd|awslogs|splunk|etwlogs|gcplogs|logentries
-  options:
-    max-size: "10m"     # Set maximum log file size
-    max-file: 3         # Set maximum number of log files
-    compress: "true"    # Enable log file compression
-    labels: app=example # Add custom labels to log messages
-    # # => gelf
-    # gelf-address: "tcp://graylog-server:12201"
-    # gelf-compression-type: zlib
-    # tag: "log-gelf"
-    # tls: "true"
-    # tls-verify: "true"  # Enable TLS verification
-    # tls-ca-cert: /path/to/ca-cert.pem  # Path to CA certificate file
-    # tls-cert: /path/to/client-cert.pem  # Path to client certificate file
-    # tls-key: /path/to/client-key.pem  # Path to client private key file
+    # https://docs.docker.com/config/containers/logging/configure/#supported-logging-drivers
+    driver: json-file # none|local|json-file|syslog|journald|gelf|fluentd|awslogs|splunk|etwlogs|gcplogs|logentries
+    options:
+      max-size: "10m"     # Set maximum log file size
+      max-file: 3         # Set maximum number of log files
+      compress: "true"    # Enable log file compression
+      labels: app=example # Add custom labels to log messages
+      # # => gelf
+      # gelf-address: "tcp://graylog-server:12201"
+      # gelf-compression-type: zlib
+      # tag: "log-gelf"
+      # tls: "true"
+      # tls-verify: "true"  # Enable TLS verification
+      # tls-ca-cert: /path/to/ca-cert.pem  # Path to CA certificate file
+      # tls-cert: /path/to/client-cert.pem  # Path to client certificate file
+      # tls-key: /path/to/client-key.pem  # Path to client private key file
 
 ################################################################################
 ################################################################################
@@ -157,7 +159,7 @@ services:
         BUILD_DATE: ${BUILD_DATE:-2022}
         VERSION: ${VERSION:-latest}
     image: localhost:5000/...:${VERSION:-latest}
-    <<: *basic
+    <<: [*basic, *logging]
     deploy:
       <<: [ *basic-deploy, *basic-deploy-labels ]
     # ports:

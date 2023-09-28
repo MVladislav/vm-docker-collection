@@ -10,6 +10,7 @@
   - [basic](#basic)
     - [create your `secrets`:](#create-your-secrets)
     - [create `.env` file following:](#create-env-file-following)
+      - [example short .env](#example-short-env)
   - [Helper](#helper)
     - [verify healthcheck](#verify-healthcheck)
   - [References](#references)
@@ -30,24 +31,44 @@ $echo "swordfish" > config/secrets/my_file_secret.txt
 ### create `.env` file following:
 
 ```env
+# GENERAL variables (mostly by default, change as needed)
+# ______________________________________________________________________________
 NODE_ID=
 NODE_ROLE=manager
-NETWORK_MODE=overlay
+NETWORK_MODE=overlay # by default "bridge"
 
-VERSION=latest
-
+# GENERAL traefik variables (set by default, change as needed)
+# ______________________________________________________________________________
 LB_SWARM=true
-DOMAIN=<HOST>.home.local
+DOMAIN=<HOST>.home.local # not set in docker-compose, needs to be copied to .env
 PROTOCOL=https
 PORT=443
 # default-secured@file | protected-secured@file | admin-secured@file
 MIDDLEWARE_SECURED=default-secured@file
 
+# GENERAL sources to be used (set by default, change as needed)
+# ______________________________________________________________________________
 RESOURCES_LIMITS_CPUS=1
 # 500m | 1g | ...
 RESOURCES_LIMITS_MEMORY=1g
 RESOURCES_RESERVATIONS_CPUS=0.001
 RESOURCES_RESERVATIONS_MEMORY=32m
+
+# APPLICATION version for easy update
+# ______________________________________________________________________________
+VERSION=latest
+
+# APPLICATION general variable to adjust the apps
+# ______________________________________________________________________________
+# NOTE: extend additional info here ...
+```
+
+#### example short .env
+
+```env
+NETWORK_MODE=overlay
+DOMAIN=<HOST>.home.local
+VERSION=latest
 ```
 
 ---
