@@ -1,0 +1,128 @@
+---
+version: "3.8"
+
+################################################################################
+################################################################################
+################################################################################
+
+x-basic-deploy-labels:
+  &basic-deploy-labels
+  labels:
+    - traefik.enable=true
+    - traefik.docker.lbswarm=${LB_SWARM:-true}
+    - traefik.docker.network=proxy
+    - traefik.http.routers.code-server.entrypoints=https
+    - traefik.http.routers.code-server.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.code-server.tls=true
+    - traefik.http.routers.code-server.service=code-server
+    - traefik.http.services.code-server.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.code-server.loadbalancer.server.port=${PORT:-8080}
+    - traefik.http.routers.code-server.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+
+x-basic-deploy:
+  &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  restart_policy:
+    condition: on-failure
+  resources:
+    limits:
+      cpus: ${RESOURCES_LIMITS_CPUS:-2}
+      memory: ${RESOURCES_LIMITS_MEMORY:-1g}
+    reservations:
+      cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
+      memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
+
+x-basic:
+  &basic
+  env_file: .env
+  user: "${GID:-1000}:${UID:-1000}"
+  cap_add:
+    - CHOWN
+    - SETGID
+    - SETUID
+    - AUDIT_WRITE
+  cap_drop: ["ALL"]
+  security_opt:
+    - no-new-privileges:false
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 65535
+      hard: 65535
+    fsize: -1
+    as: -1
+  networks:
+    proxy: {}
+  healthcheck:
+    disable: true
+  restart: always
+
+x-logging:
+  &logging
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: 3
+      compress: "true"
+
+
+################################################################################
+################################################################################
+################################################################################
+
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  code-server:
+    # https://hub.docker.com/r/codercom/code-server
+    image: codercom/code-server:${VERSION:-4.17.1-ubuntu}
+    <<: [*basic, *logging]
+    deploy:
+      <<: [ *basic-deploy, *basic-deploy-labels ]
+    configs:
+      - source: installer_ext
+        target: /entrypoint.d/install-ext.sh
+        mode: 0777
+      - source: settings_config
+        target: /home/coder/.local/share/code-server/User/settings.json
+        mode: 0644
+        uid: "${UID:-1000}"
+        gid: "${GID:-1000}"
+      - source: keybindings_config
+        target: /home/coder/.local/share/code-server/User/keybindings.json
+        mode: 0644
+        uid: "${UID:-1000}"
+        gid: "${GID:-1000}"
+    environment:
+      DOCKER_USER: ${DOCKER_USER}
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - ${CONFIG:-$PWD/config/config}:/home/coder/.config/code-server
+      - ${LOCAL:-$PWD/config/local}:/home/coder/.local/share/code-server
+      - ${PROJECT:-$PWD/config/project}:/home/coder/project
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  proxy:
+    external: true
+
+configs:
+  installer_ext:
+    file: $PWD/config/install-ext.sh
+  settings_config:
+    file: $PWD/config/settings.json
+  keybindings_config:
+    file: $PWD/config/keybindings.json
