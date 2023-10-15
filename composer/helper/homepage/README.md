@@ -44,7 +44,7 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION=latest
+VERSION=v0.7.3
 ```
 
 #### example short .env
@@ -52,7 +52,7 @@ VERSION=latest
 ```env
 NETWORK_MODE=overlay
 DOMAIN=homepage.home.local
-VERSION=latest
+VERSION=v0.7.3
 ```
 
 ---
