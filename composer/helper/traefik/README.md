@@ -13,6 +13,7 @@
     - [config setup](#config-setup)
     - [cert setup](#cert-setup)
     - [create `.env` file following:](#create-env-file-following)
+      - [example short .env](#example-short-env)
   - [label setup](#label-setup)
   - [References](#references)
 
@@ -55,19 +56,48 @@ copy/create following files:
 ### create `.env` file following:
 
 ```env
+# GENERAL variables (mostly by default, change as needed)
+# ______________________________________________________________________________
+NODE_ID=
 NODE_ROLE=manager
-NETWORK_MODE=overlay
+NETWORK_MODE=overlay # by default "bridge"
 
-VERSION=v3.0
-
+# GENERAL traefik variables (set by default, change as needed)
+# ______________________________________________________________________________
 LB_SWARM=true
-DOMAIN=traefik.home.local
+DOMAIN=traefik.home.local # not set in docker-compose, needs to be copied to .env
 PROTOCOL=http
 PORT=8080
 # default-secured@file | protected-secured@file | admin-secured@file
-MIDDLEWARE_SECURED=admin-secured@file
+MIDDLEWARE_SECURED=default-secured@file
 
-#ADMIN_USERNAME=traefik=traefik
+# GENERAL sources to be used (set by default, change as needed)
+# ______________________________________________________________________________
+RESOURCES_LIMITS_CPUS=1
+# 500m | 1g | ...
+RESOURCES_LIMITS_MEMORY=1g
+RESOURCES_RESERVATIONS_CPUS=0.001
+RESOURCES_RESERVATIONS_MEMORY=32m
+
+# APPLICATION version for easy update
+# ______________________________________________________________________________
+VERSION=v3.0
+
+# APPLICATION general variable to adjust the apps
+# ______________________________________________________________________________
+ADMIN_USERNAME=traefik
+# old: echo $(openssl passwd -apr1 $PASSWORD) or echo $(openssl passwd -apr1)
+# new: echo $(htpasswd -nB traefik)
+# replace: make "$" doubled to "$$"
+HASHED_PASSWORD=
+```
+
+#### example short .env
+
+```env
+NETWORK_MODE=overlay
+DOMAIN=traefik.home.local
+
 ADMIN_USERNAME=traefik
 # old: echo $(openssl passwd -apr1 $PASSWORD) or echo $(openssl passwd -apr1)
 # new: echo $(htpasswd -nB traefik)
