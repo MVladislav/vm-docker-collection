@@ -43,6 +43,7 @@ x-basic-deploy:
 x-basic:
   &basic
   env_file: .env
+  # user: "${GID:-1000}:${UID:-1000}"
   # privileged: true
   # stdin_open: true # docker run -i
   # tty: true # docker run -t
