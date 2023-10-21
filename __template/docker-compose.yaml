@@ -14,10 +14,10 @@ x-basic-deploy-labels:
     - traefik.http.routers.<router_name>.entrypoints=https
     - traefik.http.routers.<router_name>.rule=Host(`${DOMAIN?domain variable not set}`)
     - traefik.http.routers.<router_name>.tls=true
+    - traefik.http.routers.<router_name>.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
     - traefik.http.routers.<router_name>.service=<router_name>
     - traefik.http.services.<router_name>.loadbalancer.server.scheme=${PROTOCOL:-https}
     - traefik.http.services.<router_name>.loadbalancer.server.port=${PORT:-443}
-    - traefik.http.routers.<router_name>.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
 
 x-basic-deploy:
   &basic-deploy
@@ -107,6 +107,8 @@ x-basic:
     default: {}
     proxy: {}
   # network_mode: host
+  healthcheck:
+    disable: true
   tmpfs:
     - /tmp
   sysctls:
@@ -119,8 +121,6 @@ x-basic:
     - net.ipv6.conf.all.forwarding=1
     - net.ipv6.conf.all.disable_ipv6=0
   restart: always # always | on-failure
-  healthcheck:
-    disable: true
 
 x-logging:
   &logging
@@ -160,7 +160,7 @@ services:
         BUILD_DATE: ${BUILD_DATE:-2022}
         VERSION: ${VERSION:-latest}
     image: localhost:5000/...:${VERSION:-latest}
-    <<: [*basic, *logging]
+    <<: [*basic, *basic-deploy-labels, *logging]
     deploy:
       <<: [ *basic-deploy, *basic-deploy-labels ]
     # ports:
