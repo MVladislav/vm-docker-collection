@@ -12,25 +12,23 @@ LABEL maintainer="MVladislav"
 # ------------------------------------------------------------------------------
 
 ARG PYTHON_ARGS
-
 ENV DEBIAN_FRONTEND noninteractive
-
 # ensure local python is preferred over distribution python
-ENV PATH /usr/local/bin:$PATH
+ENV PATH /usr/local/bin:/usr/bin:$PATH
 
 # ------------------------------------------------------------------------------
 
-## Fix some issues with APT packages.
-## See https://github.com/dotcloud/docker/issues/1024
-RUN dpkg-divert --local --rename --add /sbin/initctl
-RUN ln -sf /bin/true /sbin/initctl
+# ## Fix some issues with APT packages.
+# ## See https://github.com/dotcloud/docker/issues/1024
+# RUN dpkg-divert --local --rename --add /sbin/initctl
+# RUN ln -sf /bin/true /sbin/initctl
 
-## Replace the 'ischroot' tool to make it always return true.
-## Prevent initscripts updates from breaking /dev/shm.
-## https://journal.paul.querna.org/articles/2013/10/15/docker-ubuntu-on-rackspace/
-## https://bugs.launchpad.net/launchpad/+bug/974584
-RUN dpkg-divert --local --rename --add /usr/bin/ischroot
-RUN ln -sf /bin/true /usr/bin/ischroot
+# ## Replace the 'ischroot' tool to make it always return true.
+# ## Prevent initscripts updates from breaking /dev/shm.
+# ## https://journal.paul.querna.org/articles/2013/10/15/docker-ubuntu-on-rackspace/
+# ## https://bugs.launchpad.net/launchpad/+bug/974584
+# RUN dpkg-divert --local --rename --add /usr/bin/ischroot
+# RUN ln -sf /bin/true /usr/bin/ischroot
 
 # ------------------------------------------------------------------------------
 
@@ -46,7 +44,9 @@ RUN \
   echo "**** install MAIN packages ****" \
   && apt-get install -y --no-install-recommends \
   sudo \
-  systemd systemd-cron \
+  systemd \
+  #systemd-cron \
+  cron \
   apt-utils \
   build-essential \
   locales \
@@ -66,29 +66,32 @@ RUN \
   libdbus-1-dev \
   patchelf \
   apparmor \
-  apparmor-utils
+  apparmor-utils \
+  grub-common \
+  openssh-server
 
 RUN  \
   echo "**** update python pip's ****" \
-  && python3 -m pip list -o \
-  | cut -f1 -d" " \
-  | tr " " "\n" \
-  | awk "{if(NR>=3)print}" \
-  | cut -d" " -f1 \
-  | xargs -n1 python3 -m pip install -U ${PYTHON_ARGS}
+  && python3 -m pip install --upgrade pip ${PYTHON_ARGS}
+# && python3 -m pip list -o \
+# | cut -f1 -d" " \
+# | tr " " "\n" \
+# | awk "{if(NR>=3)print}" \
+# | cut -d" " -f1 \
+# | xargs -n1 python3 -m pip install --upgrade ${PYTHON_ARGS}
 
 RUN \
   echo "**** cleanup ****" \
   && apt-get clean \
-  && rm -rf \
+  && rm -r -f \
   /tmp/* \
   /var/tmp/* \
   /var/lib/apt/lists/* \
   /var/log/* \
-  /var/www \
-  /usr/share/doc \
-  /usr/share/man \
-  /root/.cache
+  /var/www
+# /usr/share/doc \
+# /usr/share/man \
+# /root/.cache
 
 # ------------------------------------------------------------------------------
 
