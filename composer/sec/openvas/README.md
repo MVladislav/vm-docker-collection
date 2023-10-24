@@ -9,7 +9,9 @@
 - [SETUP](#setup)
   - [basic](#basic)
     - [create `.env` file following:](#create-env-file-following)
+      - [example short .env](#example-short-env)
   - [info](#info)
+  - [useful log checks](#useful-log-checks)
   - [FAQ](#faq)
   - [References](#references)
 
@@ -22,25 +24,52 @@
 ### create `.env` file following:
 
 ```env
+# GENERAL variables (mostly by default, change as needed)
+# ______________________________________________________________________________
 NODE_ID=
 NODE_ROLE=manager
-NETWORK_MODE=overlay
+NETWORK_MODE=overlay # by default "bridge"
 
-VERSION_LATEST=latest
-
-# or stable
-VERSION_PG_GVM=22.4.0
-VERSION_GVMD=22.4.0
-VERSION_GSA=22.4.0
-VERSION_OSPD_OPENVAS=22.4.0
-VERSION_NOTUS_SCANNER=22.4.0
-
+# GENERAL traefik variables (set by default, change as needed)
+# ______________________________________________________________________________
 LB_SWARM=true
-DOMAIN=openvas.home.local
+DOMAIN=openvas.home.local # not set in docker-compose, needs to be copied to .env
 PROTOCOL=http
 PORT=80
 # default-secured@file | protected-secured@file | admin-secured@file
 MIDDLEWARE_SECURED=default-secured@file
+
+# GENERAL sources to be used (set by default, change as needed)
+# ______________________________________________________________________________
+...
+
+# APPLICATION version for easy update
+# ______________________________________________________________________________
+VERSION_LATEST=latest
+
+VERSION_PG_GVM=stable        # 22.4.0
+VERSION_GVMD=stable          # 22.4.0
+VERSION_GSA=stable           # 22.4.0
+VERSION_OSPD_OPENVAS=stable  # 22.4.0
+VERSION_NOTUS_SCANNER=stable # 22.4.0
+
+# APPLICATION general variable to adjust the apps
+# ______________________________________________________________________________
+# NOTE: extend additional info here ...
+```
+
+#### example short .env
+
+```env
+NETWORK_MODE=overlay
+DOMAIN=openvas.home.local
+
+VERSION_LATEST=latest
+VERSION_PG_GVM=stable        # 22.4.0
+VERSION_GVMD=stable          # 22.4.0
+VERSION_GSA=stable           # 22.4.0
+VERSION_OSPD_OPENVAS=stable  # 22.4.0
+VERSION_NOTUS_SCANNER=stable # 22.4.0
 ```
 
 ## info
@@ -54,6 +83,20 @@ change password:
 
 ```sh
 $docker-compose exec -u gvmd gvmd gvmd --user=admin --new-password=<PASSWORD>
+```
+
+## useful log checks
+
+```sh
+: 'see feed status update process'
+$docker logs -f "$(docker ps -q -f name=openvas_gvmd)"
+
+$docker logs -f "$(docker ps -q -f name=openvas_ospd-openvas)"
+$docker logs -f "$(docker ps -q -f name=openvas_gsa)"
+$docker logs -f "$(docker ps -q -f name=openvas_notus-scanner)"
+$docker logs -f "$(docker ps -q -f name=openvas_mqtt-broker)"
+$docker logs -f "$(docker ps -q -f name=openvas_pg-gvm)"
+$docker logs -f "$(docker ps -q -f name=openvas_redis-server)"
 ```
 
 ---
@@ -78,3 +121,4 @@ $docker-compose exec -u gvmd gvmd gvmd --user=admin --new-password=<PASSWORD>
   - <https://forum.greenbone.net/t/greenbone-community-edition-22-4-stable-initial-release-2022-07-25/12638>
   - <https://secinfo.greenbone.net>
   - <https://forum.greenbone.net/t/about-greenbone-community-feed-gcf/1224>
+  - <https://forum.greenbone.net/t/scan-config-cant-be-created-failed-to-find-config-daba56c8-73ec-11df-a475-002264764cea/8938/18>
