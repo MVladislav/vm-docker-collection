@@ -133,8 +133,8 @@ services:
     # ports:
     #   - 9392:80
     volumes:
-      - /etc/timezone:/etc/timezone:ro
-      - /etc/localtime:/etc/localtime:ro
+      # - /etc/timezone:/etc/timezone:ro
+      # - /etc/localtime:/etc/localtime:ro
       - gvmd_socket_vol:/run/gvmd
     networks:
       default: {}
@@ -147,8 +147,8 @@ services:
       <<: *basic-deploy
     restart: on-failure
     volumes:
-      - /etc/timezone:/etc/timezone:ro
-      - /etc/localtime:/etc/localtime:ro
+      # - /etc/timezone:/etc/timezone:ro
+      # - /etc/localtime:/etc/localtime:ro
       - gvmd_data_vol:/var/lib/gvm
       - scap_data_vol:/var/lib/gvm/scap-data/
       - cert_data_vol:/var/lib/gvm/cert-data
@@ -166,8 +166,8 @@ services:
       <<: *basic-deploy
     restart: on-failure
     volumes:
-      - /etc/timezone:/etc/timezone:ro
-      - /etc/localtime:/etc/localtime:ro
+      # - /etc/timezone:/etc/timezone:ro
+      # - /etc/localtime:/etc/localtime:ro
       - notus_data_vol:/var/lib/notus
       - gpg_data_vol:/etc/openvas/gnupg
     environment:
@@ -201,8 +201,8 @@ services:
         "666"
       ]
     volumes:
-      - /etc/timezone:/etc/timezone:ro
-      - /etc/localtime:/etc/localtime:ro
+      # - /etc/timezone:/etc/timezone:ro
+      # - /etc/localtime:/etc/localtime:ro
       - gpg_data_vol:/etc/openvas/gnupg
       - vt_data_vol:/var/lib/openvas/plugins
       - notus_data_vol:/var/lib/notus
@@ -215,9 +215,9 @@ services:
     deploy:
       <<: *basic-deploy
     restart: on-failure
-    volumes:
-      - /etc/timezone:/etc/timezone:ro
-      - /etc/localtime:/etc/localtime:ro
+    # volumes:
+    #   - /etc/timezone:/etc/timezone:ro
+    #   - /etc/localtime:/etc/localtime:ro
     networks:
       default:
         aliases:
@@ -231,8 +231,8 @@ services:
       <<: *basic-deploy
     restart: on-failure
     volumes:
-      - /etc/timezone:/etc/timezone:ro
-      - /etc/localtime:/etc/localtime:ro
+      # - /etc/timezone:/etc/timezone:ro
+      # - /etc/localtime:/etc/localtime:ro
       - psql_data_vol:/var/lib/postgresql
       - psql_socket_vol:/var/run/postgresql
 
@@ -243,8 +243,8 @@ services:
       <<: *basic-deploy
     restart: on-failure
     volumes:
-      - /etc/timezone:/etc/timezone:ro
-      - /etc/localtime:/etc/localtime:ro
+      # - /etc/timezone:/etc/timezone:ro
+      # - /etc/localtime:/etc/localtime:ro
       - redis_socket_vol:/run/redis/
 
   ##############################################################################
@@ -259,8 +259,8 @@ services:
     environment:
       STORAGE_PATH: /var/lib/openvas/22.04/vt-data/nasl
     volumes:
-      - /etc/timezone:/etc/timezone:ro
-      - /etc/localtime:/etc/localtime:ro
+      # - /etc/timezone:/etc/timezone:ro
+      # - /etc/localtime:/etc/localtime:ro
       - vt_data_vol:/mnt
 
   ##############################################################################
@@ -273,8 +273,8 @@ services:
     deploy:
       <<: *basic-deploy-conf
     volumes:
-      - /etc/timezone:/etc/timezone:ro
-      - /etc/localtime:/etc/localtime:ro
+      # - /etc/timezone:/etc/timezone:ro
+      # - /etc/localtime:/etc/localtime:ro
       - notus_data_vol:/mnt
 
   scap-data:
@@ -283,8 +283,8 @@ services:
     deploy:
       <<: *basic-deploy-conf
     volumes:
-      - /etc/timezone:/etc/timezone:ro
-      - /etc/localtime:/etc/localtime:ro
+      # - /etc/timezone:/etc/timezone:ro
+      # - /etc/localtime:/etc/localtime:ro
       - scap_data_vol:/mnt
 
   cert-bund-data:
@@ -293,8 +293,8 @@ services:
     deploy:
       <<: *basic-deploy-conf
     volumes:
-      - /etc/timezone:/etc/timezone:ro
-      - /etc/localtime:/etc/localtime:ro
+      # - /etc/timezone:/etc/timezone:ro
+      # - /etc/localtime:/etc/localtime:ro
       - cert_data_vol:/mnt
 
   dfn-cert-data:
@@ -303,8 +303,8 @@ services:
     deploy:
       <<: *basic-deploy-conf
     volumes:
-      - /etc/timezone:/etc/timezone:ro
-      - /etc/localtime:/etc/localtime:ro
+      # - /etc/timezone:/etc/timezone:ro
+      # - /etc/localtime:/etc/localtime:ro
       - cert_data_vol:/mnt
 
   data-objects:
@@ -313,8 +313,8 @@ services:
     deploy:
       <<: *basic-deploy-conf
     volumes:
-      - /etc/timezone:/etc/timezone:ro
-      - /etc/localtime:/etc/localtime:ro
+      # - /etc/timezone:/etc/timezone:ro
+      # - /etc/localtime:/etc/localtime:ro
       - data_objects_vol:/mnt
 
   report-formats:
@@ -323,8 +323,8 @@ services:
     deploy:
       <<: *basic-deploy-conf
     volumes:
-      - /etc/timezone:/etc/timezone:ro
-      - /etc/localtime:/etc/localtime:ro
+      # - /etc/timezone:/etc/timezone:ro
+      # - /etc/localtime:/etc/localtime:ro
       - data_objects_vol:/mnt
 
   gpg-data:
@@ -333,8 +333,8 @@ services:
     deploy:
       <<: *basic-deploy-conf
     volumes:
-      - /etc/timezone:/etc/timezone:ro
-      - /etc/localtime:/etc/localtime:ro
+      # - /etc/timezone:/etc/timezone:ro
+      # - /etc/localtime:/etc/localtime:ro
       - gpg_data_vol:/mnt
 
   gvm-tools:
@@ -343,8 +343,8 @@ services:
     deploy:
       <<: *basic-deploy-conf
     volumes:
-      - /etc/timezone:/etc/timezone:ro
-      - /etc/localtime:/etc/localtime:ro
+      # - /etc/timezone:/etc/timezone:ro
+      # - /etc/localtime:/etc/localtime:ro
       - gvmd_socket_vol:/run/gvmd
       - ospd_openvas_socket_vol:/run/ospd
 
