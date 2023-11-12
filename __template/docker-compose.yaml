@@ -11,7 +11,7 @@ x-basic-deploy-labels:
     - traefik.enable=true
     - traefik.docker.lbswarm=${LB_SWARM:-true}
     - traefik.docker.network=proxy
-    - traefik.http.routers.<router_name>.entrypoints=https
+    - traefik.http.routers.<router_name>.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
     - traefik.http.routers.<router_name>.rule=Host(`${DOMAIN?domain variable not set}`)
     - traefik.http.routers.<router_name>.tls=true
     - traefik.http.routers.<router_name>.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
@@ -91,6 +91,7 @@ x-basic:
   # cap_drop: ["ALL"]
   # security_opt:
   #   - no-new-privileges:true
+  #   # - label:disable
   # pids_limit: 200
   # read_only: ${CONTAINER_READONLY:-false}
   ulimits:
@@ -146,6 +147,11 @@ x-logging:
 ################################################################################
 ################################################################################
 
+x-base-env: &base-env
+  TZ: ${TIMEZONE:-Europe/Berlin}
+  PUID: ${PUID:-$UID}
+  PGID: ${PGID:-$GID}
+
 services:
   ##############################################################################
   ##############################################################################
@@ -162,7 +168,7 @@ services:
     image: localhost:5000/...:${VERSION:-latest}
     <<: [*basic, *basic-deploy-labels, *logging]
     deploy:
-      <<: [ *basic-deploy, *basic-deploy-labels ]
+      <<: [*basic-deploy, *basic-deploy-labels]
     # ports:
     #   - target: ${PORT:-...}
     #     published: ${PORT_PUBLISH:-...}
@@ -176,6 +182,7 @@ services:
         gid: "1000"
         mode: 400
     environment:
+      <<: *base-env
       MY_EXTERNAL_SECRET_FILE: /run/secrets/my_external_secret
       MY_FILE_SECRET_FILE: /run/secrets/my_file_secret
     # configs:

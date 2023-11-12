@@ -18,6 +18,8 @@ ARG BUILD_DATE
 ARG VERSION
 LABEL build_version="MVladislav version:- ${VERSION} Build-date:- ${BUILD_DATE}"
 LABEL maintainer="MVladislav"
+LABEL org.opencontainers.image.description example official docker container.
+
 
 # ------------------------------------------------------------------------------
 
