@@ -1,0 +1,113 @@
+---
+version: "3.8"
+
+################################################################################
+################################################################################
+################################################################################
+
+x-basic-deploy-labels: &basic-deploy-labels
+  labels:
+    - traefik.enable=true
+    - traefik.docker.lbswarm=${LB_SWARM:-true}
+    - traefik.docker.network=${TRAEFIK_NETWORK:-proxy}
+    - traefik.http.routers.netbootxyz.entrypoints=https
+    - traefik.http.routers.netbootxyz.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.netbootxyz.tls=true
+    - traefik.http.routers.netbootxyz.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.netbootxyz.service=netbootxyz
+    - traefik.http.services.netbootxyz.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.netbootxyz.loadbalancer.server.port=${PORT:-3000}
+
+    - traefik.http.routers.netbootxyz_assets.entrypoints=https
+    - traefik.http.routers.netbootxyz_assets.rule=Host(`${DOMAIN_ASSETS?domain variable not set}`)
+    - traefik.http.routers.netbootxyz_assets.tls=true
+    - traefik.http.routers.netbootxyz_assets.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.netbootxyz_assets.service=netbootxyz_assets
+    - traefik.http.services.netbootxyz_assets.loadbalancer.server.scheme=${PROTOCOL_ASSETS:-http}
+    - traefik.http.services.netbootxyz_assets.loadbalancer.server.port=${PORT_ASSETS:-80}
+
+    # - traefik.udp.routers.mqtt.entrypoints=tftp
+    # # - traefik.udp.routers.mqtt.rule=HostSNI(`*`)
+    # - traefik.udp.services.mqtt.loadbalancer.server.port=69
+
+x-basic-deploy: &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  restart_policy:
+    condition: on-failure
+  resources:
+    limits:
+      cpus: ${RESOURCES_LIMITS_CPUS:-0.5}
+      memory: ${RESOURCES_LIMITS_MEMORY:-500m}
+    reservations:
+      cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
+      memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
+
+x-basic: &basic
+  env_file: .env
+  cap_add:
+    - CHOWN
+    - DAC_OVERRIDE
+    - DAC_READ_SEARCH
+    - SETGID
+    - SETUID
+  cap_drop: ["ALL"]
+  security_opt:
+    - no-new-privileges:true
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 65535
+      hard: 65535
+    fsize: -1
+    as: -1
+  networks:
+    proxy: {}
+  healthcheck:
+    disable: true
+  restart: always
+
+################################################################################
+################################################################################
+################################################################################
+
+
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  netbootxyz:
+    # https://github.com/netbootxyz/docker-netbootxyz/pkgs/container/netbootxyz
+    image: ghcr.io/netbootxyz/netbootxyz:${VERSION:-0.6.9-nbxyz2}
+    <<: [*basic, *basic-deploy-labels]
+    deploy:
+      <<: [*basic-deploy, *basic-deploy-labels]
+    ports:
+      - target: ${PORT_TFTP:-69}
+        published: ${PORT_TFTP_PUBLISH:-69}
+        protocol: udp
+        mode: host
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - config:/config
+      - assets:/assets
+
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  proxy:
+    external: true
+
+volumes:
+  config: {}
+  assets: {}
