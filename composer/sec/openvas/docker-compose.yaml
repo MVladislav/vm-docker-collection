@@ -180,13 +180,18 @@ services:
     deploy:
       <<: *basic-deploy
     restart: on-failure
-    # init: true
-    cap_add:
-      - NET_ADMIN # for capturing packages in promiscuous mode
-      - NET_RAW # for raw sockets e.g. used for the boreas alive detection
-    security_opt:
-      - seccomp=unconfined
-      - apparmor=unconfined
+    # cap_add:
+    #   - NET_ADMIN # for capturing packages in promiscuous mode
+    #   - NET_RAW # for raw sockets e.g. used for the boreas alive detection
+    # security_opt:
+    #   - seccomp=unconfined
+    #   - apparmor=unconfined
+    # configs:
+    #   - source: openvas_config
+    #     target: /etc/openvas/openvas.conf
+    #     mode: 0644
+    #     uid: "19654"
+    #     gid: "19654"
     command:
       [
         "ospd-openvas",
@@ -373,3 +378,7 @@ volumes:
   gvmd_socket_vol:
   ospd_openvas_socket_vol:
   redis_socket_vol:
+
+# configs:
+#   openvas_config:
+#     file: $PWD/config/openvas.conf

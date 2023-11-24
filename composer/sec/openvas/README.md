@@ -36,7 +36,7 @@ LB_SWARM=true
 DOMAIN=openvas.home.local # not set in docker-compose, needs to be copied to .env
 PROTOCOL=http
 PORT=80
-# default-secured@file | protected-secured@file | admin-secured@file
+# default-secured@file | public-whitelist@file | authentik@file
 MIDDLEWARE_SECURED=default-secured@file
 
 # GENERAL sources to be used (set by default, change as needed)
@@ -107,6 +107,10 @@ $docker logs -f "$(docker ps -q -f name=openvas_redis-server)"
   - this was happen to me, because my host has disabled IPv6
   - openvas needs the functionality for IPv6, also without connection
   - else it will always fail
+- Boreas:: failure when show `0% interrupted`
+  - <https://forum.greenbone.net/t/failed-to-open-icmpv4-socket-operation-not-permitted/13791/9>
+  - `$docker exec -it  "$(docker ps -q -f name=openvas_ospd-openvas)" bash`
+    - `# $echo "test_alive_hosts_only = no" >> /etc/openvas/openvas.conf`
 
 ---
 
