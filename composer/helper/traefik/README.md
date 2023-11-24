@@ -47,7 +47,7 @@ $cp ./config/config_template.yml ./config/config.yml
 
 ### cert setup
 
-copy/create following files:
+create following files inside `config/ssl`:
 
 - config/ssl/ca.pem
 - config/ssl/cert.pem
@@ -58,7 +58,6 @@ copy/create following files:
 ```env
 # GENERAL variables (mostly by default, change as needed)
 # ______________________________________________________________________________
-NODE_ID=
 NODE_ROLE=manager
 NETWORK_MODE=overlay # by default "bridge"
 
@@ -68,14 +67,13 @@ LB_SWARM=true
 DOMAIN=traefik.home.local # not set in docker-compose, needs to be copied to .env
 PROTOCOL=http
 PORT=8080
-# default-secured@file | protected-secured@file | admin-secured@file
+# default-secured@file | public-whitelist@file | authentik@file
 MIDDLEWARE_SECURED=default-secured@file
 
 # GENERAL sources to be used (set by default, change as needed)
 # ______________________________________________________________________________
-RESOURCES_LIMITS_CPUS=1
-# 500m | 1g | ...
-RESOURCES_LIMITS_MEMORY=1g
+RESOURCES_LIMITS_CPUS=0.5
+RESOURCES_LIMITS_MEMORY=100M
 RESOURCES_RESERVATIONS_CPUS=0.001
 RESOURCES_RESERVATIONS_MEMORY=32m
 
@@ -118,10 +116,10 @@ labels:
   - traefik.http.routers.<router_name>.entrypoints=https
   - traefik.http.routers.<router_name>.rule=Host(`${DOMAIN?domain variable not set}`)
   - traefik.http.routers.<router_name>.tls=true
+  - traefik.http.routers.<router_name>.middlewares=<default-secured@file | public-secured@file>
   - traefik.http.routers.<router_name>.service=<router_name>
-  - traefik.http.services.<router_name>.loadbalancer.server.scheme=${PROTOCOL:-https}
-  - traefik.http.services.<router_name>.loadbalancer.server.port=<port>
-  - traefik.http.routers.<router_name>.middlewares=<default-secured@file | protected-secured@file | admin-secured@file>
+  - traefik.http.services.<router_name>.loadbalancer.server.scheme=${PROTOCOL:-http}
+  - traefik.http.services.<router_name>.loadbalancer.server.port=${PORT:-80}
 ```
 
 ```yml

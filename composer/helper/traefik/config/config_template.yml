@@ -1,22 +1,22 @@
 http:
   # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  routers:
-    example:
-      entryPoints:
-        - https
-      rule: "Host(`example.home.local`)"
-      middlewares:
-        - default-secured
-      tls: {}
-      service: example
+  # routers:
+  #   example:
+  #     entryPoints:
+  #       - https
+  #     rule: "Host(`example.home.local`)"
+  #     middlewares:
+  #       - default-secured
+  #     tls: {}
+  #     service: example
 
   # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  services:
-    example:
-      loadBalancer:
-        servers:
-          - url: "https://192.168.xx.xx"
-        passHostHeader: true
+  # services:
+  #   example:
+  #     loadBalancer:
+  #       servers:
+  #         - url: "https://192.168.xx.xx"
+  #       passHostHeader: true
 
   # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   middlewares:
@@ -33,24 +33,37 @@ http:
         customRequestHeaders:
           X-Forwarded-Proto: https
 
+    # https://github.com/goauthentik/authentik/issues/2366
+    authentik:
+      forwardAuth:
+        address: "http://goauthentik-server:9000/outpost.goauthentik.io/auth/traefik"
+        trustForwardHeader: true
+        authResponseHeaders:
+          - X-authentik-username
+          - X-authentik-groups
+          - X-authentik-email
+          - X-authentik-name
+          - X-authentik-uid
+          - X-authentik-jwt
+          - X-authentik-meta-jwks
+          - X-authentik-meta-outpost
+          - X-authentik-meta-provider
+          - X-authentik-meta-app
+          - X-authentik-meta-version
+
     # --------------------------------------------------------------------------
     default-whitelist:
       IPAllowList:
         sourceRange:
+          - 127.0.0.0/8
           - 10.0.0.0/8
           - 192.168.0.0/16
           - 172.16.0.0/12
 
-    admin-whitelist:
+    public-whitelist:
       IPAllowList:
         sourceRange:
-          - 192.168.xx.0/24
-
-    protected-whitelist:
-      IPAllowList:
-        sourceRange:
-          - 192.168.xx.0/24
-          - 192.168.xx.0/24
+          - 0.0.0.0/0
 
     # --------------------------------------------------------------------------
     default-secured:
@@ -59,20 +72,14 @@ http:
           - default-whitelist
           - default-headers
 
-    protected-secured:
+    public-secured:
       chain:
         middlewares:
-          - protected-whitelist
-          - default-headers
-
-    admin-secured:
-      chain:
-        middlewares:
-          - admin-whitelist
+          - public-whitelist
           - default-headers
 
     # --------------------------------------------------------------------------
-    bouncer-crowdsec:
-      forwardauth:
-        address: http://bouncer-traefik:8080/api/v1/forwardAuth
-        trustForwardHeader: true
+    # bouncer-crowdsec:
+    #   forwardauth:
+    #     address: http://bouncer-traefik:8080/api/v1/forwardAuth
+    #     trustForwardHeader: true
