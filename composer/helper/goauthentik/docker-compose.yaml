@@ -1,0 +1,199 @@
+---
+version: "3.8"
+
+################################################################################
+################################################################################
+################################################################################
+
+x-basic-deploy-labels: &basic-deploy-labels
+  labels:
+    - traefik.enable=true
+    - traefik.docker.lbswarm=${LB_SWARM:-true}
+    - traefik.docker.network=proxy
+    - traefik.http.routers.authentik.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.authentik.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.authentik.tls=true
+    - traefik.http.routers.authentik.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.authentik.service=authentik
+    - traefik.http.services.authentik.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.authentik.loadbalancer.server.port=${PORT:-9000}
+
+x-basic-deploy: &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  restart_policy:
+    condition: on-failure
+  resources:
+    limits:
+      cpus: ${RESOURCES_LIMITS_CPUS:-1}
+      memory: ${RESOURCES_LIMITS_MEMORY:-1g}
+    reservations:
+      cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
+      memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
+
+x-basic: &basic
+  env_file: .env
+  cap_drop: ["ALL"]
+  security_opt:
+    - no-new-privileges:true
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 65535
+      hard: 65535
+    fsize: -1
+    as: -1
+  networks:
+    default: {}
+  healthcheck:
+    disable: true
+  restart: always
+
+################################################################################
+################################################################################
+################################################################################
+
+x-authentik-env: &authentik-env
+  AUTHENTIK_COOKIE_DOMAIN: ${DOMAIN?domain variable not set}
+  AUTHENTIK_INSECURE: "false"
+  AUTHENTIK_REDIS__HOST: redis
+  AUTHENTIK_POSTGRESQL__HOST: postgresql
+  AUTHENTIK_POSTGRESQL__USER: ${PG_USER:-authentik}
+  AUTHENTIK_POSTGRESQL__NAME: ${PG_DB:-authentik}
+  AUTHENTIK_POSTGRESQL__PASSWORD: file:///run/secrets/postgres_password_file
+  AUTHENTIK_SECRET_KEY: file:///run/secrets/authentik_secret_key
+  AUTHENTIK_ERROR_REPORTING__ENABLED: ${AUTHENTIK_ERROR_REPORTING__ENABLED:-false}
+
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  goauthentik-server:
+    # https://github.com/goauthentik/authentik/pkgs/container/server
+    image: ghcr.io/goauthentik/server:${VERSION_GOAUTHENTIK:-2023.10.4}
+    <<: [*basic, *basic-deploy-labels]
+    deploy:
+      <<: [*basic-deploy, *basic-deploy-labels]
+    secrets:
+      - postgres_password_file
+      - authentik_secret_key
+    environment:
+      <<: *authentik-env
+    volumes:
+      - media:/media
+      - custom-templates:/templates
+    command: server
+    networks:
+      default: {}
+      proxy: {}
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  goauthentik-worker:
+    # https://github.com/goauthentik/authentik/pkgs/container/server
+    image: ghcr.io/goauthentik/server:${VERSION_GOAUTHENTIK:-2023.10.4}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+    user: root
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - SETGID
+      - SETUID
+      - FOWNER
+      - FSETID
+    secrets:
+      - postgres_password_file
+      - authentik_secret_key
+    environment:
+      <<: *authentik-env
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - media:/media
+      - custom-templates:/templates
+      - certs:/certs
+    command: worker
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  redis:
+    # https://hub.docker.com/_/redis
+    image: redis:${VERSION_REDIS:-7.2.3-alpine}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+    cap_add:
+      - SETGID
+      - SETUID
+    volumes:
+      - redis:/data
+    command: --save 60 1 --loglevel warning
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
+      start_period: 20s
+      interval: 30s
+      retries: 5
+      timeout: 3s
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  postgresql:
+    # https://hub.docker.com/_/postgres
+    image: docker.io/library/postgres:${VERSION_POSTGRESQL:-16.1-alpine}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+    cap_add:
+      - SETGID
+      - SETUID
+      - DAC_OVERRIDE
+    secrets:
+      - postgres_password_file
+    environment:
+      POSTGRES_DB: ${PG_DB:-authentik}
+      POSTGRES_USER: ${PG_USER:-authentik}
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password_file
+    volumes:
+      - database:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
+      start_period: 20s
+      interval: 30s
+      retries: 5
+      timeout: 5s
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  default:
+    driver: ${NETWORK_MODE:-bridge}
+    attachable: true
+    driver_opts:
+      encrypted: "true"
+  proxy:
+    external: true
+
+volumes:
+  media: {}
+  certs: {}
+  custom-templates: {}
+  redis: {}
+  database: {}
+
+secrets:
+  postgres_password_file:
+    file: config/secrets/postgres_password_file.txt
+  authentik_secret_key:
+    file: config/secrets/authentik_secret_key.txt
