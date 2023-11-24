@@ -42,7 +42,7 @@ LB_SWARM=true
 DOMAIN=firefly.home.local
 PROTOCOL=https
 PORT=443
-# default-secured@file | protected-secured@file | admin-secured@file
+# default-secured@file | public-whitelist@file | authentik@file
 MIDDLEWARE_SECURED=default-secured@file
 
 RESOURCES_LIMITS_CPUS="1"

@@ -27,7 +27,7 @@ LB_SWARM=true
 DOMAIN=speed.home.local
 PROTOCOL=http
 PORT=3000
-# default-secured@file | protected-secured@file | admin-secured@file
+# default-secured@file | public-whitelist@file | authentik@file
 MIDDLEWARE_SECURED=default-secured@file
 ```
 

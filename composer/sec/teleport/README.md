@@ -30,7 +30,7 @@ LB_SWARM=true
 DOMAIN=teleport.home.local
 PROTOCOL=http
 PORT=3080
-# default-secured@file | protected-secured@file | admin-secured@file
+# default-secured@file | public-whitelist@file | authentik@file
 MIDDLEWARE_SECURED=default-secured@file
 ```
 

@@ -32,13 +32,13 @@ LB_SWARM=true
 DOMAIN_ADMIN=gophish.home.local
 PROTOCOL_ADMIN=http
 PORT_ADMIN=3333
-# default-secured@file | protected-secured@file | admin-secured@file
+# default-secured@file | public-whitelist@file | authentik@file
 MIDDLEWARE_SECURED_ADMIN=default-secured@file
 
 DOMAINS_PHISH=Host(`phish.home.local`) || Host(`phish2.home.local`) || ...
 PROTOCOL_PHISH=http
 PORT_PHISH=80
-# default-secured@file | protected-secured@file | admin-secured@file
+# default-secured@file | public-whitelist@file | authentik@file
 MIDDLEWARE_SECURED_PHISH=default-secured@file
 ```
 

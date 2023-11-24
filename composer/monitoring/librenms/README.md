@@ -41,7 +41,7 @@ LB_SWARM=true
 DOMAIN=monitoring.home.local
 PROTOCOL=http
 PORT=8000
-# default-secured@file | protected-secured@file | admin-secured@file
+# default-secured@file | public-whitelist@file | authentik@file
 MIDDLEWARE_SECURED=default-secured@file
 
 TZ=Europe/Berlin

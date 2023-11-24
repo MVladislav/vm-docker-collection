@@ -70,7 +70,7 @@ PORT=9000
 DOMAIN_SYSLOG_TLS=*
 PORT_SYSLOG_TLS=1514
 
-# default-secured@file | protected-secured@file | admin-secured@file
+# default-secured@file | public-whitelist@file | authentik@file
 MIDDLEWARE_SECURED=default-secured@file
 
 GRAYLOG_MEM_USE_LIMIT=2G

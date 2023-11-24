@@ -32,7 +32,7 @@ LB_SWARM=true
 DOMAIN=homepage.home.local # not set in docker-compose, needs to be copied to .env
 PROTOCOL=http
 PORT=3000
-# default-secured@file | protected-secured@file | admin-secured@file
+# default-secured@file | public-whitelist@file | authentik@file
 MIDDLEWARE_SECURED=default-secured@file
 
 # GENERAL sources to be used (set by default, change as needed)

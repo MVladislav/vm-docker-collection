@@ -30,7 +30,7 @@ LB_SWARM=true
 DOMAIN=nessus.home.local
 PROTOCOL=https
 PORT=8834
-# default-secured@file | protected-secured@file | admin-secured@file
+# default-secured@file | public-whitelist@file | authentik@file
 MIDDLEWARE_SECURED=default-secured@file
 ```
 

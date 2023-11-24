@@ -51,7 +51,7 @@ PORT_NETMAKER_UI=80
 PROTOCOL_MQTT=http
 PORT_MQTT=8883
 
-# default-secured@file | protected-secured@file | admin-secured@file
+# default-secured@file | public-whitelist@file | authentik@file
 MIDDLEWARE_SECURED_NETMAKER_UI=default-secured@file,nmui-security@docker
 MIDDLEWARE_SECURED_NETMAKER_API=default-secured@file
 

@@ -33,7 +33,7 @@ DOMAIN_SHORT=s.home.local
 PROTOCOL=http
 PORT=80
 PORT_SHORT=8080
-# default-secured@file | protected-secured@file | admin-secured@file
+# default-secured@file | public-whitelist@file | authentik@file
 MIDDLEWARE_SECURED=default-secured@file
 
 TZ=Europe/Berlin

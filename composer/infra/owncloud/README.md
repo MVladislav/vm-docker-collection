@@ -37,7 +37,7 @@ LB_SWARM=true
 DOMAIN=owncloud.home.local
 PROTOCOL=http
 PORT=8080
-# default-secured@file | protected-secured@file | admin-secured@file
+# default-secured@file | public-whitelist@file | authentik@file
 MIDDLEWARE_SECURED=default-secured@file
 
 OWNCLOUD_TRUSTED_DOMAINS=owncloud.home.local

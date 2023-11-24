@@ -29,7 +29,7 @@ LB_SWARM=true
 DOMAIN=portainer.home.local
 PROTOCOL=http
 PORT=9000
-# default-secured@file | protected-secured@file | admin-secured@file
+# default-secured@file | public-whitelist@file | authentik@file
 MIDDLEWARE_SECURED=protected-secured@file
 ```
 

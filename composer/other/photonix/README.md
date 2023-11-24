@@ -38,7 +38,7 @@ LB_SWARM=true
 DOMAIN=photonix.home.local
 PROTOCOL=http
 PORT=80
-# default-secured@file | protected-secured@file | admin-secured@file
+# default-secured@file | public-whitelist@file | authentik@file
 MIDDLEWARE_SECURED=default-secured@file
 ```
 

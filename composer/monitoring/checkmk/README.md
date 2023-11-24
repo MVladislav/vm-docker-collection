@@ -36,7 +36,7 @@ LB_SWARM=true
 DOMAIN=checkmk.home.local
 PROTOCOL=http
 PORT=5000
-# default-secured@file | protected-secured@file | admin-secured@file
+# default-secured@file | public-whitelist@file | authentik@file
 MIDDLEWARE_SECURED=default-secured@file
 ```
 
