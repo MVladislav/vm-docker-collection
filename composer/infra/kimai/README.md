@@ -8,7 +8,6 @@
 
 - [SETUP](#setup)
   - [basic](#basic)
-    - [create your `secrets`:](#create-your-secrets)
     - [create `.env` file following:](#create-env-file-following)
       - [example short .env](#example-short-env)
   - [FAQ](#faq)
@@ -19,12 +18,6 @@
 ## basic
 
 > defined to work with treafik
-
-### create your `secrets`:
-
-```sh
-$echo "swordfish" > config/secrets/my_file_secret.txt
-```
 
 ### create `.env` file following:
 
