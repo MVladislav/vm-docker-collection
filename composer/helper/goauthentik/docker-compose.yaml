@@ -150,7 +150,7 @@ services:
   ##############################################################################
   postgresql:
     # https://hub.docker.com/_/postgres
-    image: docker.io/library/postgres:${VERSION_POSTGRESQL:-16.1-alpine}
+    image: postgres:${VERSION_POSTGRESQL:-16.1-alpine}
     <<: *basic
     deploy:
       <<: *basic-deploy
