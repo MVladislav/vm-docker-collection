@@ -140,8 +140,8 @@ services:
     command: --save 60 1 --loglevel warning
     healthcheck:
       test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
-      start_period: 20s
-      interval: 30s
+      start_period: 5s
+      interval: 10s
       retries: 5
       timeout: 3s
 
@@ -168,10 +168,10 @@ services:
       - database:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
-      start_period: 20s
-      interval: 30s
+      start_period: 5s
+      interval: 10s
       retries: 5
-      timeout: 5s
+      timeout: 3s
 
 ################################################################################
 ################################################################################
