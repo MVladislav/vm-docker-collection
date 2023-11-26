@@ -5,22 +5,20 @@ version: "3.8"
 ################################################################################
 ################################################################################
 
-x-basic-deploy-labels:
-  &basic-deploy-labels
+x-basic-deploy-labels: &basic-deploy-labels
   labels:
     - traefik.enable=true
     - traefik.docker.lbswarm=${LB_SWARM:-true}
     - traefik.docker.network=proxy
-    - traefik.http.routers.openspeedtest.entrypoints=https
+    - traefik.http.routers.openspeedtest.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
     - traefik.http.routers.openspeedtest.rule=Host(`${DOMAIN?domain variable not set}`)
     - traefik.http.routers.openspeedtest.tls=true
+    - traefik.http.routers.openspeedtest.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
     - traefik.http.routers.openspeedtest.service=openspeedtest
     - traefik.http.services.openspeedtest.loadbalancer.server.scheme=${PROTOCOL:-http}
     - traefik.http.services.openspeedtest.loadbalancer.server.port=${PORT:-3000}
-    - traefik.http.routers.openspeedtest.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
 
-x-basic-deploy:
-  &basic-deploy
+x-basic-deploy: &basic-deploy
   mode: replicated
   replicas: 1
   placement:
@@ -32,16 +30,15 @@ x-basic-deploy:
     condition: on-failure
   resources:
     limits:
-      # cpus: "1.5"
-      memory: 500M
+      cpus: ${RESOURCES_LIMITS_CPUS:-0.2}
+      memory: ${RESOURCES_LIMITS_MEMORY:-500m}
     reservations:
-      cpus: "0.001"
-      memory: 32M
+      cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
+      memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
 
-x-basic:
-  &basic
+x-basic: &basic
   env_file: .env
-  cap_drop: [ "ALL" ]
+  cap_drop: ["ALL"]
   security_opt:
     - no-new-privileges:true
   ulimits:
@@ -55,8 +52,8 @@ x-basic:
     as: -1
   networks:
     proxy: {}
-  tmpfs:
-    - /tmp
+  healthcheck:
+    disable: true
   restart: always
 
 ################################################################################
@@ -69,32 +66,22 @@ services:
   ##############################################################################
   openspeedtest:
     # https://hub.docker.com/r/openspeedtest/latest
-    image: openspeedtest/latest:${VERSION:-latest}
+    image: openspeedtest/latest:${VERSION:-v2.0.4}
     <<: *basic
     deploy:
-      <<: [ *basic-deploy, *basic-deploy-labels ]
-    # ports:
-    #   - target: ${PORT:-3000}
-    #     published: ${PORT_PUBLISH:-3000}
-    #     protocol: tcp
-    #     mode: host
+      <<: [*basic-deploy, *basic-deploy-labels]
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
     healthcheck:
-      test:
-        [
-          "CMD",
-          "curl",
-          "-f",
-          "${PROTOCOL:-http}://localhost:${PORT:-3000}"
-        ]
+      test: ["CMD", "curl", "-f", "${PROTOCOL:-http}://localhost:${PORT:-3000}"]
       interval: 30s
       timeout: 10s
       retries: 5
-      ################################################################################
-      ################################################################################
-      ################################################################################
+
+################################################################################
+################################################################################
+################################################################################
 networks:
   proxy:
     external: true
