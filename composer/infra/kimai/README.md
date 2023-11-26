@@ -46,12 +46,11 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 # APPLICATION version for easy update
 # ______________________________________________________________________________
 VERSION_KIMAI=apache-2.4.1-prod
-VERSION_MYSQL=8.2.0
+VERSION_MARIADB=11.2.2
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
-MYSQL_PASSWORD=
-MYSQL_ROOT_PASSWORD=
+MARIADB_PASSWORD=
 ```
 
 #### example short .env
@@ -61,10 +60,9 @@ NETWORK_MODE=overlay
 DOMAIN=kimai.home.local
 
 VERSION_KIMAI=apache-2.4.1-prod
-VERSION_MYSQL=8.2.0
+VERSION_MARIADB=11.2.2
 
-MYSQL_PASSWORD=
-MYSQL_ROOT_PASSWORD=
+MARIADB_PASSWORD=
 ```
 
 ---

@@ -90,11 +90,8 @@ services:
       - SETGID
       - SETUID
       - DAC_OVERRIDE
-    # secrets:
-    #   - my_file_secret
     environment:
-      # MY_FILE_SECRET_FILE: /run/secrets/my_file_secret
-      DATABASE_URL: mysql://${MYSQL_USER:-kimaiuser}:${MYSQL_PASSWORD}@sqldb/${MYSQL_DATABASE:-kimai}?charset=utf8&serverVersion=5.7
+      DATABASE_URL: mysql://${MARIADB_USER:-kimai}:${MARIADB_PASSWORD}@mariadb/${MARIADB_DATABASE:-kimai}?charset=utf8&serverVersion=5.7
       TRUSTED_HOSTS: ${DOMAIN?domain variable not set},localhost,127.0.0.1
     volumes:
       - /etc/timezone:/etc/timezone:ro
@@ -107,10 +104,10 @@ services:
   ##############################################################################
   ##############################################################################
   ##############################################################################
-  sqldb:
-    # https://hub.docker.com/_/mysql
-    image: mysql:${VERSION_MYSQL:-8.2.0}
-    <<: [*basic, *basic-deploy-labels]
+  mariadb:
+    # https://hub.docker.com/_/mariadb
+    image: mariadb:${VERSION_MARIADB:-11.2.2}
+    <<: *basic
     deploy:
       <<: *basic-deploy
     cap_add:
@@ -118,21 +115,26 @@ services:
       - SETUID
       - DAC_OVERRIDE
     environment:
-      MYSQL_DATABASE: ${MYSQL_DATABASE:-kimai}
-      MYSQL_USER: ${MYSQL_USER:-kimaiuser}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      TZ: ${TZ:-Europe/Berlin}
+      MARIADB_DATABASE: ${MARIADB_DATABASE:-kimai}
+      MARIADB_USER: ${MARIADB_USER:-kimai}
+      MARIADB_PASSWORD: ${MARIADB_PASSWORD}
+      MARIADB_RANDOM_ROOT_PASSWORD: ${MARIADB_RANDOM_ROOT_PASSWORD:-true}
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-      - mysql:/var/lib/mysql
-    command: --default-storage-engine innodb
+      - mariadb:/var/lib/mysql
+    command:
+      - --log-bin=mysql-bin
+      - --expire-logs-days=90
+    networks:
+      default: {}
     healthcheck:
-      test: mysqladmin -p$$MYSQL_ROOT_PASSWORD ping -h localhost
-      interval: 20s
-      start_period: 10s
-      timeout: 10s
-      retries: 3
+      test: ["CMD-SHELL", "/usr/local/bin/healthcheck.sh --no-defaults"]
+      start_period: 5s
+      interval: 10s
+      retries: 5
+      timeout: 3s
 
 ################################################################################
 ################################################################################
@@ -148,11 +150,4 @@ networks:
 
 volumes:
   kimai: {}
-  mysql: {}
-#
-# secrets:
-#   # echo "This is an external secret" | docker secret create my_external_secret -
-#   my_external_secret:
-#     external: true
-#   my_file_secret:
-#     file: config/secrets/my_file_secret.txt
+  mariadb: {}
