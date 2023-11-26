@@ -47,8 +47,8 @@ $db.createUser(
 
 ```sh
 #: 'must be at least 16 characters!'
-$echo 'swordfishswordfish' > config/secrets/graylog_password_secret.txt
-$echo -n 'swordfish' | sha256sum | awk '{ print $1 }' > config/secrets/graylog_root_password_sha2.txt
+$openssl rand -base64 18 > config/secrets/graylog_password_secret.txt
+$openssl rand -base64 18 | sha256sum | awk '{ print $1 }' > config/secrets/graylog_root_password_sha2.txt
 $echo 'mongodb://graylog:swordfish@mongodb:27017/graylog' > config/secrets/graylog_mongodb_uri.txt
 ```
 

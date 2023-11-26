@@ -21,8 +21,8 @@
 ### create your `secrets`:
 
 ```sh
-$echo "swordfish" | docker secret create my_external_secret -
-$echo "swordfish" > config/secrets/my_file_secret.txt
+$openssl rand -base64 18 | docker secret create my_external_secret -
+$openssl rand -base64 18 > config/secrets/my_file_secret.txt
 ```
 
 ### create `.env` file following:

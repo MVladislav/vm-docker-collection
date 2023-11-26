@@ -22,7 +22,7 @@
 ### create your `secrets`:
 
 ```sh
-$echo "swordfish" > config/secrets/postgres_secret.txt
+$openssl rand -base64 18 > config/secrets/postgres_secret.txt
 ```
 
 ### create `.env` file following:

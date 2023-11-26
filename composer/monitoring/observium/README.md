@@ -30,9 +30,9 @@
 > do not use hard passwort with special chars like "$", they not work current
 
 ```sh
-$echo "swordfish" > config/secrets/observium_admin_pass.txt
-$echo "swordfish" > config/secrets/observium_db_pass.txt
-$echo "swordfish" > config/secrets/mariadb_root_password.txt
+$openssl rand -base64 18 > config/secrets/observium_admin_pass.txt
+$openssl rand -base64 18 > config/secrets/observium_db_pass.txt
+$openssl rand -base64 18 > config/secrets/mariadb_root_password.txt
 ```
 
 ### create `.env` file following:

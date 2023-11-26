@@ -22,7 +22,7 @@
 ### create your `secrets`:
 
 ```sh
-$echo "swordfish" > config/secrets/db_password_file_secret.txt
+$openssl rand -base64 18 > config/secrets/db_password_file_secret.txt
 ```
 
 ### create `.env` file following:

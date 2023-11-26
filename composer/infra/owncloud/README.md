@@ -21,7 +21,7 @@
 ### create your `secrets`:
 
 ```sh
-$echo "swordfish" > config/secrets/owncloud_db_password.txt
+$openssl rand -base64 18 > config/secrets/owncloud_db_password.txt
 ```
 
 ### create `.env` file following:

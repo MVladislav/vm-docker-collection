@@ -10,8 +10,6 @@
   - [basic](#basic)
     - [create your `secrets`:](#create-your-secrets)
     - [create `.env` file following:](#create-env-file-following)
-  - [Helper](#helper)
-    - [verify healthcheck](#verify-healthcheck)
   - [References](#references)
 
 ---
@@ -23,9 +21,9 @@
 ### create your `secrets`:
 
 ```sh
-$echo "swordfish" > config/secrets/fireflyiii_password.txt
-$echo "swordfish" > config/secrets/mariadb_root_password.txt
-$echo "swordfish" > config/secrets/mariadb_user_password.txt
+$openssl rand -base64 18 > config/secrets/fireflyiii_password.txt
+$openssl rand -base64 18 > config/secrets/mariadb_root_password.txt
+$openssl rand -base64 18 > config/secrets/mariadb_user_password.txt
 ```
 
 ### create `.env` file following:

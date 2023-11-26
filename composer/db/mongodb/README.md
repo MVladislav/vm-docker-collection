@@ -22,8 +22,8 @@
 ### create your `secrets`:
 
 ```sh
-$echo "swordfish" > config/secrets/me_config_basicauth_password.txt
-$echo "swordfish" > config/secrets/mongo_initdb_root_password.txt
+$openssl rand -base64 18 > config/secrets/me_config_basicauth_password.txt
+$openssl rand -base64 18 > config/secrets/mongo_initdb_root_password.txt
 ```
 
 ### create `.env` file following:

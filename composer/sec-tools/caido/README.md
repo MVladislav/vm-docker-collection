@@ -8,7 +8,6 @@
 
 - [SETUP](#setup)
   - [basic](#basic)
-    - [create your `secrets`:](#create-your-secrets)
     - [create `.env` file following:](#create-env-file-following)
   - [References](#references)
 
@@ -17,13 +16,6 @@
 ## basic
 
 > defined to work with treafik
-
-### create your `secrets`:
-
-```sh
-$echo "swordfish" | docker secret create my_external_secret -
-$echo "swordfish" > config/secrets/my_file_secret.txt
-```
 
 ### create `.env` file following:
 

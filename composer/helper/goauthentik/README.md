@@ -24,8 +24,8 @@
 ### create your `secrets`:
 
 ```sh
-$echo "swordfish" > config/secrets/postgres_password_file.txt
-$echo "swordfish" > config/secrets/authentik_secret_key.txt
+$openssl rand -base64 18 > config/secrets/postgres_password_file.txt
+$openssl rand -base64 18 > config/secrets/authentik_secret_key.txt
 ```
 
 ### create `.env` file following:

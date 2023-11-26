@@ -21,7 +21,7 @@
 ### create your `secrets`:
 
 ```sh
-$echo "swordfish" > config/secrets/mysql_root_password.txt
+$openssl rand -base64 18 > config/secrets/mysql_root_password.txt
 ```
 
 ### create `.env` file following:

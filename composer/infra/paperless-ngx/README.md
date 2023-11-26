@@ -22,10 +22,10 @@
 ### create your `secrets`:
 
 ```sh
-$echo "swordfish" > config/secrets/mariadb_password_file.txt
-$echo "swordfish" > config/secrets/mariadb_root_password_file.txt
-$echo "swordfish" > config/secrets/paperless_admin_password_file.txt
-$echo "swordfish" > config/secrets/paperless_secret_key.txt
+$openssl rand -base64 18 > config/secrets/mariadb_password_file.txt
+$openssl rand -base64 18 > config/secrets/mariadb_root_password_file.txt
+$openssl rand -base64 18 > config/secrets/paperless_admin_password_file.txt
+$openssl rand -base64 18 > config/secrets/paperless_secret_key.txt
 ```
 
 ### create `.env` file following:

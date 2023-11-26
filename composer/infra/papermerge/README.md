@@ -21,9 +21,9 @@
 ### create your `secrets`:
 
 ```sh
-$echo "swordfish" > config/secrets/papermerge__main__secret_key.txt
-$echo "swordfish" > config/secrets/papermerge__database__password.txt
-$echo "swordfish" > config/secrets/django_superuser_password.txt
+$openssl rand -base64 18 > config/secrets/papermerge__main__secret_key.txt
+$openssl rand -base64 18 > config/secrets/papermerge__database__password.txt
+$openssl rand -base64 18 > config/secrets/django_superuser_password.txt
 ```
 
 ### create `.env` file following:

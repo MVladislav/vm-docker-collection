@@ -21,10 +21,10 @@
 ### create your `secrets`:
 
 ```sh
-$echo "swordfish" > config/secrets/secret_key_secret.txt
-$echo "swordfish" > config/secrets/postgres_password_secret.txt
-$echo "swordfish" > config/secrets/redis_password_secret.txt
-$echo "swordfish" > config/secrets/superuser_password_secret.txt
+$openssl rand -base64 18 > config/secrets/secret_key_secret.txt
+$openssl rand -base64 18 > config/secrets/postgres_password_secret.txt
+$openssl rand -base64 18 > config/secrets/redis_password_secret.txt
+$openssl rand -base64 18 > config/secrets/superuser_password_secret.txt
 ```
 
 ### create `.env` file following:
