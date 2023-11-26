@@ -4,9 +4,7 @@ version: "3.8"
 ################################################################################
 ################################################################################
 ################################################################################
-
-x-basic-deploy-labels:
-  &basic-deploy-labels
+x-basic-deploy-labels: &basic-deploy-labels
   labels:
     - traefik.enable=true
     - traefik.docker.lbswarm=${LB_SWARM:-true}
@@ -19,8 +17,7 @@ x-basic-deploy-labels:
     - traefik.http.services.homepage.loadbalancer.server.port=${PORT:-3000}
     - traefik.http.routers.homepage.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
 
-x-basic-deploy:
-  &basic-deploy
+x-basic-deploy: &basic-deploy
   mode: replicated
   replicas: 1
   placement:
@@ -32,15 +29,19 @@ x-basic-deploy:
     condition: on-failure
   resources:
     limits:
-      cpus: ${RESOURCES_LIMITS_CPUS:-1}
+      cpus: ${RESOURCES_LIMITS_CPUS:-0.2}
       memory: ${RESOURCES_LIMITS_MEMORY:-250m}
     reservations:
       cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
       memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
 
-x-basic:
-  &basic
+x-basic: &basic
   env_file: .env
+  cap_add:
+    # https://dockerlabs.collabnix.com/advanced/security/capabilities/
+    - CHOWN
+    - SETGID
+    - SETUID
   cap_drop: ["ALL"]
   security_opt:
     - no-new-privileges:true
@@ -54,20 +55,10 @@ x-basic:
     fsize: -1
     as: -1
   networks:
-    default: {}
     proxy: {}
   restart: always
   healthcheck:
     disable: true
-
-x-logging:
-  &logging
-  logging:
-    driver: json-file
-    options:
-      max-size: "10m"     # Set maximum log file size
-      max-file: 3         # Set maximum number of log files
-      compress: "true"    # Enable log file compression
 
 ################################################################################
 ################################################################################
@@ -79,13 +70,13 @@ services:
   ##############################################################################
   homepage:
     # https://github.com/gethomepage/homepage/pkgs/container/homepage
-    image: ghcr.io/gethomepage/homepage:${VERSION:-v0.7.3}
-    <<: [*basic, *logging]
+    image: ghcr.io/gethomepage/homepage:${VERSION:-v0.8.2}
+    <<: *basic
     deploy:
-      <<: [ *basic-deploy, *basic-deploy-labels ]
+      <<: [*basic-deploy, *basic-deploy-labels]
     environment:
-      MY_EXTERNAL_SECRET_FILE: /run/secrets/my_external_secret
-      MY_FILE_SECRET_FILE: /run/secrets/my_file_secret
+      PUID: ${PUID:-1000}
+      PGID: ${PGID:-1000}
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
@@ -96,11 +87,6 @@ services:
 ################################################################################
 ################################################################################
 networks:
-  default:
-    driver: ${NETWORK_MODE:-bridge}
-    attachable: true
-    driver_opts:
-      encrypted: "true"
   proxy:
     external: true
 

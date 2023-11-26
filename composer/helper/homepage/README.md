@@ -10,6 +10,7 @@
   - [basic](#basic)
     - [create `.env` file following:](#create-env-file-following)
       - [example short .env](#example-short-env)
+  - [Edit configs](#edit-configs)
   - [References](#references)
 
 ---
@@ -37,14 +38,19 @@ MIDDLEWARE_SECURED=default-secured@file
 
 # GENERAL sources to be used (set by default, change as needed)
 # ______________________________________________________________________________
-RESOURCES_LIMITS_CPUS=1
+RESOURCES_LIMITS_CPUS=0.2
 RESOURCES_LIMITS_MEMORY=250m
 RESOURCES_RESERVATIONS_CPUS=0.001
 RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION=v0.7.3
+VERSION=v0.8.2
+
+# APPLICATION general variable to adjust the apps (optional set by default)
+# ______________________________________________________________________________
+PUID=1000
+PGID=1000
 ```
 
 #### example short .env
@@ -52,7 +58,21 @@ VERSION=v0.7.3
 ```env
 NETWORK_MODE=overlay
 DOMAIN=homepage.home.local
-VERSION=v0.7.3
+VERSION=v0.8.2
+```
+
+---
+
+## Edit configs
+
+open different files direct in container, for example with:
+
+```sh
+$docker exec -it "$(docker ps -q -f name=homepage_homepage)" vi config/bookmarks.yaml
+$docker exec -it "$(docker ps -q -f name=homepage_homepage)" vi config/services.yaml
+$docker exec -it "$(docker ps -q -f name=homepage_homepage)" vi config/docker.yaml
+$docker exec -it "$(docker ps -q -f name=homepage_homepage)" vi config/settings.yaml
+$docker exec -it "$(docker ps -q -f name=homepage_homepage)" vi config/widgets.yaml
 ```
 
 ---
@@ -60,4 +80,4 @@ VERSION=v0.7.3
 ## References
 
 - <https://gethomepage.dev/en/installation/docker/>
-- <https://github.com/benphelps/homepage>
+- <https://github.com/gethomepage/homepage>
