@@ -47,8 +47,8 @@ services:
     secrets:
       - postgres_password_file
     environment:
-      POSTGRES_DB: ${PG_DB:-authentik}
-      POSTGRES_USER: ${PG_USER:-authentik}
+      POSTGRES_DB: ${PG_DB:-postgresql}
+      POSTGRES_USER: ${PG_USER:-postgresql}
       POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password_file
     volumes:
       - postgresql:/var/lib/postgresql/data
@@ -61,30 +61,29 @@ services:
       retries: 5
       timeout: 3s
 
-    ##############################################################################
-    ##############################################################################
-    ##############################################################################
-  mariadb-bitwarden:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  mariadb:
     # https://hub.docker.com/_/mariadb
-    image: mariadb:${VERSION_MARIADB:-10.7.8}
+    image: mariadb:${VERSION_MARIADB:-11.2.2}
     # <<: *basic
     # deploy:
     #   <<: *basic-deploy
     cap_add:
-      - SYS_NICE
-      - DAC_OVERRIDE
-      - CHOWN
       - SETGID
       - SETUID
+      - DAC_OVERRIDE
     secrets:
       - mariadb_root_password
       - mariadb_user_password
     environment:
       TZ: ${TZ:-Europe/Berlin}
-      MARIADB_ROOT_PASSWORD_FILE: /run/secrets/mariadb_root_password
-      MARIADB_DATABASE: ${MARIADB_DATABASE:-bitwarden_vault}
-      MARIADB_USER: ${MARIADB_USER:-bitwarden}
+      MARIADB_DATABASE: ${MARIADB_DATABASE:-mariadb}
+      MARIADB_USER: ${MARIADB_USER:-mariadb}
       MARIADB_PASSWORD_FILE: /run/secrets/mariadb_user_password
+      MARIADB_ROOT_PASSWORD_FILE: /run/secrets/mariadb_root_password
+      # MARIADB_RANDOM_ROOT_PASSWORD: ${MARIADB_RANDOM_ROOT_PASSWORD:-true}
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
