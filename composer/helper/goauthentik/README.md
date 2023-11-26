@@ -48,7 +48,7 @@ MIDDLEWARE_SECURED=default-secured@file
 # GENERAL sources to be used (set by default, change as needed)
 # ______________________________________________________________________________
 RESOURCES_LIMITS_CPUS=1
-RESOURCES_LIMITS_MEMORY=qg
+RESOURCES_LIMITS_MEMORY=1g
 RESOURCES_RESERVATIONS_CPUS=0.001
 RESOURCES_RESERVATIONS_MEMORY=32m
 
@@ -57,10 +57,6 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 VERSION_GOAUTHENTIK=2023.10.4
 VERSION_REDIS=7.2.3-alpine
 VERSION_POSTGRESQL=16.1-alpine
-
-# APPLICATION general variable to adjust the apps
-# ______________________________________________________________________________
-...
 ```
 
 #### example short .env
