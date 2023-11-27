@@ -85,7 +85,6 @@ services:
       LISTEN: 0.0.0.0:${PUBLISHED_PORT:-8080}
       FRESHRSS_ENV: production
     volumes:
-      - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - data:/var/www/FreshRSS/data
       - extensions:/var/www/FreshRSS/extensions
