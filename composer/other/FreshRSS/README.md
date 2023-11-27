@@ -8,8 +8,8 @@
 
 - [SETUP](#setup)
   - [basic](#basic)
-    - [create your `secrets` (optional when mysql is needed):](#create-your-secrets-optional-when-mysql-is-needed)
     - [create `.env` file following:](#create-env-file-following)
+      - [example short .env](#example-short-env)
   - [References](#references)
 
 ---
@@ -18,44 +18,47 @@
 
 > defined to work with treafik
 
-### create your `secrets` (optional when mysql is needed):
-
-```sh
-$echo "swordfish" > config/secrets/freshrss_db_pass.txt
-$echo "swordfish" > config/secrets/mariadb_root_password.txt
-```
-
 ### create `.env` file following:
 
 ```env
+
+# GENERAL variables (mostly by default, change as needed)
+# ______________________________________________________________________________
+NODE_ID=
 NODE_ROLE=manager
-NETWORK_MODE=overlay
+NETWORK_MODE=overlay # by default "bridge"
 
-VERSION=1.21.0
-VERSION_MARIADB=10.7.8
-
+# GENERAL traefik variables (set by default, change as needed)
+# ______________________________________________________________________________
 LB_SWARM=true
-DOMAIN=freshrss.home.local
+DOMAIN=freshrss.home.local # not set in docker-compose, needs to be copied to .env
 PROTOCOL=http
 PORT=8080
 # default-secured@file | public-whitelist@file | authentik@file
 MIDDLEWARE_SECURED=default-secured@file
 
+# GENERAL sources to be used (set by default, change as needed)
+# ______________________________________________________________________________
+RESOURCES_LIMITS_CPUS=0.5
+RESOURCES_LIMITS_MEMORY=500m
+RESOURCES_RESERVATIONS_CPUS=0.001
+RESOURCES_RESERVATIONS_MEMORY=32m
 
+# APPLICATION version for easy update
+# ______________________________________________________________________________
+VERSION=1.22.1-alpine
+
+# APPLICATION general variable to adjust the apps
+# ______________________________________________________________________________
 TZ=Europe/Berlin
 CRON_MIN=3,33
+```
 
-# OPTIONAL
+#### example short .env
 
-ADMIN_EMAIL=root@home.local
-
-FRESHRSS_DB_HOST=freshrss-mariadb
-FRESHRSS_DB_NAME=freshrss
-FRESHRSS_DB_USER=freshrss
-
-ADMIN_PASSWORD=freshrss
-ADMIN_API_PASSWORD=freshrss
-DB_PASSWORD=freshrss
+```env
+NETWORK_MODE=overlay
+DOMAIN=freshrss.home.local
 ```
 
 ---
