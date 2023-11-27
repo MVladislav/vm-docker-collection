@@ -38,11 +38,6 @@ x-basic-deploy: &basic-deploy
 
 x-basic: &basic
   env_file: .env
-  cap_add:
-    - CHOWN
-    - DAC_OVERRIDE
-    - SETGID
-    - SETUID
   cap_drop: ["ALL"]
   security_opt:
     - no-new-privileges:true
@@ -71,10 +66,16 @@ services:
   ##############################################################################
   freshrss:
     # https://hub.docker.com/r/freshrss/freshrss
-    image: freshrss/freshrss:${VERSION:-1.22.1-alpine}
+    image: freshrss/freshrss:${VERSION:-1.22.1}
     <<: *basic
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels]
+    cap_add:
+      - CHOWN
+      - FOWNER
+      - FSETID
+      - SETGID
+      - SETUID
     environment:
       TZ: ${TZ:-Europe/Berlin}
       # Cron job to refresh feeds at specified minutes
