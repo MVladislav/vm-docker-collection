@@ -23,6 +23,8 @@
 
 ### create your `secrets`:
 
+> instead of openssl for password you can also use `pwgen -s 50 1`
+
 ```sh
 $openssl rand -base64 18 | docker secret create my_external_secret -
 $openssl rand -base64 18 > config/secrets/my_file_secret.txt
