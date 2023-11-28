@@ -11,6 +11,8 @@
     - [create `.env` file following:](#create-env-file-following)
       - [example short .env](#example-short-env)
   - [FAQ](#faq)
+    - [login](#login)
+    - [oauth](#oauth)
   - [References](#references)
 
 ---
@@ -69,11 +71,19 @@ MARIADB_PASSWORD=
 
 ## FAQ
 
+### login
+
 On intial setup you need to assigne the first user manually a admin roles:
 
 ```sh
 $docker exec -it "$(docker ps -q -f name=kimai_kimai)" /opt/kimai/bin/console kimai:user:create admin admin@home.local ROLE_SUPER_ADMIN
 ```
+
+### oauth
+
+- [goauthentik setup](https://github.com/MVladislav/vm-docker-collection/tree/main/composer/helper/goauthentik)
+- [config example](https://www.kimai.org/documentation/saml-authentik.html)
+- [config example](https://goauthentik.io/integrations/services/kimai/)
 
 ---
 

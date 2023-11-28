@@ -38,21 +38,6 @@ x-basic-deploy: &basic-deploy
 
 x-basic: &basic
   env_file: .env
-  # cap_add:
-  #   # https://dockerlabs.collabnix.com/advanced/security/capabilities/
-  #   - CHOWN
-  #   - DAC_OVERRIDE
-  #   - DAC_READ_SEARCH
-  #   - SETGID
-  #   - SETUID
-  #   - NET_ADMIN
-  #   - NET_RAW
-  #   - NET_BIND_SERVICE
-  #   - NET_BROADCAST
-  #   - SYS_MODULE
-  #   - SYS_NICE
-  #   - AUDIT_CONTROL
-  #   - AUDIT_READ
   cap_drop: ["ALL"]
   security_opt:
     - no-new-privileges:true
@@ -90,6 +75,9 @@ services:
       - SETGID
       - SETUID
       - DAC_OVERRIDE
+    # configs:
+    #   - source: local_config
+    #     target: /opt/kimai/config/packages/local.yaml
     environment:
       DATABASE_URL: mysql://${MARIADB_USER:-kimai}:${MARIADB_PASSWORD}@mariadb/${MARIADB_DATABASE:-kimai}?charset=utf8&serverVersion=5.7
       TRUSTED_HOSTS: ${DOMAIN?domain variable not set},localhost,127.0.0.1
@@ -147,6 +135,10 @@ networks:
       encrypted: "true"
   proxy:
     external: true
+
+# configs:
+#   local_config:
+#     file: $PWD/config/local.yaml
 
 volumes:
   kimai: {}
