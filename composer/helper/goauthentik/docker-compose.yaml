@@ -62,6 +62,8 @@ x-basic: &basic
 
 x-authentik-env: &authentik-env
   AUTHENTIK_COOKIE_DOMAIN: ${DOMAIN?domain variable not set}
+  AUTHENTIK_HOST: http://goauthentik-server:9000
+  AUTHENTIK_HOST_BROWSER: https://${DOMAIN?domain variable not set}
   AUTHENTIK_INSECURE: "false"
   AUTHENTIK_REDIS__HOST: redis
   AUTHENTIK_POSTGRESQL__HOST: postgresql
@@ -122,6 +124,31 @@ services:
       - custom-templates:/templates
       - certs:/certs
     command: worker
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  # goauthentik-ldap:
+  #   # https://github.com/goauthentik/authentik/pkgs/container/ldap
+  #   image: ghcr.io/goauthentik/ldap:${VERSION_GOAUTHENTIK:-2023.10.4}
+  #   <<: *basic
+  #   deploy:
+  #     <<: *basic-deploy
+  #   # cap_add:
+  #   #   - CHOWN
+  #   #   - DAC_OVERRIDE
+  #   #   - SETGID
+  #   #   - SETUID
+  #   #   - FOWNER
+  #   #   - FSETID
+  #   secrets:
+  #     - postgres_password_file
+  #     - authentik_secret_key
+  #   environment:
+  #     <<: *authentik-env
+  #     AUTHENTIK_TOKEN: ${AUTHENTIK_TOKEN:-}
+  #   volumes:
+  #     - /var/run/docker.sock:/var/run/docker.sock:ro
 
   ##############################################################################
   ##############################################################################
