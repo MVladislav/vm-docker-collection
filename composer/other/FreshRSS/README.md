@@ -10,6 +10,8 @@
   - [basic](#basic)
     - [create `.env` file following:](#create-env-file-following)
       - [example short .env](#example-short-env)
+  - [FAQ](#faq)
+    - [oauth](#oauth)
   - [References](#references)
 
 ---
@@ -60,6 +62,16 @@ CRON_MIN=3,33
 NETWORK_MODE=overlay
 DOMAIN=freshrss.home.local
 ```
+
+---
+
+## FAQ
+
+### oauth
+
+- [goauthentik setup](https://github.com/MVladislav/vm-docker-collection/tree/main/composer/helper/goauthentik)
+- [config example](https://freshrss.github.io/FreshRSS/en/admins/16_OpenID-Connect-Authentik.html)
+- [config example](https://goauthentik.io/integrations/services/freshrss/)
 
 ---
 
