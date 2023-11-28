@@ -18,6 +18,19 @@ x-basic-deploy-labels: &basic-deploy-labels
     - traefik.http.services.authentik.loadbalancer.server.scheme=${PROTOCOL:-http}
     - traefik.http.services.authentik.loadbalancer.server.port=${PORT:-9000}
 
+# x-ldap-deploy-labels: &ldap-deploy-labels
+#   labels:
+#     - traefik.enable=true
+#     - traefik.docker.lbswarm=${LB_SWARM:-true}
+#     - traefik.docker.network=proxy
+#     - traefik.http.routers.authentik-ldap.entrypoints=${TRAEFIK_ENTRYPOINT_LDAP:-ldap}
+#     - traefik.http.routers.authentik-ldap.rule=Host(`${DOMAIN?domain variable not set}`)
+#     - traefik.http.routers.authentik-ldap.tls=true
+#     - traefik.http.routers.authentik-ldap.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+#     - traefik.http.routers.authentik-ldap.service=authentik-ldap
+#     - traefik.http.services.authentik-ldap.loadbalancer.server.scheme=http
+#     - traefik.http.services.authentik-ldap.loadbalancer.server.port=3389
+
 x-basic-deploy: &basic-deploy
   mode: replicated
   replicas: 1
@@ -61,16 +74,18 @@ x-basic: &basic
 ################################################################################
 
 x-authentik-env: &authentik-env
-  AUTHENTIK_COOKIE_DOMAIN: ${DOMAIN?domain variable not set}
-  AUTHENTIK_HOST: http://goauthentik-server:9000
-  AUTHENTIK_HOST_BROWSER: https://${DOMAIN?domain variable not set}
-  AUTHENTIK_INSECURE: "false"
   AUTHENTIK_REDIS__HOST: redis
   AUTHENTIK_POSTGRESQL__HOST: postgresql
   AUTHENTIK_POSTGRESQL__USER: ${PG_USER:-authentik}
   AUTHENTIK_POSTGRESQL__NAME: ${PG_DB:-authentik}
   AUTHENTIK_POSTGRESQL__PASSWORD: file:///run/secrets/postgres_password_file
   AUTHENTIK_SECRET_KEY: file:///run/secrets/authentik_secret_key
+
+x-authentik-extend-env: &authentik-extend-env
+  AUTHENTIK_COOKIE_DOMAIN: ${DOMAIN?domain variable not set}
+  AUTHENTIK_HOST: http://goauthentik-server:9000
+  AUTHENTIK_HOST_BROWSER: https://${DOMAIN?domain variable not set}
+  AUTHENTIK_INSECURE: "false"
   AUTHENTIK_ERROR_REPORTING__ENABLED: ${AUTHENTIK_ERROR_REPORTING__ENABLED:-false}
 
 services:
@@ -87,7 +102,7 @@ services:
       - postgres_password_file
       - authentik_secret_key
     environment:
-      <<: *authentik-env
+      <<: [*authentik-env, *authentik-extend-env]
     volumes:
       - media:/media
       - custom-templates:/templates
@@ -117,7 +132,7 @@ services:
       - postgres_password_file
       - authentik_secret_key
     environment:
-      <<: *authentik-env
+      <<: [*authentik-env, *authentik-extend-env]
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - media:/media
@@ -131,24 +146,15 @@ services:
   # goauthentik-ldap:
   #   # https://github.com/goauthentik/authentik/pkgs/container/ldap
   #   image: ghcr.io/goauthentik/ldap:${VERSION_GOAUTHENTIK:-2023.10.4}
-  #   <<: *basic
+  #   <<: [*basic, *ldap-deploy-labels]
   #   deploy:
-  #     <<: *basic-deploy
-  #   # cap_add:
-  #   #   - CHOWN
-  #   #   - DAC_OVERRIDE
-  #   #   - SETGID
-  #   #   - SETUID
-  #   #   - FOWNER
-  #   #   - FSETID
-  #   secrets:
-  #     - postgres_password_file
-  #     - authentik_secret_key
+  #     <<: [*basic-deploy, *ldap-deploy-labels]
   #   environment:
-  #     <<: *authentik-env
-  #     AUTHENTIK_TOKEN: ${AUTHENTIK_TOKEN:-}
-  #   volumes:
-  #     - /var/run/docker.sock:/var/run/docker.sock:ro
+  #     <<: *authentik-extend-env
+  #     AUTHENTIK_TOKEN: ${AUTHENTIK_TOKEN_LDAP:-}
+  #   networks:
+  #     default: {}
+  #     proxy: {}
 
   ##############################################################################
   ##############################################################################
