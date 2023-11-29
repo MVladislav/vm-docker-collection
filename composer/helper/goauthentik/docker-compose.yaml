@@ -23,13 +23,12 @@ x-basic-deploy-labels: &basic-deploy-labels
 #     - traefik.enable=true
 #     - traefik.docker.lbswarm=${LB_SWARM:-true}
 #     - traefik.docker.network=proxy
-#     - traefik.http.routers.authentik-ldap.entrypoints=${TRAEFIK_ENTRYPOINT_LDAP:-ldap}
-#     - traefik.http.routers.authentik-ldap.rule=Host(`${DOMAIN?domain variable not set}`)
-#     - traefik.http.routers.authentik-ldap.tls=true
-#     - traefik.http.routers.authentik-ldap.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
-#     - traefik.http.routers.authentik-ldap.service=authentik-ldap
-#     - traefik.http.services.authentik-ldap.loadbalancer.server.scheme=http
-#     - traefik.http.services.authentik-ldap.loadbalancer.server.port=3389
+#     - traefik.tcp.routers.authentik-ldap.entrypoints=${TRAEFIK_ENTRYPOINT_LDAP:-ldap}
+#     - traefik.tcp.routers.authentik-ldap.rule=HostSNI(`${DOMAIN?domain variable not set}`)
+#     - traefik.tcp.routers.authentik-ldap.tls=true
+#     - traefik.tcp.routers.authentik-ldap.tls.passthrough=true
+#     - traefik.tcp.routers.authentik-ldap.service=authentik-ldap
+#     - traefik.tcp.services.authentik-ldap.loadbalancer.server.port=6636
 
 x-basic-deploy: &basic-deploy
   mode: replicated

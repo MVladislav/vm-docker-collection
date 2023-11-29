@@ -100,3 +100,6 @@ on initial setup open page under `https://authentik.home.local/if/flow/initial-s
 
 - <https://goauthentik.io/>
 - <https://github.com/goauthentik/authentik>
+- [passwordless authentication setup example](https://www.youtube.com/watch?v=aEpT2fYGwLw)
+- [ldap example setup](https://www.youtube.com/watch?v=RtPKMMKRT_E)
+  - <https://goauthentik.io/docs/providers/ldap/generic_setup>
