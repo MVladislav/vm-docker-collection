@@ -68,11 +68,11 @@ VERSION=v0.8.2
 open different files direct in container, for example with:
 
 ```sh
-$docker exec -it "$(docker ps -q -f name=homepage_homepage)" vi config/bookmarks.yaml
-$docker exec -it "$(docker ps -q -f name=homepage_homepage)" vi config/services.yaml
-$docker exec -it "$(docker ps -q -f name=homepage_homepage)" vi config/docker.yaml
-$docker exec -it "$(docker ps -q -f name=homepage_homepage)" vi config/settings.yaml
-$docker exec -it "$(docker ps -q -f name=homepage_homepage)" vi config/widgets.yaml
+$docker exec -u node -it "$(docker ps -q -f name=homepage_homepage)" vi config/bookmarks.yaml
+$docker exec -u node -it "$(docker ps -q -f name=homepage_homepage)" vi config/services.yaml
+$docker exec -u node -it "$(docker ps -q -f name=homepage_homepage)" vi config/docker.yaml
+$docker exec -u node -it "$(docker ps -q -f name=homepage_homepage)" vi config/settings.yaml
+$docker exec -u node -it "$(docker ps -q -f name=homepage_homepage)" vi config/widgets.yaml
 ```
 
 ---
