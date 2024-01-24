@@ -81,6 +81,8 @@ x-authentik-env: &authentik-env
   AUTHENTIK_POSTGRESQL__HOST: postgresql
   AUTHENTIK_POSTGRESQL__NAME: ${PG_DB:-authentik}
   AUTHENTIK_POSTGRESQL__USER: ${PG_USER:-authentik}
+  AUTHENTIK_POSTGRESQL__PASSWORD: file:///run/secrets/postgres_password_file # pragma: allowlist secret
+  AUTHENTIK_SECRET_KEY: file:///run/secrets/authentik_secret_key # pragma: allowlist secret
 
 x-authentik-extend-env: &authentik-extend-env
   AUTHENTIK_COOKIE_DOMAIN: ${DOMAIN?domain variable not set}
