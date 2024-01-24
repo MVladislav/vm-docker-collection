@@ -17,6 +17,8 @@ x-basic-deploy-labels: &basic-deploy-labels
     - traefik.http.routers.authentik.service=authentik
     - traefik.http.services.authentik.loadbalancer.server.scheme=${PROTOCOL:-http}
     - traefik.http.services.authentik.loadbalancer.server.port=${PORT:-9000}
+    # - traefik.http.services.authentik.loadbalancer.healthcheck.port=9300
+    # - traefik.http.services.authentik.loadbalancer.healthcheck.path=/outpost.goauthentik.io/ping
 
 # x-ldap-deploy-labels: &ldap-deploy-labels
 #   labels:
@@ -29,6 +31,8 @@ x-basic-deploy-labels: &basic-deploy-labels
 #     - traefik.tcp.routers.authentik-ldap.tls.passthrough=true
 #     - traefik.tcp.routers.authentik-ldap.service=authentik-ldap
 #     - traefik.tcp.services.authentik-ldap.loadbalancer.server.port=6636
+#     # - traefik.tcp.services.authentik-ldap.loadbalancer.healthcheck.port=9300
+#     # - traefik.tcp.services.authentik-ldap.loadbalancer.healthcheck.path=/outpost.goauthentik.io/ping
 
 x-basic-deploy: &basic-deploy
   mode: replicated
@@ -75,17 +79,25 @@ x-basic: &basic
 x-authentik-env: &authentik-env
   AUTHENTIK_REDIS__HOST: redis
   AUTHENTIK_POSTGRESQL__HOST: postgresql
-  AUTHENTIK_POSTGRESQL__USER: ${PG_USER:-authentik}
   AUTHENTIK_POSTGRESQL__NAME: ${PG_DB:-authentik}
-  AUTHENTIK_POSTGRESQL__PASSWORD: file:///run/secrets/postgres_password_file
-  AUTHENTIK_SECRET_KEY: file:///run/secrets/authentik_secret_key
+  AUTHENTIK_POSTGRESQL__USER: ${PG_USER:-authentik}
 
 x-authentik-extend-env: &authentik-extend-env
   AUTHENTIK_COOKIE_DOMAIN: ${DOMAIN?domain variable not set}
   AUTHENTIK_HOST: http://goauthentik-server:9000
   AUTHENTIK_HOST_BROWSER: https://${DOMAIN?domain variable not set}
   AUTHENTIK_INSECURE: "false"
+
+  AUTHENTIK_DISABLE_UPDATE_CHECK: ${AUTHENTIK_DISABLE_UPDATE_CHECK:-false}
   AUTHENTIK_ERROR_REPORTING__ENABLED: ${AUTHENTIK_ERROR_REPORTING__ENABLED:-false}
+  AUTHENTIK_DISABLE_STARTUP_ANALYTICS: ${AUTHENTIK_DISABLE_STARTUP_ANALYTICS:-true}
+  AUTHENTIK_AVATARS: ${AUTHENTIK_AVATARS:-initials}
+  # AUTHENTIK_LISTEN__HTTP: ${AUTHENTIK_LISTEN__HTTP:-9000}
+  # AUTHENTIK_LISTEN__HTTPS: ${AUTHENTIK_LISTEN__HTTPS:-9443}
+  # AUTHENTIK_LISTEN__LDAP: ${AUTHENTIK_LISTEN__LDAP:-3389}
+  # AUTHENTIK_LISTEN__LDAPS: ${AUTHENTIK_LISTEN__LDAPS:-6636}
+  # AUTHENTIK_LISTEN__METRICS: ${AUTHENTIK_LISTEN__METRICS:-9300}
+  # AUTHENTIK_LISTEN__DEBUG: ${AUTHENTIK_LISTEN__DEBUG:-9900}
 
 services:
   ##############################################################################
@@ -133,7 +145,7 @@ services:
     environment:
       <<: [*authentik-env, *authentik-extend-env]
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/run/docker.sock:/var/run/docker.sock:ro
       - media:/media
       - custom-templates:/templates
       - certs:/certs
