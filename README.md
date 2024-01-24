@@ -1,27 +1,18 @@
 # Docker Collection
 
-```sh
-  MVladislav
-```
-
 ---
 
 - [Docker Collection](#docker-collection)
-  - [more description](#more-description)
-    - [best practice start-up](#best-practice-start-up)
+  - [best practice start-up](#best-practice-start-up)
   - [References](#references)
 
 ---
 
 A docker collection with composer for a fast start-up.
 
-Each composer-service folder has its own **README**.
+- Each service folder has its own **README**.
 
-## more description
-
-...
-
-### best practice start-up
+## best practice start-up
 
 use docker-swarm to manage and start containers.
 
@@ -73,7 +64,7 @@ $docker-swarm-compose <STACK_NAME>
 
 ## References
 
-- <...>
+- ...
 
 ---
 

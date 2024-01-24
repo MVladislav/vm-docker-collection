@@ -1,18 +1,25 @@
+# Ignore .hidden files
+.*
+# Ignore everything
 *
-.env
-!.git/
-!.git/**
+
 !.github/
 !.github/**
-!.vscode/
-!.vscode/**
+
+!.gitattributes
 !.gitignore
 !.gitempty
 
 !CHANGELOG.md
+!CONTRIBUTING.md
 !LICENCE
-!README.md
 !SECURITY.md
+
+!README.md
+
+!.pre-commit-config.yaml
+!.prettierrc.yml
+!.yamllint
 
 !__template/
 !composer/
