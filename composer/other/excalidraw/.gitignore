@@ -1,10 +1,5 @@
 *
 !.gitignore
 !.gitempty
-
 !docker-compose.yaml
-!Dockerfile
-
-!CHANGELOG.md
-!LICENCE
 !README.md
