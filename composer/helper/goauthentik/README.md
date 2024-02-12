@@ -56,7 +56,7 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_GOAUTHENTIK=2023.10.4
+VERSION_GOAUTHENTIK=2023.10.7
 VERSION_REDIS=7.2.3-alpine
 VERSION_POSTGRESQL=16.1-alpine
 
