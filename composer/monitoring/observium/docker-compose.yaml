@@ -5,22 +5,20 @@ version: "3.8"
 ################################################################################
 ################################################################################
 
-x-basic-deploy-labels:
-  &basic-deploy-labels
+x-basic-deploy-labels: &basic-deploy-labels
   labels:
     - traefik.enable=true
     - traefik.docker.lbswarm=${LB_SWARM:-true}
     - traefik.docker.network=proxy
-    - traefik.http.routers.observium.entrypoints=https
+    - traefik.http.routers.observium.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
     - traefik.http.routers.observium.rule=Host(`${DOMAIN?domain variable not set}`)
     - traefik.http.routers.observium.tls=true
+    - traefik.http.routers.observium.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
     - traefik.http.routers.observium.service=observium
     - traefik.http.services.observium.loadbalancer.server.scheme=${PROTOCOL:-http}
     - traefik.http.services.observium.loadbalancer.server.port=${PORT:-80}
-    - traefik.http.routers.observium.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
 
-x-basic-deploy:
-  &basic-deploy
+x-basic-deploy: &basic-deploy
   mode: replicated
   replicas: 1
   placement:
@@ -32,14 +30,13 @@ x-basic-deploy:
     condition: on-failure
   resources:
     limits:
-      # cpus: "1.5"
-      memory: 1g
+      cpus: ${RESOURCES_LIMITS_CPUS:-2}
+      memory: ${RESOURCES_LIMITS_MEMORY:-2g}
     reservations:
-      cpus: "0.001"
-      memory: 50M
+      cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
+      memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
 
-x-basic:
-  &basic
+x-basic: &basic
   env_file: .env
   cap_add:
     - NET_ADMIN
@@ -52,7 +49,7 @@ x-basic:
     - SETUID
     - SETGID
     - SYSLOG
-  cap_drop: [ "ALL" ]
+  cap_drop: ["ALL"]
   security_opt:
     - no-new-privileges:true
   ulimits:
@@ -65,8 +62,10 @@ x-basic:
     fsize: -1
     as: -1
   networks:
-      default: {}
-      proxy: {}
+    default: {}
+    proxy: {}
+  healthcheck:
+    disable: true
   restart: always
 
 ################################################################################
@@ -90,38 +89,39 @@ services:
       context: .
       dockerfile: ./Dockerfile
       args:
-        VERSION_DEBIAN: 11.6-slim
-        BUILD_DATE: ${BUILD_DATE:-2023}
-        VERSION: ${VERSION:-ce-23.1}
-    image: mvladislav/observium:${VERSION:-ce-23.1}
-    <<: *basic
+        # VERSION_UBUNTU: "23.10"
+        VERSION_DEBIAN: 12.5-slim
+        BUILD_DATE: ${BUILD_DATE:-2024}
+        VERSION: ${VERSION:-ce-23.9}
+    image: mvladislav/observium:${VERSION:-ce-23.9}
+    <<: [*basic, *basic-deploy-labels]
     deploy:
-      <<: [ *basic-deploy, *basic-deploy-labels ]
+      <<: [*basic-deploy, *basic-deploy-labels]
     # ports:
-    #   # - target: 80
-    #   #   published: ${PORT:-80}
-    #   #   protocol: tcp
-    #   #   mode: host
+    #   - target: ${PORT:-80}
+    #     published: ${PORT_PUBLISH:-80}
+    #     protocol: tcp
+    #     mode: host
     #   - target: 514
     #     published: 514
     #     protocol: udp
     #     mode: host
     secrets:
       - observium_admin_pass
-      - observium_db_pass
+      - mariadb_user_password
     environment:
       TZ: ${TZ:-Europe/Berlin}
 
-      OBSERVIUM_ADMIN_USER: ${OBSERVIUM_ADMIN_USER:-groot}
+      OBSERVIUM_ADMIN_USER: ${OBSERVIUM_ADMIN_USER:-admin}
       OBSERVIUM_ADMIN_PASS_FILE: /run/secrets/observium_admin_pass
       OBSERVIUM_BASE_URL: https://${DOMAIN?domain variable not set}
 
-      OBSERVIUM_DB_HOST: ${OBSERVIUM_DB_HOST:-observium-mariadb}
-      OBSERVIUM_DB_PORT: ${OBSERVIUM_DB_PORT:-3306}
+      OBSERVIUM_DB_NAME: ${MARIADB_DATABASE:-observium}
+      OBSERVIUM_DB_USER: ${MARIADB_USER:-observium}
+      OBSERVIUM_DB_PASS_FILE: /run/secrets/mariadb_user_password
 
-      OBSERVIUM_DB_NAME: ${OBSERVIUM_DB_NAME:-observium}
-      OBSERVIUM_DB_USER: ${OBSERVIUM_DB_USER:-observium}
-      OBSERVIUM_DB_PASS_FILE: /run/secrets/observium_db_pass
+      OBSERVIUM_DB_HOST: ${MARIADB_HOST:-mariadb}
+      OBSERVIUM_DB_PORT: ${MARIADB_PORT:-3306}
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
@@ -129,25 +129,8 @@ services:
       - logs_sys:/var/log
       - rrd:/opt/observium/rrd
       # - html:/opt/observium/html
-    tmpfs:
-      - /tmp
-    sysctls:
-      - net.ipv4.ip_forward=1
-      - net.ipv4.conf.all.src_valid_mark=1
-      - net.ipv4.conf.all.rp_filter=0
-      - net.ipv4.conf.default.rp_filter=0
-      - net.ipv4.conf.eth0.rp_filter=0
-      - net.ipv4.conf.lo.rp_filter=0
-      - net.ipv6.conf.all.forwarding=1
-      - net.ipv6.conf.all.disable_ipv6=0
     healthcheck:
-      test:
-        [
-          "CMD",
-          "curl",
-          "-f",
-          "${PROTOCOL:-http}://localhost:${PORT:-80}"
-        ]
+      test: ["CMD", "curl", "-f", "${PROTOCOL:-http}://localhost:${PORT:-80}"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -155,27 +138,25 @@ services:
   ##############################################################################
   ##############################################################################
   ##############################################################################
-  observium-mariadb:
+  mariadb:
     # https://hub.docker.com/_/mariadb
-    image: mariadb:${VERSION_MARIADB:-10.7.8}
+    image: mariadb:${VERSION_MARIADB:-11.3.2}
     <<: *basic
     deploy:
       <<: *basic-deploy
     cap_add:
-      - SYS_NICE
-      - DAC_OVERRIDE
-      - CHOWN
       - SETGID
       - SETUID
+      - DAC_OVERRIDE
     secrets:
-      - mariadb_root_password
-      - observium_db_pass
+      - mariadb_user_password
     environment:
       TZ: ${TZ:-Europe/Berlin}
-      MARIADB_ROOT_PASSWORD_FILE: /run/secrets/mariadb_root_password
-      MARIADB_DATABASE: ${OBSERVIUM_DB_NAME:-observium}
-      MARIADB_USER: ${OBSERVIUM_DB_USER:-observium}
-      MARIADB_PASSWORD_FILE: /run/secrets/observium_db_pass
+
+      MARIADB_DATABASE: ${MARIADB_DATABASE:-observium}
+      MARIADB_USER: ${MARIADB_USER:-observium}
+      MARIADB_PASSWORD_FILE: /run/secrets/mariadb_user_password
+      MARIADB_RANDOM_ROOT_PASSWORD: ${MARIADB_RANDOM_ROOT_PASSWORD:-true}
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
@@ -186,48 +167,11 @@ services:
     networks:
       default: {}
     healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "mysqladmin ping -h 127.0.0.1 -P 3306 -u root -p$$(cat $$MARIADB_ROOT_PASSWORD_FILE) | grep 'mysqld is alive' || exit 1"
-        ]
-      interval: 30s
-      timeout: 10s
+      test: ["CMD-SHELL", "/usr/local/bin/healthcheck.sh --no-defaults"]
+      start_period: 5s
+      interval: 10s
       retries: 5
-
-  ##############################################################################
-  ##############################################################################
-  ##############################################################################
-  # phpmyadmin:
-  #   # https://hub.docker.com/_/phpmyadmin
-  #   image: phpmyadmin:${VERSION_PHPMYADMIN:-5.2.0-apache}
-  #   <<: *basic
-  #   deploy:
-  #     <<: *basic-deploy
-  #     labels:
-  #       - traefik.enable=true
-  #       - traefik.docker.lbswarm=${LB_SWARM:-true}
-  #       - traefik.docker.network=proxy
-  #       - traefik.http.routers.phpmyadmin.entrypoints=https
-  #       - traefik.http.routers.phpmyadmin.rule=Host(`${DOMAIN_PHPMYADMIN?domain variable not set}`)
-  #       - traefik.http.routers.phpmyadmin.tls=true
-  #       - traefik.http.routers.phpmyadmin.service=phpmyadmin
-  #       - traefik.http.services.phpmyadmin.loadbalancer.server.scheme=${PROTOCOL_PHPMYADMIN:-http}
-  #       - traefik.http.services.phpmyadmin.loadbalancer.server.port=${PORT_PHPMYADMIN:-8080}
-  #       - traefik.http.routers.phpmyadmin.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
-  #   # ports:
-  #   #   - target: ${PORT:-8080}
-  #   #     published: ${PORT_PUBLISH:-8080}
-  #   #     protocol: tcp
-  #   #     mode: host
-  #   environment:
-  #     PMA_HOST: observium-mariadb
-  #     PMA_PORT: 3306
-  #     UPLOAD_LIMIT: 5G
-  #     APACHE_PORT: 8080
-  #   volumes:
-  #     - /etc/timezone:/etc/timezone:ro
-  #     - /etc/localtime:/etc/localtime:ro
+      timeout: 3s
 
 ################################################################################
 ################################################################################
@@ -251,7 +195,7 @@ volumes:
 secrets:
   observium_admin_pass:
     file: config/secrets/observium_admin_pass.txt
-  observium_db_pass:
-    file: config/secrets/observium_db_pass.txt
+  mariadb_user_password:
+    file: config/secrets/mariadb_user_password.txt
   mariadb_root_password:
     file: config/secrets/mariadb_root_password.txt

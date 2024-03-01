@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 count=0
 rc=1
@@ -6,14 +6,14 @@ rc=1
 while [ $rc -ne 0 ]; do
   let count++
   echo "[$count] Verifying coonection to observium database."
-  mysql -h "${OBSERVIUM_DB_HOST}" -u "${OBSERVIUM_DB_USER}" --password="${OBSERVIUM_DB_PASS}" -e "select 1" "${OBSERVIUM_DB_NAME}" >/dev/null
+  MYSQL_PWD="$OBSERVIUM_DB_PASS" mysql -h "${OBSERVIUM_DB_HOST}" -u "${OBSERVIUM_DB_USER}" -e "select 1" "${OBSERVIUM_DB_NAME}" >/dev/null
   rc=$?
   [ $rc -ne 0 ] && sleep 5
 done
 
 echo "Connected to observium database successfully."
 
-tables=$(mysql -h "${OBSERVIUM_DB_HOST}" -u "${OBSERVIUM_DB_USER}" --password="${OBSERVIUM_DB_PASS}" -e "show tables" "${OBSERVIUM_DB_NAME}" 2>/dev/null)
+tables=$(MYSQL_PWD="$OBSERVIUM_DB_PASS" mysql -h "${OBSERVIUM_DB_HOST}" -u "${OBSERVIUM_DB_USER}" -e "show tables" "${OBSERVIUM_DB_NAME}" 2>/dev/null)
 
 if [ -z "$tables" ]; then
   echo "Setting /opt/observium/rrd directory to www-data:www-data."
@@ -27,16 +27,30 @@ else
   sleep 5
 fi
 
+if [ -z "$TZ" ] || [ "$TZ" = "Etc/UTC" ]; then
+  echo "Keep system timezone as the default of $(cat /etc/timezone)."
+else
+  if [ -f "/usr/share/zoneinfo/$TZ" ]; then
+    echo "Setting system timezone to specific $TZ."
+    echo "$TZ" >/etc/timezone
+    ln -sfv "/usr/share/zoneinfo/$TZ" /etc/localtime
+  else
+    echo "Invalid specific $TZ timezone and use the default of $(cat /etc/timezone) instead."
+  fi
+fi
+
 echo "Check Database, and update if version changed"
 /opt/observium/discovery.php -u
 # /opt/observium/discovery.php -h all
 
-echo "export OBSERVIUM_ADMIN_USER='${OBSERVIUM_ADMIN_USER}'" >>/opt/observium/observium-setenv.sh
-echo "export OBSERVIUM_ADMIN_PASS='${OBSERVIUM_ADMIN_PASS}'" >>/opt/observium/observium-setenv.sh
-echo "export OBSERVIUM_DB_HOST='${OBSERVIUM_DB_HOST}'" >>/opt/observium/observium-setenv.sh
-echo "export OBSERVIUM_DB_USER='${OBSERVIUM_DB_USER}'" >>/opt/observium/observium-setenv.sh
-echo "export OBSERVIUM_DB_PASS='${OBSERVIUM_DB_PASS}'" >>/opt/observium/observium-setenv.sh
-echo "export OBSERVIUM_DB_NAME='${OBSERVIUM_DB_NAME}'" >>/opt/observium/observium-setenv.sh
+{
+  echo "export OBSERVIUM_ADMIN_USER='${OBSERVIUM_ADMIN_USER}'"
+  echo "export OBSERVIUM_ADMIN_PASS='${OBSERVIUM_ADMIN_PASS}'"
+  echo "export OBSERVIUM_DB_HOST='${OBSERVIUM_DB_HOST}'"
+  echo "export OBSERVIUM_DB_USER='${OBSERVIUM_DB_USER}'"
+  echo "export OBSERVIUM_DB_PASS='${OBSERVIUM_DB_PASS}'"
+  echo "export OBSERVIUM_DB_NAME='${OBSERVIUM_DB_NAME}'"
+} >>/opt/observium/observium-setenv.sh
 chmod u+x /opt/observium/observium-setenv.sh
 
 exit 0

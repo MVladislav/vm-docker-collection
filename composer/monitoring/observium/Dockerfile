@@ -1,11 +1,11 @@
 # original from: https://github.com/somsakc/docker-observium
 
 # # https://hub.docker.com/_/ubuntu
-# ARG VERSION_UBUNTU=22.10
+# ARG VERSION_UBUNTU=23.10
 # FROM ubuntu:${VERSION_UBUNTU}
 
 # https://hub.docker.com/_/debian
-ARG VERSION_DEBIAN=11.6-slim
+ARG VERSION_DEBIAN=12.5-slim
 FROM debian:${VERSION_DEBIAN}
 
 # ------------------------------------------------------------------------------
@@ -22,38 +22,19 @@ ENV DEBIAN_FRONTEND noninteractive
 
 ARG OBSERVIUM_ADMIN_USER=admin
 
-ARG OBSERVIUM_DB_HOST=mysql
+ARG OBSERVIUM_DB_HOST=mariadb
 ARG OBSERVIUM_DB_NAME=observium
 ARG OBSERVIUM_DB_USER=observium
 
 # set environment variables
+ENV LANG=en_US.UTF-8
+ENV LANGUAGE=$LANG
 ENV OBSERVIUM_DB_HOST=$OBSERVIUM_DB_HOST
 ENV OBSERVIUM_DB_NAME=$OBSERVIUM_DB_NAME
 ENV OBSERVIUM_DB_USER=$OBSERVIUM_DB_USER
 
-# "7.4" | "8.1"
-ENV USED_PHP_VERSION="7.4"
-# "20190902" | "20210902"
-ENV USED_PHP_MCRYPT_F="20190902"
+ENV USED_PHP_VERSION="8.2"
 ENV PHP_EXTRA_CONFIGURE_ARGS --enable-fpm --with-fpm-user=www-data --with-fpm-group=www-data
-
-# ------------------------------------------------------------------------------
-
-## Fix some issues with APT packages.
-## See https://github.com/dotcloud/docker/issues/1024
-RUN dpkg-divert --local --rename --add /sbin/initctl
-RUN ln -sf /bin/true /sbin/initctl
-
-## Replace the 'ischroot' tool to make it always return true.
-## Prevent initscripts updates from breaking /dev/shm.
-## https://journal.paul.querna.org/articles/2013/10/15/docker-ubuntu-on-rackspace/
-## https://bugs.launchpad.net/launchpad/+bug/974584
-RUN dpkg-divert --local --rename --add /usr/bin/ischroot
-RUN ln -sf /bin/true /usr/bin/ischroot
-
-# http://bugs.python.org/issue19846
-# > At the moment, setting "LANG=C" on a Linux system *fundamentally breaks Python 3*, and that's not OK.
-ENV LANG C.UTF-8
 
 # ------------------------------------------------------------------------------
 
@@ -68,25 +49,26 @@ RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selectio
 RUN \
   echo "**** install packages ****" \
   && apt-get install -y --no-install-recommends \
+  libphp-phpmailer \
   "libapache2-mod-php${USED_PHP_VERSION}" \
   "php${USED_PHP_VERSION}-cli" \
   "php${USED_PHP_VERSION}-mysql" \
   "php${USED_PHP_VERSION}-bcmath" \
   "php${USED_PHP_VERSION}-gd" \
-  "php${USED_PHP_VERSION}-bz2" \
-  "php${USED_PHP_VERSION}-ldap" \
+  "php${USED_PHP_VERSION}-apcu" \
+  # "php${USED_PHP_VERSION}-bz2" \
+  # "php${USED_PHP_VERSION}-ldap" \
   "php${USED_PHP_VERSION}-mbstring" \
   "php${USED_PHP_VERSION}-opcache" \
   "php${USED_PHP_VERSION}-curl" \
-  php-apcu \
   php-pear \
+  php-json \
   # ......................................
-  at \
+  # at \
   nmap \
-  pwgen \
+  # pwgen \
   snmp \
   fping \
-  # mysql-client \
   mariadb-client \
   rrdcached \
   rrdtool \
@@ -105,37 +87,24 @@ RUN \
   monitoring-plugins-common \
   monitoring-plugins-standard \
   # --------------------------------------
+  # on ubuntu
+  # libvirt-bin \
+  # on debian
   libvirt-clients \
   libvirt-daemon-system \
   # --------------------------------------
+  vim \
+  curl \
+  wget \
   cron \
+  locales \
+  iproute2 \
   syslog-ng-core \
   logrotate \
-  curl \
   supervisor \
-  wget \
+  # software-properties-common \
   apt-transport-https \
-  ca-certificates \
-  nano \
-  software-properties-common \
-  iproute2
-
-RUN \
-  echo "install & configure php modules" \
-  && apt-get install -y --no-install-recommends \
-  "php${USED_PHP_VERSION}-dev" \
-  gcc \
-  make \
-  autoconf \
-  libc-dev \
-  pkg-config \
-  libmcrypt-dev
-RUN pecl install mcrypt-1.0.5
-RUN bash -c "echo extension=/usr/lib/php/${USED_PHP_MCRYPT_F}/mcrypt.so > /etc/php/${USED_PHP_VERSION}/cli/conf.d/mcrypt.ini"
-RUN bash -c "echo extension=/usr/lib/php/${USED_PHP_MCRYPT_F}/mcrypt.so > /etc/php/${USED_PHP_VERSION}/apache2/conf.d/mcrypt.ini"
-RUN \
-  echo "**** Verify MCrypt ****" \
-  && php -i | grep "mcrypt"
+  ca-certificates
 
 RUN \
   echo "**** cleanup ****" \
@@ -162,6 +131,11 @@ RUN \
 
 # ------------------------------------------------------------------------------
 
+# set locale
+RUN locale-gen $LANG
+
+# ------------------------------------------------------------------------------
+
 RUN \
   useradd -r -M -d /opt/observium observium \
   && usermod -a -G observium www-data
@@ -172,10 +146,8 @@ RUN mkdir -p \
   /opt/observium/firstrun \
   /opt/observium/logs \
   /opt/observium/rrd
-RUN cd /opt \
-  && wget -nv https://www.observium.org/observium-community-latest.tar.gz -O /opt/observium-community-latest.tar.gz \
-  && tar zxf observium-community-latest.tar.gz --checkpoint=.1000 \
-  && rm -f observium-community-latest.tar.gz
+RUN wget -qO - https://www.observium.org/observium-community-latest.tar.gz \
+  | tar zxf - -C /opt
 
 # Installing WMIC
 # https://docs.observium.org/device_windows/
@@ -204,6 +176,9 @@ RUN [ -f /opt/observium/VERSION ] && cat /opt/observium/VERSION
 
 # ------------------------------------------------------------------------------
 
+# configure php modules
+RUN phpenmod mcrypt
+
 # configure apache configuration and modules
 COPY --chmod=644 config/observium/observium-000-default /etc/apache2/sites-available/000-default.conf
 RUN \
@@ -212,8 +187,12 @@ RUN \
   && a2enmod mpm_prefork \
   && a2enmod "php${USED_PHP_VERSION}" \
   && a2enmod rewrite \
-  && sed -i -e "s/\${APACHE_LOG_DIR}\//\/opt\/observium\/logs\/apache2-/g" /etc/apache2/apache2.conf \
+  && sed -i -e 's|${APACHE_LOG_DIR}/|/opt/observium/logs/apache2-|g' /etc/apache2/apache2.conf \
   && echo "ServerName localhost" >> /etc/apache2/apache2.conf
+
+# If you're using Debian, due to the decision of Debian to no longer ship SNMP MIBs with the distribution,
+# you need to direct the snmp utilities to use Observium's MIBs in order to suppress some annoying error output.
+RUN sed -i 's|mibs :|mibs : /opt/observium/mibs/rfc:/opt/observium/mibs/net-snmp|' /etc/snmp/snmp.conf
 
 # configure cron, syslog & logrotate
 RUN mkdir -p \

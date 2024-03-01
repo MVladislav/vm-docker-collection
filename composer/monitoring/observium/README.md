@@ -10,6 +10,7 @@
   - [basic](#basic)
     - [create your `secrets`:](#create-your-secrets)
     - [create `.env` file following:](#create-env-file-following)
+      - [example short .env](#example-short-env)
   - [Hint](#hint)
   - [client setup](#client-setup)
     - [snmpv3](#snmpv3)
@@ -31,18 +32,21 @@
 
 ```sh
 $openssl rand -base64 18 > config/secrets/observium_admin_pass.txt
-$openssl rand -base64 18 > config/secrets/observium_db_pass.txt
+$openssl rand -base64 18 > config/secrets/mariadb_user_password.txt
 $openssl rand -base64 18 > config/secrets/mariadb_root_password.txt
 ```
 
 ### create `.env` file following:
 
 ```env
+
+# GENERAL variables (mostly by default, change as needed)
+# ______________________________________________________________________________
 NODE_ROLE=manager
-NETWORK_MODE=overlay
+NETWORK_MODE=overlay # by default "bridge"
 
-VERSION=ce-23.1
-
+# GENERAL traefik variables (set by default, change as needed)
+# ______________________________________________________________________________
 LB_SWARM=true
 DOMAIN=observium.home.local
 PROTOCOL=http
@@ -50,26 +54,54 @@ PORT=80
 # default-secured@file | public-whitelist@file | authentik@file
 MIDDLEWARE_SECURED=default-secured@file
 
+# GENERAL sources to be used (set by default, change as needed)
+# ______________________________________________________________________________
+RESOURCES_LIMITS_CPUS=2
+RESOURCES_LIMITS_MEMORY=2g
+RESOURCES_RESERVATIONS_CPUS=0.001
+RESOURCES_RESERVATIONS_MEMORY=32m
+
+# APPLICATION version for easy update
+# ______________________________________________________________________________
+VERSION=ce-23.9
+VERSION_MARIADB:-11.3.2
+
+# APPLICATION general variable to adjust the apps
+# ______________________________________________________________________________
 TZ=Europe/Berlin
 
-OBSERVIUM_ADMIN_USER=groot
+OBSERVIUM_ADMIN_USER=admin
 
-OBSERVIUM_DB_HOST=observium-mariadb
-OBSERVIUM_DB_PORT=3306
+MARIADB_DATABASE=observium
+MARIADB_USER=observium
 
-OBSERVIUM_DB_NAME=observium
-OBSERVIUM_DB_USER=observium
+MARIADB_HOST=mariadb
+MARIADB_PORT=3306
 
-# for build
-VERSION_DEBIAN=11.6-slim
-BUILD_DATE=2023
+# BUILD
+# ______________________________________________________________________________
+VERSION_DEBIAN=12.5-slim
+BUILD_DATE=2024
 
-# for phpmyadmin
+# PHPMYADMIN
+# ______________________________________________________________________________
 VERSION_PHPMYADMIN=5.2.0-apache
 DOMAIN_PHPMYADMIN=phpmyadmin.home.local
 PROTOCOL_PHPMYADMIN=http
 PORT_PHPMYADMIN=8080
 ```
+
+#### example short .env
+
+```env
+NETWORK_MODE=overlay
+DOMAIN=observium.home.local
+VERSION=ce-23.9
+
+TZ=Europe/Berlin
+```
+
+---
 
 ## Hint
 
