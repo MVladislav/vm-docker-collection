@@ -1,0 +1,162 @@
+---
+version: "3.8"
+
+################################################################################
+################################################################################
+################################################################################
+
+x-basic-deploy-labels: &basic-deploy-labels
+  labels:
+    - traefik.enable=true
+    - traefik.docker.lbswarm=${LB_SWARM:-true}
+    - traefik.docker.network=proxy
+    - traefik.http.routers.speedtest-tracker.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.speedtest-tracker.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.speedtest-tracker.tls=true
+    - traefik.http.routers.speedtest-tracker.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.speedtest-tracker.service=speedtest-tracker
+    - traefik.http.services.speedtest-tracker.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.speedtest-tracker.loadbalancer.server.port=${PORT:-80}
+
+x-basic-deploy: &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  restart_policy:
+    condition: on-failure
+  resources:
+    limits:
+      cpus: ${RESOURCES_LIMITS_CPUS:-1}
+      memory: ${RESOURCES_LIMITS_MEMORY:-300m}
+    reservations:
+      cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
+      memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
+
+x-basic: &basic
+  env_file: .env
+  cap_add:
+    - CHOWN
+    - FOWNER
+    - SETGID
+    - SETUID
+    - DAC_OVERRIDE
+  cap_drop: ["ALL"]
+  security_opt:
+    - no-new-privileges:true
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 65535
+      hard: 65535
+    fsize: -1
+    as: -1
+  networks:
+    default: {}
+  healthcheck:
+    disable: true
+  restart: always # always | on-failure
+
+################################################################################
+################################################################################
+################################################################################
+
+x-base-env: &base-env
+  TZ: ${TIMEZONE:-Europe/Berlin}
+
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  speedtest-tracker:
+    # https://github.com/alexjustesen/speedtest-tracker/pkgs/container/speedtest-tracker
+    image: ghcr.io/alexjustesen/speedtest-tracker:${VERSION:-v0.15.2}
+    <<: [*basic, *basic-deploy-labels]
+    deploy:
+      <<: [*basic-deploy, *basic-deploy-labels]
+    # ports:
+    #   - target: ${PORT:-80}
+    #     published: ${PORT_PUBLISH:-80}
+    #     protocol: tcp
+    #     mode: host
+    secrets:
+      - mariadb_user_password
+    environment:
+      <<: *base-env
+      SSL_MODE: "off"
+      PUID: 1000
+      PGID: 1000
+
+      DB_CONNECTION: mysql
+      DB_HOST: mariadb
+      DB_PORT: 3306
+      DB_DATABASE: ${MARIADB_DATABASE:-speedtest_tracker}
+      DB_USERNAME: ${MARIADB_USER:-speedy}
+      DB_PASSWORD: ${MARIADB_PASSWORD}
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - speedtest-app:/config
+    networks:
+      default: {}
+      proxy: {}
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  mariadb:
+    # https://hub.docker.com/_/mariadb
+    image: mariadb:${VERSION_MARIADB:-11.2.2}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+    cap_add:
+      - SETGID
+      - SETUID
+      - DAC_OVERRIDE
+    secrets:
+      - mariadb_user_password
+    environment:
+      <<: *base-env
+      MARIADB_DATABASE: ${MARIADB_DATABASE:-speedtest_tracker}
+      MARIADB_USER: ${MARIADB_USER:-speedy}
+      MARIADB_PASSWORD_FILE: /run/secrets/mariadb_user_password
+      MARIADB_RANDOM_ROOT_PASSWORD: "true" # pragma: allowlist secret
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - mariadb:/var/lib/mysql
+    command:
+      - --log-bin=mysql-bin
+      - --expire-logs-days=90
+    healthcheck:
+      test: ["CMD-SHELL", "/usr/local/bin/healthcheck.sh --no-defaults"]
+      start_period: 5s
+      interval: 10s
+      retries: 5
+      timeout: 3s
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  default:
+    driver: ${NETWORK_MODE:-bridge}
+    attachable: true
+    driver_opts:
+      encrypted: "true"
+  proxy:
+    external: true
+
+volumes:
+  speedtest-app: {}
+  mariadb: {}
+
+secrets:
+  mariadb_user_password:
+    file: config/secrets/mariadb_user_password.txt
