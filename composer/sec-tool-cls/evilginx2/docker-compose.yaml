@@ -5,8 +5,7 @@ version: "3.8"
 ################################################################################
 ################################################################################
 
-x-basic-deploy-labels:
-  &basic-deploy-labels
+x-basic-deploy-labels: &basic-deploy-labels
   labels:
     - traefik.enable=true
     - traefik.docker.lbswarm=${LB_SWARM:-true}
@@ -19,8 +18,7 @@ x-basic-deploy-labels:
     - traefik.http.services.evilginx2.loadbalancer.server.port=${PORT:-80}
     - traefik.http.routers.evilginx2.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
 
-x-basic-deploy:
-  &basic-deploy
+x-basic-deploy: &basic-deploy
   mode: replicated
   replicas: 1
   placement:
@@ -38,8 +36,7 @@ x-basic-deploy:
       cpus: "0.001"
       memory: 32M
 
-x-basic:
-  &basic
+x-basic: &basic
   env_file: .env
   stdin_open: true # docker run -i
   tty: true # docker run -t
@@ -58,7 +55,7 @@ x-basic:
   #   - SYS_NICE
   #   - AUDIT_CONTROL
   #   - AUDIT_READ
-  cap_drop: [ "ALL" ]
+  cap_drop: ["ALL"]
   security_opt:
     - no-new-privileges:true
   ulimits:
@@ -104,7 +101,7 @@ services:
     image: mvladislav/evilginx2:${VERSION:-latest}
     <<: *basic
     deploy:
-      <<: [ *basic-deploy, *basic-deploy-labels ]
+      <<: [*basic-deploy, *basic-deploy-labels]
     # ports:
     #   - target: ${PORT_80:-80}
     #     published: ${PORT_PUBLISH_80:-80}

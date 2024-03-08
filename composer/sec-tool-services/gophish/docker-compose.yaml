@@ -5,8 +5,7 @@ version: "3.8"
 ################################################################################
 ################################################################################
 
-x-basic-deploy-labels:
-  &basic-deploy-labels
+x-basic-deploy-labels: &basic-deploy-labels
   labels:
     - traefik.enable=true
     - traefik.docker.lbswarm=${LB_SWARM:-true}
@@ -28,8 +27,7 @@ x-basic-deploy-labels:
     - traefik.http.services.gophish-phish.loadbalancer.server.port=${PORT_PHISH:-80}
     - traefik.http.routers.gophish-phish.middlewares=${MIDDLEWARE_SECURED_PHISH:-default-secured@file}
 
-x-basic-deploy:
-  &basic-deploy
+x-basic-deploy: &basic-deploy
   mode: replicated
   replicas: 1
   placement:
@@ -47,12 +45,11 @@ x-basic-deploy:
       cpus: "0.001"
       memory: 32M
 
-x-basic:
-  &basic
+x-basic: &basic
   env_file: .env
   cap_add:
     - NET_BIND_SERVICE
-  cap_drop: [ "ALL" ]
+  cap_drop: ["ALL"]
   security_opt:
     - no-new-privileges:true
   ulimits:
@@ -92,7 +89,7 @@ services:
     image: gophish/gophish:${VERSION:-0.12.1}
     <<: *basic
     deploy:
-      <<: [ *basic-deploy, *basic-deploy-labels ]
+      <<: [*basic-deploy, *basic-deploy-labels]
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro

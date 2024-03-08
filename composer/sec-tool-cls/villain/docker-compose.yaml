@@ -5,8 +5,7 @@ version: "3.8"
 ################################################################################
 ################################################################################
 
-x-basic-deploy:
-  &basic-deploy
+x-basic-deploy: &basic-deploy
   mode: replicated
   replicas: 1
   placement:
@@ -18,20 +17,22 @@ x-basic-deploy:
     condition: on-failure
   resources:
     limits:
-      # cpus: "1.0"
-      memory: 500M
-    reservations:
-      cpus: "0.0001"
-      memory: 20M
+      memory: 1g
 
-x-basic:
-  &basic
-  cap_add:
-    - NET_ADMIN
-    - NET_RAW
-  cap_drop: [ "ALL" ]
-  # stdin_open: true # docker run -i
-  # tty: true # docker run -t
+x-basic: &basic
+  stdin_open: true # docker run -i
+  tty: true # docker run -t
+  # cap_add:
+  #   - CHOWN
+  #   - DAC_OVERRIDE
+  #   - SETGID
+  #   - SETUID
+  #   - NET_ADMIN
+  #   - NET_RAW
+  #   - SYS_MODULE
+  #   - AUDIT_CONTROL
+  #   - AUDIT_READ
+  # cap_drop: ["ALL"]
   ulimits:
     memlock:
       soft: -1
@@ -41,10 +42,11 @@ x-basic:
       hard: 65535
     fsize: -1
     as: -1
-  network_mode: host
+  networks:
+    default: {}
   tmpfs:
     - /tmp
-  restart: on-failure
+  restart: always
 
 ################################################################################
 ################################################################################
@@ -54,28 +56,25 @@ services:
   ##############################################################################
   ##############################################################################
   ##############################################################################
-  zeek:
-    image: zeekurity/zeek:${VERSION:-5.1.1}
+  villain:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+      args:
+        BUILD_DATE: ${BUILD_DATE:-2022}
+        VERSION: ${VERSION:-latest}
+    image: villain:${VERSION:-latest}
     <<: *basic
     deploy:
       <<: *basic-deploy
-    # configs:
-    #   - source: node_cfg_config
-    #     target: /usr/local/zeek/etc/node.cfg
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-      - ./config/logs:/usr/local/zeek/logs/
-      - ./config/node.cfg:/usr/local/zeek/etc/node.cfg
-    # HINT: start with "docker-compose run zeek" when you finished with sniffing, type "stop" to let zeek write logs
-    command: bash -c "zeekctl install && zeekctl start && zeekctl"
 
 ################################################################################
 ################################################################################
 ################################################################################
-volumes:
-  data: {}
-
-# configs:
-#   node_cfg_config:
-#     file: $PWD/config/node.cfg
+networks:
+  default:
+    driver: ${NETWORK_MODE:-bridge}
+    attachable: true

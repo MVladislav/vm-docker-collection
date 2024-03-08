@@ -5,36 +5,22 @@ version: "3.8"
 ################################################################################
 ################################################################################
 
-x-basic-deploy:
-  &basic-deploy
-  mode: replicated
-  replicas: 1
-  placement:
-    max_replicas_per_node: 1
-    constraints:
-      - "node.role==${NODE_ROLE:-manager}"
-      - node.platform.os == linux
-  restart_policy:
-    condition: on-failure
-  resources:
-    limits:
-      memory: 1g
-
-x-basic:
-  &basic
+x-basic: &basic
   stdin_open: true # docker run -i
   tty: true # docker run -t
-  # cap_add:
-  #   - CHOWN
-  #   - DAC_OVERRIDE
-  #   - SETGID
-  #   - SETUID
-  #   - NET_ADMIN
-  #   - NET_RAW
-  #   - SYS_MODULE
-  #   - AUDIT_CONTROL
-  #   - AUDIT_READ
-  # cap_drop: ["ALL"]
+  # privileged: true
+  # runtime: rocr
+  # runtime: rocm
+  # ipc: host
+  group_add:
+    - video
+    - render
+  cap_add:
+    - SYS_PTRACE
+  cap_drop: ["ALL"]
+  security_opt:
+    - no-new-privileges:true
+    - seccomp=unconfined
   ulimits:
     memlock:
       soft: -1
@@ -46,9 +32,7 @@ x-basic:
     as: -1
   networks:
     default: {}
-  tmpfs:
-    - /tmp
-  restart: always
+  restart: on-failure
 
 ################################################################################
 ################################################################################
@@ -58,20 +42,50 @@ services:
   ##############################################################################
   ##############################################################################
   ##############################################################################
-  villain:
+  hashcat:
     build:
       context: .
       dockerfile: ./Dockerfile
-      args:
-        BUILD_DATE: ${BUILD_DATE:-2022}
-        VERSION: ${VERSION:-latest}
-    image: villain:${VERSION:-latest}
+    image: hashcat:${VERSION:-latest}
     <<: *basic
     deploy:
-      <<: *basic-deploy
+      mode: replicated
+      replicas: 1
+      placement:
+        max_replicas_per_node: 1
+        constraints:
+          - "node.role==${NODE_ROLE:-manager}"
+          - node.platform.os == linux
+      restart_policy:
+        condition: on-failure
+      resources:
+        limits:
+          cpus: "5"
+          memory: 3g
+        reservations:
+          cpus: "2"
+          memory: 512M
+          # devices:
+          #   - driver: amdgpu
+          #     count: 1
+          #     capabilities: [ gpu ]
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
+      - /tmp/.X11-unix:/tmp/.X11-unix
+      - ./config:/tmp/config
+    environment:
+      ROC_ENABLE_PRE_VEGA: 1
+      DISPLAY: $DISPLAY
+    devices:
+      - /dev/kfd:/dev/kfd
+      - /dev/dri:/dev/dri
+    command: >
+      /bin/bash
+    # command: >
+    #   hashcat --opencl-device-types 2 --opencl-device 1 -b
+    healthcheck:
+      disable: true
 
 ################################################################################
 ################################################################################
@@ -80,3 +94,5 @@ networks:
   default:
     driver: ${NETWORK_MODE:-bridge}
     attachable: true
+    driver_opts:
+      encrypted: "true"

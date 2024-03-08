@@ -1,0 +1,74 @@
+---
+version: "3.8"
+
+################################################################################
+################################################################################
+################################################################################
+
+x-basic-deploy: &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  restart_policy:
+    condition: on-failure
+  resources:
+    limits:
+      cpus: "1.5"
+      memory: 1g # 500M
+    reservations:
+      cpus: "0.001"
+      memory: 32M
+
+x-basic: &basic
+  stdin_open: true # docker run -i
+  tty: true # docker run -t
+  pid: host
+  cap_add:
+    - AUDIT_CONTROL
+  cap_drop: ["ALL"]
+  security_opt:
+    - no-new-privileges:true
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 65535
+      hard: 65535
+    fsize: -1
+    as: -1
+  network_mode: host
+  tmpfs:
+    - /tmp
+  restart: on-failure
+
+################################################################################
+################################################################################
+################################################################################
+
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  docker-bench-security:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+      args:
+        BUILD_DATE: ${BUILD_DATE:-2022}
+        VERSION: ${VERSION:-latest}
+    image: docker-bench-security:${VERSION:-latest}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - /var/lib:/var/lib:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /usr/lib/systemd:/usr/lib/systemd:ro
+      - /etc:/etc:ro

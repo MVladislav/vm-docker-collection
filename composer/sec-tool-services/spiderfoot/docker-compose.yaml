@@ -5,8 +5,7 @@ version: "3.8"
 ################################################################################
 ################################################################################
 
-x-basic-deploy-labels:
-  &basic-deploy-labels
+x-basic-deploy-labels: &basic-deploy-labels
   labels:
     - traefik.enable=true
     - traefik.docker.lbswarm=${LB_SWARM:-true}
@@ -19,8 +18,7 @@ x-basic-deploy-labels:
     - traefik.http.services.spiderfoot.loadbalancer.server.port=${PORT:-5001}
     - traefik.http.routers.spiderfoot.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
 
-x-basic-deploy:
-  &basic-deploy
+x-basic-deploy: &basic-deploy
   mode: replicated
   replicas: 1
   placement:
@@ -30,12 +28,8 @@ x-basic-deploy:
       - node.platform.os == linux
   restart_policy:
     condition: on-failure
-  # resources:
-  #   limits:
-  #     memory: 1g
 
-x-basic:
-  &basic
+x-basic: &basic
   env_file: .env
   cap_add:
     - NET_ADMIN
@@ -62,13 +56,7 @@ x-basic:
     - net.ipv4.conf.eth0.rp_filter=0
     - net.ipv4.conf.lo.rp_filter=0
   healthcheck:
-    test:
-      [
-        "CMD",
-        "curl",
-        "-f",
-        "${PROTOCOL:-http}://localhost:${PORT:-5001}"
-      ]
+    test: ["CMD", "curl", "-f", "${PROTOCOL:-http}://localhost:${PORT:-5001}"]
     interval: 30s
     timeout: 10s
     retries: 5
@@ -89,7 +77,7 @@ services:
     image: spiderfoot:${VERSION:-latest}
     <<: *basic
     deploy:
-      <<: [ *basic-deploy, *basic-deploy-labels ]
+      <<: [*basic-deploy, *basic-deploy-labels]
     # ports:
     #   - target: 5001
     #     published: ${PORT:-5001}

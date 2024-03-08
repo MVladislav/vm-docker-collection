@@ -5,8 +5,7 @@ version: "3.8"
 ################################################################################
 ################################################################################
 
-x-basic-deploy:
-  &basic-deploy
+x-basic-deploy: &basic-deploy
   mode: replicated
   replicas: 1
   placement:
@@ -18,22 +17,19 @@ x-basic-deploy:
     condition: on-failure
   resources:
     limits:
-      cpus: "1.5"
-      memory: 1g # 500M
+      # cpus: "1.0"
+      memory: 500M
     reservations:
-      cpus: "0.001"
-      memory: 32M
+      cpus: "0.0001"
+      memory: 20M
 
-x-basic:
-  &basic
-  stdin_open: true # docker run -i
-  tty: true # docker run -t
-  pid: host
+x-basic: &basic
   cap_add:
-    - AUDIT_CONTROL
-  cap_drop: [ "ALL" ]
-  security_opt:
-    - no-new-privileges:true
+    - NET_ADMIN
+    - NET_RAW
+  cap_drop: ["ALL"]
+  # stdin_open: true # docker run -i
+  # tty: true # docker run -t
   ulimits:
     memlock:
       soft: -1
@@ -56,21 +52,27 @@ services:
   ##############################################################################
   ##############################################################################
   ##############################################################################
-  docker-bench-security:
-    build:
-      context: .
-      dockerfile: ./Dockerfile
-      args:
-        BUILD_DATE: ${BUILD_DATE:-2022}
-        VERSION: ${VERSION:-latest}
-    image: docker-bench-security:${VERSION:-latest}
+  zeek:
+    image: zeekurity/zeek:${VERSION:-5.1.1}
     <<: *basic
     deploy:
       <<: *basic-deploy
+    # configs:
+    #   - source: node_cfg_config
+    #     target: /usr/local/zeek/etc/node.cfg
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-      - /var/lib:/var/lib:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - /usr/lib/systemd:/usr/lib/systemd:ro
-      - /etc:/etc:ro
+      - ./config/logs:/usr/local/zeek/logs/
+      - ./config/node.cfg:/usr/local/zeek/etc/node.cfg
+    # HINT: start with "docker-compose run zeek" when you finished with sniffing, type "stop" to let zeek write logs
+    command: bash -c "zeekctl install && zeekctl start && zeekctl"
+
+################################################################################
+################################################################################
+################################################################################
+volumes:
+  data: {}
+# configs:
+#   node_cfg_config:
+#     file: $PWD/config/node.cfg
