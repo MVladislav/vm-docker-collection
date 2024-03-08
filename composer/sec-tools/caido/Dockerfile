@@ -29,7 +29,7 @@ FROM base as download
 RUN \
   echo "**** download caido ****" \
   && curl -s https://api.caido.io/releases/latest \
-  | jq '.links[] | select(.display == "Linux") | .link' \
+  | jq '.links[] | select(.display == "Linux x86_64") | .link' \
   | xargs curl -s --output caido.tar.gz \
   && tar -xf caido.tar.gz \
   && rm caido.tar.gz
@@ -40,8 +40,9 @@ RUN \
 FROM base
 
 RUN groupadd -r caido && useradd --no-log-init -m -r -g caido caido
+RUN mkdir -p /mnt/caido && chown caido:caido /mnt/caido
 
-COPY --from=download caido /usr/bin/caido
+COPY --from=download caido-cli /usr/bin/caido-cli
 
 # ------------------------------------------------------------------------------
 
@@ -51,5 +52,5 @@ USER caido
 EXPOSE 8080
 
 # configure entry point
-ENTRYPOINT ["caido"]
-CMD ["--listen", "0.0.0.0:8080"]
+ENTRYPOINT ["caido-cli"]
+CMD ["--no-renderer-sandbox", "--no-open", "--no-logging", "--listen", "0.0.0.0:8080", "--data-path", "/mnt/caido"]

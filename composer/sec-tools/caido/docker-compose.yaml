@@ -5,22 +5,20 @@ version: "3.8"
 ################################################################################
 ################################################################################
 
-x-basic-deploy-labels:
-  &basic-deploy-labels
+x-basic-deploy-labels: &basic-deploy-labels
   labels:
     - traefik.enable=true
     - traefik.docker.lbswarm=${LB_SWARM:-true}
     - traefik.docker.network=proxy
-    - traefik.http.routers.caido.entrypoints=https
+    - traefik.http.routers.caido.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
     - traefik.http.routers.caido.rule=Host(`${DOMAIN?domain variable not set}`)
     - traefik.http.routers.caido.tls=true
+    - traefik.http.routers.caido.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
     - traefik.http.routers.caido.service=caido
     - traefik.http.services.caido.loadbalancer.server.scheme=${PROTOCOL:-http}
     - traefik.http.services.caido.loadbalancer.server.port=${PORT:-8080}
-    - traefik.http.routers.caido.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
 
-x-basic-deploy:
-  &basic-deploy
+x-basic-deploy: &basic-deploy
   mode: replicated
   replicas: 1
   placement:
@@ -32,22 +30,29 @@ x-basic-deploy:
     condition: on-failure
   resources:
     limits:
-      # cpus: "1.5"
-      memory: 1g # 500M
+      cpus: ${RESOURCES_LIMITS_CPUS:-1}
+      memory: ${RESOURCES_LIMITS_MEMORY:-1g}
     reservations:
-      cpus: "0.001"
-      memory: 32M
+      cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
+      memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
 
-x-basic:
-  &basic
+x-basic: &basic
   env_file: .env
-  # cap_add:
-  #   - SYS_ADMIN
-  #   - SYS_PTRACE
-  #   - SYSLOG
-  #   - AUDIT_CONTROL
-  #   - AUDIT_READ
-  # cap_drop: [ "ALL" ]
+  cap_add: ["ALL"]
+  # - CHOWN
+  # - DAC_OVERRIDE
+  # - DAC_READ_SEARCH
+  # - SETGID
+  # - SETUID
+  # - NET_ADMIN
+  # - NET_RAW
+  # - NET_BIND_SERVICE
+  # - NET_BROADCAST
+  # - SYS_MODULE
+  # - SYS_NICE
+  # - AUDIT_CONTROL
+  # - AUDIT_READ
+  # cap_drop: ["ALL"]
   # security_opt:
   #   - no-new-privileges:true
   ulimits:
@@ -62,18 +67,10 @@ x-basic:
   networks:
     default: {}
     proxy: {}
-  tmpfs:
-    - /tmp
-  sysctls:
-    - net.ipv4.ip_forward=1
-    - net.ipv4.conf.all.src_valid_mark=1
-    - net.ipv4.conf.all.rp_filter=0
-    - net.ipv4.conf.default.rp_filter=0
-    - net.ipv4.conf.eth0.rp_filter=0
-    - net.ipv4.conf.lo.rp_filter=0
-    - net.ipv6.conf.all.forwarding=1
-    - net.ipv6.conf.all.disable_ipv6=0
-  restart: on-failure
+  # network_mode: host
+  healthcheck:
+    disable: true
+  restart: always # always | on-failure
 
 ################################################################################
 ################################################################################
@@ -87,14 +84,12 @@ services:
     build:
       context: .
       dockerfile: ./Dockerfile
-      # context: https://github.com/FreshRSS/FreshRSS.git#latest
-      # dockerfile: Docker/Dockerfile-Alpine
       args:
         VERSION_DEBIAN: bullseye-slim
     image: caido:${VERSION:-latest}
-    <<: *basic
+    <<: [*basic, *basic-deploy-labels]
     deploy:
-      <<: [ *basic-deploy, *basic-deploy-labels ]
+      <<: [*basic-deploy, *basic-deploy-labels]
     # ports:
     #   - target: ${PORT:-8080}
     #     published: ${PORT_PUBLISH:-8080}
@@ -103,9 +98,7 @@ services:
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-      - data:/home/caido/.local/share/caido
-    healthcheck:
-      disable: true
+      - ./data:/mnt/caido
 
 ################################################################################
 ################################################################################
@@ -118,6 +111,3 @@ networks:
       encrypted: "true"
   proxy:
     external: true
-
-volumes:
-  data: {}
