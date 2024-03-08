@@ -14,16 +14,25 @@ services:
   ##############################################################################
   redis:
     # https://hub.docker.com/_/redis
-    image: redis:${VERSION_REDIS:-7.2.3-alpine}
+    image: redis:${VERSION_REDIS:-7.2.4-alpine3.19}
     # <<: *basic
-    # deploy:
-    #   <<: *basic-deploy
+    deploy:
+      # <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_REDIS:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_REDIS:-128M}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_REDIS:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_REDIS:-32m}
     cap_add:
       - SETGID
       - SETUID
     volumes:
+      # - /etc/timezone:/etc/timezone:ro
+      # - /etc/localtime:/etc/localtime:ro
       - redis:/data
-    command: --save 300 1 --loglevel warning --stats-interval 300
+    command: --save 300 1 --loglevel warning
     healthcheck:
       test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
       start_period: 5s
@@ -36,10 +45,17 @@ services:
   ##############################################################################
   postgresql:
     # https://hub.docker.com/_/postgres
-    image: postgres:${VERSION_POSTGRESQL:-16.1-alpine}
+    image: postgres:${VERSION_POSTGRESQL:-16.2-alpine3.19}
     # <<: *basic
-    # deploy:
-    #   <<: *basic-deploy
+    deploy:
+      # <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_POSTGRESQL:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_POSTGRESQL:-500M}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_POSTGRESQL:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_POSTGRESQL:-32m}
     cap_add:
       - SETGID
       - SETUID
@@ -47,10 +63,12 @@ services:
     secrets:
       - postgres_password_file
     environment:
-      POSTGRES_DB: ${PG_DB:-postgresql}
-      POSTGRES_USER: ${PG_USER:-postgresql}
+      POSTGRES_DB: ${POSTGRES_DB:-postgresql}
+      POSTGRES_USER: ${POSTGRES_USER:-postgresql}
       POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password_file
     volumes:
+      # - /etc/timezone:/etc/timezone:ro
+      # - /etc/localtime:/etc/localtime:ro
       - postgresql:/var/lib/postgresql/data
     networks:
       default: {}
@@ -66,10 +84,17 @@ services:
   ##############################################################################
   mariadb:
     # https://hub.docker.com/_/mariadb
-    image: mariadb:${VERSION_MARIADB:-11.2.2}
+    image: mariadb:${VERSION_MARIADB:-11.3.2}
     # <<: *basic
-    # deploy:
-    #   <<: *basic-deploy
+    deploy:
+      # <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_MARIADB:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_MARIADB:-5008M}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_MARIADB:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_MARIADB:-32m}
     cap_add:
       - SETGID
       - SETUID
@@ -85,8 +110,8 @@ services:
       MARIADB_ROOT_PASSWORD_FILE: /run/secrets/mariadb_root_password
       # MARIADB_RANDOM_ROOT_PASSWORD: ${MARIADB_RANDOM_ROOT_PASSWORD:-true}
     volumes:
-      - /etc/timezone:/etc/timezone:ro
-      - /etc/localtime:/etc/localtime:ro
+      # - /etc/timezone:/etc/timezone:ro
+      # - /etc/localtime:/etc/localtime:ro
       - mariadb:/var/lib/mysql
     command:
       - --log-bin=mysql-bin
