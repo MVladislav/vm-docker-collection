@@ -5,22 +5,20 @@ version: "3.8"
 ################################################################################
 ################################################################################
 
-x-basic-deploy-labels:
-  &basic-deploy-labels
+x-basic-deploy-labels: &basic-deploy-labels
   labels:
     - traefik.enable=true
     - traefik.docker.lbswarm=${LB_SWARM:-true}
     - traefik.docker.network=proxy
-    - traefik.http.routers.faraday.entrypoints=https
+    - traefik.http.routers.faraday.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
     - traefik.http.routers.faraday.rule=Host(`${DOMAIN?domain variable not set}`)
     - traefik.http.routers.faraday.tls=true
+    - traefik.http.routers.faraday.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
     - traefik.http.routers.faraday.service=faraday
     - traefik.http.services.faraday.loadbalancer.server.scheme=${PROTOCOL:-http}
     - traefik.http.services.faraday.loadbalancer.server.port=${PORT:-5985}
-    - traefik.http.routers.faraday.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
 
-x-basic-deploy:
-  &basic-deploy
+x-basic-deploy: &basic-deploy
   mode: replicated
   replicas: 1
   placement:
@@ -32,22 +30,14 @@ x-basic-deploy:
     condition: on-failure
   resources:
     limits:
-      cpus: ${RESOURCES_LIMITS_CPUS:-"1"}
-      memory: ${RESOURCES_LIMITS_MEMORY:-500m}
+      cpus: ${RESOURCES_LIMITS_CPUS:-1}
+      memory: ${RESOURCES_LIMITS_MEMORY:-1g}
     reservations:
-      cpus: ${RESOURCES_RESERVATIONS_CPUS:-"0.001"}
+      cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
       memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
 
-x-basic:
-  &basic
-  env_file: .env
-  cap_add:
-    - DAC_READ_SEARCH
-    - FOWNER
-    - FSETID
-    - SETGID
-    - SETUID
-  cap_drop: [ "ALL" ]
+x-basic: &basic # env_file: .env
+  cap_drop: ["ALL"]
   security_opt:
     - no-new-privileges:true
   ulimits:
@@ -61,7 +51,8 @@ x-basic:
     as: -1
   networks:
     default: {}
-    proxy: {}
+  healthcheck:
+    disable: true
   restart: always
 
 ################################################################################
@@ -73,11 +64,17 @@ services:
   ##############################################################################
   ##############################################################################
   faraday:
-    # https://hub.docker.com/r/faradaysec/faraday/tags
-    image: faradaysec/faraday:${VERSION_FARADAY:-4.4.0}
-    <<: *basic
+    # https://hub.docker.com/r/faradaysec/faraday
+    image: faradaysec/faraday:${VERSION_FARADAY:-5.1.1}
+    <<: [*basic, *basic-deploy-labels]
     deploy:
-      <<: [ *basic-deploy, *basic-deploy-labels ]
+      <<: [*basic-deploy, *basic-deploy-labels]
+    cap_add:
+      - DAC_READ_SEARCH
+      - FOWNER
+      - FSETID
+      - SETGID
+      - SETUID
     # ports:
     #   - target: ${PORT:-5985}
     #     published: ${PORT_PUBLISH:-5985}
@@ -88,57 +85,94 @@ services:
     #     published: ${PORT_PUBLISH_9000:-9000}
     #     protocol: tcp
     #     mode: host
+    secrets:
+      - postgres_password_file
     environment:
+      LISTEN_ADDR: ${LISTEN_ADDR:-0.0.0.0}
+
+      REDIS_SERVER: ${REDIS_SERVER:-redis}
+
       PGSQL_DBNAME: ${POSTGRES_DB:-faraday}
-      PGSQL_USER: ${POSTGRES_USER:-postgres}
-      PGSQL_PASSWD: ${POSTGRES_PASSWORD:-postgres}
-      PGSQL_HOST: ${POSTGRES_HOST:-faraday_postgres}
-      REDIS_SERVER: ${REDIS_SERVER:-faraday_redis}
+      PGSQL_USER: ${POSTGRES_USER:-faraday}
+      PGSQL_PASSWD: ${PGSQL_PASSWD:-/run/secrets/postgres_password_file}
+      PGSQL_HOST: ${POSTGRES_HOST:-postgresql}
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - data:/home/faraday/.faraday
-    healthcheck:
-      disable: true
+    entrypoint: /entrypoint.sh
+
+    networks:
+      default: {}
+      proxy: {}
 
   ##############################################################################
   ##############################################################################
   ##############################################################################
-  faraday_postgres:
-    # https://hub.docker.com/_/postgres/tags
-    image: postgres:${VERSION_POSTGRES:-15.3-alpine}
+  postgresql:
+    # https://hub.docker.com/_/postgres
+    image: postgres:${VERSION_POSTGRESQL:-16.2-alpine3.19}
     <<: *basic
     deploy:
       <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_POSTGRESQL:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_POSTGRESQL:-500M}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_POSTGRESQL:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_POSTGRESQL:-32m}
+    cap_add:
+      - SETGID
+      - SETUID
+      - DAC_OVERRIDE
+    secrets:
+      - postgres_password_file
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-faraday}
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_USER: ${POSTGRES_USER:-faraday}
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password_file
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-      - db:/var/lib/postgresql/data
-    networks:
-      default: {}
+      - postgresql:/var/lib/postgresql/data
     healthcheck:
-      disable: true
+      test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
+      start_period: 5s
+      interval: 10s
+      retries: 5
+      timeout: 3s
 
   ##############################################################################
   ##############################################################################
   ##############################################################################
-  faraday_redis:
-    # https://hub.docker.com/_/redis/tags
-    image: redis:${VERSION_REDIS:-7.0.11-alpine}
+  redis:
+    # https://hub.docker.com/_/redis
+    image: redis:${VERSION_REDIS:-7.2.4-alpine3.19}
     <<: *basic
     deploy:
       <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_REDIS:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_REDIS:-128M}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_REDIS:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_REDIS:-32m}
+    cap_add:
+      - SETGID
+      - SETUID
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-    networks:
-      default: {}
+      - redis:/data
+    command: --save 300 1 --loglevel warning
     healthcheck:
-      disable: true
+      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
+      start_period: 5s
+      interval: 10s
+      retries: 5
+      timeout: 3s
 
 ################################################################################
 ################################################################################
@@ -154,4 +188,9 @@ networks:
 
 volumes:
   data: {}
-  db: {}
+  redis: {}
+  postgresql: {}
+
+secrets:
+  postgres_password_file:
+    file: config/secrets/postgres_password_file.txt
