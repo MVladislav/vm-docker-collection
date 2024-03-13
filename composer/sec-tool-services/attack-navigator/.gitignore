@@ -1,22 +1,9 @@
 *
-!.git
-!.github
 !.gitignore
 !.gitempty
 
 !.dockerignore
-!docker-*
 !Dockerfile
+!docker-compose.yaml
 
-!CHANGELOG.md
-!LICENCE
 !README.md
-
-!config/
-config/*
-
-!config/.gitempty
-
-!config/ssl/
-config/ssl/*
-!config/ssl/.gitempty
