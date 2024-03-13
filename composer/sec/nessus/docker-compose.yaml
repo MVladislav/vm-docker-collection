@@ -5,22 +5,20 @@ version: "3.8"
 ################################################################################
 ################################################################################
 
-x-basic-deploy-labels:
-  &basic-deploy-labels
+x-basic-deploy-labels: &basic-deploy-labels
   labels:
     - traefik.enable=true
     - traefik.docker.lbswarm=${LB_SWARM:-true}
     - traefik.docker.network=proxy
-    - traefik.http.routers.nessus.entrypoints=https
+    - traefik.http.routers.nessus.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
     - traefik.http.routers.nessus.rule=Host(`${DOMAIN?domain variable not set}`)
     - traefik.http.routers.nessus.tls=true
+    - traefik.http.routers.nessus.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
     - traefik.http.routers.nessus.service=nessus
     - traefik.http.services.nessus.loadbalancer.server.scheme=${PROTOCOL:-https}
     - traefik.http.services.nessus.loadbalancer.server.port=${PORT:-8834}
-    - traefik.http.routers.nessus.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
 
-x-basic-deploy:
-  &basic-deploy
+x-basic-deploy: &basic-deploy
   mode: replicated
   replicas: 1
   placement:
@@ -32,14 +30,20 @@ x-basic-deploy:
     condition: on-failure
   resources:
     limits:
-      memory: 1g
+      cpus: ${RESOURCES_LIMITS_CPUS:-1}
+      memory: ${RESOURCES_LIMITS_MEMORY:-1g}
+    reservations:
+      cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
+      memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
 
-x-basic:
-  &basic
+x-basic: &basic
   env_file: .env
   cap_add:
     - NET_ADMIN
     - NET_RAW
+  cap_drop: ["ALL"]
+  security_opt:
+    - no-new-privileges:true
   ulimits:
     memlock:
       soft: -1
@@ -50,8 +54,9 @@ x-basic:
     fsize: -1
     as: -1
   networks:
-    default: {}
     proxy: {}
+  healthcheck:
+    disable: true
   tmpfs:
     - /tmp
   sysctls:
@@ -61,7 +66,9 @@ x-basic:
     - net.ipv4.conf.default.rp_filter=0
     - net.ipv4.conf.eth0.rp_filter=0
     - net.ipv4.conf.lo.rp_filter=0
-  restart: always # always | on-failure
+    - net.ipv6.conf.all.forwarding=1
+    - net.ipv6.conf.all.disable_ipv6=0
+  restart: always
 
 ################################################################################
 ################################################################################
@@ -71,14 +78,15 @@ services:
   ##############################################################################
   ##############################################################################
   ##############################################################################
-  app:
-    image: tenableofficial/nessus:${VERSION:-latest}
-    <<: *basic
+  nessus:
+    # https://hub.docker.com/r/tenable/nessus
+    image: tenable/nessus:${VERSION:-10.7.1-ubuntu}
+    <<: [*basic, *basic-deploy-labels]
     deploy:
-      <<: [ *basic-deploy, *basic-deploy-labels ]
+      <<: [*basic-deploy, *basic-deploy-labels]
     ports:
-      - target: 8834
-        published: ${PORT:-8834}
+      - target: ${PORT:-8834}
+        published: ${PORT_PUBLISH:-8834}
         protocol: tcp
         mode: host
     volumes:
@@ -87,22 +95,15 @@ services:
       - data:/opt/nessus/
     healthcheck:
       test:
-        [
-          "CMD",
-          "curl",
-          "-f",
-          "${PROTOCOL:-https}://localhost:${PORT:-8834}"
-        ]
+        ["CMD", "curl", "-f", "${PROTOCOL:-https}://localhost:${PORT:-8834}"]
       interval: 30s
       timeout: 10s
       retries: 5
-      ################################################################################
-      ################################################################################
-      ################################################################################
+
+################################################################################
+################################################################################
+################################################################################
 networks:
-  default:
-    driver: ${NETWORK_MODE:-bridge}
-    attachable: true
   proxy:
     external: true
 

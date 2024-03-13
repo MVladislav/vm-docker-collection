@@ -2,9 +2,6 @@
 !.gitignore
 !.gitempty
 
-!.dockerignore
-!docker-*
+!docker-compose.yaml
 
-!CHANGELOG.md
-!LICENCE
 !README.md
