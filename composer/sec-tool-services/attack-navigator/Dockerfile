@@ -1,5 +1,5 @@
 ARG VERSION_NODE=21
-FROM node:${VERSION_NODE}
+FROM node:${VERSION_NODE} as builder
 
 # ------------------------------------------------------------------------------
 
@@ -25,30 +25,20 @@ RUN \
   /var/lib/apt/lists/* \
   /var/tmp/*
 
+# ------------------------------------------------------------------------------
+
+ENV NODE_OPTIONS=--openssl-legacy-provider
 RUN git clone https://github.com/mitre-attack/attack-navigator /tmp/cloned
-RUN mkdir -p /src/nav-app/
-RUN mv /tmp/cloned/nav-app /src/
 
-# ------------------------------------------------------------------------------
-
-WORKDIR /src
-
-RUN mkdir -p /src/layers/
-RUN mv /tmp/cloned/layers/*.md /src/layers/
-RUN mv /tmp/cloned/*.md /src/
-
-WORKDIR /src/nav-app
-
-# give user permissions
+# install node packages - cache for faster future builds
+WORKDIR /tmp/cloned/nav-app
 RUN chown -R node:node ./
-
-# install packages and build
-RUN npm install --unsafe-perm --force
-
-EXPOSE 4200
-
-CMD npm start
-
-USER node
+RUN npm install
+RUN npm run build
 
 # ------------------------------------------------------------------------------
+
+ARG VERSION_NGINX=1.25.4
+FROM nginx:${VERSION_NGINX}
+COPY --from=builder /tmp/cloned/nav-app/dist /usr/share/nginx/html
+EXPOSE 80

@@ -16,7 +16,7 @@ x-basic-deploy-labels: &basic-deploy-labels
     - traefik.http.routers.attack-navigator.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
     - traefik.http.routers.attack-navigator.service=attack-navigator
     - traefik.http.services.attack-navigator.loadbalancer.server.scheme=${PROTOCOL:-http}
-    - traefik.http.services.attack-navigator.loadbalancer.server.port=${PORT:-4200}
+    - traefik.http.services.attack-navigator.loadbalancer.server.port=${PORT:-80}
 
 x-basic-deploy: &basic-deploy
   mode: replicated
@@ -37,21 +37,10 @@ x-basic-deploy: &basic-deploy
       memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
 
 x-basic: &basic
-  env_file: .env
-  # cap_add:
-  #   - CHOWN
-  #   - DAC_OVERRIDE
-  #   - DAC_READ_SEARCH
-  #   - SETGID
-  #   - SETUID
-  #   - NET_ADMIN
-  #   - NET_RAW
-  #   - NET_BIND_SERVICE
-  #   - NET_BROADCAST
-  #   - SYS_MODULE
-  #   - SYS_NICE
-  #   - AUDIT_CONTROL
-  #   - AUDIT_READ
+  cap_add:
+    - CHOWN
+    - SETGID
+    - SETUID
   cap_drop: ["ALL"]
   security_opt:
     - no-new-privileges:true
@@ -78,23 +67,30 @@ services:
   ##############################################################################
   ##############################################################################
   ##############################################################################
-  app:
+  attacknavigator:
     build:
       context: .
       dockerfile: ./Dockerfile
       args:
         BUILD_DATE: ${BUILD_DATE:-2024}
         VERSION: ${VERSION:-latest}
+        # https://hub.docker.com/_/node
         VERSION_NODE: ${VERSION_NODE:-21}
+        # https://hub.docker.com/_/nginx
+        VERSION_NGINX: ${VERSION_NGINX:-1.25.4}
+    # https://github.com/mitre-attack/attack-navigator
     image: attacknavigator:${VERSION:-latest}
     <<: [*basic, *basic-deploy-labels]
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels]
     # ports:
-    #   - target: ${PORT:-4200}
-    #     published: ${PORT_PUBLISH:-4200}
+    #   - target: ${PORT:-80}
+    #     published: ${PORT_PUBLISH:-80}
     #     protocol: tcp
     #     mode: host
+    environment:
+      NGINX_HOST: ${DOMAIN?domain variable not set}
+      NGINX_PORT: 80
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
