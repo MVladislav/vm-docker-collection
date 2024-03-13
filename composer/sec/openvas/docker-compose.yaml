@@ -5,8 +5,7 @@ version: "3.8"
 ################################################################################
 ################################################################################
 
-x-basic-deploy-labels:
-  &basic-deploy-labels
+x-basic-deploy-labels: &basic-deploy-labels
   labels:
     - traefik.enable=true
     - traefik.docker.lbswarm=${LB_SWARM:-true}
@@ -23,8 +22,7 @@ x-basic-deploy-labels:
     - traefik.http.services.openvas.loadbalancer.sticky.cookie.secure=true
     - traefik.http.services.openvas.loadbalancer.sticky.cookie.httpOnly=true
 
-x-basic-deploy:
-  &basic-deploy
+x-basic-deploy: &basic-deploy
   mode: replicated
   replicas: 1
   placement:
@@ -42,8 +40,7 @@ x-basic-deploy:
       cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.01}
       memory: ${RESOURCES_RESERVATIONS_MEMORY:-100m}
 
-x-basic-deploy-conf:
-  &basic-deploy-conf
+x-basic-deploy-conf: &basic-deploy-conf
   mode: replicated
   replicas: 1
   placement:
@@ -61,13 +58,12 @@ x-basic-deploy-conf:
       cpus: ${RESOURCES_RESERVATIONS_CPUS_CONF:-0.001}
       memory: ${RESOURCES_RESERVATIONS_MEMORY_CONF:-32m}
 
-x-basic:
-  &basic
+x-basic: &basic
   env_file: .env
   cap_add: ["ALL"]
-  # cap_drop: ["ALL"]
-  # security_opt:
-  #   - no-new-privileges:true
+  cap_drop: ["ALL"]
+  security_opt:
+    - no-new-privileges:true
   ulimits:
     memlock:
       soft: -1
@@ -123,12 +119,11 @@ x-basic:
 ################################################################################
 
 services:
-
   gsa:
     image: greenbone/gsa:${VERSION_GSA:-stable}
     <<: [*basic, *basic-deploy-labels]
     deploy:
-      <<: [ *basic-deploy, *basic-deploy-labels ]
+      <<: [*basic-deploy, *basic-deploy-labels]
     restart: on-failure
     # ports:
     #   - 9392:80
@@ -203,7 +198,7 @@ services:
         "--notus-feed-dir",
         "/var/lib/notus/advisories",
         "-m",
-        "666"
+        "666",
       ]
     volumes:
       # - /etc/timezone:/etc/timezone:ro
@@ -378,7 +373,6 @@ volumes:
   gvmd_socket_vol:
   ospd_openvas_socket_vol:
   redis_socket_vol:
-
 # configs:
 #   openvas_config:
 #     file: $PWD/config/openvas.conf

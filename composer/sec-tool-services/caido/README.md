@@ -8,6 +8,7 @@
 
 - [SETUP](#setup)
   - [basic](#basic)
+    - [change "data" folder user](#change-data-folder-user)
     - [create `.env` file following:](#create-env-file-following)
       - [example short .env](#example-short-env)
   - [References](#references)
@@ -17,6 +18,12 @@
 ## basic
 
 > defined to work with treafik
+
+### change "data" folder user
+
+```sh
+$sudo chown 999 data
+```
 
 ### create `.env` file following:
 

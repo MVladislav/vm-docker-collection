@@ -36,7 +36,8 @@ x-basic-deploy: &basic-deploy
       cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
       memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
 
-x-basic: &basic # env_file: .env
+x-basic: &basic
+  env_file: .env
   cap_drop: ["ALL"]
   security_opt:
     - no-new-privileges:true
