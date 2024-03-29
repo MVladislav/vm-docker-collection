@@ -5,8 +5,7 @@ version: "3.8"
 ################################################################################
 ################################################################################
 
-x-basic-deploy-labels:
-  &basic-deploy-labels
+x-basic-deploy-labels: &basic-deploy-labels
   labels:
     - traefik.enable=true
     - traefik.docker.lbswarm=${LB_SWARM:-true}
@@ -19,8 +18,7 @@ x-basic-deploy-labels:
     - traefik.http.services.<router_name>.loadbalancer.server.scheme=${PROTOCOL:-https}
     - traefik.http.services.<router_name>.loadbalancer.server.port=${PORT:-443}
 
-x-basic-deploy:
-  &basic-deploy
+x-basic-deploy: &basic-deploy
   mode: replicated
   # mode: global
   replicas: 1
@@ -40,8 +38,7 @@ x-basic-deploy:
       cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
       memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
 
-x-basic:
-  &basic
+x-basic: &basic
   env_file: .env
   # user: "${GID:-1000}:${UID:-1000}"
   # privileged: true
@@ -54,6 +51,9 @@ x-basic:
   #   - DAC_READ_SEARCH
   #   - SETGID
   #   - SETUID
+  #   - FOWNER
+  #   - FSETID
+  #   # --------------------------
   #   - NET_ADMIN
   #   - NET_RAW
   #   - NET_BIND_SERVICE
@@ -63,8 +63,6 @@ x-basic:
   #   - AUDIT_CONTROL
   #   - AUDIT_READ
   #   # --------------------------
-  #   - FOWNER
-  #   - FSETID
   #   - KILL
   #   - SETPCAP
   #   - LINUX_IMMUTABLE
@@ -123,15 +121,14 @@ x-basic:
     - net.ipv6.conf.all.disable_ipv6=0
   restart: always # always | on-failure
 
-x-logging:
-  &logging
+x-logging: &logging
   logging:
     # https://docs.docker.com/config/containers/logging/configure/#supported-logging-drivers
     driver: json-file # none|local|json-file|syslog|journald|gelf|fluentd|awslogs|splunk|etwlogs|gcplogs|logentries
     options:
-      max-size: "10m"     # Set maximum log file size
-      max-file: 3         # Set maximum number of log files
-      compress: "true"    # Enable log file compression
+      max-size: "10m" # Set maximum log file size
+      max-file: 3 # Set maximum number of log files
+      compress: "true" # Enable log file compression
       labels: app=example # Add custom labels to log messages
       # # => gelf
       # gelf-address: "tcp://graylog-server:12201"
@@ -249,7 +246,6 @@ networks:
       type: "cifs"
       device: "//${NAS_HOST}${NAS_PATH:-/}"
       o: "username=${NAS_USERNAME},password=${NAS_PASSWORD},vers=3.0,uid=${NAS_PUID:-1000},gid=${NAS_PGID:-1000}"
-
 #
 # volumes:
 #   data: {}
