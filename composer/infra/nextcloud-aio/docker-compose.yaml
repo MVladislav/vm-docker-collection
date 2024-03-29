@@ -1,0 +1,113 @@
+---
+x-basic: &basic
+  # cap_add:
+  #   - CAP_NET_BIND_SERVICE
+  #   - CHOWN
+  #   - DAC_OVERRIDE
+  #   - SETGID
+  #   - SETUID
+  # cap_drop: ["ALL"]
+  # security_opt:
+  #   - no-new-privileges:true
+  #   - label:disable
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 65535
+      hard: 65535
+    fsize: -1
+    as: -1
+  mem_limit: ${RESOURCES_LIMITS_MEMORY:-4096M}
+  healthcheck:
+    disable: true
+  restart: always
+
+################################################################################
+################################################################################
+################################################################################
+
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  nextcloud:
+    # https://hub.docker.com/r/nextcloud/all-in-one
+    image: nextcloud/all-in-one:${VERSION_NEXTCLOUD:-20240308_092935-latest}
+    <<: *basic
+    init: true
+    container_name: nextcloud-aio-mastercontainer
+    ports:
+      - target: 8080
+        published: 8080
+        protocol: tcp
+        mode: host
+    environment:
+      APACHE_PORT: ${APACHE_PORT:-11000}
+      APACHE_IP_BINDING: ${APACHE_IP_BINDING:-127.0.0.1}
+      SKIP_DOMAIN_VALIDATION: ${SKIP_DOMAIN_VALIDATION:-true}
+      TALK_PORT: ${TALK_PORT:-3478}
+
+      NEXTCLOUD_DATADIR: "nextcloud_aio_nextcloud_datadir"
+      # NEXTCLOUD_MOUNT: /mnt/
+
+      AIO_DISABLE_BACKUP_SECTION: ${AIO_DISABLE_BACKUP_SECTION:-false}
+      BORG_RETENTION_POLICY: ${BORG_RETENTION_POLICY:---keep-within=7d --keep-weekly=4 --keep-monthly=6}
+      NEXTCLOUD_UPLOAD_LIMIT: ${NEXTCLOUD_UPLOAD_LIMIT:-2G}
+      NEXTCLOUD_MEMORY_LIMIT: ${NEXTCLOUD_MEMORY_LIMIT:-${RESOURCES_LIMITS_MEMORY:-4096M}}
+
+      NEXTCLOUD_STARTUP_APPS: ${NEXTCLOUD_STARTUP_APPS:-deck twofactor_totp tasks calendar contacts notes}
+
+      NEXTCLOUD_ADDITIONAL_APKS: ${NEXTCLOUD_ADDITIONAL_APKS:-imagemagick}
+      NEXTCLOUD_ADDITIONAL_PHP_EXTENSIONS: ${NEXTCLOUD_ADDITIONAL_PHP_EXTENSIONS:-imagick}
+
+      NEXTCLOUD_ENABLE_DRI_DEVICE: ${NEXTCLOUD_ENABLE_DRI_DEVICE:-false}
+      NEXTCLOUD_KEEP_DISABLED_APPS: ${NEXTCLOUD_KEEP_DISABLED_APPS:-false}
+    volumes:
+      - nextcloud_aio_mastercontainer:/mnt/docker-aio-config
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      nextcloud-aio: {}
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  caddy:
+    # https://hub.docker.com/_/caddy
+    image: caddy:${VERSION_CADDY:-2.7.6-alpine}
+    container_name: caddy
+    <<: *basic
+    volumes:
+      - $PWD/config/Caddyfile:/etc/caddy/Caddyfile
+      - $PWD/config/certs:/certs
+      - caddy_sites:/srv
+      - caddy_data:/data
+      - caddy_config:/config
+    network_mode: "host"
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  nextcloud-aio:
+    name: nextcloud-aio
+    driver: bridge
+    attachable: false
+    driver_opts:
+      encrypted: "true"
+
+volumes:
+  caddy_sites:
+    name: caddy_sites
+  caddy_data:
+    name: caddy_data
+  caddy_config:
+    name: caddy_config
+  nextcloud_aio_mastercontainer:
+    name: nextcloud_aio_mastercontainer
+    driver: local
+    driver_opts:
+      type: nfs
+      o: nfsvers=4,addr=${NEXTCLOUD_NFS_IP},rw
+      device: ":${NEXTCLOUD_NFS_PATH_MASTER}/master"

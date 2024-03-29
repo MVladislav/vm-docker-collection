@@ -1,0 +1,16 @@
+*
+!.gitignore
+!.gitempty
+
+!docker-compose.yaml
+
+!README.md
+
+!config/
+config/*
+
+!config/Caddyfile_Template
+
+!config/certs/
+config/certs/*
+!config/certs/.gitempty

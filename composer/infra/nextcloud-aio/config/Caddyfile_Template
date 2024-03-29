@@ -1,0 +1,4 @@
+https://nextcloud.home.local:443 {
+  reverse_proxy localhost:11000
+  tls /certs/cert.pem /certs/key.pem
+}
