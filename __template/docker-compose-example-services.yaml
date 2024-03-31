@@ -52,7 +52,7 @@ services:
       resources:
         limits:
           cpus: ${RESOURCES_LIMITS_CPUS_POSTGRESQL:-1}
-          memory: ${RESOURCES_LIMITS_MEMORY_POSTGRESQL:-500M}
+          memory: ${RESOURCES_LIMITS_MEMORY_POSTGRESQL:-512M}
         reservations:
           cpus: ${RESOURCES_RESERVATIONS_CPUS_POSTGRESQL:-0.001}
           memory: ${RESOURCES_RESERVATIONS_MEMORY_POSTGRESQL:-32m}
@@ -91,7 +91,7 @@ services:
       resources:
         limits:
           cpus: ${RESOURCES_LIMITS_CPUS_MARIADB:-1}
-          memory: ${RESOURCES_LIMITS_MEMORY_MARIADB:-5008M}
+          memory: ${RESOURCES_LIMITS_MEMORY_MARIADB:-512M}
         reservations:
           cpus: ${RESOURCES_RESERVATIONS_CPUS_MARIADB:-0.001}
           memory: ${RESOURCES_RESERVATIONS_MEMORY_MARIADB:-32m}
@@ -99,6 +99,11 @@ services:
       - SETGID
       - SETUID
       - DAC_OVERRIDE
+    # ports:
+    #   - target: ${PORT_MARIADB:-3306}
+    #     published: ${PORT_MARIADB_PUBLISH:-3306}
+    #     protocol: tcp
+    #     mode: host
     secrets:
       - mariadb_root_password
       - mariadb_user_password
@@ -125,6 +130,75 @@ services:
       retries: 5
       timeout: 3s
 
+  ##############################################################################
+  ## NOTE: for PostgreSQL and MySQL ############################################
+  ##############################################################################
+  adminer:
+    # https://hub.docker.com/_/adminer
+    image: adminer:${VERSION_ADMINER:-4.8.1-standalone}
+    # <<: *basic
+    deploy:
+      # <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_ADMINER:-0.25}
+          memory: ${RESOURCES_LIMITS_MEMORY_ADMINER:-256M}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_ADMINER:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_ADMINER:-32m}
+    # ports:
+    #   - target: ${PORT_ADMINER:-8080}
+    #     published: ${PORT_ADMINER_PUBLISH:-8080}
+    #     protocol: tcp
+    #     mode: host
+    environment:
+      ADMINER_DEFAULT_SERVER: mysql # mysql | postgresql
+      ADMINER_PLUGINS: "tables-filter tinymce file-upload"
+      ADMINER_DESIGN: "hydra"
+    # volumes:
+    #   - /etc/timezone:/etc/timezone:ro
+    #   - /etc/localtime:/etc/localtime:ro
+    command: php -S 0.0.0.0:8080 -t /var/www/html
+    networks:
+      default: {}
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  influxdb:
+    # https://hub.docker.com/_/influxdb
+    image: influxdb:${VERSION_INFLUXDB:-2.7.5-alpine}
+    # <<: *basic
+    deploy:
+      # <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_INFLUXDB:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_INFLUXDB:-512M}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_INFLUXDB:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_INFLUXDB:-32m}
+    # ports:
+    #   - target: ${PORT_INFLUXDB:-8086}
+    #     published: ${PORT_INFLUXDB_PUBLISH:-8086}
+    #     protocol: tcp
+    #     mode: host
+    environment:
+      DOCKER_INFLUXDB_INIT_MODE: ${DOCKER_INFLUXDB_INIT_MODE:-setup}
+      DOCKER_INFLUXDB_INIT_USERNAME: ${DOCKER_INFLUXDB_INIT_USERNAME:-root}
+      # DOCKER_INFLUXDB_INIT_PASSWORD: ${DOCKER_INFLUXDB_INIT_PASSWORD:-}
+      DOCKER_INFLUXDB_INIT_ORG: ${DOCKER_INFLUXDB_INIT_ORG:-my_orga}
+      DOCKER_INFLUXDB_INIT_BUCKET: ${DOCKER_INFLUXDB_INIT_BUCKET:-db0}
+      # DOCKER_INFLUXDB_INIT_RETENTION: ${DOCKER_INFLUXDB_INIT_RETENTION:-1w}
+      # DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: ${DOCKER_INFLUXDB_INIT_ADMIN_TOKEN:-my-super-secret-auth-token}
+    networks:
+      default: {}
+    volumes:
+      # - /etc/timezone:/etc/timezone:ro
+      # - /etc/localtime:/etc/localtime:ro
+      - influxdb-storage:/var/lib/influxdb2
+      - influxdb-config:/etc/influxdb2
+
 ################################################################################
 ################################################################################
 ################################################################################
@@ -133,6 +207,8 @@ volumes:
   redis: {}
   postgresql: {}
   mariadb: {}
+  influxdb-storage: {}
+  influxdb-config: {}
 
 secrets:
   postgres_password_file:
