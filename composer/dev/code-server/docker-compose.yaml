@@ -5,8 +5,7 @@ version: "3.8"
 ################################################################################
 ################################################################################
 
-x-basic-deploy-labels:
-  &basic-deploy-labels
+x-basic-deploy-labels: &basic-deploy-labels
   labels:
     - traefik.enable=true
     - traefik.docker.lbswarm=${LB_SWARM:-true}
@@ -19,8 +18,7 @@ x-basic-deploy-labels:
     - traefik.http.services.code-server.loadbalancer.server.port=${PORT:-8080}
     - traefik.http.routers.code-server.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
 
-x-basic-deploy:
-  &basic-deploy
+x-basic-deploy: &basic-deploy
   mode: replicated
   replicas: 1
   placement:
@@ -38,8 +36,7 @@ x-basic-deploy:
       cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
       memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
 
-x-basic:
-  &basic
+x-basic: &basic
   env_file: .env
   user: "${GID:-1000}:${UID:-1000}"
   cap_add:
@@ -65,15 +62,13 @@ x-basic:
     disable: true
   restart: always
 
-x-logging:
-  &logging
+x-logging: &logging
   logging:
     driver: json-file
     options:
       max-size: "10m"
       max-file: 3
       compress: "true"
-
 
 ################################################################################
 ################################################################################
@@ -88,19 +83,19 @@ services:
     image: codercom/code-server:${VERSION:-4.17.1-ubuntu}
     <<: [*basic, *logging]
     deploy:
-      <<: [ *basic-deploy, *basic-deploy-labels ]
+      <<: [*basic-deploy, *basic-deploy-labels]
     configs:
       - source: installer_ext
         target: /entrypoint.d/install-ext.sh
-        mode: 0777
+        mode: "0777"
       - source: settings_config
         target: /home/coder/.local/share/code-server/User/settings.json
-        mode: 0644
+        mode: "0644"
         uid: "${UID:-1000}"
         gid: "${GID:-1000}"
       - source: keybindings_config
         target: /home/coder/.local/share/code-server/User/keybindings.json
-        mode: 0644
+        mode: "0644"
         uid: "${UID:-1000}"
         gid: "${GID:-1000}"
     environment:

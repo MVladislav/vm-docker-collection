@@ -9,8 +9,6 @@
 - [SETUP](#setup)
   - [basic](#basic)
     - [create `.env` file following:](#create-env-file-following)
-  - [TODO](#todo)
-    - [existing db](#existing-db)
     - [traefik](#traefik)
   - [References](#references)
 
@@ -42,33 +40,6 @@ PROTOCOL=http
 PORT=80
 # default-secured@file | public-whitelist@file | authentik@file
 MIDDLEWARE_SECURED=default-secured@file
-```
-
-## TODO
-
-### existing db
-
-stop on db choose, and add it manually by
-change in file `/var/www/html/typo3conf/LocalConfiguration.php`:
-
-```conf
-    'DB' => [
-        'Connections' => [
-            'Default' => [
-                'charset' => 'utf8mb4',
-                'dbname' => 'laurora',
-                'driver' => 'mysqli',
-                'host' => 'mysql',
-                'password' => 'laurora',
-                'port' => 3306,
-                'tableoptions' => [
-                    'charset' => 'utf8mb4',
-                    'collate' => 'utf8mb4_unicode_ci',
-                ],
-                'user' => 'laurora',
-            ],
-        ],
-    ],
 ```
 
 ### traefik

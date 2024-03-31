@@ -5,8 +5,7 @@ version: "3.8"
 ################################################################################
 ################################################################################
 
-x-basic-deploy-labels:
-  &basic-deploy-labels
+x-basic-deploy-labels: &basic-deploy-labels
   labels:
     - traefik.enable=true
     - traefik.docker.lbswarm=${LB_SWARM:-true}
@@ -19,8 +18,7 @@ x-basic-deploy-labels:
     - traefik.http.services.netbox.loadbalancer.server.port=${PORT:-8080}
     - traefik.http.routers.netbox.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
 
-x-basic-deploy:
-  &basic-deploy
+x-basic-deploy: &basic-deploy
   mode: replicated
   replicas: 1
   placement:
@@ -38,8 +36,7 @@ x-basic-deploy:
       cpus: "0.001"
       memory: 32M
 
-x-basic:
-  &basic
+x-basic: &basic
   env_file: .env
   # cap_add:
   #   # https://dockerlabs.collabnix.com/advanced/security/capabilities/
@@ -76,7 +73,7 @@ x-basic-netbox:
   # https://hub.docker.com/r/netboxcommunity/netbox
   &basic-netbox
   image: netboxcommunity/netbox:${VERSION:-v3.4}
-  user: 'unit:root'
+  user: "unit:root"
   volumes:
     - /etc/timezone:/etc/timezone:ro
     - /etc/localtime:/etc/localtime:ro
@@ -125,9 +122,9 @@ services:
   ##############################################################################
   ##############################################################################
   netbox:
-    <<: [ *basic, *basic-netbox ]
+    <<: [*basic, *basic-netbox]
     deploy:
-      <<: [ *basic-deploy, *basic-deploy-labels ]
+      <<: [*basic-deploy, *basic-deploy-labels]
     # ports:
     #   - target: ${PORT:-8080}
     #     published: ${PORT_PUBLISH:-8080}
@@ -140,14 +137,14 @@ services:
       test:
         [
           "CMD-SHELL",
-          "curl -f ${PROTOCOL:-http}://127.0.0.1:${PORT:-8080}/api/ || exit 1"
+          "curl -f ${PROTOCOL:-http}://127.0.0.1:${PORT:-8080}/api/ || exit 1",
         ]
       interval: 30s
       timeout: 10s
       retries: 5
 
   netbox-worker:
-    <<: [ *basic, *basic-netbox ]
+    <<: [*basic, *basic-netbox]
     deploy:
       <<: *basic-deploy
     command:
@@ -155,27 +152,20 @@ services:
       - /opt/netbox/netbox/manage.py
       - rqworker
     healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "ps -aux | grep -v grep | grep -q rqworker || exit 1"
-        ]
+      test: ["CMD-SHELL", "ps -aux | grep -v grep | grep -q rqworker || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 5
 
   netbox-housekeeping:
-    <<: [ *basic, *basic-netbox ]
+    <<: [*basic, *basic-netbox]
     deploy:
       <<: *basic-deploy
     command:
       - /opt/netbox/housekeeping.sh
     healthcheck:
       test:
-        [
-          "CMD-SHELL",
-          "ps -aux | grep -v grep | grep -q housekeeping || exit 1"
-        ]
+        ["CMD-SHELL", "ps -aux | grep -v grep | grep -q housekeeping || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -252,7 +242,6 @@ volumes:
   netbox-postgres-data: {}
   netbox-redis-data: {}
   netbox-redis-cache-data: {}
-
 # secrets:
 #   secret_key_secret:
 #     file: config/secrets/secret_key_secret.txt

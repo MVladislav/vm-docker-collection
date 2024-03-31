@@ -5,8 +5,7 @@ version: "3.8"
 ################################################################################
 ################################################################################
 
-x-basic-deploy-labels:
-  &basic-deploy-labels
+x-basic-deploy-labels: &basic-deploy-labels
   labels:
     - traefik.enable=true
     - traefik.docker.lbswarm=${LB_SWARM:-true}
@@ -19,8 +18,7 @@ x-basic-deploy-labels:
     - traefik.http.services.typo3.loadbalancer.server.port=${PORT:-80}
     - traefik.http.routers.typo3.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
 
-x-basic-deploy:
-  &basic-deploy
+x-basic-deploy: &basic-deploy
   mode: replicated
   replicas: 1
   placement:
@@ -38,8 +36,7 @@ x-basic-deploy:
       cpus: "0.001"
       memory: 32M
 
-x-basic:
-  &basic
+x-basic: &basic
   env_file: .env
   # user: "33:33"
   # cap_add: [ "ALL" ]
@@ -81,7 +78,7 @@ services:
     image: typo3:${VERSION:-11.5.21}
     <<: *basic
     deploy:
-      <<: [ *basic-deploy, *basic-deploy-labels ]
+      <<: [*basic-deploy, *basic-deploy-labels]
     # ports:
     #   - target: ${PORT:-80}
     #     published: ${PORT_PUBLISH:-80}

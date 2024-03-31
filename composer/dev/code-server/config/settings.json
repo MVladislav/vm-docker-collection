@@ -59,10 +59,10 @@
   },
   "editor.tabSize": 2,
   "editor.cursorWidth": 2,
-  "editor.cursorBlinking": "smooth", // smooth | phase
+  "editor.cursorBlinking": "smooth",
   "editor.cursorStyle": "line",
   "editor.acceptSuggestionOnCommitCharacter": true,
-  "editor.acceptSuggestionOnEnter": "smart", // on | off | smart
+  "editor.acceptSuggestionOnEnter": "smart",
   "editor.inlineSuggest.enabled": true,
   "editor.detectIndentation": false,
   "editor.autoIndent": "none",
@@ -70,11 +70,10 @@
   "editor.bracketPairColorization.enabled": true,
   "editor.bracketPairColorization.independentColorPoolPerBracketType": true,
   "editor.guides.bracketPairs": true,
-  "debug.toolBarLocation": "docked", // docked | floating
+  "debug.toolBarLocation": "docked",
   "diffEditor.ignoreTrimWhitespace": true,
   "diffEditor.renderSideBySide": true,
   "notebook.diff.enablePreview": true,
-  // "files.autoSave": "onFocusChange",
   "files.insertFinalNewline": true,
   "files.trimFinalNewlines": true,
   "files.trimTrailingWhitespace": true,
@@ -266,7 +265,6 @@
   "[csharp]": {
     "editor.defaultFormatter": "Leopotam.csharpfixformat"
   },
-
   "[python]": {
     "editor.insertSpaces": true,
     "editor.tabSize": 4,
@@ -323,7 +321,7 @@
       "es6": true
     },
     "parserOptions": {
-      "ecmaVersion": 6 // or 7,8,9
+      "ecmaVersion": 6
     }
   },
   "[php]": {},
@@ -346,7 +344,6 @@
   "[xml]": {
     "editor.defaultFormatter": "redhat.vscode-xml"
   },
-  // "xmlTools.splitXmlnsOnFormat": false,
   "xmlTools.removeCommentsOnMinify": false,
   "xml.symbols.maxItemsComputed": 99000,
   "xml.server.vmargs": "-Xmx2G",
@@ -382,11 +379,11 @@
   "markdown-pdf.headerTemplate": "<div></div>",
   "markdown-pdf.footerTemplate": "<div></div>",
   "markdownlint.config": {
-    "MD031": false, // Fenced code blocks should be surrounded by blank lines
-    "MD033": false, // Inline HTML
-    "MD024": false, // Multiple headings with the same content
-    "MD026": false, // Trailing punctuation in heading
-    "MD036": false // Emphasis used instead of a heading
+    "MD031": false,
+    "MD033": false,
+    "MD024": false,
+    "MD026": false,
+    "MD036": false
   },
   "latex-workshop.latex.tools": [
     {
