@@ -1,0 +1,112 @@
+---
+version: "3.8"
+
+################################################################################
+################################################################################
+################################################################################
+
+x-basic-deploy-labels: &basic-deploy-labels
+  labels:
+    - traefik.enable=true
+    - traefik.docker.lbswarm=${LB_SWARM:-true}
+    - traefik.docker.network=proxy
+    - traefik.http.routers.filebrowser.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.filebrowser.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.filebrowser.tls=true
+    - traefik.http.routers.filebrowser.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.filebrowser.service=filebrowser
+    - traefik.http.services.filebrowser.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.filebrowser.loadbalancer.server.port=${PORT:-80}
+
+x-basic-deploy: &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  restart_policy:
+    condition: on-failure
+  resources:
+    limits:
+      cpus: ${RESOURCES_LIMITS_CPUS:-1}
+      memory: ${RESOURCES_LIMITS_MEMORY:-500m}
+    reservations:
+      cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
+      memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
+
+x-basic: &basic
+  env_file: .env
+  user: "${GID:-0}:${UID:-0}"
+  cap_drop: ["ALL"]
+  security_opt:
+    - no-new-privileges:true
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 65535
+      hard: 65535
+    fsize: -1
+    as: -1
+  networks:
+    proxy: {}
+  healthcheck:
+    disable: true
+  restart: always
+
+################################################################################
+################################################################################
+################################################################################
+
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  filebrowser:
+    # https://hub.docker.com/r/filebrowser/filebrowser
+    image: filebrowser/filebrowser:${VERSION:-v2.27.0}
+    <<: [*basic, *basic-deploy-labels]
+    deploy:
+      <<: [*basic-deploy, *basic-deploy-labels]
+    # ports:
+    #   - target: ${PORT:-80}
+    #     published: ${PORT_PUBLISH:-80}
+    #     protocol: tcp
+    #     mode: host
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - nas-data:/srv
+      - data:/config
+    command:
+      [
+        "-d",
+        "/config/database.db",
+        "-a",
+        "0.0.0.0",
+        "-p",
+        "80",
+        "-r",
+        "/srv",
+        "-l",
+        "stdout",
+      ]
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  proxy:
+    external: true
+
+volumes:
+  data: {}
+  nas-data:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: nfsvers=4,addr=${NFS_HOST},rw,noatime,rsize=8192,wsize=8192,tcp,timeo=14
+      device: ":${NFS_PATH}"
