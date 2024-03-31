@@ -234,21 +234,24 @@ networks:
       encrypted: "true"
   proxy:
     external: true
-  nas-data:
-    driver: local
-    driver_opts:
-      type: nfs
-      o: nfsvers=4,addr=${NAS_HOST},rw,noatime,rsize=8192,wsize=8192,tcp,timeo=14
-      device: ":${NAS_PATH:-/}"
-  smb-data:
-    driver: local
-    driver_opts:
-      type: "cifs"
-      device: "//${NAS_HOST}${NAS_PATH:-/}"
-      o: "username=${NAS_USERNAME},password=${NAS_PASSWORD},vers=3.0,uid=${NAS_PUID:-1000},gid=${NAS_PGID:-1000}"
 #
 # volumes:
 #   data: {}
+#   ## sudo apt install nfs-common
+#   # nas-data:
+#   #   # name: nas-data
+#   #   driver: local
+#   #   driver_opts:
+#   #     type: nfs
+#   #     o: nfsvers=4,addr=${NAS_HOST},rw,noatime,rsize=8192,wsize=8192,tcp,timeo=14
+#   #     device: ":${NAS_PATH:-/}"
+#   # smb-data:
+#   #   # name: smb-data
+#   #   driver: local
+#   #   driver_opts:
+#   #     type: cifs
+#   #     device: "//${NAS_HOST}${NAS_PATH:-/}"
+#   #     o: "username=${NAS_USERNAME},password=${NAS_PASSWORD},vers=3.0,uid=${NAS_PUID:-1000},gid=${NAS_PGID:-1000}"
 #
 # configs:
 #   xx_config:
