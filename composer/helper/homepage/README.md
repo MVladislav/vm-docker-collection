@@ -79,5 +79,13 @@ $docker exec -u node -it "$(docker ps -q -f name=homepage_homepage)" vi config/w
 
 ## References
 
-- <https://gethomepage.dev/en/installation/docker/>
+- <https://gethomepage.dev/latest/installation/docker/>
 - <https://github.com/gethomepage/homepage>
+- Confs
+  - <https://gethomepage.dev/latest/configs/settings/>
+  - <https://gethomepage.dev/latest/configs/services/>
+    - <https://simpleicons.org/> `si-XX-#a712a2`
+    - <https://pictogrammers.com/library/mdi/> `mdi-XX-#f0d453`
+    - <https://github.com/walkxcode/dashboard-icons/tree/main/svg>
+  - <https://gethomepage.dev/latest/configs/bookmarks/>
+  - <https://gethomepage.dev/latest/configs/service-widgets/>
