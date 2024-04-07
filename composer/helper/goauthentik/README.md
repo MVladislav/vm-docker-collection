@@ -27,7 +27,7 @@
 
 ```sh
 $openssl rand -base64 18 > config/secrets/postgres_password_file.txt
-$openssl rand -base64 18 > config/secrets/authentik_secret_key.txt
+$openssl rand -base64 66 > config/secrets/authentik_secret_key.txt
 ```
 
 ### create `.env` file following:
@@ -56,7 +56,7 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_GOAUTHENTIK=2023.10.7
+VERSION_GOAUTHENTIK=2024.2.2
 VERSION_REDIS=7.2.3-alpine
 VERSION_POSTGRESQL=16.1-alpine
 
