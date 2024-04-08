@@ -1,0 +1,538 @@
+---
+version: "3.8"
+
+################################################################################
+################################################################################
+################################################################################
+
+x-basic-deploy-labels: &basic-deploy-labels
+  labels:
+    - traefik.enable=true
+    - traefik.docker.lbswarm=${LB_SWARM:-true}
+    - traefik.docker.network=proxy
+    - traefik.http.routers.wazuh.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.wazuh.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.wazuh.tls=true
+    - traefik.http.routers.wazuh.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.wazuh.service=wazuh
+    - traefik.http.services.wazuh.loadbalancer.server.scheme=${PROTOCOL:-https}
+    - traefik.http.services.wazuh.loadbalancer.server.port=${PORT:-5601}
+
+x-basic-deploy-master-labels: &basic-deploy-master-labels
+  labels: []
+
+x-basic-deploy-indexer-labels: &basic-deploy-indexer-labels
+  labels: []
+
+x-basic-deploy: &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  restart_policy:
+    condition: on-failure
+  resources:
+    # limits:
+    #   cpus: ${RESOURCES_LIMITS_CPUS:-4}
+    #   memory: ${RESOURCES_LIMITS_MEMORY:-2g}
+    reservations:
+      cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
+      memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
+
+x-basic: &basic
+  env_file: .env
+  cap_add: ["ALL"]
+  # cap_drop: ["ALL"]
+  security_opt:
+    - no-new-privileges:true
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 655360
+      hard: 655360
+    fsize: -1
+    as: -1
+  networks:
+    proxy: {}
+  healthcheck:
+    disable: true
+  restart: always
+
+################################################################################
+################################################################################
+################################################################################
+
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  wazuh-dashboard:
+    # https://hub.docker.com/r/wazuh/wazuh-dashboard
+    image: wazuh/wazuh-dashboard:${VERSION:-4.8.0-beta4}
+    hostname: wazuh.dashboard
+    <<: [*basic, *basic-deploy-labels]
+    deploy:
+      <<: [*basic-deploy, *basic-deploy-labels]
+    # ports:
+    #   - target: ${PORT_DASHBOARD:-5601}
+    #     published: ${PORT_DASHBOARD_PUBLISH:-5601}
+    #     protocol: tcp
+    #     mode: host
+    secrets:
+      - dashboard_password_file_secret
+      - api_password_file_secret
+    environment:
+      OPENSEARCH_HOSTS: https://wazuh1.indexer:9200
+      WAZUH_API_URL: https://wazuh.master
+      DASHBOARD_USERNAME: kibanaserver
+      DASHBOARD_PASSWORD_FILE: dashboard_password_file_secret # pragma: allowlist secret
+      API_USERNAME: wazuh-wui
+      API_PASSWORD_FILE: api_password_file_secret # pragma: allowlist secret
+    configs:
+      - source: opensearch_dashboards_config
+        target: /usr/share/wazuh-dashboard/config/opensearch_dashboards.yml
+        mode: 0660
+        uid: "1000"
+        gid: "1000"
+      - source: wazuh_config
+        target: usr/share/wazuh-dashboard/data/wazuh/config/wazuh.yml
+        mode: 0660
+        uid: "1000"
+        gid: "1000"
+
+      - source: root_ca_cert
+        target: /usr/share/wazuh-dashboard/certs/root-ca.pem
+        mode: 0600
+        uid: "1000"
+        gid: "1000"
+      - source: wazuh_dashboard_cert
+        target: /usr/share/wazuh-dashboard/certs/wazuh-dashboard.pem
+        mode: 0600
+        uid: "1000"
+        gid: "1000"
+      - source: wazuh_dashboard_cert_key
+        target: /usr/share/wazuh-dashboard/certs/wazuh-dashboard-key.pem
+        mode: 0600
+        uid: "1000"
+        gid: "1000"
+    volumes:
+      # - /etc/timezone:/etc/timezone:ro
+      # - /etc/localtime:/etc/localtime:ro
+      - wazuh-dashboard-config:/usr/share/wazuh-dashboard/data/wazuh/config
+      - wazuh-dashboard-custom:/usr/share/wazuh-dashboard/plugins/wazuh/public/assets/custom
+    links:
+      - wazuh-master:wazuh-master
+      - wazuh1-indexer:wazuh1-indexer
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  wazuh-master:
+    # https://hub.docker.com/r/wazuh/wazuh-manager
+    image: wazuh/wazuh-manager:${VERSION:-4.8.0-beta4}
+    hostname: wazuh.master
+    <<: [*basic, *basic-deploy-master-labels]
+    deploy:
+      <<: [*basic-deploy, *basic-deploy-master-labels]
+    ports:
+      # Agent connection service
+      - target: ${PORT_AGENT_CON:-1514}
+        published: ${PORT_AGENT_CON_PUBLISH:-1514}
+        protocol: tcp
+        mode: host
+      # Agent enrollment service
+      - target: ${PORT_AGENT_ENROLL:-1515}
+        published: ${PORT_AGENT_ENROLL_PUBLISH:-1515}
+        protocol: tcp
+        mode: host
+      # Wazuh Syslog collector
+      - target: ${PORT_SYSLOG:-514}
+        published: ${PORT_SYSLOG_PUBLISH:-514}
+        protocol: udp
+        mode: host
+    secrets:
+      - indexer_password_file_secret
+      - api_password_file_secret
+    environment:
+      INDEXER_URL: https://wazuh1.indexer:9200
+      INDEXER_USERNAME: admin
+      INDEXER_PASSWORD_FILE: indexer_password_file_secret # pragma: allowlist secret
+      API_USERNAME: wazuh-wui
+      API_PASSWORD_FILE: api_password_file_secret # pragma: allowlist secret
+
+      FILEBEAT_SSL_VERIFICATION_MODE: full
+      SSL_CERTIFICATE_AUTHORITIES: /etc/ssl/root-ca.pem
+      SSL_CERTIFICATE: /etc/ssl/filebeat.pem
+      SSL_KEY: /etc/ssl/filebeat.key
+    configs:
+      - source: wazuh_manager_config
+        target: /wazuh-config-mount/etc/ossec.conf
+        mode: 0660
+        uid: "999"
+        gid: "999"
+
+      - source: root_ca_manager_cert
+        target: /etc/ssl/root-ca.pem
+        mode: 0600
+        uid: "999"
+        gid: "999"
+      - source: wazuh_master_cert
+        target: /etc/ssl/filebeat.pem
+        mode: 0600
+        uid: "999"
+        gid: "999"
+      - source: wazuh_master_cert_key
+        target: /etc/ssl/filebeat.key
+        mode: 0600
+        uid: "999"
+        gid: "999"
+    volumes:
+      # - /etc/timezone:/etc/timezone:ro
+      # - /etc/localtime:/etc/localtime:ro
+      - master-wazuh-api-configuration:/var/ossec/api/configuration
+      - master-wazuh-etc:/var/ossec/etc
+      - master-wazuh-logs:/var/ossec/logs
+      - master-wazuh-queue:/var/ossec/queue
+      - master-wazuh-var-multigroups:/var/ossec/var/multigroups
+      - master-wazuh-integrations:/var/ossec/integrations
+      - master-wazuh-active-response:/var/ossec/active-response/bin
+      - master-wazuh-agentless:/var/ossec/agentless
+      - master-wazuh-wodles:/var/ossec/wodles
+      - master-filebeat-etc:/etc/filebeat
+      - master-filebeat-var:/var/lib/filebeat
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  wazuh-worker:
+    # https://hub.docker.com/r/wazuh/wazuh-manager
+    image: wazuh/wazuh-manager:${VERSION:-4.8.0-beta4}
+    hostname: wazuh.worker
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+    secrets:
+      - indexer_password_file_secret
+    environment:
+      INDEXER_URL: https://wazuh1.indexer:9200
+      INDEXER_USERNAME: admin
+      INDEXER_PASSWORD_FILE: indexer_password_file_secret # pragma: allowlist secret
+
+      FILEBEAT_SSL_VERIFICATION_MODE: full
+      SSL_CERTIFICATE_AUTHORITIES: /etc/ssl/root-ca.pem
+      SSL_CERTIFICATE: /etc/ssl/filebeat.pem
+      SSL_KEY: /etc/ssl/filebeat.key
+    configs:
+      - source: wazuh_worker_config
+        target: /wazuh-config-mount/etc/ossec.conf
+        mode: 0660
+        uid: "999"
+        gid: "999"
+
+      - source: root_ca_manager_cert
+        target: /etc/ssl/root-ca.pem
+        mode: 0600
+        uid: "999"
+        gid: "999"
+      - source: wazuh_worker_cert
+        target: /etc/ssl/filebeat.pem
+        mode: 0600
+        uid: "999"
+        gid: "999"
+      - source: wazuh_worker_cert_key
+        target: /etc/ssl/filebeat.key
+        mode: 0600
+        uid: "999"
+        gid: "999"
+    volumes:
+      # - /etc/timezone:/etc/timezone:ro
+      # - /etc/localtime:/etc/localtime:ro
+      - worker-wazuh-api-configuration:/var/ossec/api/configuration
+      - worker-wazuh-etc:/var/ossec/etc
+      - worker-wazuh-logs:/var/ossec/logs
+      - worker-wazuh-queue:/var/ossec/queue
+      - worker-wazuh-var-multigroups:/var/ossec/var/multigroups
+      - worker-wazuh-integrations:/var/ossec/integrations
+      - worker-wazuh-active-response:/var/ossec/active-response/bin
+      - worker-wazuh-agentless:/var/ossec/agentless
+      - worker-wazuh-wodles:/var/ossec/wodles
+      - worker-filebeat-etc:/etc/filebeat
+      - worker-filebeat-var:/var/lib/filebeat
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  wazuh1-indexer:
+    # https://hub.docker.com/r/wazuh/wazuh-indexer
+    image: wazuh/wazuh-indexer:${VERSION:-4.8.0-beta4}
+    hostname: wazuh1.indexer
+    <<: [*basic, *basic-deploy-indexer-labels]
+    deploy:
+      <<: [*basic-deploy, *basic-deploy-indexer-labels]
+    # ports:
+    #   # Wazuh indexer RESTful API
+    #   - target: ${PORT_INDEXER:-9200}
+    #     published: ${PORT_INDEXER_PUBLISH:-9200}
+    #     protocol: tcp
+    #     mode: host
+    environment:
+      OPENSEARCH_JAVA_OPTS: -Xms${WAZUH_INDEXER_JAVA:-1g} -Xmx${WAZUH_INDEXER_JAVA:-1g}
+      bootstrap.memory_lock: ${MEM_LOCK:-true}
+    configs:
+      - source: wazuh1_indexer_config
+        target: /usr/share/wazuh-indexer/opensearch.yml
+        mode: 0660
+        uid: "1000"
+        gid: "1000"
+      - source: internal_users_config
+        target: /usr/share/wazuh-indexer/opensearch-security/internal_users.yml
+        mode: 0660
+        uid: "1000"
+        gid: "1000"
+
+      - source: root_ca_cert
+        target: /usr/share/wazuh-indexer/certs/root-ca.pem
+        mode: 0600
+        uid: "1000"
+        gid: "1000"
+      - source: admin_cert
+        target: /usr/share/wazuh-indexer/certs/admin.pem
+        mode: 0600
+        uid: "1000"
+        gid: "1000"
+      - source: admin_cert_key
+        target: /usr/share/wazuh-indexer/certs/admin-key.pem
+        mode: 0600
+        uid: "1000"
+        gid: "1000"
+      - source: wazuh1_indexer_cert
+        target: /usr/share/wazuh-indexer/certs/wazuh1.indexer.pem
+        mode: 0600
+        uid: "1000"
+        gid: "1000"
+      - source: wazuh1_indexer_cert_key
+        target: /usr/share/wazuh-indexer/certs/wazuh1.indexer.key
+        mode: 0600
+        uid: "1000"
+        gid: "1000"
+    volumes:
+      # - /etc/timezone:/etc/timezone:ro
+      # - /etc/localtime:/etc/localtime:ro
+      - wazuh-indexer-data-1:/var/lib/wazuh-indexer
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  wazuh2-indexer:
+    # https://hub.docker.com/r/wazuh/wazuh-indexer
+    image: wazuh/wazuh-indexer:${VERSION:-4.8.0-beta4}
+    hostname: wazuh2.indexer
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+    environment:
+      OPENSEARCH_JAVA_OPTS: -Xms${WAZUH_INDEXER_JAVA:-1g} -Xmx${WAZUH_INDEXER_JAVA:-1g}
+      bootstrap.memory_lock: ${MEM_LOCK:-true}
+    configs:
+      - source: wazuh2_indexer_config
+        target: /usr/share/wazuh-indexer/opensearch.yml
+        mode: 0660
+        uid: "1000"
+        gid: "1000"
+      - source: internal_users_config
+        target: /usr/share/wazuh-indexer/opensearch-security/internal_users.yml
+        mode: 0660
+        uid: "1000"
+        gid: "1000"
+
+      - source: root_ca_cert
+        target: /usr/share/wazuh-indexer/certs/root-ca.pem
+        mode: 0600
+        uid: "1000"
+        gid: "1000"
+      - source: wazuh2_indexer_cert
+        target: /usr/share/wazuh-indexer/certs/wazuh2.indexer.pem
+        mode: 0600
+        uid: "1000"
+        gid: "1000"
+      - source: wazuh2_indexer_cert_key
+        target: /usr/share/wazuh-indexer/certs/wazuh2.indexer.key
+        mode: 0600
+        uid: "1000"
+        gid: "1000"
+    volumes:
+      # - /etc/timezone:/etc/timezone:ro
+      # - /etc/localtime:/etc/localtime:ro
+      - wazuh-indexer-data-2:/var/lib/wazuh-indexer
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  wazuh3-indexer:
+    # https://hub.docker.com/r/wazuh/wazuh-indexer
+    image: wazuh/wazuh-indexer:${VERSION:-4.8.0-beta4}
+    hostname: wazuh3.indexer
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+    environment:
+      OPENSEARCH_JAVA_OPTS: -Xms${WAZUH_INDEXER_JAVA:-1g} -Xmx${WAZUH_INDEXER_JAVA:-1g}
+      bootstrap.memory_lock: ${MEM_LOCK:-true}
+    configs:
+      - source: wazuh3_indexer_config
+        target: /usr/share/wazuh-indexer/opensearch.yml
+        mode: 0660
+        uid: "1000"
+        gid: "1000"
+      - source: internal_users_config
+        target: /usr/share/wazuh-indexer/opensearch-security/internal_users.yml
+        mode: 0660
+        uid: "1000"
+        gid: "1000"
+
+      - source: root_ca_cert
+        target: /usr/share/wazuh-indexer/certs/root-ca.pem
+        mode: 0600
+        uid: "1000"
+        gid: "1000"
+      - source: wazuh3_indexer_cert
+        target: /usr/share/wazuh-indexer/certs/wazuh3.indexer.pem
+        mode: 0600
+        uid: "1000"
+        gid: "1000"
+      - source: wazuh3_indexer_cert_key
+        target: /usr/share/wazuh-indexer/certs/wazuh3.indexer.key
+        mode: 0600
+        uid: "1000"
+        gid: "1000"
+    volumes:
+      # - /etc/timezone:/etc/timezone:ro
+      # - /etc/localtime:/etc/localtime:ro
+      - wazuh-indexer-data-3:/var/lib/wazuh-indexer
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  proxy:
+    external: true
+
+volumes:
+  wazuh-dashboard-config:
+    name: wazuh-dashboard-config
+  wazuh-dashboard-custom:
+    name: wazuh-dashboard-custom
+  master-wazuh-api-configuration:
+    name: master-wazuh-api-configuration
+  master-wazuh-etc:
+    name: master-wazuh-etc
+  master-wazuh-logs:
+    name: master-wazuh-logs
+  master-wazuh-queue:
+    name: master-wazuh-queue
+  master-wazuh-var-multigroups:
+    name: master-wazuh-var-multigroups
+  master-wazuh-integrations:
+    name: master-wazuh-integrations
+  master-wazuh-active-response:
+    name: master-wazuh-active-response
+  master-wazuh-agentless:
+    name: master-wazuh-agentless
+  master-wazuh-wodles:
+    name: master-wazuh-wodles
+  master-filebeat-etc:
+    name: master-filebeat-etc
+  master-filebeat-var:
+    name: master-filebeat-var
+  worker-wazuh-api-configuration:
+    name: worker-wazuh-api-configuration
+  worker-wazuh-etc:
+    name: worker-wazuh-etc
+  worker-wazuh-logs:
+    name: worker-wazuh-logs
+  worker-wazuh-queue:
+    name: worker-wazuh-queue
+  worker-wazuh-var-multigroups:
+    name: worker-wazuh-var-multigroups
+  worker-wazuh-integrations:
+    name: worker-wazuh-integrations
+  worker-wazuh-active-response:
+    name: worker-wazuh-active-response
+  worker-wazuh-agentless:
+    name: worker-wazuh-agentless
+  worker-wazuh-wodles:
+    name: worker-wazuh-wodles
+  worker-filebeat-etc:
+    name: worker-filebeat-etc
+  worker-filebeat-var:
+    name: worker-filebeat-var
+  wazuh-indexer-data-1:
+    name: wazuh-indexer-data-1
+  wazuh-indexer-data-2:
+    name: wazuh-indexer-data-2
+  wazuh-indexer-data-3:
+    name: wazuh-indexer-data-3
+
+configs:
+  opensearch_dashboards_config:
+    file: $PWD/config/wazuh_dashboard/opensearch_dashboards.yml
+  wazuh_config:
+    file: $PWD/config/wazuh_dashboard/wazuh.yml
+  wazuh_manager_config:
+    file: $PWD/config/wazuh_cluster/wazuh_manager.conf
+  wazuh_worker_config:
+    file: $PWD/config/wazuh_cluster/wazuh_worker.conf
+  internal_users_config:
+    file: $PWD/config/wazuh_indexer/internal_users.yml
+  wazuh1_indexer_config:
+    file: $PWD/config/wazuh_indexer/wazuh1.indexer.yml
+  wazuh2_indexer_config:
+    file: $PWD/config/wazuh_indexer/wazuh2.indexer.yml
+  wazuh3_indexer_config:
+    file: $PWD/config/wazuh_indexer/wazuh3.indexer.yml
+
+  root_ca_cert:
+    file: $PWD/config/wazuh_indexer_ssl_certs/root-ca.pem
+  wazuh_dashboard_cert:
+    file: $PWD/config/wazuh_indexer_ssl_certs/wazuh.dashboard.pem
+  wazuh_dashboard_cert_key:
+    file: $PWD/config/wazuh_indexer_ssl_certs/wazuh.dashboard-key.pem
+  root_ca_manager_cert:
+    file: $PWD/config/wazuh_indexer_ssl_certs/root-ca-manager.pem
+  wazuh_master_cert:
+    file: $PWD/config/wazuh_indexer_ssl_certs/wazuh.master.pem
+  wazuh_master_cert_key:
+    file: $PWD/config/wazuh_indexer_ssl_certs/wazuh.master-key.pem
+  wazuh_worker_cert:
+    file: $PWD/config/wazuh_indexer_ssl_certs/wazuh.worker.pem
+  wazuh_worker_cert_key:
+    file: $PWD/config/wazuh_indexer_ssl_certs/wazuh.worker-key.pem
+  admin_cert:
+    file: $PWD/config/wazuh_indexer_ssl_certs/admin.pem
+  admin_cert_key:
+    file: $PWD/config/wazuh_indexer_ssl_certs/admin-key.pem
+  wazuh1_indexer_cert:
+    file: $PWD/config/wazuh_indexer_ssl_certs/wazuh1.indexer.pem
+  wazuh1_indexer_cert_key:
+    file: $PWD/config/wazuh_indexer_ssl_certs/wazuh1.indexer-key.pem
+  wazuh2_indexer_cert:
+    file: $PWD/config/wazuh_indexer_ssl_certs/wazuh2.indexer.pem
+  wazuh2_indexer_cert_key:
+    file: $PWD/config/wazuh_indexer_ssl_certs/wazuh2.indexer-key.pem
+  wazuh3_indexer_cert:
+    file: $PWD/config/wazuh_indexer_ssl_certs/wazuh3.indexer.pem
+  wazuh3_indexer_cert_key:
+    file: $PWD/config/wazuh_indexer_ssl_certs/wazuh3.indexer-key.pem
+
+secrets:
+  dashboard_password_file_secret:
+    file: config/secrets/dashboard_password_file_secret.txt
+  indexer_password_file_secret:
+    file: config/secrets/indexer_password_file_secret.txt
+  api_password_file_secret:
+    file: config/secrets/api_password_file_secret.txt

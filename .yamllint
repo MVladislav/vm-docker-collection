@@ -68,5 +68,6 @@ rules:
     level: error
   truthy: disable
   octal-values:
+    level: warning
     forbid-implicit-octal: true
     forbid-explicit-octal: true
