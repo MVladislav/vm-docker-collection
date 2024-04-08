@@ -155,6 +155,11 @@ services:
         published: ${PORT_SYSLOG_PUBLISH:-514}
         protocol: udp
         mode: host
+      # Wazuh server RESTful API
+      - target: ${PORT_RESTFUL:-55000}
+        published: ${PORT_RESTFUL_PUBLISH:-55000}
+        protocol: tcp
+        mode: host
     secrets:
       - indexer_password_file_secret
       - api_password_file_secret
