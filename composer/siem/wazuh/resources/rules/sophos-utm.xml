@@ -1,0 +1,14 @@
+<group name="sophos-utm,firewall,">
+  <rule id="100011" level="0">
+    <decoded_as>sophos-utm</decoded_as>
+    <description>Sophos UTM Log</description>
+    <options>no_full_log</options>
+  </rule>
+
+  <rule id="100012" level="0">
+    <if_sid>100011</if_sid>
+    <field name="program_name">ulogd</field>
+    <description>Sophos UTM Log: firewall</description>
+    <options>no_full_log</options>
+  </rule>
+</group>

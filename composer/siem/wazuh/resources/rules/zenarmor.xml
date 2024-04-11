@@ -1,0 +1,37 @@
+<group name="zenarmor,">
+  <rule id="100011" level="0">
+    <decoded_as>zenarmor-decoder</decoded_as>
+    <description>Zenarmor Log</description>
+    <options>no_full_log</options>
+  </rule>
+
+  <rule id="100012" level="3">
+    <if_sid>100011</if_sid>
+    <field name="security_tags">"Phishing"</field>
+    <description>Zenarmor blocked a connection: Category - Possible Phishing attempt</description>
+    <options>no_full_log</options>
+  </rule>
+
+  <rule id="100013" level="3">
+    <if_sid>100011</if_sid>
+    <field name="security_tags">"Hacking"</field>
+    <description>Zenarmor blocked a connection: Category - Possible Hacking attempt or Hacking tool
+      site access</description>
+    <options>no_full_log</options>
+  </rule>
+
+  <rule id="100014" level="3">
+    <if_sid>100011</if_sid>
+    <field name="security_tags">"Malware"</field>
+    <description>Zenarmor blocked a connection: Category - Possible Malware attempt or Malware tool
+      site access</description>
+    <options>no_full_log</options>
+  </rule>
+
+  <rule id="100015" level="3">
+    <if_sid>100011</if_sid>
+    <field name="security_tags">"Proxy"</field>
+    <description>Zenarmor blocked a connection: Category - Possible Proxy access</description>
+    <options>no_full_log</options>
+  </rule>
+</group>

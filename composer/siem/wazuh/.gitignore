@@ -32,3 +32,14 @@ config/wazuh_dashboard/*
 !config/wazuh_indexer/
 config/wazuh_indexer/*
 !config/wazuh_indexer/*.yml
+
+!resources/
+resources/*
+
+!resources/decoders/
+resources/decoders/*
+!resources/decoders/*.xml
+
+!resources/rules/
+resources/rules/*
+!resources/rules/*.xml

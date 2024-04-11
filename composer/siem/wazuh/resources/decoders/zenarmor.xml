@@ -1,0 +1,23 @@
+<!--
+  -  Zenarmor decoders
+  -  Author: Vladislav Masepohl
+  -  Updated by MVladislav
+  -  Copyright (C) 2024, MVladislav
+  -  This program is a free software; you can redistribute it and/or modify it under the terms of
+GPLv2.
+-->
+
+<!--
+  - Examples:
+  - ...
+-->
+
+<decoder name="zenarmor-decoder">
+  <prematch>zenarmor</prematch>
+</decoder>
+
+<decoder name="zenarmor-conn">
+  <parent>zenarmor-decoder</parent>
+  <prematch>data=</prematch>
+  <plugin_decoder offset="after_prematch">JSON_Decoder</plugin_decoder>
+</decoder>

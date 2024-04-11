@@ -101,6 +101,15 @@ DOMAIN=wazuh.home.local
 - <https://opensearch.org/docs/latest/install-and-configure/install-dashboards/tls/>
 - <https://documentation.wazuh.com/current/getting-started/architecture.html>
 - <https://datatracker.ietf.org/doc/html/rfc3164>
+- decoder
+  - <https://documentation.wazuh.com/current/user-manual/ruleset/custom.html>
+  - <https://github.com/wazuh/wazuh/tree/master/ruleset/decoders>
+  - <https://github.com/wazuh/wazuh-ruleset/tree/master/decoders>
+  - <https://documentation.wazuh.com/current/user-manual/ruleset/ruleset-xml-syntax/decoders.html>
+  - <https://wazuh.com/blog/creating-decoders-and-rules-from-scratch/>
+  - <https://wazuh.com/blog/sibling-decoders-flexible-extraction-of-information/>
+  - <https://documentation.wazuh.com/current/user-manual/ruleset/decoders/sibling-decoders.html>
+  - <https://medium.com/@HirushanTech/creating-custom-decoders-on-wazuh-siem-67563dfe9aff>
 - additional service include references
   - <https://www.youtube.com/watch?v=jNSYinFdWAI>
   - <https://docs.opnsense.org/manual/wazuh-agent.html>
