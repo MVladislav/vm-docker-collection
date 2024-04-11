@@ -9,13 +9,13 @@ x-basic-deploy-labels: &basic-deploy-labels
     - traefik.enable=true
     - traefik.docker.lbswarm=${LB_SWARM:-true}
     - traefik.docker.network=proxy
-    - traefik.http.routers.homepage.entrypoints=https
-    - traefik.http.routers.homepage.rule=Host(`${DOMAIN?domain variable not set}`)
-    - traefik.http.routers.homepage.tls=true
-    - traefik.http.routers.homepage.service=homepage
-    - traefik.http.services.homepage.loadbalancer.server.scheme=${PROTOCOL:-http}
-    - traefik.http.services.homepage.loadbalancer.server.port=${PORT:-3000}
-    - traefik.http.routers.homepage.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.homepage${SERVICE_NAME_POST:-}.entrypoints=https
+    - traefik.http.routers.homepage${SERVICE_NAME_POST:-}.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.homepage${SERVICE_NAME_POST:-}.tls=true
+    - traefik.http.routers.homepage${SERVICE_NAME_POST:-}.service=homepage${SERVICE_NAME_POST:-}
+    - traefik.http.services.homepage${SERVICE_NAME_POST:-}.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.homepage${SERVICE_NAME_POST:-}.loadbalancer.server.port=${PORT:-3000}
+    - traefik.http.routers.homepage${SERVICE_NAME_POST:-}.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
 
 x-basic-deploy: &basic-deploy
   mode: replicated
@@ -70,7 +70,7 @@ services:
   ##############################################################################
   homepage:
     # https://github.com/gethomepage/homepage/pkgs/container/homepage
-    image: ghcr.io/gethomepage/homepage:${VERSION:-v0.8.2}
+    image: ghcr.io/gethomepage/homepage:${VERSION:-v0.8.11}
     <<: *basic
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels]
@@ -91,4 +91,5 @@ networks:
     external: true
 
 volumes:
-  config: {}
+  config:
+    name: homepage${SERVICE_NAME_POST:-}

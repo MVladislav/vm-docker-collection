@@ -45,7 +45,7 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION=v0.8.2
+VERSION=v0.8.11
 
 # APPLICATION general variable to adjust the apps (optional set by default)
 # ______________________________________________________________________________
@@ -58,7 +58,7 @@ PGID=1000
 ```env
 NETWORK_MODE=overlay
 DOMAIN=homepage.home.local
-VERSION=v0.8.2
+VERSION=v0.8.11
 ```
 
 ---
