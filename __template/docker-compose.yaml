@@ -10,13 +10,13 @@ x-basic-deploy-labels: &basic-deploy-labels
     - traefik.enable=true
     - traefik.docker.lbswarm=${LB_SWARM:-true}
     - traefik.docker.network=proxy
-    - traefik.http.routers.<router_name>.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
-    - traefik.http.routers.<router_name>.rule=Host(`${DOMAIN?domain variable not set}`)
-    - traefik.http.routers.<router_name>.tls=true
-    - traefik.http.routers.<router_name>.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
-    - traefik.http.routers.<router_name>.service=<router_name>
-    - traefik.http.services.<router_name>.loadbalancer.server.scheme=${PROTOCOL:-https}
-    - traefik.http.services.<router_name>.loadbalancer.server.port=${PORT:-443}
+    - traefik.http.routers.<router_name>${SERVICE_NAME_POST:-}.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.<router_name>${SERVICE_NAME_POST:-}.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.<router_name>${SERVICE_NAME_POST:-}.tls=true
+    - traefik.http.routers.<router_name>${SERVICE_NAME_POST:-}.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.<router_name>${SERVICE_NAME_POST:-}.service=<router_name>${SERVICE_NAME_POST:-}
+    - traefik.http.services.<router_name>${SERVICE_NAME_POST:-}.loadbalancer.server.scheme=${PROTOCOL:-https}
+    - traefik.http.services.<router_name>${SERVICE_NAME_POST:-}.loadbalancer.server.port=${PORT:-443}
 
 x-basic-deploy: &basic-deploy
   mode: replicated
@@ -236,7 +236,8 @@ networks:
     external: true
 #
 # volumes:
-#   data: {}
+#   data:
+#     name: data${SERVICE_NAME_POST:-}
 #   ## sudo apt install nfs-common
 #   # nas-data:
 #   #   # name: nas-data
