@@ -19,19 +19,17 @@ ENV PHP_EXTRA_CONFIGURE_ARGS --enable-fpm --with-fpm-user=www-data --with-fpm-gr
 RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections
 RUN \
   echo "**** install MAIN packages ****" \
-  apk update; \
-  apk add --update \
+  apk update
+apk add --update \
   git \
   wget \
   curl \
-  bash;
-
+  bash
 
 RUN \
-  echo "**** cleanup ****" \
-  && rm -rf \
-  /var/cache/apk/*
-
+  echo "**** cleanup ****" &&
+  rm -rf \
+    /var/cache/apk/*
 
 # ------------------------------------------------------------------------------
 
