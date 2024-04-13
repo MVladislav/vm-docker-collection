@@ -111,6 +111,24 @@ NEXTCLOUD_NFS_IP=<NFS_SYSTEM_IP_ADDRESS>
 NEXTCLOUD_NFS_PATH_MASTER=<NFS_PATH>
 ```
 
+## Manual run after install
+
+### set default phone region
+
+> change "DE" with your country code
+
+```sh
+$docker exec --user www-data nextcloud-aio-nextcloud php occ config:system:set default_phone_region --value="DE"
+```
+
+## Helpers
+
+### Bruteforce protection - unblock ip
+
+```sh
+$docker exec --user www-data -it nextcloud-aio-nextcloud php occ security:bruteforce:reset <ip-address>
+```
+
 ---
 
 ## References
@@ -118,3 +136,5 @@ NEXTCLOUD_NFS_PATH_MASTER=<NFS_PATH>
 - <https://github.com/nextcloud/all-in-one>
 - <https://github.com/nextcloud/all-in-one/blob/main/reverse-proxy.md#1-configure-the-reverse-proxy>
 - <https://github.com/nextcloud/all-in-one/discussions/575#discussion-4055615>
+- <https://github.com/nextcloud/all-in-one#how-to-resolve-security--setup-warnings-displays-the-missing-default-phone-region-after-initial-install>
+- <https://github.com/nextcloud/all-in-one?tab=readme-ov-file#bruteforce-protection-faq>
