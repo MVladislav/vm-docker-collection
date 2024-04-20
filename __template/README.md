@@ -13,6 +13,7 @@
       - [example short .env](#example-short-env)
   - [Helper](#helper)
     - [verify healthcheck](#verify-healthcheck)
+    - [access docker in swarm mode](#access-docker-in-swarm-mode)
   - [References](#references)
 
 ---
@@ -81,6 +82,12 @@ VERSION=latest
 
 ```sh
 $docker inspect --format "{{json .State.Health }}" <CONTAINER_NAME> | jq
+```
+
+### access docker in swarm mode
+
+```sh
+$docker exec -it "$(docker ps -q -f name=<SERVICE_NAME>)" <COMMAND>
 ```
 
 ---
