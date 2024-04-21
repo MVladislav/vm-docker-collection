@@ -1,0 +1,121 @@
+---
+version: "3.8"
+
+################################################################################
+################################################################################
+################################################################################
+
+x-basic-deploy-labels: &basic-deploy-labels
+  labels:
+    - traefik.enable=true
+    - traefik.docker.lbswarm=${LB_SWARM:-true}
+    - traefik.docker.network=proxy
+    - traefik.http.routers.crater.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.crater.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.crater.tls=true
+    - traefik.http.routers.crater.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.crater.service=crater
+    - traefik.http.services.crater.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.crater.loadbalancer.server.port=${PORT:-80}
+
+x-basic-deploy: &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  restart_policy:
+    condition: on-failure
+  resources:
+    limits:
+      cpus: ${RESOURCES_LIMITS_CPUS:-1}
+      memory: ${RESOURCES_LIMITS_MEMORY:-1g}
+    reservations:
+      cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
+      memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
+
+x-basic: &basic
+  env_file: .env
+  # cap_add:
+  #   # https://dockerlabs.collabnix.com/advanced/security/capabilities/
+  #   - CHOWN
+  #   - DAC_OVERRIDE
+  #   - DAC_READ_SEARCH
+  #   - SETGID
+  #   - SETUID
+  #   - FOWNER
+  #   - FSETID
+  # cap_drop: ["ALL"]
+  # security_opt:
+  #   - no-new-privileges:true
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 655360
+      hard: 655360
+    fsize: -1
+    as: -1
+  networks:
+    default: {}
+  healthcheck:
+    disable: true
+  restart: always
+
+################################################################################
+################################################################################
+################################################################################
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  crater:
+    build:
+      context: https://github.com/crater-invoice/crater.git#main
+      dockerfile: ./Dockerfile
+      args:
+        user: crater-user
+        uid: 1000
+    image: crater:${VERSION:-2024.04}
+    <<: [*basic, *basic-deploy-labels]
+    deploy:
+      <<: [*basic-deploy, *basic-deploy-labels]
+    configs:
+      - source: php_ini_config
+        target: /usr/local/etc/php/conf.d/uploads.ini
+        mode: 0660
+        uid: "1000"
+        gid: "1000"
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - data:/var/www
+    networks:
+      default: {}
+      proxy: {}
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  default:
+    driver: ${NETWORK_MODE:-bridge}
+    attachable: true
+    driver_opts:
+      encrypted: "true"
+  proxy:
+    external: true
+
+volumes:
+  data: {}
+
+configs:
+  php_ini_config:
+    file: $PWD/config/uploads.ini
+
+secrets:
+  my_file_secret:
+    file: config/secrets/my_file_secret.txt

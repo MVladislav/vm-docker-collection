@@ -36,7 +36,7 @@ NETWORK_MODE=overlay # by default "bridge"
 # GENERAL traefik variables (set by default, change as needed)
 # ______________________________________________________________________________
 LB_SWARM=true
-DOMAIN=openproject.home.local # not set in docker-compose, needs to be copied to .env
+DOMAIN=crater.home.local # not set in docker-compose, needs to be copied to .env
 PROTOCOL=https
 PORT=443
 # default-secured@file | public-whitelist@file | authentik@file
@@ -51,7 +51,8 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION=latest
+VERSION_CRATER=latest
+VERSION_MARIADB=11.3.2
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
@@ -62,7 +63,7 @@ VERSION=latest
 
 ```env
 NETWORK_MODE=overlay
-DOMAIN=openproject.home.local
+DOMAIN=crater.home.local
 VERSION=latest
 ```
 
@@ -70,7 +71,7 @@ VERSION=latest
 
 ## References
 
-- <https://www.openproject.org/>
-- <https://www.openproject.org/docs/installation-and-operations/installation/docker/>
-- <https://github.com/opf/openproject-deploy>
-  - <https://github.com/opf/openproject-deploy/tree/stable/13/compose>
+- <https://crater.financial/>
+- <https://github.com/crater-invoice/crater>
+- <https://docs.craterapp.com/installation.html#docker-installation>
+  - <https://github.com/crater-invoice/crater/blob/master/docker-compose.yml>

@@ -10,13 +10,13 @@ x-basic-deploy-labels: &basic-deploy-labels
     - traefik.enable=true
     - traefik.docker.lbswarm=${LB_SWARM:-true}
     - traefik.docker.network=proxy
-    - traefik.http.routers.<router_name>.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
-    - traefik.http.routers.<router_name>.rule=Host(`${DOMAIN?domain variable not set}`)
-    - traefik.http.routers.<router_name>.tls=true
-    - traefik.http.routers.<router_name>.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
-    - traefik.http.routers.<router_name>.service=<router_name>
-    - traefik.http.services.<router_name>.loadbalancer.server.scheme=${PROTOCOL:-https}
-    - traefik.http.services.<router_name>.loadbalancer.server.port=${PORT:-443}
+    - traefik.http.routers.<router_name>${SERVICE_NAME_POST:-}.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.<router_name>${SERVICE_NAME_POST:-}.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.<router_name>${SERVICE_NAME_POST:-}.tls=true
+    - traefik.http.routers.<router_name>${SERVICE_NAME_POST:-}.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.<router_name>${SERVICE_NAME_POST:-}.service=<router_name>${SERVICE_NAME_POST:-}
+    - traefik.http.services.<router_name>${SERVICE_NAME_POST:-}.loadbalancer.server.scheme=${PROTOCOL:-https}
+    - traefik.http.services.<router_name>${SERVICE_NAME_POST:-}.loadbalancer.server.port=${PORT:-443}
 
 x-basic-deploy: &basic-deploy
   mode: replicated
@@ -97,8 +97,8 @@ x-basic: &basic
       soft: -1
       hard: -1
     nofile:
-      soft: 65535
-      hard: 65535
+      soft: 655360
+      hard: 655360
     fsize: -1
     as: -1
   # mem_limit: 1g
@@ -157,8 +157,8 @@ services:
     build:
       context: .
       dockerfile: ./Dockerfile
-      # context: https://github.com/FreshRSS/FreshRSS.git#latest
-      # dockerfile: Docker/Dockerfile-Alpine
+      # context: https://github.com/<TODO>/<TODO>.git#main
+      # dockerfile: ./Dockerfile
       args:
         BUILD_DATE: ${BUILD_DATE:-2022}
         VERSION: ${VERSION:-latest}
@@ -234,21 +234,25 @@ networks:
       encrypted: "true"
   proxy:
     external: true
-  nas-data:
-    driver: local
-    driver_opts:
-      type: nfs
-      o: nfsvers=4,addr=${NAS_HOST},rw,noatime,rsize=8192,wsize=8192,tcp,timeo=14
-      device: ":${NAS_PATH:-/}"
-  smb-data:
-    driver: local
-    driver_opts:
-      type: "cifs"
-      device: "//${NAS_HOST}${NAS_PATH:-/}"
-      o: "username=${NAS_USERNAME},password=${NAS_PASSWORD},vers=3.0,uid=${NAS_PUID:-1000},gid=${NAS_PGID:-1000}"
 #
 # volumes:
-#   data: {}
+#   data:
+#     name: data${SERVICE_NAME_POST:-}
+#   ## sudo apt install nfs-common
+#   # nas-data:
+#   #   # name: nas-data
+#   #   driver: local
+#   #   driver_opts:
+#   #     type: nfs
+#   #     o: nfsvers=4,addr=${NAS_HOST},rw,noatime,rsize=8192,wsize=8192,tcp,timeo=14
+#   #     device: ":${NAS_PATH:-/}"
+#   # smb-data:
+#   #   # name: smb-data
+#   #   driver: local
+#   #   driver_opts:
+#   #     type: cifs
+#   #     device: "//${NAS_HOST}${NAS_PATH:-/}"
+#   #     o: "username=${NAS_USERNAME},password=${NAS_PASSWORD},vers=3.0,uid=${NAS_PUID:-1000},gid=${NAS_PGID:-1000}"
 #
 # configs:
 #   xx_config:
