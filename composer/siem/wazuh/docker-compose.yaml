@@ -175,6 +175,11 @@ services:
       SSL_CERTIFICATE: /etc/ssl/filebeat.pem
       SSL_KEY: /etc/ssl/filebeat.key
     configs:
+      - source: authd_pass_secret
+        target: /var/ossec/etc/authd.pass
+        mode: 0640
+        uid: "0"
+        gid: "999"
       - source: wazuh_manager_config
         target: /wazuh-config-mount/etc/ossec.conf
         mode: 0660
@@ -535,6 +540,8 @@ configs:
     file: $PWD/config/wazuh_indexer_ssl_certs/wazuh3.indexer-key.pem
 
 secrets:
+  authd_pass_secret:
+    file: config/secrets/authd_pass_secret.txt
   dashboard_password_file_secret:
     file: config/secrets/dashboard_password_file_secret.txt
   indexer_password_file_secret:
