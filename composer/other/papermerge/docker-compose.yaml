@@ -37,7 +37,7 @@ x-backend: &backend
     PAPERMERGE__REDIS__PORT: ${REDIS_PORT:-6379}
 
     # PAPERMERGE__SEARCH__PATH: /app/xapian_index
-    PAPERMERGE__SEARCH__ENGINE : ${SEARCH_ENGINES_MAP:-elastic} # xapian
+    PAPERMERGE__SEARCH__ENGINE: ${SEARCH_ENGINES_MAP:-elastic} # xapian
     PAPERMERGE__SEARCH__URL: ${SEARCH_URL:-http://elasticsearch:9200}
     PAPERMERGE__SEARCH__INDEX_NAME: ${SEARCH_INDEX_NAME:-papermerge}
 
@@ -79,7 +79,7 @@ services:
   ##############################################################################
   ##############################################################################
   ##############################################################################
-  ws_server:  # websockets server / daphne
+  ws_server: # websockets server / daphne
     <<: *backend
     command: ws_server
     deploy:
@@ -109,7 +109,7 @@ services:
   ##############################################################################
   ##############################################################################
   ##############################################################################
-  backend:  # rest api backend / uwsgi
+  backend: # rest api backend / uwsgi
     <<: *backend
     deploy:
       mode: replicated
@@ -287,7 +287,6 @@ services:
     networks:
       default: {}
     restart: always
-
 
 ################################################################################
 ################################################################################

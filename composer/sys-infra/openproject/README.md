@@ -8,11 +8,9 @@
 
 - [SETUP](#setup)
   - [basic](#basic)
+    - [create your `secrets`:](#create-your-secrets)
     - [create `.env` file following:](#create-env-file-following)
       - [example short .env](#example-short-env)
-  - [FAQ](#faq)
-    - [login](#login)
-    - [oauth](#oauth)
   - [References](#references)
 
 ---
@@ -21,74 +19,62 @@
 
 > defined to work with treafik
 
+### create your `secrets`:
+
+> instead of openssl for password you can also use `pwgen -s 50 1`
+
+```sh
+$openssl rand -base64 18 | docker secret create my_external_secret -
+$openssl rand -base64 18 > config/secrets/my_file_secret.txt
+```
+
 ### create `.env` file following:
 
 ```env
 # GENERAL variables (mostly by default, change as needed)
 # ______________________________________________________________________________
+NODE_ID=
 NODE_ROLE=manager
 NETWORK_MODE=overlay # by default "bridge"
 
 # GENERAL traefik variables (set by default, change as needed)
 # ______________________________________________________________________________
 LB_SWARM=true
-DOMAIN=kimai.home.local # not set in docker-compose, needs to be copied to .env
-PROTOCOL=http
-PORT=8001
+DOMAIN=<HOST>.home.local # not set in docker-compose, needs to be copied to .env
+PROTOCOL=https
+PORT=443
 # default-secured@file | public-whitelist@file | authentik@file
 MIDDLEWARE_SECURED=default-secured@file
 
 # GENERAL sources to be used (set by default, change as needed)
 # ______________________________________________________________________________
-RESOURCES_LIMITS_CPUS=0.5
-RESOURCES_LIMITS_MEMORY=500m
+RESOURCES_LIMITS_CPUS=1
+# 500m | 1g | ...
+RESOURCES_LIMITS_MEMORY=1g
 RESOURCES_RESERVATIONS_CPUS=0.001
 RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_KIMAI=apache-2.4.1-prod
-VERSION_MARIADB=11.2.2
+VERSION=latest
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
-MARIADB_PASSWORD=
+# NOTE: extend additional info here ...
 ```
 
 #### example short .env
 
 ```env
 NETWORK_MODE=overlay
-DOMAIN=kimai.home.local
-
-VERSION_KIMAI=apache-2.4.1-prod
-VERSION_MARIADB=11.2.2
-
-MARIADB_PASSWORD=
+DOMAIN=<HOST>.home.local
+VERSION=latest
 ```
-
----
-
-## FAQ
-
-### login
-
-On intial setup you need to assigne the first user manually a admin roles:
-
-```sh
-$docker exec -it "$(docker ps -q -f name=kimai_kimai)" /opt/kimai/bin/console kimai:user:create admin admin@home.local ROLE_SUPER_ADMIN
-```
-
-### oauth
-
-- [goauthentik setup](https://github.com/MVladislav/vm-docker-collection/tree/main/composer/helper/goauthentik)
-- [config example](https://www.kimai.org/documentation/saml-authentik.html)
-- [config example](https://goauthentik.io/integrations/services/kimai/)
 
 ---
 
 ## References
 
-- <https://hub.docker.com/r/kimai/kimai2>
-- <https://github.com/kimai/kimai>
-- <https://www.kimai.org/documentation/docker-compose.html>
+- <https://www.openproject.org/>
+- <https://www.openproject.org/docs/installation-and-operations/installation/docker/>
+- <https://github.com/opf/openproject-deploy>

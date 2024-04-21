@@ -5,8 +5,7 @@ version: "3.8"
 ################################################################################
 ################################################################################
 
-x-basic-deploy-labels:
-  &basic-deploy-labels
+x-basic-deploy-labels: &basic-deploy-labels
   labels:
     - traefik.enable=true
     - traefik.docker.lbswarm=${LB_SWARM:-true}
@@ -19,8 +18,7 @@ x-basic-deploy-labels:
     - traefik.http.services.nextcloud.loadbalancer.server.scheme=${PROTOCOL:-http}
     - traefik.http.services.nextcloud.loadbalancer.server.port=${PORT:-80}
 
-x-basic-deploy:
-  &basic-deploy
+x-basic-deploy: &basic-deploy
   mode: replicated
   replicas: 1
   placement:
@@ -38,8 +36,7 @@ x-basic-deploy:
       cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
       memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
 
-x-basic:
-  &basic
+x-basic: &basic
   env_file: .env
   user: "${GID:-www-data}:${UID:-www-data}"
   # cap_add:
@@ -103,8 +100,7 @@ x-basic:
     disable: true
   restart: always
 
-x-nextcloud-env:
-  &nextcloud-env
+x-nextcloud-env: &nextcloud-env
   VIRTUAL_HOST: ${VIRTUAL_HOST:-}
 
   NEXTCLOUD_ADMIN_USER: ${NEXTCLOUD_ADMIN_USER:-admin}
@@ -139,7 +135,7 @@ services:
     image: nextcloud:${VERSION_NEXTCLOUD:-27.1.3-apache}
     <<: [*basic, *basic-deploy-labels]
     deploy:
-      <<: [ *basic-deploy, *basic-deploy-labels ]
+      <<: [*basic-deploy, *basic-deploy-labels]
     # cap_add:
     #   - MKNOD
     # read_only: true
@@ -154,13 +150,7 @@ services:
       - nextcloud_html:/var/www/html
       - nextcloud_data:/var/www/data
     healthcheck:
-      test:
-        [
-          "CMD",
-          "curl",
-          "-f",
-          "${PROTOCOL:-http}://127.0.0.1:${PORT:-80}"
-        ]
+      test: ["CMD", "curl", "-f", "${PROTOCOL:-http}://127.0.0.1:${PORT:-80}"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -182,19 +172,11 @@ services:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - redis:/data
-    command:
-      [
-        "redis-server",
-        "--save",
-        "60",
-        "1",
-        "--loglevel",
-        "warning"
-      ]
+    command: ["redis-server", "--save", "60", "1", "--loglevel", "warning"]
     networks:
       default: {}
     healthcheck:
-      test: [ "CMD", "redis-cli", "ping" ]
+      test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -225,7 +207,6 @@ services:
     networks:
       default: {}
       mysql: {}
-
 
 ################################################################################
 ################################################################################

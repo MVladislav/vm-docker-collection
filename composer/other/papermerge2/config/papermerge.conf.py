@@ -1,6 +1,6 @@
 # DBTYPE = "mariadb"  # Uncomment this to enable an external DB instead of local SQLite, refer to Papermerge docs
 DBUSER = "root"
-DBPASS = "root"
+DBPASS = "root"  # pragma: allowlist secret
 DBHOST = "mariadb"
 DBNAME = "papermerge"
 
