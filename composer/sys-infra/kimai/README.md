@@ -8,6 +8,7 @@
 
 - [SETUP](#setup)
   - [basic](#basic)
+    - [create your `secrets`:](#create-your-secrets)
     - [create `.env` file following:](#create-env-file-following)
       - [example short .env](#example-short-env)
   - [FAQ](#faq)
@@ -20,6 +21,12 @@
 ## basic
 
 > defined to work with treafik
+
+### create your `secrets`:
+
+```sh
+$pwgen -s 32 1 > config/secrets/mariadb_user_password.txt
+```
 
 ### create `.env` file following:
 
@@ -47,12 +54,12 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_KIMAI=apache-2.4.1-prod
-VERSION_MARIADB=11.2.2
+VERSION_KIMAI=apache-2.15.0-prod
+VERSION_MARIADB=11.3.2
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
-MARIADB_PASSWORD=
+DB_PASS=$(cat config/secrets/mariadb_user_password.txt)
 ```
 
 #### example short .env
@@ -61,10 +68,10 @@ MARIADB_PASSWORD=
 NETWORK_MODE=overlay
 DOMAIN=kimai.home.local
 
-VERSION_KIMAI=apache-2.4.1-prod
-VERSION_MARIADB=11.2.2
+VERSION_KIMAI=apache-2.15.0-prod
+VERSION_MARIADB=11.3.2
 
-MARIADB_PASSWORD=
+DB_PASS=$(cat config/secrets/mariadb_user_password.txt)
 ```
 
 ---
@@ -73,10 +80,10 @@ MARIADB_PASSWORD=
 
 ### login
 
-On initial setup you need to assign the first user manually a admin roles:
+On initial setup you need to assign the first user manually an admin roles:
 
 ```sh
-$docker exec -it "$(docker ps -q -f name=kimai_kimai)" /opt/kimai/bin/console kimai:user:create admin admin@home.local ROLE_SUPER_ADMIN
+$docker exec -it "$(docker ps -q -f name=kimai_kimai)" /opt/kimai/bin/console kimai:user:create admin 'admin@home.local' ROLE_SUPER_ADMIN
 ```
 
 ### oauth
