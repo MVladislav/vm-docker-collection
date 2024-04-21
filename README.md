@@ -40,21 +40,18 @@ services:
 ```
 
 to start this configuration with all supportings between docker-stack and docker-composer
-run it with following commando:
+run it example as follow:
 
-```sh
-$DOCKER_BUILDKIT=1 docker-compose config | CONFIG_VERSION=1 docker stack deploy --resolve-image=never --with-registry-auth --compose-file - <STACK_NAME>
-```
-
-or create directly an alias for it:
+create alias for a `docker-swarm` command:
 
 ```sh
 $alias docker='DOCKER_BUILDKIT=1 docker'
-$alias docker-compose='DOCKER_BUILDKIT=1 docker-compose'
-$alias docker-swarm-compose='docker-compose config | CONFIG_VERSION=1 docker stack deploy --resolve-image=never --with-registry-auth --compose-file -'
+$alias docker-compose='docker compose'
+$alias docker-swarm-compose='docker compose --compatibility config | sed '\''s|cpus: \([0-9]\+\(\.[0-9]\+\)*\)|cpus: "\1"|'\'' | sed '\''1{/^name:/d}'\'' | sed '\''s/published: "\(.*\)"/published: \1/'\'' | docker stack deploy --resolve-image=never --with-registry-auth --compose-file -'
+
 ```
 
-and run:
+and as run:
 
 ```sh
 $docker-swarm-compose <STACK_NAME>
@@ -64,7 +61,15 @@ $docker-swarm-compose <STACK_NAME>
 
 ## References
 
-- ...
+- Not included
+  - <https://github.com/crater-invoice/crater>
+    - <https://www.youtube.com/watch?v=velKYXN3A_w>
+  - <https://hay-kot.github.io/homebox/quick-start/>
+  - <https://github.com/mattermost/mattermost>
+  - <https://listmonk.app/>
+  - <https://github.com/hackmdio/codimd>
+  - <https://rustdesk.com/docs/en/self-host/rustdesk-server-oss/docker/>
+  - <https://zentyal.com/>
 
 ---
 
