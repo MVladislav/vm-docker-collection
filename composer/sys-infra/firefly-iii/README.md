@@ -10,6 +10,7 @@
   - [basic](#basic)
     - [create your `secrets`:](#create-your-secrets)
     - [create `.env` file following:](#create-env-file-following)
+      - [example short .env](#example-short-env)
   - [References](#references)
 
 ---
@@ -21,38 +22,57 @@
 ### create your `secrets`:
 
 ```sh
-$openssl rand -base64 18 > config/secrets/fireflyiii_password.txt
-$openssl rand -base64 18 > config/secrets/mariadb_root_password.txt
-$openssl rand -base64 18 > config/secrets/mariadb_user_password.txt
+$pwgen -s 32 1 > config/secrets/mariadb_user_password.txt
+$pwgen -s 32 1 > config/secrets/app_key_file_password.txt
+$echo "mail@example.com" > config/secrets/site_owner_conf.txt
 ```
 
 ### create `.env` file following:
 
 ```env
+# GENERAL variables (mostly by default, change as needed)
+# ______________________________________________________________________________
 NODE_ROLE=manager
-NETWORK_MODE=overlay
+NETWORK_MODE=overlay # by default "bridge"
 
-VERSION_FIREFLY=version-6.0.26
-VERSION_DB=11.1.2
-VERSION_ALPINE=3.18.3
-
+# GENERAL traefik variables (set by default, change as needed)
+# ______________________________________________________________________________
 LB_SWARM=true
 DOMAIN=firefly.home.local
-PROTOCOL=https
-PORT=443
+PROTOCOL=http
+PORT=8080
 # default-secured@file | public-whitelist@file | authentik@file
 MIDDLEWARE_SECURED=default-secured@file
 
-RESOURCES_LIMITS_CPUS="1"
-# 500m | 1g | ...
+# GENERAL sources to be used (set by default, change as needed)
+# ______________________________________________________________________________
+RESOURCES_LIMITS_CPUS=1
 RESOURCES_LIMITS_MEMORY=1g
-RESOURCES_RESERVATIONS_CPUS="0.001"
+RESOURCES_RESERVATIONS_CPUS=0.001
 RESOURCES_RESERVATIONS_MEMORY=32m
 
-APP_KEY=SomeRandomStringOf32CharsExactly
-SITE_OWNER=mail@example.com
+RESOURCES_LIMITS_CPUS_MARIADB=1
+RESOURCES_LIMITS_MEMORY_MARIADB=512M
+RESOURCES_RESERVATIONS_CPUS_MARIADB=0.001
+RESOURCES_RESERVATIONS_MEMORY_MARIADB=32m
 
+# APPLICATION version for easy update
 # ______________________________________________________________________________
+VERSION_FIREFLY=version-6.1.13
+VERSION_MARIADB=11.3.2
+VERSION_ALPINE=3.19.1
+
+# APPLICATION general variable to adjust the apps
+# ______________________________________________________________________________
+STATIC_CRON_TOKEN=$(pwgen -s 32 1)
+
+# OPTIONAL
+# https://github.com/firefly-iii/firefly-iii/tree/main/resources/lang
+DEFAULT_LANGUAGE=de_DE
+DEFAULT_LOCALE=equal
+# https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+TZ=Europe/Berlin
+
 # OPTIONAL
 # https://docs.firefly-iii.org/firefly-iii/advanced-installation/email/#email
 MAIL_MAILER=log
@@ -63,75 +83,21 @@ MAIL_USERNAME=null
 MAIL_PASSWORD=null
 MAIL_ENCRYPTION=null
 MAIL_SENDMAIL_COMMAND=
+```
 
-# ______________________________________________________________________________
-# OPTIONAL set by default
-APP_ENV=local # local | production
-APP_DEBUG=false
+#### example short .env
 
-# https://github.com/firefly-iii/firefly-iii/tree/main/resources/lang
-DEFAULT_LANGUAGE=de_DE
-DEFAULT_LOCALE=equal
-# https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
-TZ=Europe/Berlin
+```env
+NETWORK_MODE=overlay
+DOMAIN=firefly.home.local
 
-TRUSTED_PROXIES=**
-LOG_CHANNEL=stack
-# debug, info, notice, warning, error, critical, alert, emergency
-APP_LOG_LEVEL=notice
-# info, emergency
-AUDIT_LOG_LEVEL=emergency
-AUDIT_LOG_CHANNEL=
+VERSION_FIREFLY=version-6.1.13
+VERSION_MARIADB=11.3.2
+VERSION_ALPINE=3.19.1
 
-DB_CONNECTION=mysql
-DB_HOST=fireflyiii_db
-DB_PORT=3306
-DB_DATABASE=firefly
-DB_USERNAME=firefly
+STATIC_CRON_TOKEN=$(pwgen -s 32 1)
 
-CACHE_DRIVER=file
-SESSION_DRIVER=file
-COOKIE_PATH="/"
-COOKIE_DOMAIN=
-COOKIE_SECURE=false
-COOKIE_SAMESITE=lax
-
-SEND_ERROR_MESSAGE=true
-SEND_REPORT_JOURNALS=true
-
-ENABLE_EXTERNAL_MAP=false
-ENABLE_EXTERNAL_RATES=false
-
-# The map will default to this location:
-MAP_DEFAULT_LAT=51.983333
-MAP_DEFAULT_LONG=5.916667
-MAP_DEFAULT_ZOOM=6
-
-# https://docs.firefly-iii.org/firefly-iii/advanced-installation/authentication
-AUTHENTICATION_GUARD=web
-AUTHENTICATION_GUARD_HEADER=REMOTE_USER
-AUTHENTICATION_GUARD_EMAIL=
-PASSPORT_PRIVATE_KEY=
-PASSPORT_PUBLIC_KEY=
-DISABLE_FRAME_HEADER=false
-DISABLE_CSP_HEADER=false
-ALLOW_WEBHOOKS=false
-
-# Leave the following configuration vars as is.
-# Unless you like to tinker and know what you're doing.
-APP_NAME=FireflyIII
-BROADCAST_DRIVER=log
-QUEUE_DRIVER=sync
-CACHE_PREFIX=firefly
-PUSHER_KEY=
-IPINFO_TOKEN=
-PUSHER_SECRET=
-PUSHER_ID=
-DEMO_USERNAME=
-DEMO_PASSWORD=
-FIREFLY_III_LAYOUT=v1
-
-APP_URL=http://localhost
+FIREFLY_III_LAYOUT=v2
 ```
 
 ---
@@ -140,3 +106,4 @@ APP_URL=http://localhost
 
 - <https://www.firefly-iii.org/>
 - <https://github.com/firefly-iii/firefly-iii>
+- <https://github.com/firefly-iii/docker>

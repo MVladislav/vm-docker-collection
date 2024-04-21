@@ -45,14 +45,8 @@ x-basic: &basic
   #   - DAC_READ_SEARCH
   #   - SETGID
   #   - SETUID
-  #   - NET_ADMIN
-  #   - NET_RAW
-  #   - NET_BIND_SERVICE
-  #   - NET_BROADCAST
-  #   - SYS_MODULE
-  #   - SYS_NICE
-  #   - AUDIT_CONTROL
-  #   - AUDIT_READ
+  #   - FOWNER
+  #   - FSETID
   cap_add: ["ALL"] # TODO: remove only test
   # cap_drop: ["ALL"]
   security_opt:
@@ -62,12 +56,14 @@ x-basic: &basic
       soft: -1
       hard: -1
     nofile:
-      soft: 65535
-      hard: 65535
+      soft: 655360
+      hard: 655360
     fsize: -1
     as: -1
   networks:
     default: {}
+  healthcheck:
+    disable: true
   restart: always
 
 ################################################################################
@@ -80,31 +76,40 @@ services:
   ##############################################################################
   fireflyiii:
     # https://hub.docker.com/r/fireflyiii/core
-    image: fireflyiii/core:${VERSION_FIREFLY:-version-6.0.26}
-    <<: *basic
+    image: fireflyiii/core:${VERSION_FIREFLY:-version-6.1.13}
+    <<: [*basic, *basic-deploy-labels]
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels]
     secrets:
-      - fireflyiii_password
+      - site_owner_conf
+      - app_key_file_password
+      - mariadb_user_password
     environment:
-      APP_ENV: ${APP_ENV:-local}
-      APP_DEBUG: ${APP_DEBUG:-false}
+      SITE_OWNER_FILE: /run/secrets/site_owner_conf
+      APP_KEY_FILE: /run/secrets/app_key_file_password
+
+      APP_URL: "https://${DOMAIN?domain variable not set}"
+      TRUSTED_PROXIES: ${TRUSTED_PROXIES:-**}
+
       DEFAULT_LANGUAGE: ${DEFAULT_LANGUAGE:-de_DE}
       DEFAULT_LOCALE: ${DEFAULT_LOCALE:-equal}
       TZ: ${TZ:-Europe/Berlin}
-      TRUSTED_PROXIES: ${TRUSTED_PROXIES:-**}
+
+      APP_ENV: ${APP_ENV:-local}
+      APP_DEBUG: ${APP_DEBUG:-false}
       LOG_CHANNEL: ${LOG_CHANNEL:-stack}
       APP_LOG_LEVEL: ${APP_LOG_LEVEL:-notice}
       AUDIT_LOG_LEVEL: ${AUDIT_LOG_LEVEL:-emergency}
       AUDIT_LOG_CHANNEL: ${AUDIT_LOG_CHANNEL:-}
 
       DB_CONNECTION: ${DB_CONNECTION:-mysql}
-      DB_HOST: ${DB_HOST:-fireflyiii_db}
+      DB_HOST: ${DB_HOST:-mariadb}
       DB_PORT: ${DB_PORT:-3306}
-      DB_USERNAME: ${DB_USERNAME:-firefly}
-      DB_DATABASE: ${DB_DATABASE:-firefly}
-      DB_PASSWORD_FILE: /run/secrets/fireflyiii_password
+      DB_USERNAME: ${MARIADB_USER:-firefly}
+      DB_DATABASE: ${MARIADB_USER:-firefly}
+      DB_PASSWORD_FILE: /run/secrets/mariadb_user_password
 
+      # If you're looking for performance improvements, you could install memcached or redis
       CACHE_DRIVER: ${CACHE_DRIVER:-file}
       SESSION_DRIVER: ${SESSION_DRIVER:-file}
 
@@ -121,6 +126,11 @@ services:
       MAP_DEFAULT_LONG: ${MAP_DEFAULT_LONG:-5.916667}
       MAP_DEFAULT_ZOOM: ${MAP_DEFAULT_ZOOM:-6}
 
+      # Firefly III supports a few authentication methods:
+      # - 'web' (default, uses built in DB)
+      # - 'remote_user_guard' for Authelia etc
+      # Read more about these settings in the documentation.
+      # https://docs.firefly-iii.org/how-to/firefly-iii/advanced/authentication/
       AUTHENTICATION_GUARD: ${AUTHENTICATION_GUARD:-web}
       AUTHENTICATION_GUARD_HEADER: ${AUTHENTICATION_GUARD_HEADER:-REMOTE_USER}
       AUTHENTICATION_GUARD_EMAIL: ${AUTHENTICATION_GUARD_EMAIL:-}
@@ -132,65 +142,69 @@ services:
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-      - firefly_iii_upload:/var/www/html/storage/upload
+      - upload:/var/www/html/storage/upload
     networks:
       default: {}
       proxy: {}
-    healthcheck:
-      disable: true
 
   ##############################################################################
   ##############################################################################
   ##############################################################################
-  fireflyiii_db:
+  mariadb:
     # https://hub.docker.com/_/mariadb
-    image: mariadb:${VERSION_DB:-11.1.2}
+    image: mariadb:${VERSION_MARIADB:-11.3.2}
     <<: *basic
     deploy:
       <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_MARIADB:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_MARIADB:-512M}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_MARIADB:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_MARIADB:-32m}
     cap_add:
-      - SYS_NICE
-      - DAC_OVERRIDE
-      - CHOWN
       - SETGID
       - SETUID
+      - DAC_OVERRIDE
     secrets:
-      - mariadb_root_password
       - mariadb_user_password
     environment:
       TZ: ${TZ:-Europe/Berlin}
-      MYSQL_USER: ${DB_USERNAME:-firefly}
-      MYSQL_DATABASE: ${DB_DATABASE:-firefly}
-      MARIADB_ROOT_PASSWORD_FILE: /run/secrets/mariadb_root_password
-      MYSQL_PASSWORD_FILE: /run/secrets/mariadb_user_password
+      MARIADB_DATABASE: ${MARIADB_DATABASE:-firefly}
+      MARIADB_USER: ${MARIADB_USER:-firefly}
+      MARIADB_PASSWORD_FILE: /run/secrets/mariadb_user_password
+      MARIADB_RANDOM_ROOT_PASSWORD: ${MARIADB_RANDOM_ROOT_PASSWORD:-true}
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-      - firefly_iii_db:/var/lib/mysql
+      - mariadb:/var/lib/mysql
     command:
       - --log-bin=mysql-bin
       - --expire-logs-days=7
     healthcheck:
       test: ["CMD-SHELL", "/usr/local/bin/healthcheck.sh --no-defaults"]
-      interval: 30s
-      timeout: 10s
+      start_period: 5s
+      interval: 10s
       retries: 5
+      timeout: 3s
 
   ##############################################################################
   ##############################################################################
   ##############################################################################
   fireflyiii_cron:
     # https://hub.docker.com/_/alpine
-    image: alpine:${VERSION_ALPINE:-3.18.3}
+    image: alpine:${VERSION_ALPINE:-3.19.1}
     <<: *basic
     deploy:
       <<: *basic-deploy
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-    command: sh -c "echo \"0 3 * * * wget -qO- http://app:8080/api/v1/cron/REPLACEME\" | crontab - && crond -f -L /dev/stdout"
-    healthcheck:
-      disable: true
+    command: >
+      sh -c "echo \"0 3 * * *
+      wget -qO- http://fireflyiii:8080/api/v1/cron/${STATIC_CRON_TOKEN}\"
+      | crontab - && crond -f -L /dev/stdout"
 
 ################################################################################
 ################################################################################
@@ -205,13 +219,13 @@ networks:
     external: true
 
 volumes:
-  firefly_iii_upload: {}
-  firefly_iii_db: {}
+  upload: {}
+  mariadb: {}
 
 secrets:
-  fireflyiii_password:
-    file: config/secrets/fireflyiii_password.txt
-  mariadb_root_password:
-    file: config/secrets/mariadb_root_password.txt
+  site_owner_conf:
+    file: config/secrets/site_owner_conf.txt
+  app_key_file_password:
+    file: config/secrets/app_key_file_password.txt
   mariadb_user_password:
     file: config/secrets/mariadb_user_password.txt
