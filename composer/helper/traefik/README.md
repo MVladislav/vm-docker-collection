@@ -12,6 +12,7 @@
     - [traefik_dynamic setup](#traefik_dynamic-setup)
     - [config setup](#config-setup)
     - [cert setup](#cert-setup)
+      - [example quick create](#example-quick-create)
     - [create `.env` file following:](#create-env-file-following)
       - [example short .env](#example-short-env)
   - [label setup](#label-setup)
@@ -29,6 +30,10 @@
 $cp ./config/traefik_template.yml ./config/traefik.yml
 ```
 
+- In most cases no changes are necessary, when setup with swarm
+  - if not used swarm, uncomment for non swarm section needed
+  - if specific TLS usage needed, section for 'certificatesResolvers' should be checked
+
 ### traefik_dynamic setup
 
 > copy and update the traefik_dynamic setup
@@ -36,6 +41,8 @@ $cp ./config/traefik_template.yml ./config/traefik.yml
 ```sh
 $cp ./config/traefik_dynamic_template.yml ./config/traefik_dynamic.yml
 ```
+
+- In most cases no changes are necessary
 
 ### config setup
 
@@ -45,6 +52,11 @@ $cp ./config/traefik_dynamic_template.yml ./config/traefik_dynamic.yml
 $cp ./config/config_template.yml ./config/config.yml
 ```
 
+- In most cases no changes are necessary
+  - possible, update section for needed headers
+  - possible, update section for ip white list
+  - activate authentic middleware
+
 ### cert setup
 
 create following files inside `config/ssl`:
@@ -52,6 +64,19 @@ create following files inside `config/ssl`:
 - config/ssl/ca.pem
 - config/ssl/cert.pem
 - config/ssl/cert-key.pem
+
+#### example quick create
+
+```sh
+$openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:P-521 -quiet -out config/ssl/ca-key.pem
+$openssl req -new -x509 -key config/ssl/ca-key.pem -out config/ssl/ca.pem -subj "/CN=TEST CA"
+
+$openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:P-521 -quiet -out config/ssl/cert-key.pem
+$openssl req -new -key config/ssl/cert-key.pem -out config/ssl/cert.csr -subj "/CN=traefik.test.local"
+
+$openssl x509 -req -in config/ssl/cert.csr -CA config/ssl/ca.pem -CAkey config/ssl/ca-key.pem -CAcreateserial -out config/ssl/cert.pem -days 365
+$rm config/ssl/cert.csr
+```
 
 ### create `.env` file following:
 
