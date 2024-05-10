@@ -49,8 +49,8 @@ ENV LANG C.UTF-8
 # ------------------------------------------------------------------------------
 
 RUN \
-  echo "**** UPDATE - UPGRADE ****" &&
-  apt-get update -q &&
+  echo "**** UPDATE - UPGRADE ****" && \
+  apt-get update -q && \
   apt-get upgrade -y -q
 
 # LANG SETUP
@@ -58,7 +58,7 @@ ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US.UTF-8
 ENV LC_ALL C.UTF-8
 RUN \
-  echo "**** install LANG packages ****" &&
+  echo "**** install LANG packages ****" && \
   apt-get install -y --no-install-recommends \
     locales \
     apt-utils \
@@ -83,7 +83,7 @@ RUN locale-gen en_US.UTF-8
 
 RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections
 RUN \
-  echo "**** install MAIN packages ****" &&
+  echo "**** install MAIN packages ****" && \
   apt-get install -y --no-install-recommends \
     git-core \
     wget \
@@ -97,8 +97,8 @@ RUN \
     build-essential
 
 RUN \
-  echo "**** cleanup ****" &&
-  apt-get clean &&
+  echo "**** cleanup ****" && \
+  apt-get clean && \
   rm -rf \
     /tmp/* \
     /var/tmp/* \
