@@ -5,19 +5,6 @@ version: "3.8"
 ################################################################################
 ################################################################################
 
-x-basic-deploy-labels: &basic-deploy-labels
-  labels:
-    - traefik.enable=true
-    - traefik.docker.lbswarm=${LB_SWARM:-true}
-    - traefik.docker.network=proxy
-    - traefik.http.routers.evilginx2.entrypoints=https
-    - traefik.http.routers.evilginx2.rule=Host(`${DOMAIN?domain variable not set}`)
-    - traefik.http.routers.evilginx2.tls=true
-    - traefik.http.routers.evilginx2.service=evilginx2
-    - traefik.http.services.evilginx2.loadbalancer.server.scheme=${PROTOCOL:-http}
-    - traefik.http.services.evilginx2.loadbalancer.server.port=${PORT:-80}
-    - traefik.http.routers.evilginx2.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
-
 x-basic-deploy: &basic-deploy
   mode: replicated
   replicas: 1
@@ -30,37 +17,28 @@ x-basic-deploy: &basic-deploy
     condition: on-failure
   resources:
     limits:
-      # cpus: "1.5"
-      memory: 1g # 500M
+      cpus: ${RESOURCES_LIMITS_CPUS:-1}
+      memory: ${RESOURCES_LIMITS_MEMORY:-1g}
     reservations:
-      cpus: "0.001"
-      memory: 32M
+      cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
+      memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
 
 x-basic: &basic
-  env_file: .env
-  stdin_open: true # docker run -i
-  tty: true # docker run -t
-  # cap_add:
-  #   - CHOWN
-  #   - DAC_OVERRIDE
-  #   - DAC_READ_SEARCH
-  #   - SETGID
-  #   - SETUID
-  cap_drop: ["ALL"]
-  security_opt:
-    - no-new-privileges:true
+  cap_add: ["ALL"]
   ulimits:
     memlock:
       soft: -1
       hard: -1
     nofile:
-      soft: 65535
-      hard: 65535
+      soft: 655360
+      hard: 655360
     fsize: -1
     as: -1
   networks:
     default: {}
-    proxy: {}
+  # network_mode: host
+  healthcheck:
+    disable: true
   tmpfs:
     - /tmp
   sysctls:
@@ -72,54 +50,42 @@ x-basic: &basic
     - net.ipv4.conf.lo.rp_filter=0
     - net.ipv6.conf.all.forwarding=1
     - net.ipv6.conf.all.disable_ipv6=0
-  restart: always # always | on-failure
+  restart: always
 
 ################################################################################
 ################################################################################
 ################################################################################
-
 services:
   ##############################################################################
   ##############################################################################
   ##############################################################################
-  evilginx2:
+  netexec:
     build:
       context: .
       dockerfile: ./Dockerfile
-      args:
-        VERSION_GO: 1.19-alpine
-        VERSION_ALPINE: 3.17
-    image: mvladislav/evilginx2:${VERSION:-latest}
+    image: netexec:${VERSION:-latest}
     <<: *basic
     deploy:
-      <<: [*basic-deploy, *basic-deploy-labels]
+      <<: *basic-deploy
     # ports:
-    #   - target: ${PORT_80:-80}
-    #     published: ${PORT_PUBLISH_80:-80}
+    #   - target: ${PORT:-...}
+    #     published: ${PORT_PUBLISH:-...}
     #     protocol: tcp
     #     mode: host
-    #   - target: ${PORT_443:-443}
-    #     published: ${PORT_PUBLISH_443:-443}
-    #     protocol: tcp
-    #     mode: host
-    #   - target: ${PORT_53:-53}
-    #     published: ${PORT_PUBLISH_53:-53}
-    #     protocol: udp
-    #     mode: host
+    # environment:
+    #   MY_FILE_SECRET_FILE: /run/secrets/my_file_secret
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-    healthcheck:
-      disable: true
+      - $PWD/data:/data
 
 ################################################################################
 ################################################################################
 ################################################################################
 networks:
   default:
+    name: netexec
     driver: ${NETWORK_MODE:-bridge}
     attachable: true
     driver_opts:
       encrypted: "true"
-  proxy:
-    external: true

@@ -1,0 +1,16 @@
+*
+!.gitignore
+!.gitempty
+
+!.dockerignore
+!docker-compose.yaml
+
+!README.md
+
+!data/
+data/*
+!data/.gitempty
+
+!msf4/
+msf4/*
+!msf4/.gitempty

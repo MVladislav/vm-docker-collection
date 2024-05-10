@@ -1,0 +1,143 @@
+---
+version: "3.8"
+
+################################################################################
+################################################################################
+################################################################################
+
+x-basic-deploy: &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  restart_policy:
+    condition: on-failure
+  resources:
+    limits:
+      cpus: ${RESOURCES_LIMITS_CPUS:-1}
+      memory: ${RESOURCES_LIMITS_MEMORY:-1g}
+    reservations:
+      cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
+      memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
+
+x-basic: &basic
+  cap_add: ["ALL"]
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 655360
+      hard: 655360
+    fsize: -1
+    as: -1
+  networks:
+    default: {}
+  # network_mode: host
+  healthcheck:
+    disable: true
+  tmpfs:
+    - /tmp
+  sysctls:
+    - net.ipv4.ip_forward=1
+    - net.ipv4.conf.all.src_valid_mark=1
+    - net.ipv4.conf.all.rp_filter=0
+    - net.ipv4.conf.default.rp_filter=0
+    - net.ipv4.conf.eth0.rp_filter=0
+    - net.ipv4.conf.lo.rp_filter=0
+    - net.ipv6.conf.all.forwarding=1
+    - net.ipv6.conf.all.disable_ipv6=0
+  restart: always
+
+################################################################################
+################################################################################
+################################################################################
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  ms:
+    container_name: metasploit-ms
+    build:
+      context: https://github.com/rapid7/metasploit-framework.git#master
+      dockerfile: ./Dockerfile
+    image: metasploitframework/metasploit-framework:${VERSION:-latest}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+    ports:
+      - target: 4444
+        published: 4444
+        protocol: tcp
+        mode: host
+      - target: 4444
+        published: 4444
+        protocol: udp
+        mode: host
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgresql.metasploit:5432/${POSTGRES_DB:-msf}
+      MSF_UID: $(id -u)
+      MSF_GID: $(id -g)
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - $PWD/msf4:/home/msf/.msf4
+      - $PWD/data:/data
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  postgresql:
+    container_name: metasploit-postgresql
+    hostname: postgresql
+    # https://hub.docker.com/_/postgres
+    image: postgres:${VERSION_POSTGRESQL:-16.2-alpine3.19}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_POSTGRESQL:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_POSTGRESQL:-512M}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_POSTGRESQL:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_POSTGRESQL:-32m}
+    cap_add:
+      - SETGID
+      - SETUID
+      - DAC_OVERRIDE
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: trust
+      POSTGRES_DB: ${POSTGRES_DB:-msf}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - postgresql:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
+      start_period: 5s
+      interval: 10s
+      retries: 5
+      timeout: 3s
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  default:
+    name: metasploit
+    driver: ${NETWORK_MODE:-bridge}
+    attachable: true
+    driver_opts:
+      encrypted: "true"
+
+volumes:
+  data:
+    name: metasploit_data
+  postgresql:
+    name: metasploit_postgresql
