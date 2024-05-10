@@ -1,3 +1,4 @@
+---
 ################################################################
 #
 # Configuration sample for Traefik v3.
@@ -42,37 +43,36 @@ entryPoints:
     #   middlewares:
     #     - default-secured@file
     #     # - bouncer-crowdsec
-  # -------------------------------------
-  # mysql:
-  #   address: :3306
-  # postgress:
-  #   address: :5432
-  # influxdb:
-  #   address: :8086
-  # prometheus:
-  #   address: :9090
-  # -------------------------------------
-  # smb-139:
-  #   address: :139/tcp
-  # smb-445:
-  #   address: :445/tcp
-  # spice:
-  #   address: :3128/tcp
-  # -------------------------------------
-  # elastic: # send metrics direct to elastic
-  #   address: :9200
-  # elastic-agent: # access elastic over installed agent
-  #   address: :8220
-  # elastic-beats: # logtash used for example sysmon
-  #   address: :5044
-  # -------------------------------------
-  # syslog-opnsense: # logstash syslogs opnsense collector
-  #   address: :5140
-  # syslog-unifi: # logstash syslogs unifi collector
-  #   address: :5145
-  # netflow: # filebeat netflow collector
-  #   address: :2055/udp
-  # -------------------------------------
+#   # -------------------------------------
+#   mysql:
+#     address: :3306
+#   postgresql:
+#     address: :5432
+#   influxdb:
+#     address: :8086
+#   prometheus:
+#     address: :9090
+#   # -------------------------------------
+#   smb-139:
+#     address: :139/tcp
+#   smb-445:
+#     address: :445/tcp
+#   spice:
+#     address: :3128/tcp
+#   # -------------------------------------
+#   elastic: # send metrics direct to elastic
+#     address: :9200
+#   elastic-agent: # access elastic over installed agent
+#     address: :8220
+#   elastic-beats: # logtash used for example sysmon
+#     address: :5044
+#   # -------------------------------------
+#   syslog-opnsense: # logstash syslogs opnsense collector
+#     address: :5140
+#   syslog-unifi: # logstash syslogs unifi collector
+#     address: :5145
+#   netflow: # filebeat netflow collector
+#     address: :2055/udp
 
 ################################################################
 # Traefik logs configuration
@@ -232,36 +232,24 @@ serversTransport:
   rootCAs:
     - "/etc/traefik/certs/ca.pem"
 #
-# Configure your CertificateResolver here...
-# https://doc.traefik.io/traefik/https/acme
+# # Configure your CertificateResolver here...
+# # https://doc.traefik.io/traefik/https/acme
 # certificatesResolvers:
-#   staging:
+#   letsencrypt:
 #     acme:
 #       email: your-email@example.com
 #       storage: /resolver-certs/acme.json
-#       caServer: "https://acme-staging-v02.api.letsencrypt.org/directory"
-#       tlschallenge: {}
-#   #
-#   # production: # tls-challange
-#   #   acme:
-#   #     email: your-email@example.com
-#   #     storage: /resolver-certs/acme.json
-#   #     caServer: "https://acme-v02.api.letsencrypt.org/directory"
-#   #     tlschallenge: {}
-#   #
-#   # production: # dns-challange
-#   #   acme:
-#   #     email: your-email@example.com
-#   #     storage: /resolver-certs/acme.json
-#   #     caServer: "https://acme-v02.api.letsencrypt.org/directory"
-#   #     dnsChallenge:
-#   #       provider: "cloudflare"
-#   #       delayBeforeCheck: 0
-#   #
-#   # production: # http-challange
-#   #   acme:
-#   #     email: your-email@example.com
-#   #     storage: /resolver-certs/acme.json
-#   #     caServer: "https://acme-v02.api.letsencrypt.org/directory"
-#   #     httpChallenge:
-#   #       entryPoint: http
+#       caServer: https://acme-staging-v02.api.letsencrypt.org/directory # staging
+#       # caServer: https://acme-v02.api.letsencrypt.org/directory # production
+#
+#       # tlschallenge: {} # tls-challange
+#
+#       # dnsChallenge: # dns-challange
+#       #   provider: "cloudflare"
+#       #   delayBeforeCheck: 0
+#       #   resolvers:
+#       #     - "1.1.1.1:53"
+#       #     - "1.0.0.1:53"
+#
+#       # httpChallenge: # http-challange
+#       #   entryPoint: http

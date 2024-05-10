@@ -13,6 +13,7 @@
     - [config setup](#config-setup)
     - [cert setup](#cert-setup)
       - [example quick create](#example-quick-create)
+    - [optional - create your `secrets`:](#optional---create-your-secrets)
     - [create `.env` file following:](#create-env-file-following)
       - [example short .env](#example-short-env)
   - [label setup](#label-setup)
@@ -46,7 +47,7 @@ $cp ./config/traefik_dynamic_template.yml ./config/traefik_dynamic.yml
 
 ### config setup
 
-> instead or byside to labels you can also define a config.yml
+> instead or on side to labels you can also define a config.yml
 
 ```sh
 $cp ./config/config_template.yml ./config/config.yml
@@ -75,8 +76,15 @@ $openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:P-521 -quiet -out conf
 $openssl req -new -key config/ssl/cert-key.pem -out config/ssl/cert.csr -subj "/CN=traefik.test.local"
 
 $openssl x509 -req -in config/ssl/cert.csr -CA config/ssl/ca.pem -CAkey config/ssl/ca-key.pem -CAcreateserial -out config/ssl/cert.pem -days 365
-$rm config/ssl/cert.csr
+$rm config/ssl/cert.csr config/ssl/ca.srl
 ```
+
+### optional - create your `secrets`:
+
+Create a file as `config/secrets/cf_api_token_secret.txt`
+and add your Cloudflare api token if you use certificates resolvers.
+
+> _do not forget to uncomment the secret parts in `docker-compose.yaml`_
 
 ### create `.env` file following:
 
@@ -108,11 +116,8 @@ VERSION=v3.0
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
-ADMIN_USERNAME=traefik
-# old: echo $(openssl passwd -apr1 $PASSWORD) or echo $(openssl passwd -apr1)
-# new: echo $(htpasswd -nB traefik)
-# replace: make "$" doubled to "$$"
-HASHED_PASSWORD=
+# new: `echo $(htpasswd -nB traefik) | sed -e 's|\$|$$|g'`
+TRAEFIK_DASHBOARD_CREDENTIALS=
 ```
 
 #### example short .env
@@ -121,11 +126,8 @@ HASHED_PASSWORD=
 NETWORK_MODE=overlay
 DOMAIN=traefik.home.local
 
-ADMIN_USERNAME=traefik
-# old: echo $(openssl passwd -apr1 $PASSWORD) or echo $(openssl passwd -apr1)
-# new: echo $(htpasswd -nB traefik)
-# replace: make "$" doubled to "$$"
-HASHED_PASSWORD=
+# new: `echo $(htpasswd -nB traefik) | sed -e 's|\$|$$|g'`
+TRAEFIK_DASHBOARD_CREDENTIALS=
 ```
 
 ## label setup
