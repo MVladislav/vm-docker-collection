@@ -13,6 +13,7 @@
       - [example short .env](#example-short-env)
   - [Note](#note)
     - [credentials](#credentials)
+    - [passwort reset](#passwort-reset)
   - [References](#references)
 
 ---
@@ -86,6 +87,12 @@ PGSQL_PASSWD=<ADD_PASSWORD>
 - **username**: `faraday`
 - **password**: _is printed in logs_
 
+### passwort reset
+
+```sh
+faraday-manage change-password
+```
+
 ---
 
 ## References
@@ -95,3 +102,9 @@ PGSQL_PASSWD=<ADD_PASSWORD>
 - <https://github.com/infobyte/faraday>
 - <https://github.com/infobyte/faraday/blob/master/docker-compose.yaml>
 - <https://hub.docker.com/r/faradaysec/faraday>
+- <https://docs.faradaysec.com/import/>
+- alternatives
+  - <https://hexway.io/pricing>
+    - `sudo apt-get install uidmap`
+  - <https://reconmap.com/pricing>
+  - <https://attackforge.com/pricing>
