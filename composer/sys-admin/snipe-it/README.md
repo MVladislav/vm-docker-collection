@@ -8,8 +8,9 @@
 
 - [SETUP](#setup)
   - [basic](#basic)
+    - [create your `secrets`:](#create-your-secrets)
     - [create `.env` file following:](#create-env-file-following)
-      - [API Key](#api-key)
+      - [example short .env](#example-short-env)
   - [References](#references)
     - [How-To](#how-to)
 
@@ -17,56 +18,55 @@
 
 ## basic
 
+> defined to work with treafik
+
+### create your `secrets`:
+
+```sh
+$pwgen -s 18 1 > config/secrets/mariadb_user_password.txt
+$docker-compose run snipeit php artisan key:generate --show > config/secrets/app_key_password.txt
+```
+
 ### create `.env` file following:
 
 ```env
-NODE_ID=
+# GENERAL variables (mostly by default, change as needed)
+# ______________________________________________________________________________
 NODE_ROLE=manager
+NETWORK_MODE=overlay # by default "bridge"
+
+# GENERAL traefik variables (set by default, change as needed)
+# ______________________________________________________________________________
+LB_SWARM=true
+DOMAIN=snipeit.home.local # not set in docker-compose, needs to be copied to .env
+PROTOCOL=http
+PORT=80
+# default-secured@file | public-whitelist@file | authentik@file
+MIDDLEWARE_SECURED=default-secured@file
+
+# GENERAL sources to be used (set by default, change as needed)
+# ______________________________________________________________________________
+RESOURCES_LIMITS_CPUS=1
+RESOURCES_LIMITS_MEMORY=1g
+RESOURCES_RESERVATIONS_CPUS=0.001
+RESOURCES_RESERVATIONS_MEMORY=32m
+
+# APPLICATION version for easy update
+# ______________________________________________________________________________
+VERSION=v6.3.4
+VERSION_MARIADB=11.3.2
+
+# APPLICATION general variable to adjust the apps
+# ______________________________________________________________________________
+#...
+```
+
+#### example short .env
+
+```env
 NETWORK_MODE=overlay
-
-VERSION=latest
-
-# Mysql Parameters
-MYSQL_PORT_3306_TCP_ADDR=snipe-mysql
-MYSQL_PORT_3306_TCP_PORT=3306
-MYSQL_ROOT_PASSWORD=YOUR_ROOT_PW
-MYSQL_DATABASE=snipeit
-MYSQL_USER=snipeit
-MYSQL_PASSWORD=snipeit
-
-# Email Parameters
-# - the hostname/IP address of your mailserver
-MAIL_PORT_587_TCP_ADDR=smtp.example.com
-#the port for the mailserver (probably 587, could be another)
-MAIL_PORT_587_TCP_PORT=587
-# the default from address, and from name for emails
-MAIL_ENV_FROM_ADDR=ex@email.com
-MAIL_ENV_FROM_NAME=Your Name
-# - pick 'tls' for SMTP-over-SSL, 'tcp' for unencrypted
-MAIL_ENV_ENCRYPTION=tls
-# SMTP username and password
-MAIL_ENV_USERNAME=your_username
-MAIL_ENV_PASSWORD=your_email_pw
-
-# Snipe-IT Settings
-APP_ENV=production
-APP_DEBUG=false
-APP_KEY={{INSERT_API_TOKEN}}
-#APP_KEY=base64:uiG3aLkSmzR6jy3JcrRgWDIh6/HEpwxp+hxD3+CMS3o=
-APP_URL=http://127.0.0.1:80
-APP_TIMEZONE=Europe/Berlin # you should change this to your timezone
-APP_LOCALE=en # you should change this for the desired language
+DOMAIN=snipeit.home.local
 ```
-
-#### API Key
-
-```sh
-$docker-compose up -d
-$docker-compose exec snipeit php artisan key:generate --show
-$docker-compose stop
-```
-
-replace `{{INSERT_API_TOKEN}}` with output from last command (from log) in your **.env** file
 
 ---
 
