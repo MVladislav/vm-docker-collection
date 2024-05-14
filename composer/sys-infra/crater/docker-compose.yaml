@@ -48,8 +48,8 @@ x-basic: &basic
   #   - FOWNER
   #   - FSETID
   # cap_drop: ["ALL"]
-  # security_opt:
-  #   - no-new-privileges:true
+  security_opt:
+    - no-new-privileges:true
   ulimits:
     memlock:
       soft: -1

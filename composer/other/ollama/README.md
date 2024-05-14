@@ -60,7 +60,14 @@ DOMAIN=ai.home.local
 
 ```sh
 $docker exec -it "$(docker ps -q -f name=ollama_ollama)" ollama pull llama3
+# codellama
 # mistral
+# dolphin-mistral
+#   openhermes
+#   openchat
+# deepseek-coder
+# starling-lm - summarisation and text analysis
+# zephyr - summarization
 ```
 
 ---

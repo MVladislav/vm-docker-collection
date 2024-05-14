@@ -47,7 +47,6 @@ x-basic: &basic
   #   - SETUID
   #   - FOWNER
   #   - FSETID
-  cap_add: ["ALL"] # TODO: remove only test
   # cap_drop: ["ALL"]
   security_opt:
     - no-new-privileges:true
