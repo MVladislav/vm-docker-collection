@@ -60,6 +60,10 @@ VERSION_MARIADB=11.3.2
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
 DB_PASS=$(cat config/secrets/mariadb_user_password.txt)
+
+# https://www.kimai.org/documentation/emails.html
+MAILER_FROM=changeme@example.com
+MAILER_URL=smtps://{username}:{password}@{smtp-host}:465
 ```
 
 #### example short .env
