@@ -59,7 +59,9 @@ DOMAIN=ai.home.local
 #### download model
 
 ```sh
-$docker exec -it "$(docker ps -q -f name=ollama_ollama)" ollama pull llama3
+$docker exec -it "$(docker ps -q -f name=ollama-ollama)" ollama pull llama3
+# => https://ollama.com/library
+# llama3:70b
 # codellama
 # mistral
 # dolphin-mistral
