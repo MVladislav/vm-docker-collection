@@ -14,19 +14,19 @@ FROM node:lts-alpine as frontend
 # ------------------------------------------------------------------------------
 
 # set version label
-ARG BUILD_DATE
-ARG VERSION
-LABEL build_version="MVladislav version:- ${VERSION} Build-date:- ${BUILD_DATE}"
+ARG BUILD_DATE=$(date +"%Y-%m-%d")
+ARG VERSION=latest
+LABEL build_version="MVladislav :: version - '${VERSION}' :: build-date - '${BUILD_DATE}'"
 LABEL maintainer="MVladislav"
-LABEL org.opencontainers.image.description example official docker container.
+LABEL org.opencontainers.image.description="example official docker container."
 
 # ------------------------------------------------------------------------------
 
 ENV DEBIAN_FRONTEND noninteractive
 ENV PHP_EXTRA_CONFIGURE_ARGS --enable-fpm --with-fpm-user=www-data --with-fpm-group=www-data
-
-# ensure local python is preferred over distribution python
 ENV PATH /usr/local/bin:$PATH
+
+RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections
 
 # ------------------------------------------------------------------------------
 
@@ -48,76 +48,45 @@ ENV LANG C.UTF-8
 
 # ------------------------------------------------------------------------------
 
-RUN \
-  echo "**** UPDATE - UPGRADE ****" && \
-  apt-get update -q && \
-  apt-get upgrade -y -q
-
-# LANG SETUP
 ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US.UTF-8
 ENV LC_ALL C.UTF-8
-RUN \
-  echo "**** install LANG packages ****" && \
-  apt-get install -y --no-install-recommends \
-    locales \
-    apt-utils \
-    language-pack-en
-# Install locales
-RUN locale-gen cs_CZ.UTF-8
-RUN locale-gen de_DE.UTF-8
-RUN locale-gen en_US.UTF-8
-RUN locale-gen es_ES.UTF-8
-RUN locale-gen fr_FR.UTF-8
-RUN locale-gen it_IT.UTF-8
-RUN locale-gen pl_PL.UTF-8
-RUN locale-gen pt_BR.UTF-8
-RUN locale-gen ru_RU.UTF-8
-RUN locale-gen sl_SI.UTF-8
-RUN locale-gen uk_UA.UTF-8
-
-# set locale
-RUN locale-gen en_US.UTF-8
 
 # ------------------------------------------------------------------------------
 
-RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections
 RUN \
-  echo "**** install MAIN packages ****" && \
+  echo "**** BASE => UPDATE :: INSTALL :: CLEAN ****" && \
+  apt-get update -q && \
   apt-get install -y --no-install-recommends \
-    git-core \
-    wget \
+    # language
+    locales \
+    apt-utils \
+    language-pack-en \
+    # defaults \
+    git \
+    vim \
     curl \
-    supervisor \
-    iproute2 \
-    nano \
+    wget \
     apt-transport-https \
     ca-certificates \
+    iproute2 \
+    supervisor \
     make \
-    build-essential
-
-RUN \
-  echo "**** cleanup ****" && \
+    build-essential \
+  && \
   apt-get clean && \
   rm -rf \
     /tmp/* \
     /var/tmp/* \
     /var/lib/apt/lists/* \
     /var/log/* \
-    /var/www
-RUN \
-  echo "**** cleanup ****" \
-  rm -f /etc/ssh/ssh_host_* \
-  /etc/apache2/sites-available/* \
-  /dev/log \
-  /var/lib/syslog-ng/syslog-ng.ctl \
-  /etc/cron.d/* \
-  /etc/cron.hourly/* \
-  /etc/cron.daily/* \
-  /etc/cron.weekly/* \
-  /etc/cron.monthly/* \
-  /etc/logrotate.d/* \
-  /etc/supervisord/conf.d/*
+    /var/www \
+    /usr/src/*
+
+# ------------------------------------------------------------------------------
+
+# LANG SETUP
+RUN locale-gen en_US.UTF-8
 
 # ------------------------------------------------------------------------------
 
@@ -134,7 +103,8 @@ WORKDIR /app
 # expose tcp port
 EXPOSE 80/tcp
 # set volumes
-VOLUME ["/app", "/var/log"]
+VOLUME /app
+VOLUME /var/log
 
 # configure entry point
 COPY --chmod=750 config/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh

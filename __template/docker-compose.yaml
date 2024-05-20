@@ -88,8 +88,9 @@ x-basic: &basic
   #   - BLOCK_SUSPEND
   # cap_drop: ["ALL"]
   # security_opt:
-  #   - no-new-privileges:true
-  #   # - label:disable
+  #   - no-new-privileges=true
+  #   # - seccomp=unconfined
+  #   # - label=disable
   # pids_limit: 200
   # read_only: ${CONTAINER_READONLY:-false}
   ulimits:
