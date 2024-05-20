@@ -74,15 +74,14 @@ DEFAULT_LOCALE=equal
 TZ=Europe/Berlin
 
 # OPTIONAL
-# https://docs.firefly-iii.org/firefly-iii/advanced-installation/email/#email
-MAIL_MAILER=log
+# https://docs.firefly-iii.org/how-to/data-importer/advanced/notifications/
+MAIL_MAILER=smtp
 MAIL_HOST=null
 MAIL_PORT=2525
 MAIL_FROM=changeme@example.com
 MAIL_USERNAME=null
 MAIL_PASSWORD=null
-MAIL_ENCRYPTION=null
-MAIL_SENDMAIL_COMMAND=
+MAIL_ENCRYPTION=tls
 ```
 
 #### example short .env
