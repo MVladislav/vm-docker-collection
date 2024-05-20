@@ -1,132 +1,117 @@
-ARG VERSION_PHP=8.0
-# FROM php:${VERSION_PHP}-apache-stretch
-# FROM php:${VERSION_PHP}-fpm-alpine
-FROM php:${VERSION_PHP}-apache-buster
-COPY --from=composer:latest /usr/bin/composer /usr/local/bin/composer
+# https://hub.docker.com/_/php/tags
+ARG VERSION_PHP=8.3-apache
+FROM php:${VERSION_PHP}
 
 # ------------------------------------------------------------------------------
 
-# set version label
-ARG BUILD_DATE
-ARG VERSION
-LABEL build_version="MVladislav version:- ${VERSION} Build-date:- ${BUILD_DATE}"
+ARG BUILD_DATE=$(date +"%Y-%m-%d")
+ARG VERSION=latest
+LABEL build_version="MVladislav :: version - '${VERSION}' :: build-date - '${BUILD_DATE}'"
 LABEL maintainer="MVladislav"
+LABEL org.opencontainers.image.description="typo3 dev docker container."
 
 # ------------------------------------------------------------------------------
 
 ENV DEBIAN_FRONTEND noninteractive
 ENV PHP_EXTRA_CONFIGURE_ARGS --enable-fpm --with-fpm-user=www-data --with-fpm-group=www-data
-
-# ------------------------------------------------------------------------------
-
-RUN \
-  echo "**** UPDATE - UPGRADE ****" \
-  && apt-get update -q \
-  && apt-get upgrade -y -q
-
-# ------------------------------------------------------------------------------
+ENV PATH /usr/local/bin:$PATH
 
 RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections
-RUN \
-  echo "**** install MAIN packages ****" \
-  && apt-get install -y --no-install-recommends \
-  wget \
-  curl \
-  nano \
-  apt-transport-https \
-  ca-certificates \
-  # Configure PHP
-  libxml2-dev libfreetype6-dev \
-  libjpeg62-turbo-dev \
-  libmcrypt-dev \
-  libpng-dev \
-  libpq-dev \
-  libzip-dev \
-  zlib1g-dev \
-  # Install required 3rd party tools
-  graphicsmagick
+
+# ------------------------------------------------------------------------------
 
 RUN \
-  echo "**** configure typo3 dependencies ****"
-# Configure extensions
-# first configure the to-be-installed extension
-RUN docker-php-ext-configure gd --with-libdir=/usr/include/ --with-freetype --with-jpeg
-# Only then install it
-RUN docker-php-ext-install -j$(nproc) mysqli soap gd zip opcache intl pgsql pdo_pgsql
-RUN echo 'always_populate_raw_post_data = -1\nmax_execution_time = 240\nmax_input_vars = 1500\nupload_max_filesize = 32M\npost_max_size = 32M' > /usr/local/etc/php/conf.d/typo3.ini
-# Configure Apache as needed
-RUN a2enmod rewrite
+  echo "**** BASE => UPDATE :: INSTALL :: CLEAN ****" && \
+  apt-get update -q && \
+  apt-get install -y --no-install-recommends \
+    # defaults \
+    git \
+    vim \
+    curl \
+    wget \
+    apt-transport-https \
+    ca-certificates \
+  && \
+  apt-get clean
 
+# ------------------------------------------------------------------------------
+
+# Install TYPO3
 RUN \
-  echo "**** cleanup ****" \
+  echo "**** TPYO3 => UPDATE :: INSTALL :: CLEAN ****" && \
+  apt-get update && \
+  apt-get install -y --no-install-recommends \
+    libxml2-dev \
+    libfreetype6-dev \
+    libjpeg62-turbo-dev \
+    libmcrypt-dev \
+    libpng-dev \
+    libpq-dev \
+    libzip-dev \
+    zlib1g-dev \
+    graphicsmagick \
+  && \
+  # configure extensions
+  docker-php-ext-configure gd --with-libdir=/usr/include/ --with-jpeg --with-freetype && \
+  docker-php-ext-install -j$(nproc) mysqli soap gd zip opcache intl pgsql pdo_pgsql exif && \
+  echo 'always_populate_raw_post_data = -1\nmax_execution_time = 240\nmax_input_vars = 1500\nupload_max_filesize = 32M\npost_max_size = 32M' > /usr/local/etc/php/conf.d/typo3.ini && \
+  # configure apache as needed
+  a2enmod rewrite && \
+  # cleanup
+  apt-get clean && \
   apt-get -y purge \
-  libxml2-dev \
-  libfreetype6-dev \
-  libjpeg62-turbo-dev \
-  libmcrypt-dev \
-  libpng-dev \
-  libzip-dev \
-  zlib1g-dev
-RUN \
-  echo "**** cleanup ****" \
-  && apt-get clean \
-  && rm -rf \
-  /tmp/* \
-  /var/tmp/* \
-  /var/lib/apt/lists/* \
-  /var/log/* \
-  /var/www \
-  /usr/src/*
-RUN \
-  echo "**** cleanup ****" \
-  rm -f /etc/ssh/ssh_host_* \
-  /etc/apache2/sites-available/* \
-  /dev/log \
-  /var/lib/syslog-ng/syslog-ng.ctl \
-  /etc/cron.d/* \
-  /etc/cron.hourly/* \
-  /etc/cron.daily/* \
-  /etc/cron.weekly/* \
-  /etc/cron.monthly/* \
-  /etc/logrotate.d/*
+    libxml2-dev \
+    libfreetype6-dev \
+    libjpeg62-turbo-dev \
+    libmcrypt-dev \
+    libpng-dev \
+    libzip-dev \
+    zlib1g-dev \
+  && \
+  rm -rf \
+    /tmp/* \
+    /var/tmp/* \
+    /var/lib/apt/lists/* \
+    /var/log/* \
+    /var/www \
+    /usr/src/*
 
 # ------------------------------------------------------------------------------
 
-ARG TYPO3_VERSION
-ARG TYPO3_SHA256
-
-ENV TYPO3_VERSION="${TYPO3_VERSION}"
-ENV TYPO3_SHA256="${TYPO3_SHA256}"
-
-# ------------------------------------------------------------------------------
+# https://get.typo3.org/version/13
+ARG TYPO3_VERSION=13.1.1
+ARG TYPO3_SHA256=e57cbb2e201e0fb00007a75e8abf0f796146ea3771240f48f6e3c0d5d37626e8
 
 RUN \
-  cd /var/www/html \
-  && wget -O download.tar.gz https://get.typo3.org/${TYPO3_VERSION} \
-  && echo "${TYPO3_SHA256} download.tar.gz" > download.tar.gz.sum \
-  && sha256sum -c download.tar.gz.sum \
-  && tar -xzf download.tar.gz \
-  && rm download.* \
-  && ln -s typo3_src-* typo3_src \
-  && ln -s typo3_src/index.php \
-  && ln -s typo3_src/typo3 \
-  && cp typo3/sysext/install/Resources/Private/FolderStructureTemplateFiles/root-htaccess .htaccess \
-  && mkdir typo3temp \
-  && mkdir typo3conf \
-  && mkdir typo3conf/ext \
-  && mkdir fileadmin \
-  && mkdir uploads \
-  && touch FIRST_INSTALL \
-  && chown -R www-data. .
+  echo "**** SETUP TYPO3 ****" && \
+  cd /var/www/html && \
+  wget -O download.tar.gz https://get.typo3.org/${TYPO3_VERSION}/tar.gz && \
+  echo "${TYPO3_SHA256} download.tar.gz" > download.tar.gz.sum && \
+  sha256sum -c download.tar.gz.sum && \
+  tar -xzf download.tar.gz && \
+  rm download.* && \
+  ln -s typo3_src-* typo3_src && \
+  ln -s typo3_src/index.php && \
+  ln -s typo3_src/typo3 && \
+  cp typo3/sysext/install/Resources/Private/FolderStructureTemplateFiles/root-htaccess .htaccess && \
+  mkdir typo3temp && \
+  mkdir typo3conf && \
+  mkdir typo3conf/ext && \
+  mkdir fileadmin && \
+  mkdir uploads && \
+  touch FIRST_INSTALL && \
+  chown -R www-data. .
 
 # ------------------------------------------------------------------------------
 
 # configure working directory
 WORKDIR /var/www/html
-# expose tcp port
-EXPOSE 80/tcp
-# set volumes
+
+# Configure volumes
 VOLUME /var/www/html/fileadmin
 VOLUME /var/www/html/typo3conf
 VOLUME /var/www/html/typo3temp
 VOLUME /var/www/html/uploads
+
+# expose tcp port
+EXPOSE 80/tcp
