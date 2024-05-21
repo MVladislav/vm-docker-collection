@@ -11,6 +11,7 @@
     - [create your `secrets`:](#create-your-secrets)
     - [create `.env` file following:](#create-env-file-following)
       - [example short .env](#example-short-env)
+  - [Helper](#helper)
   - [References](#references)
 
 ---
@@ -22,7 +23,8 @@
 ### create your `secrets`:
 
 ```sh
-$pwgen -s 32 1 > config/secrets/my_file_secret.txt
+$pwgen -s 32 1 > config/secrets/app_key_password.txt
+$pwgen -s 32 1 > config/secrets/mariadb_user_password.txt
 ```
 
 ### create `.env` file following:
@@ -37,8 +39,8 @@ NETWORK_MODE=overlay # by default "bridge"
 # ______________________________________________________________________________
 LB_SWARM=true
 DOMAIN=crater.home.local # not set in docker-compose, needs to be copied to .env
-PROTOCOL=https
-PORT=443
+PROTOCOL=http
+PORT=8080
 # default-secured@file | public-whitelist@file | authentik@file
 MIDDLEWARE_SECURED=default-secured@file
 
@@ -52,7 +54,8 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 # APPLICATION version for easy update
 # ______________________________________________________________________________
 VERSION_CRATER=latest
-VERSION_MARIADB=11.3.2
+VERSION_MARIADB=11.3
+VERSION_NGNIX=1.25-alpine-slim
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
@@ -64,7 +67,16 @@ VERSION_MARIADB=11.3.2
 ```env
 NETWORK_MODE=overlay
 DOMAIN=crater.home.local
-VERSION=latest
+```
+
+## Helper
+
+after run application, you need create a key as follow:
+
+```sh
+$docker exec -it "$(docker ps -q -f name=crater_crater)" composer install --no-interaction --prefer-dist --optimize-autoloader
+$docker exec -it "$(docker ps -q -f name=crater_crater)" php artisan storage:link || true
+$docker exec -it "$(docker ps -q -f name=crater_crater)" php artisan key:generate
 ```
 
 ---
