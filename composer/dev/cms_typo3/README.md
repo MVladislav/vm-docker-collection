@@ -12,9 +12,12 @@
     - [create `.env` file following:](#create-env-file-following)
       - [example short .env](#example-short-env)
   - [Helper](#helper)
-    - [traefik](#traefik)
-    - [mariadb](#mariadb)
-    - [install from shell](#install-from-shell)
+    - [traefik and logging](#traefik-and-logging)
+    - [mariadb import](#mariadb-import)
+      - [install from shell](#install-from-shell)
+    - [upgrade process](#upgrade-process)
+  - [Additional](#additional)
+    - [installToolPassword](#installtoolpassword)
   - [References](#references)
 
 ---
@@ -78,30 +81,28 @@ DOMAIN=page.home.local
 
 ## Helper
 
-### traefik
+### traefik and logging
 
 open file for edit:
 
 ```sh
-$docker exec --privileged -it "$(docker ps -q -f name=typo3_typo3)" vim /var/www/html/typo3conf/system/settings.php
+# >= version 12
+$docker exec --privileged -it "$(docker ps -q -f name=typo3_typo3)" vim /var/www/html/typo3conf/system/additional.php
+# <= version 11
+$docker exec --privileged -it "$(docker ps -q -f name=typo3_typo3)" vim /var/www/html/typo3conf/AdditionalConfiguration.php
 ```
-
-add into `SYS > features` the following setting:
 
 ```php
 <?php
-return [
-    'SYS' => [
-        'features' => [
-           'security.backend.enforceReferrer' => false,
-        ],
-    ],
-]
+$GLOBALS['TYPO3_CONF_VARS']['SYS']['reverseProxySSL'] = '*';
+$GLOBALS['TYPO3_CONF_VARS']['SYS']['reverseProxyIP'] = '*';
+$GLOBALS['TYPO3_CONF_VARS']['SYS']['displayErrors'] = '1';
+$GLOBALS['TYPO3_CONF_VARS']['SYS']['features']['security.backend.enforceReferrer'] = 'false';
 ```
 
-### mariadb
+### mariadb import
 
-for your script change lines from
+inside your sql script, change lines from
 
 ```sql
 CREATE DATABASE IF NOT EXISTS ...
@@ -116,18 +117,27 @@ CREATE DATABASE IF NOT EXISTS `typo3` DEFAULT CHARACTER SET utf8mb3 COLLATE utf8
 USE `typo3`;
 ```
 
-import old database records
+than import old database records with following command
 
 ```sh
 # $docker exec --privileged -it "$(docker ps -q -f name=typo3_mariadb)" bash -c 'mariadb -u typo3 -p -e "DROP DATABASE IF EXISTS typo3; CREATE DATABASE IF NOT EXISTS typo3;"'
 $docker exec --privileged -it "$(docker ps -q -f name=typo3_mariadb)" bash -c 'mariadb -u typo3 -p < /sql/records.sql'
 ```
 
-### install from shell
+```sh
+$docker exec --privileged -it "$(docker ps -q -f name=typo3_mariadb)" bash -c 'mariadb-dump -u typo3 -p typo3 > /sql/dump.sql'
+```
+
+#### install from shell
 
 ```sh
+# >= version 12
 $docker exec --privileged -it "$(docker ps -q -f name=typo3_typo3)" vim /var/www/html/typo3conf/system/settings.php
+# <= version 11
+$docker exec --privileged -it "$(docker ps -q -f name=typo3_typo3)" vim /var/www/html/typo3conf/LocalConfiguration.php
 ```
+
+> mostly when you get over web-page until stage `3 / 5 - 60% Complete` you only need to add into conf file `'dbname' => 'typo3',`
 
 ```php
 return [
@@ -135,20 +145,34 @@ return [
         'Connections' => [
             'Default' => [
                 'dbname' => 'typo3',
-                'charset' => 'utf8mb4',
-                'driver' => 'mysqli',
-                'host' => 'mariadb',
-                'password' => '<PASSWORD>',
-                'port' => 3306,
-                'tableoptions' => [
-                    'charset' => 'utf8mb4',
-                    'collate' => 'utf8mb4_unicode_ci',
-                ],
-                'user' => 'typo3',
+                // ...
             ],
         ],
     ],
 ]
+```
+
+### upgrade process
+
+```sh
+$docker exec --privileged -it "$(docker ps -q -f name=typo3_typo3)" php /var/www/html/typo3/sysext/core/bin/typo3 referenceindex:update
+```
+
+## Additional
+
+### installToolPassword
+
+```sh
+# >= version 12
+$docker exec --privileged -it "$(docker ps -q -f name=typo3_typo3)" vim /var/www/html/typo3conf/system/settings.php
+# <= version 11
+$docker exec --privileged -it "$(docker ps -q -f name=typo3_typo3)" vim /var/www/html/typo3conf/LocalConfiguration.php
+```
+
+```php
+'BE' => [
+   'installToolPassword' => '$argon2i$v=xyz',
+],
 ```
 
 ---
@@ -162,3 +186,5 @@ return [
 - <https://docs.typo3.org/m/typo3/reference-exceptions/main/en-us/Exceptions/1588095935.html>
 - <https://t3planet.com/blog>
 - <https://www.derhansen.de/2022/12/2022-12-31-typo3-12-not-working-after-extension-install.html>
+- <https://docs.typo3.org/m/typo3/tutorial-getting-started/main/en-us/Troubleshooting/TYPO3.html>
+- <https://docs.j7k6.org/typo3-reverse-proxy-ssl/>

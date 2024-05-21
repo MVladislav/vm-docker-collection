@@ -81,18 +81,13 @@ services:
     cap_add:
       - SETGID
       - SETUID
-    # ports:
-    #   - target: ${PORT:-80}
-    #     published: ${PORT_PUBLISH:-8080}
-    #     protocol: tcp
-    #     mode: host
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-      # - fileadmin:/var/www/html/fileadmin
-      # - typo3conf:/var/www/html/typo3conf
-      # - uploads:/var/www/html/uploads
-      - ./ext/:/var/www/html/typo3conf/ext/
+      - uploads:/var/www/html/uploads
+      - ./fileadmin/:/var/www/html/fileadmin
+      - ./typo3conf:/var/www/html/typo3conf
+      - ./typo3conf/ext:/var/www/html/typo3conf/ext
     networks:
       default: {}
       proxy: {}
@@ -127,7 +122,7 @@ services:
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-      # - mariadb:/var/lib/mysql
+      - mariadb:/var/lib/mysql
       - ./sql:/sql
     command:
       - --log-bin=mysql-bin
@@ -152,8 +147,6 @@ networks:
     external: true
 
 volumes:
-  fileadmin:
-  typo3conf:
   uploads:
   mariadb:
 
