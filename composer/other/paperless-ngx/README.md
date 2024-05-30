@@ -22,10 +22,9 @@
 ### create your `secrets`:
 
 ```sh
-$openssl rand -base64 18 > config/secrets/mariadb_password_file.txt
-$openssl rand -base64 18 > config/secrets/mariadb_root_password_file.txt
-$openssl rand -base64 18 > config/secrets/paperless_admin_password_file.txt
-$openssl rand -base64 18 > config/secrets/paperless_secret_key.txt
+$pwgen -s 18 1 > config/secrets/mariadb_user_password.txt
+$pwgen -s 18 1 > config/secrets/paperless_admin_password.txt
+$pwgen -s 18 1 > config/secrets/paperless_secret_key.txt
 ```
 
 ### create `.env` file following:
@@ -47,16 +46,16 @@ MIDDLEWARE_SECURED=default-secured@file
 
 # GENERAL sources to be used (set by default, change as needed)
 # ______________________________________________________________________________
-RESOURCES_LIMITS_CPUS=1
-RESOURCES_LIMITS_MEMORY=1g
+RESOURCES_LIMITS_CPUS=2
+RESOURCES_LIMITS_MEMORY=2g
 RESOURCES_RESERVATIONS_CPUS=0.001
 RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_PAPERLESS=1.17.4
-VERSION_MARIADB=11.2.2
-VERSION_REDIS=7.2.3-alpine
+VERSION_PAPERLESS=2.8
+VERSION_MARIADB=11.3.2
+VERSION_VALKEY=7.2.5-alpine
 ```
 
 #### example short .env
@@ -64,10 +63,6 @@ VERSION_REDIS=7.2.3-alpine
 ```env
 NETWORK_MODE=overlay
 DOMAIN=paperless.home.local
-
-VERSION_PAPERLESS=1.17.4
-VERSION_MARIADB=11.2.2
-VERSION_REDIS=7.2.3-alpine
 ```
 
 ---
