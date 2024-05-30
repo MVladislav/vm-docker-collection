@@ -22,7 +22,7 @@
 ### create your `secrets`:
 
 ```sh
-$pwgen -s 32 1 > config/secrets/my_file_secret.txt
+$pwgen -s 32 1 > config/secrets/postgres_password_file.txt
 ```
 
 ### create `.env` file following:
@@ -44,18 +44,30 @@ MIDDLEWARE_SECURED=default-secured@file
 
 # GENERAL sources to be used (set by default, change as needed)
 # ______________________________________________________________________________
-RESOURCES_LIMITS_CPUS=1
-RESOURCES_LIMITS_MEMORY=1g
+RESOURCES_LIMITS_CPUS=4
+RESOURCES_LIMITS_MEMORY=2g
 RESOURCES_RESERVATIONS_CPUS=0.001
 RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION=latest
+VERSION_OPENPROJECT=14-slim
+VERSION_MEMCACHED=1.6.27-alpine
+VERSION_POSTGRESQL=16.2-alpine3.19
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
-# NOTE: extend additional info here ...
+
+POSTGRES_PASSWORD_TMP=$(cat config/secrets/postgres_password_file.txt)
+
+EMAIL_DELIVERY_METHOD=smtp
+SMTP_ADDRESS=<ADD_HERE>
+SMTP_PORT=587
+SMTP_DOMAIN=<ADD_HERE>
+SMTP_AUTHENTICATION=plain
+SMTP_USER_NAME=<ADD_HERE>
+SMTP_PASSWORD=<ADD_HERE>
+SMTP_ENABLE_STARTTLS_AUTO=true
 ```
 
 #### example short .env
@@ -63,7 +75,8 @@ VERSION=latest
 ```env
 NETWORK_MODE=overlay
 DOMAIN=openproject.home.local
-VERSION=latest
+
+POSTGRES_PASSWORD_TMP=$(cat config/secrets/postgres_password_file.txt)
 ```
 
 ---
@@ -73,4 +86,4 @@ VERSION=latest
 - <https://www.openproject.org/>
 - <https://www.openproject.org/docs/installation-and-operations/installation/docker/>
 - <https://github.com/opf/openproject-deploy>
-  - <https://github.com/opf/openproject-deploy/tree/stable/13/compose>
+  - <https://github.com/opf/openproject-deploy/tree/stable/14/compose>

@@ -4,48 +4,40 @@ version: "3.8"
 ################################################################################
 ################################################################################
 ################################################################################
-
 x-basic-deploy-labels: &basic-deploy-labels
   labels:
     - traefik.enable=true
     - traefik.docker.lbswarm=${LB_SWARM:-true}
     - traefik.docker.network=proxy
-    - traefik.http.routers.<router_name>${SERVICE_NAME_POST:-}.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
-    - traefik.http.routers.<router_name>${SERVICE_NAME_POST:-}.rule=Host(`${DOMAIN?domain variable not set}`)
-    - traefik.http.routers.<router_name>${SERVICE_NAME_POST:-}.tls=true
-    - traefik.http.routers.<router_name>${SERVICE_NAME_POST:-}.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
-    - traefik.http.routers.<router_name>${SERVICE_NAME_POST:-}.service=<router_name>${SERVICE_NAME_POST:-}
-    - traefik.http.services.<router_name>${SERVICE_NAME_POST:-}.loadbalancer.server.scheme=${PROTOCOL:-https}
-    - traefik.http.services.<router_name>${SERVICE_NAME_POST:-}.loadbalancer.server.port=${PORT:-443}
+    - traefik.http.routers.openproject.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.openproject.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.openproject.tls=true
+    - traefik.http.routers.openproject.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.openproject.service=openproject
+    - traefik.http.services.openproject.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.openproject.loadbalancer.server.port=${PORT:-8080}
 
 x-basic-deploy: &basic-deploy
   mode: replicated
-  # mode: global
   replicas: 1
   placement:
     max_replicas_per_node: 1
     constraints:
-      # - "node.id==${NODE_ID}"
       - "node.role==${NODE_ROLE:-manager}"
       - node.platform.os == linux
   restart_policy:
     condition: on-failure
   resources:
     limits:
-      cpus: ${RESOURCES_LIMITS_CPUS:-1}
-      memory: ${RESOURCES_LIMITS_MEMORY:-1g}
+      cpus: ${RESOURCES_LIMITS_CPUS:-4}
+      memory: ${RESOURCES_LIMITS_MEMORY:-2g}
     reservations:
       cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
       memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
 
 x-basic: &basic
   env_file: .env
-  # user: "${GID:-1000}:${UID:-1000}"
-  # privileged: true
-  # stdin_open: true # docker run -i
-  # tty: true # docker run -t
   # cap_add:
-  #   # https://dockerlabs.collabnix.com/advanced/security/capabilities/
   #   - CHOWN
   #   - DAC_OVERRIDE
   #   - DAC_READ_SEARCH
@@ -53,43 +45,11 @@ x-basic: &basic
   #   - SETUID
   #   - FOWNER
   #   - FSETID
-  #   # --------------------------
-  #   - NET_ADMIN
-  #   - NET_RAW
-  #   - NET_BIND_SERVICE
-  #   - NET_BROADCAST
-  #   - SYS_MODULE
-  #   - SYS_NICE
-  #   - AUDIT_CONTROL
-  #   - AUDIT_READ
-  #   # --------------------------
-  #   - KILL
-  #   - SETPCAP
-  #   - LINUX_IMMUTABLE
-  #   - IPC_LOCK
-  #   - IPC_OWNER
-  #   - SYS_RAWIO
-  #   - SYS_CHROOT
-  #   - SYS_PTRACE
-  #   - SYS_PACCT
-  #   - SYS_ADMIN
-  #   - SYS_BOOT
-  #   - SYS_RESOURCE
-  #   - SYS_TIME
-  #   - SYS_TTY_CONFIG
-  #   - MKNOD
-  #   - LEASE
-  #   - AUDIT_WRITE
-  #   - SETFCAP
-  #   - MAC_OVERRIDE
-  #   - MAC_ADMIN
-  #   - SYSLOG
-  #   - WAKE_ALARM
-  #   - BLOCK_SUSPEND
   # cap_drop: ["ALL"]
   # security_opt:
-  #   - no-new-privileges:true
-  #   # - label:disable
+  #   - no-new-privileges=true
+  #   # - seccomp=unconfined
+  #   # - label=disable
   # pids_limit: 200
   # read_only: ${CONTAINER_READONLY:-false}
   ulimits:
@@ -101,166 +61,179 @@ x-basic: &basic
       hard: 655360
     fsize: -1
     as: -1
-  # mem_limit: 1g
   networks:
     default: {}
-    proxy: {}
-  # network_mode: host
   healthcheck:
     disable: true
-  tmpfs:
-    - /tmp
-  sysctls:
-    - net.ipv4.ip_forward=1
-    - net.ipv4.conf.all.src_valid_mark=1
-    - net.ipv4.conf.all.rp_filter=0
-    - net.ipv4.conf.default.rp_filter=0
-    - net.ipv4.conf.eth0.rp_filter=0
-    - net.ipv4.conf.lo.rp_filter=0
-    - net.ipv6.conf.all.forwarding=1
-    - net.ipv6.conf.all.disable_ipv6=0
-  restart: always # always | on-failure
-
-x-logging: &logging
-  logging:
-    # https://docs.docker.com/config/containers/logging/configure/#supported-logging-drivers
-    driver: json-file # none|local|json-file|syslog|journald|gelf|fluentd|awslogs|splunk|etwlogs|gcplogs|logentries
-    options:
-      max-size: "10m" # Set maximum log file size
-      max-file: 3 # Set maximum number of log files
-      compress: "true" # Enable log file compression
-      labels: app=example # Add custom labels to log messages
-      # # => gelf
-      # gelf-address: "tcp://graylog-server:12201"
-      # gelf-compression-type: zlib
-      # tag: "log-gelf"
-      # tls: "true"
-      # tls-verify: "true"  # Enable TLS verification
-      # tls-ca-cert: /path/to/ca-cert.pem  # Path to CA certificate file
-      # tls-cert: /path/to/client-cert.pem  # Path to client certificate file
-      # tls-key: /path/to/client-key.pem  # Path to client private key file
+  restart: always
 
 ################################################################################
 ################################################################################
 ################################################################################
+x-op-image: &image
+  image: openproject/openproject:${VERSION_OPENPROJECT:-14-slim}
+x-op-app: &app
+  <<: *image
+  environment:
+    OPENPROJECT_HTTPS: "${OPENPROJECT_HTTPS:-true}"
+    OPENPROJECT_HOST__NAME: "${DOMAIN?domain variable not set}"
+    OPENPROJECT_HSTS: "${OPENPROJECT_HSTS:-true}"
+    OPENPROJECT_DEFAULT__LANGUAGE: ${OPENPROJECT_DEFAULT__LANGUAGE:-en}
+    RAILS_CACHE_STORE: "memcache"
+    OPENPROJECT_CACHE__MEMCACHE__SERVER: "cache:11211"
+    OPENPROJECT_RAILS__RELATIVE__URL__ROOT: "${OPENPROJECT_RAILS__RELATIVE__URL__ROOT:-}"
+    DATABASE_URL: "${DATABASE_URL:-postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD_TMP}@postgresql/${POSTGRES_DB:-openproject}?pool=20&encoding=unicode&reconnect=true}"
+    RAILS_MIN_THREADS: ${RAILS_MIN_THREADS:-4}
+    RAILS_MAX_THREADS: ${RAILS_MAX_THREADS:-16}
 
-x-base-env: &base-env
-  TZ: ${TIMEZONE:-Europe/Berlin}
-  PUID: ${PUID:-$UID}
-  PGID: ${PGID:-$GID}
+    # OPENPROJECT_DISABLED__MODULES: "${OPENPROJECT_DISABLED__MODULES:-backlogs meetings}"
 
+    PGDATA: /var/lib/postgresql/data
+    OPDATA: /var/openproject/assets
+
+    # set to true to enable the email receiving feature. See ./docker/cron for more options
+    IMAP_ENABLED: "${IMAP_ENABLED:-false}"
+  volumes:
+    - /etc/timezone:/etc/timezone:ro
+    - /etc/localtime:/etc/localtime:ro
+    - "${OPDATA:-opdata}:/var/openproject/assets"
+  links:
+    - postgresql
+    - cache
+
+################################################################################
+################################################################################
+################################################################################
 services:
   ##############################################################################
   ##############################################################################
   ##############################################################################
-  app:
-    build:
-      context: .
-      dockerfile: ./Dockerfile
-      # context: https://github.com/<TODO>/<TODO>.git#main
-      # dockerfile: ./Dockerfile
-      args:
-        BUILD_DATE: ${BUILD_DATE:-2022}
-        VERSION: ${VERSION:-latest}
-    image: localhost:5000/...:${VERSION:-latest}
-    <<: [*basic, *basic-deploy-labels, *logging]
+  openproject:
+    <<: [*app, *basic, *basic-deploy-labels]
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels]
-    # ports:
-    #   - target: ${PORT:-...}
-    #     published: ${PORT_PUBLISH:-...}
-    #     protocol: tcp
-    #     mode: host
-    secrets:
-      - my_external_secret
-      - my_file_secret
-      - source: own_secret
-        uid: "1000"
-        gid: "1000"
-        mode: 400
-    environment:
-      <<: *base-env
-      MY_EXTERNAL_SECRET_FILE: /run/secrets/my_external_secret
-      MY_FILE_SECRET_FILE: /run/secrets/my_file_secret
-    # configs:
-    #   - source: xx_config
-    #     target: ...
-    #     mode: 0440
-    #     uid: "1000"
-    #     gid: "1000"
+    labels:
+      - autoheal=true
+    networks:
+      default: {}
+      proxy: {}
+    # command: "./docker/prod/web"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "curl",
+          "-f",
+          "http://localhost:8080${OPENPROJECT_RAILS__RELATIVE__URL__ROOT:-}/health_checks/default",
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 30s
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  worker:
+    <<: [*app, *basic]
+    deploy:
+      <<: *basic-deploy
+    command: "./docker/prod/worker"
+
+  cron:
+    <<: [*app, *basic]
+    deploy:
+      <<: *basic-deploy
+    command: "./docker/prod/cron"
+
+  seeder:
+    <<: [*app, *basic]
+    deploy:
+      <<: *basic-deploy
+    command: "./docker/prod/seeder"
+    restart: on-failure
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  cache:
+    # https://hub.docker.com/_/memcached
+    image: memcached:${VERSION_MEMCACHED:-1.6.27-alpine}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-      # - data:/root
-      # - type: bind
-      #   source: ./logstash/config/logstash.yml
-      #   target: /usr/share/logstash/config/logstash.yml
-      #   read_only: true
-      # command: >
-      # ...
+
+  # autoheal:
+  #   # https://hub.docker.com/r/willfarrell/autoheal
+  #   image: willfarrell/autoheal:${VERSION_AUTOHEAL:-1.2.0}
+  #   <<: *basic
+  #   deploy:
+  #     <<: *basic-deploy
+  #   environment:
+  #     AUTOHEAL_CONTAINER_LABEL: autoheal
+  #     AUTOHEAL_START_PERIOD: 600
+  #     AUTOHEAL_INTERVAL: 30
+  #   volumes:
+  #     - /etc/timezone:/etc/timezone:ro
+  #     - /etc/localtime:/etc/localtime:ro
+  #     - /var/run/docker.sock:/var/run/docker.sock
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  postgresql:
+    # https://hub.docker.com/_/postgres
+    image: postgres:${VERSION_POSTGRESQL:-16.2-alpine3.19}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_POSTGRESQL:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_POSTGRESQL:-512M}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_POSTGRESQL:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_POSTGRESQL:-32m}
+    cap_add:
+      - SETGID
+      - SETUID
+      - DAC_OVERRIDE
+    secrets:
+      - postgres_password_file
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-openproject}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password_file
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - postgresql:/var/lib/postgresql/data
     healthcheck:
-      # test:
-      #   [
-      #     "CMD",
-      #     "curl",
-      #     "-f",
-      #     "${PROTOCOL:-https}://127.0.0.1:${PORT:-443}",
-      #     ".......................",
-      #     "CMD",
-      #     "wget",
-      #     "--no-verbose",
-      #     "--tries=1",
-      #     "--spider",
-      #     "--no-check-certificate",
-      #     "${PROTOCOL:-https}://127.0.0.1:${PORT:-443}",
-      #     "CMD-SHELL",
-      #     "wget --no-verbose --tries=1 --spider --no-check-certificate ${PROTOCOL:-https}://127.0.0.1:${PORT:-443} || exit 1"
-      #   ]
-      # start_period: 5s
-      # interval: 10s
-      # retries: 5
-      # timeout: 3s
-      disable: true
+      test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
+      start_period: 5s
+      interval: 10s
+      retries: 5
+      timeout: 3s
 
 ################################################################################
 ################################################################################
 ################################################################################
 networks:
   default:
-    # name: proxy
     driver: ${NETWORK_MODE:-bridge}
     attachable: true
     driver_opts:
       encrypted: "true"
   proxy:
     external: true
-#
-# volumes:
-#   data:
-#     name: data${SERVICE_NAME_POST:-}
-#   ## sudo apt install nfs-common
-#   # nas-data:
-#   #   # name: nas-data
-#   #   driver: local
-#   #   driver_opts:
-#   #     type: nfs
-#   #     o: nfsvers=4,addr=${NAS_HOST},rw,noatime,rsize=8192,wsize=8192,tcp,timeo=14
-#   #     device: ":${NAS_PATH:-/}"
-#   # smb-data:
-#   #   # name: smb-data
-#   #   driver: local
-#   #   driver_opts:
-#   #     type: cifs
-#   #     device: "//${NAS_HOST}${NAS_PATH:-/}"
-#   #     o: "username=${NAS_USERNAME},password=${NAS_PASSWORD},vers=3.0,uid=${NAS_PUID:-1000},gid=${NAS_PGID:-1000}"
-#
-# configs:
-#   xx_config:
-#     file: $PWD/config/...
-#
-# secrets:
-#   # echo "This is an external secret" | docker secret create my_external_secret -
-#   my_external_secret:
-#     external: true
-#   my_file_secret:
-#     file: config/secrets/my_file_secret.txt
+
+volumes:
+  opdata: {}
+  postgresql: {}
+
+secrets:
+  postgres_password_file:
+    file: config/secrets/postgres_password_file.txt
