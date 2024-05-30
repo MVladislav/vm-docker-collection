@@ -14,3 +14,7 @@ config/*
 !config/certs/
 config/certs/*
 !config/certs/.gitempty
+
+!config/certs-ca/
+config/certs-ca/*
+!config/certs-ca/.gitempty
