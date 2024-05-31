@@ -93,6 +93,12 @@ x-op-app: &app
 
     # set to true to enable the email receiving feature. See ./docker/cron for more options
     IMAP_ENABLED: "${IMAP_ENABLED:-false}"
+
+    SSL_CERT_FILE: /var/openproject/ca.crt
+  configs:
+    - source: ca_cert_file
+      target: /var/openproject/ca.crt
+      mode: 0444
   volumes:
     - /etc/timezone:/etc/timezone:ro
     - /etc/localtime:/etc/localtime:ro
@@ -166,21 +172,6 @@ services:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
 
-  # autoheal:
-  #   # https://hub.docker.com/r/willfarrell/autoheal
-  #   image: willfarrell/autoheal:${VERSION_AUTOHEAL:-1.2.0}
-  #   <<: *basic
-  #   deploy:
-  #     <<: *basic-deploy
-  #   environment:
-  #     AUTOHEAL_CONTAINER_LABEL: autoheal
-  #     AUTOHEAL_START_PERIOD: 600
-  #     AUTOHEAL_INTERVAL: 30
-  #   volumes:
-  #     - /etc/timezone:/etc/timezone:ro
-  #     - /etc/localtime:/etc/localtime:ro
-  #     - /var/run/docker.sock:/var/run/docker.sock
-
   ##############################################################################
   ##############################################################################
   ##############################################################################
@@ -233,6 +224,10 @@ networks:
 volumes:
   opdata: {}
   postgresql: {}
+
+configs:
+  ca_cert_file:
+    file: $PWD/config/ca.crt
 
 secrets:
   postgres_password_file:

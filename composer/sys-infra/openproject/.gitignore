@@ -12,3 +12,5 @@ config/*
 !config/secrets/
 config/secrets/*
 !config/secrets/.gitempty
+
+!config/ca.crt
