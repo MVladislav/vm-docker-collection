@@ -192,13 +192,19 @@ services:
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-      # - data:/root
+      - data:/root
       # - type: bind
       #   source: ./logstash/config/logstash.yml
       #   target: /usr/share/logstash/config/logstash.yml
       #   read_only: true
-      # command: >
-      # ...
+    # devices:
+    #   - /dev/kfd # main compute interface
+    #   - /dev/dri # Direct Rendering Interface
+    #   # - /dev/dri/renderD128 # instead of dri, pass each device individually (number needs to be adjust)
+    # group_add:
+    #   - video
+    # command: >
+    #   ...
     healthcheck:
       # test:
       #   [
