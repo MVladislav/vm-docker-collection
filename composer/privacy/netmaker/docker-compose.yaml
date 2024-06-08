@@ -1,12 +1,5 @@
 ---
-version: "3.8"
-
-################################################################################
-################################################################################
-################################################################################
-
-x-basic-deploy-labels:
-  &basic-deploy-labels
+x-basic-deploy-labels: &basic-deploy-labels
   labels:
     - traefik.enable=true
     - traefik.docker.lbswarm=${LB_SWARM:-true}
@@ -26,8 +19,7 @@ x-basic-deploy-labels:
     - traefik.http.middlewares.nmui-security.headers.customResponseHeaders.X-Robots-Tag=none
     - traefik.http.middlewares.nmui-security.headers.customResponseHeaders.Server=
 
-x-basic-deploy-labels-api:
-  &basic-deploy-labels-api
+x-basic-deploy-labels-api: &basic-deploy-labels-api
   labels:
     - traefik.enable=true
     - traefik.docker.lbswarm=${LB_SWARM:-true}
@@ -38,8 +30,7 @@ x-basic-deploy-labels-api:
     - traefik.http.services.netmaker-api.loadbalancer.server.scheme=${PROTOCOL_NETMAKER_API:-http}
     - traefik.http.services.netmaker-api.loadbalancer.server.port=${PORT_NETMAKER_API:-8081}
 
-x-basic-deploy-labels-mq:
-  &basic-deploy-labels-mq
+x-basic-deploy-labels-mq: &basic-deploy-labels-mq
   labels:
     - traefik.enable=true
     - traefik.docker.lbswarm=${LB_SWARM:-true}
@@ -49,8 +40,7 @@ x-basic-deploy-labels-mq:
     - traefik.tcp.services.mqtt.loadbalancer.server.scheme=${PROTOCOL_MQTT:-http}
     - traefik.tcp.services.mqtt.loadbalancer.server.port=${PORT_MQTT:-8883}
 
-x-basic-deploy:
-  &basic-deploy
+x-basic-deploy: &basic-deploy
   mode: replicated
   replicas: 1
   placement:
@@ -68,10 +58,9 @@ x-basic-deploy:
       cpus: "0.001"
       memory: 32M
 
-x-basic:
-  &basic
+x-basic: &basic
   env_file: .env
-  cap_drop: [ "ALL" ]
+  cap_drop: ["ALL"]
   ulimits:
     memlock:
       soft: -1
@@ -92,16 +81,15 @@ x-basic:
 ################################################################################
 
 services:
-
   ##############################################################################
   ##############################################################################
   ##############################################################################
   netmaker:
     # https://hub.docker.com/r/gravitl/netmaker
     image: gravitl/netmaker:${VERSION_NETMAKER:-v0.18.0}
-    <<: [ *basic, *basic-deploy-labels-api ]
+    <<: [*basic, *basic-deploy-labels-api]
     deploy:
-      <<: [ *basic-deploy, *basic-deploy-labels-api ]
+      <<: [*basic-deploy, *basic-deploy-labels-api]
     cap_add:
       - NET_ADMIN
       - NET_RAW
@@ -155,9 +143,9 @@ services:
   netmaker-ui:
     # https://hub.docker.com/r/gravitl/netmaker-ui
     image: gravitl/netmaker-ui:${VERSION_NETMAKER_UI:-v0.18.0}
-    <<: [ *basic, *basic-deploy-labels ]
+    <<: [*basic, *basic-deploy-labels]
     deploy:
-      <<: [ *basic-deploy, *basic-deploy-labels ]
+      <<: [*basic-deploy, *basic-deploy-labels]
     cap_add:
       - CHOWN
       - DAC_OVERRIDE
@@ -193,9 +181,9 @@ services:
   mq:
     # https://hub.docker.com/_/eclipse-mosquitto
     image: eclipse-mosquitto:${VERSION_MQTT:-2.0.15-openssl}
-    <<: [ *basic, *basic-deploy-labels-mq ]
+    <<: [*basic, *basic-deploy-labels-mq]
     deploy:
-      <<: [ *basic-deploy, *basic-deploy-labels-mq ]
+      <<: [*basic-deploy, *basic-deploy-labels-mq]
     cap_add:
       - CHOWN
       - SETGID
@@ -209,7 +197,7 @@ services:
       - ./config/wait.sh:/mosquitto/config/wait.sh
       - mosquitto_data:/mosquitto/data
       - mosquitto_logs:/mosquitto/log
-    command: [ "/mosquitto/config/wait.sh" ]
+    command: ["/mosquitto/config/wait.sh"]
     networks:
       default: {}
       proxy: {}

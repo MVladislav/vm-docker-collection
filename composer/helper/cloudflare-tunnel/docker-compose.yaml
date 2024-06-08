@@ -1,12 +1,5 @@
 ---
-version: "3.8"
-
-################################################################################
-################################################################################
-################################################################################
-
-x-basic-deploy:
-  &basic-deploy
+x-basic-deploy: &basic-deploy
   mode: replicated
   replicas: 1
   placement:
@@ -24,13 +17,12 @@ x-basic-deploy:
       cpus: "0.001"
       memory: 32M
 
-x-basic:
-  &basic
+x-basic: &basic
   env_file: .env
   # cap_add:
   #   - NET_ADMIN
   #   - NET_RAW
-  cap_drop: [ "ALL" ]
+  cap_drop: ["ALL"]
   security_opt:
     - no-new-privileges:true
   ulimits:

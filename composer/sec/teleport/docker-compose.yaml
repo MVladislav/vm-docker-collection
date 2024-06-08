@@ -1,12 +1,5 @@
 ---
-version: "3.8"
-
-################################################################################
-################################################################################
-################################################################################
-
-x-basic-deploy-labels:
-  &basic-deploy-labels
+x-basic-deploy-labels: &basic-deploy-labels
   labels:
     - traefik.enable=true
     - traefik.docker.lbswarm=${LB_SWARM:-true}
@@ -19,8 +12,7 @@ x-basic-deploy-labels:
     - traefik.http.services.teleport.loadbalancer.server.port=${PORT:-3080}
     - traefik.http.routers.teleport.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
 
-x-basic-deploy:
-  &basic-deploy
+x-basic-deploy: &basic-deploy
   mode: replicated
   replicas: 1
   placement:
@@ -38,10 +30,9 @@ x-basic-deploy:
       cpus: "0.001"
       memory: 32M
 
-x-basic:
-  &basic
+x-basic: &basic
   env_file: .env
-  cap_drop: [ "ALL" ]
+  cap_drop: ["ALL"]
   security_opt:
     - no-new-privileges:true
   ulimits:
@@ -70,7 +61,7 @@ services:
     image: public.ecr.aws/gravitational/teleport:${VERSION:-12}
     <<: *basic
     deploy:
-      <<: [ *basic-deploy, *basic-deploy-labels ]
+      <<: [*basic-deploy, *basic-deploy-labels]
     ports:
       # - target: 443
       #   published: ${PORT:-443}

@@ -1,12 +1,5 @@
 ---
-version: "3.8"
-
-################################################################################
-################################################################################
-################################################################################
-
-x-basic-deploy-labels:
-  &basic-deploy-labels
+x-basic-deploy-labels: &basic-deploy-labels
   labels:
     - traefik.enable=true
     - traefik.docker.lbswarm=${LB_SWARM:-true}
@@ -19,8 +12,7 @@ x-basic-deploy-labels:
     - traefik.http.services.mariadb-gui.loadbalancer.server.port=${PORT:-8080}
     - traefik.http.routers.mariadb-gui.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
 
-x-basic-deploy:
-  &basic-deploy
+x-basic-deploy: &basic-deploy
   mode: replicated
   replicas: 1
   placement:
@@ -38,10 +30,9 @@ x-basic-deploy:
       cpus: "0.001"
       memory: 32M
 
-x-basic:
-  &basic
+x-basic: &basic
   env_file: .env
-  cap_drop: [ "ALL" ]
+  cap_drop: ["ALL"]
   security_opt:
     - no-new-privileges:true
   ulimits:
@@ -93,7 +84,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "mysqladmin ping -h 127.0.0.1 -P 3306 -u root -p$$(cat $$MARIADB_ROOT_PASSWORD_FILE) | grep 'mysqld is alive' || exit 1"
+          "mysqladmin ping -h 127.0.0.1 -P 3306 -u root -p$$(cat $$MARIADB_ROOT_PASSWORD_FILE) | grep 'mysqld is alive' || exit 1",
         ]
       interval: 30s
       timeout: 10s
@@ -107,7 +98,7 @@ services:
     image: phpmyadmin:${VERSION_PHPMYADMIN:-5.2.0-apache}
     <<: *basic
     deploy:
-      <<: [ *basic-deploy, *basic-deploy-labels ]
+      <<: [*basic-deploy, *basic-deploy-labels]
       resources:
         limits:
           # cpus: "1.5"

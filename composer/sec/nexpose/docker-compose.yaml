@@ -1,12 +1,5 @@
 ---
-version: "3.8"
-
-################################################################################
-################################################################################
-################################################################################
-
-x-basic-deploy-labels:
-  &basic-deploy-labels
+x-basic-deploy-labels: &basic-deploy-labels
   labels:
     - traefik.enable=true
     - traefik.docker.lbswarm=${LB_SWARM:-true}
@@ -19,8 +12,7 @@ x-basic-deploy-labels:
     - traefik.http.services.nexpose.loadbalancer.server.port=${PORT:-3780}
     - traefik.http.routers.nexpose.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
 
-x-basic-deploy:
-  &basic-deploy
+x-basic-deploy: &basic-deploy
   mode: replicated
   replicas: 1
   placement:
@@ -31,8 +23,7 @@ x-basic-deploy:
   restart_policy:
     condition: on-failure
 
-x-basic:
-  &basic
+x-basic: &basic
   env_file: .env
   # privileged: true
   cap_add:
@@ -81,7 +72,7 @@ services:
     tty: true # docker run -t
     <<: *basic
     deploy:
-      <<: [ *basic-deploy, *basic-deploy-labels ]
+      <<: [*basic-deploy, *basic-deploy-labels]
     ports:
       - target: 3780
         published: ${PORT:-3780}

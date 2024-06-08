@@ -1,12 +1,5 @@
 ---
-version: "3.8"
-
-################################################################################
-################################################################################
-################################################################################
-
-x-basic-deploy-labels:
-  &basic-deploy-labels
+x-basic-deploy-labels: &basic-deploy-labels
   labels:
     - traefik.enable=true
     - traefik.docker.lbswarm=${LB_SWARM:-true}
@@ -19,8 +12,7 @@ x-basic-deploy-labels:
     - traefik.http.services.splunk.loadbalancer.server.port=${PORT:-8000}
     - traefik.http.routers.splunk.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
 
-x-basic-deploy:
-  &basic-deploy
+x-basic-deploy: &basic-deploy
   mode: replicated
   replicas: 1
   placement:
@@ -38,15 +30,14 @@ x-basic-deploy:
       cpus: "0.001"
       memory: 32M
 
-x-basic:
-  &basic
+x-basic: &basic
   env_file: .env
   cap_add:
     - SETGID
     - SETUID
     - NET_ADMIN
   #   - NET_RAW
-  cap_drop: [ "ALL" ]
+  cap_drop: ["ALL"]
   ulimits:
     memlock:
       soft: -1
@@ -76,7 +67,7 @@ services:
     image: splunk/splunk:${VERSION:-8.2}
     <<: *basic
     deploy:
-      <<: [ *basic-deploy, *basic-deploy-labels ]
+      <<: [*basic-deploy, *basic-deploy-labels]
     # ports:
     #   - target: ${PORT:-8000} # SplunkWeb UI
     #     published: ${PORT_PUBLISH:-8000}
@@ -100,13 +91,7 @@ services:
       - so1-var:/opt/splunk/var
       - so1-etc:/opt/splunk/etc
     healthcheck:
-      test:
-        [
-          "CMD",
-          "curl",
-          "-f",
-          "${PROTOCOL:-http}://localhost:${PORT:-8000}"
-        ]
+      test: ["CMD", "curl", "-f", "${PROTOCOL:-http}://localhost:${PORT:-8000}"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -124,7 +109,6 @@ networks:
 volumes:
   so1-var: {}
   so1-etc: {}
-
 # configs:
 #   xx_config:
 #     file: $PWD/config/...

@@ -1,11 +1,5 @@
 ---
-version: "3.8"
-
-################################################################################
-################################################################################
-################################################################################
-x-basic-deploy-labels:
-  &basic-deploy-labels
+x-basic-deploy-labels: &basic-deploy-labels
   labels:
     - traefik.enable=true
     - traefik.docker.lbswarm=${LB_SWARM:-true}
@@ -24,8 +18,7 @@ x-basic-deploy-labels:
     - traefik.tcp.routers.graylog-syslog.tls.passthrough=false
     - traefik.tcp.services.graylog-syslog.loadbalancer.server.port=${PORT_SYSLOG_TLS:-1514}
 
-x-basic-deploy:
-  &basic-deploy
+x-basic-deploy: &basic-deploy
   mode: replicated
   replicas: 1
   placement:
@@ -43,8 +36,7 @@ x-basic-deploy:
       cpus: "0.001"
       memory: 32M
 
-x-basic:
-  &basic
+x-basic: &basic
   env_file: .env
   # cap_add:
   #   - CHOWN
@@ -99,7 +91,7 @@ services:
     image: graylog/graylog:${VERSION_GRAYLOG:-5.1.1}
     <<: *basic
     deploy:
-      <<: [ *basic-deploy, *basic-deploy-labels ]
+      <<: [*basic-deploy, *basic-deploy-labels]
     ports:
       # # Graylog web interface and REST API
       # - target: 9000

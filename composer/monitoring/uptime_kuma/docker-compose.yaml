@@ -1,12 +1,5 @@
 ---
-version: "3.8"
-
-################################################################################
-################################################################################
-################################################################################
-
-x-basic-deploy-labels:
-  &basic-deploy-labels
+x-basic-deploy-labels: &basic-deploy-labels
   labels:
     - traefik.enable=true
     - traefik.docker.lbswarm=${LB_SWARM:-true}
@@ -19,8 +12,7 @@ x-basic-deploy-labels:
     - traefik.http.services.uptime-kuma.loadbalancer.server.port=${PORT:-3001}
     - traefik.http.routers.uptime-kuma.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
 
-x-basic-deploy:
-  &basic-deploy
+x-basic-deploy: &basic-deploy
   mode: replicated
   replicas: 1
   placement:
@@ -38,12 +30,11 @@ x-basic-deploy:
       cpus: "0.001"
       memory: 32M
 
-x-basic:
-  &basic
+x-basic: &basic
   env_file: .env
   cap_add:
     - SETGID
-  cap_drop: [ "ALL" ]
+  cap_drop: ["ALL"]
   security_opt:
     - no-new-privileges:true
   ulimits:
@@ -74,7 +65,7 @@ services:
     image: louislam/uptime-kuma:${VERSION:-1.21.1-alpine}
     <<: *basic
     deploy:
-      <<: [ *basic-deploy, *basic-deploy-labels ]
+      <<: [*basic-deploy, *basic-deploy-labels]
     # ports:
     #   - target: ${PORT:-3001}
     #     published: ${PORT_PUBLISH:-3001}
@@ -87,7 +78,7 @@ services:
       - data:/app/data
     healthcheck:
       # disable: true
-      test: [ "CMD-SHELL", "node extra/healthcheck" ]
+      test: ["CMD-SHELL", "node extra/healthcheck"]
       interval: 30s
       timeout: 10s
       retries: 5

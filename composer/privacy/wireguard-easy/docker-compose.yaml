@@ -1,12 +1,5 @@
 ---
-version: "3.8"
-
-################################################################################
-################################################################################
-################################################################################
-
-x-basic-deploy-labels:
-  &basic-deploy-labels
+x-basic-deploy-labels: &basic-deploy-labels
   labels:
     - traefik.enable=true
     - traefik.docker.lbswarm=${LB_SWARM:-true}
@@ -19,8 +12,7 @@ x-basic-deploy-labels:
     - traefik.http.services.wg-easy.loadbalancer.server.port=${PORT:-51821}
     - traefik.http.routers.wg-easy.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
 
-x-basic-deploy:
-  &basic-deploy
+x-basic-deploy: &basic-deploy
   mode: replicated
   replicas: 1
   placement:
@@ -34,10 +26,9 @@ x-basic-deploy:
     limits:
       memory: 1g
 
-x-basic:
-  &basic
+x-basic: &basic
   env_file: .env
-  cap_drop: [ "ALL" ]
+  cap_drop: ["ALL"]
   cap_add:
     - NET_ADMIN
     - NET_RAW
@@ -78,9 +69,9 @@ services:
   wg-easy:
     # https://hub.docker.com/r/weejewel/wg-easy
     image: weejewel/wg-easy:${VERSION:-7-nightly}
-    <<: [ *basic, *basic-deploy-labels ]
+    <<: [*basic, *basic-deploy-labels]
     deploy:
-      <<: [ *basic-deploy, *basic-deploy-labels ]
+      <<: [*basic-deploy, *basic-deploy-labels]
     ports:
       - target: ${WG_PORT:-51820}
         published: ${WG_PORT_PUBLISH:-51820}

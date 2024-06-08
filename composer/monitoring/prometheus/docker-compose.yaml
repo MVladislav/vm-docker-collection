@@ -1,12 +1,5 @@
 ---
-version: "3.8"
-
-################################################################################
-################################################################################
-################################################################################
-
-x-basic-deploy-labels:
-  &basic-deploy-labels
+x-basic-deploy-labels: &basic-deploy-labels
   labels:
     - traefik.enable=true
     - traefik.docker.lbswarm=${LB_SWARM:-true}
@@ -21,8 +14,7 @@ x-basic-deploy-labels:
     - traefik.http.routers.prometheus.middlewares=admin-auth-prometheus
     - traefik.http.middlewares.admin-auth-prometheus.basicauth.users=${ADMIN_USERNAME?username variable not set}:${HASHED_PASSWORD?password hash variable not set}
 
-x-basic-deploy:
-  &basic-deploy
+x-basic-deploy: &basic-deploy
   mode: replicated
   replicas: 1
   placement:
@@ -40,10 +32,9 @@ x-basic-deploy:
       cpus: "0.001"
       memory: 32M
 
-x-basic:
-  &basic
+x-basic: &basic
   env_file: .env
-  cap_drop: [ "ALL" ]
+  cap_drop: ["ALL"]
   security_opt:
     - no-new-privileges:true
   ulimits:
@@ -72,7 +63,7 @@ services:
     image: prom/prometheus:${VERSION:-v2.43.0-rc.0}
     <<: *basic
     deploy:
-      <<: [ *basic-deploy, *basic-deploy-labels ]
+      <<: [*basic-deploy, *basic-deploy-labels]
     # ports:
     #   - target: ${PORT:-9090}
     #     published: ${PORT_PUBLISH:-9090}
@@ -99,7 +90,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "wget --quiet --no-verbose --tries=1 --spider --no-check-certificate ${PROTOCOL:-http}://127.0.0.1:${PORT:-9090} || exit 1"
+          "wget --quiet --no-verbose --tries=1 --spider --no-check-certificate ${PROTOCOL:-http}://127.0.0.1:${PORT:-9090} || exit 1",
         ]
       interval: 30s
       timeout: 10s

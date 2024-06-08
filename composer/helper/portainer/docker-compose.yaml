@@ -1,12 +1,5 @@
 ---
-version: "3.8"
-
-################################################################################
-################################################################################
-################################################################################
-
-x-basic-deploy-labels:
-  &basic-deploy-labels
+x-basic-deploy-labels: &basic-deploy-labels
   labels:
     - traefik.enable=true
     - traefik.docker.lbswarm=${LB_SWARM:-true}
@@ -19,8 +12,7 @@ x-basic-deploy-labels:
     - traefik.http.services.portainer.loadbalancer.server.port=${PORT:-9000}
     - traefik.http.routers.portainer.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
 
-x-basic-deploy:
-  &basic-deploy
+x-basic-deploy: &basic-deploy
   mode: replicated
   replicas: 1
   placement:
@@ -38,10 +30,9 @@ x-basic-deploy:
       cpus: "0.001"
       memory: 10M
 
-x-basic:
-  &basic
+x-basic: &basic
   env_file: .env
-  cap_drop: [ "ALL" ]
+  cap_drop: ["ALL"]
   security_opt:
     - no-new-privileges:true
   ulimits:
@@ -73,7 +64,7 @@ services:
     image: portainer/portainer-ce:${VERSION_PORTAINER:-2.16.2-alpine}
     <<: *basic
     deploy:
-      <<: [ *basic-deploy, *basic-deploy-labels ]
+      <<: [*basic-deploy, *basic-deploy-labels]
     # ports:
     #   - target: ${PORT:-9000}
     #     published: ${PORT_PUBLISH:-9000}
@@ -101,7 +92,7 @@ services:
           "--tries=1",
           "--spider",
           "--no-check-certificate",
-          "${PROTOCOL:-http}://127.0.0.1:${PORT:-9000}"
+          "${PROTOCOL:-http}://127.0.0.1:${PORT:-9000}",
         ]
       interval: 30s
       timeout: 10s
