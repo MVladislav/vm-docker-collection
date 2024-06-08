@@ -30,10 +30,10 @@ services:
     command: --save 300 1 --loglevel warning
     healthcheck:
       test: ["CMD-SHELL", "valkey-cli ping | grep PONG"]
-      start_period: 5s
-      interval: 10s
-      retries: 5
+      start_period: 2s
+      interval: 5s
       timeout: 3s
+      retries: 5
 
   ##############################################################################
   ##############################################################################
@@ -69,10 +69,10 @@ services:
       default: {}
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
-      start_period: 5s
-      interval: 10s
-      retries: 5
+      start_period: 2s
+      interval: 5s
       timeout: 3s
+      retries: 5
 
   ##############################################################################
   ##############################################################################
@@ -120,10 +120,10 @@ services:
       default: {}
     healthcheck:
       test: ["CMD-SHELL", "/usr/local/bin/healthcheck.sh --no-defaults"]
-      start_period: 5s
-      interval: 10s
-      retries: 5
+      start_period: 2s
+      interval: 5s
       timeout: 3s
+      retries: 5
 
   ##############################################################################
   ## NOTE: for PostgreSQL and MySQL ############################################

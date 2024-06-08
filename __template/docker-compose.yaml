@@ -228,7 +228,7 @@ services:
 ################################################################################
 networks:
   default:
-    # name: proxy
+    # name: proxy${SERVICE_NAME_POST:-}
     driver: ${NETWORK_MODE:-bridge}
     attachable: true
     driver_opts:
