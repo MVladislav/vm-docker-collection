@@ -70,12 +70,12 @@ create following files inside `config/ssl`:
 
 ```sh
 $openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:P-521 -quiet -out config/ssl/ca-key.pem
-$openssl req -new -x509 -key config/ssl/ca-key.pem -out config/ssl/ca.pem -subj "/CN=TEST CA"
+$openssl req -new -x509 -key config/ssl/ca-key.pem -out config/ssl/ca.pem -subj "/CN=*.test.local"
 
 $openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:P-521 -quiet -out config/ssl/cert-key.pem
-$openssl req -new -key config/ssl/cert-key.pem -out config/ssl/cert.csr -subj "/CN=traefik.test.local"
+$openssl req -new -key config/ssl/cert-key.pem -out config/ssl/cert.csr -subj "/CN=*.test.local" -addext "subjectAltName=DNS:*.test.local"
 
-$openssl x509 -req -in config/ssl/cert.csr -CA config/ssl/ca.pem -CAkey config/ssl/ca-key.pem -CAcreateserial -out config/ssl/cert.pem -days 365
+$openssl x509 -req -in config/ssl/cert.csr -CA config/ssl/ca.pem -CAkey config/ssl/ca-key.pem -CAcreateserial -out config/ssl/cert.pem -days 365 -extfile <(printf "subjectAltName=DNS:*.test.local")
 $rm config/ssl/cert.csr config/ssl/ca.srl
 ```
 
