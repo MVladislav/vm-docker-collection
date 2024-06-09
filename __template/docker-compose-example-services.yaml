@@ -158,6 +158,39 @@ services:
       default: {}
 
   ##############################################################################
+  ## NOTE: for PostgreSQL and MySQL ############################################
+  ## TODO: not complete ready       ############################################
+  ##############################################################################
+  phpmyadmin:
+    # https://hub.docker.com/_/phpmyadmin
+    image: phpmyadmin:${VERSION_PHPMYADMIN:-5.2.0-apache}
+    # <<: *basic
+    deploy:
+      # <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_PHPMYADMIN:-0.25}
+          memory: ${RESOURCES_LIMITS_MEMORY_PHPMYADMIN:-256M}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_PHPMYADMIN:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_PHPMYADMIN:-32m}
+    # ports:
+    #   - target: ${PORT_PHPMYADMIN:-80}
+    #     published: ${PORT_PUBLISH_PHPMYADMIN:-80}
+    #     protocol: tcp
+    #     mode: host
+    environment:
+      PMA_HOST: mariadb
+      PMA_PORT: 3306
+      UPLOAD_LIMIT: 1G
+      APACHE_PORT: 8080
+    # volumes:
+    #   - /etc/timezone:/etc/timezone:ro
+    #   - /etc/localtime:/etc/localtime:ro
+    networks:
+      default: {}
+
+  ##############################################################################
   ##############################################################################
   ##############################################################################
   influxdb:
@@ -194,6 +227,96 @@ services:
       - influxdb-storage:/var/lib/influxdb2
       - influxdb-config:/etc/influxdb2
 
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  # ```sh
+  # $docker exec -it "$(docker ps -q -f name=mongodb_mongodb)" mongosh --port 27017 --authenticationDatabase "admin" -u "root" -p
+  # ```
+
+  # ```mongodb
+  # use graylog
+  # db.createUser(
+  #   {
+  #     user: "graylog",
+  #     pwd:  passwordPrompt(),   // or cleartext password
+  #     roles: [ { role: "readWrite", db: "graylog" } ]
+  #   }
+  # )
+  # ```
+  ##############################################################################
+  mongodb:
+    # https://hub.docker.com/_/mongo
+    image: mongo:${VERSION_MONGODB:-6.0.6}
+    # <<: *basic
+    deploy:
+      # <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_MONGODB:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_MONGODB:-512M}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_MONGODB:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_MONGODB:-32m}
+    # ports:
+    #   - target: ${PORT_MONGODB:-27017}
+    #     published: ${PORT_MONGODB_PUBLISH:-27017}
+    #     protocol: tcp
+    #     mode: host
+    secrets:
+      - mongo_initdb_root_password
+    environment:
+      TZ: ${TZ:-Europe/Berlin}
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:-root}
+      MONGO_INITDB_ROOT_PASSWORD_FILE: /run/secrets/mongo_initdb_root_password
+    networks:
+      default: {}
+    volumes:
+      # - /etc/timezone:/etc/timezone:ro
+      # - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - mongodb:/data/db
+
+  ##############################################################################
+  ## NOTE: for mongoDB              ############################################
+  ## TODO: not complete ready       ############################################
+  ##############################################################################
+  mongo-express:
+    # https://hub.docker.com/_/mongo-express
+    image: mongo-express:${VERSION_EXPRESS:-0.54.0}
+    # <<: *basic
+    deploy:
+      # <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_EXPRESS:-0.25}
+          memory: ${RESOURCES_LIMITS_MEMORY_EXPRESS:-256M}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_EXPRESS:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_EXPRESS:-32m}
+    # ports:
+    #   - target: ${PORT_EXPRESS:-8081}
+    #     published: ${PORT_PUBLISH_EXPRESS:-8081}
+    #     protocol: tcp
+    #     mode: host
+    secrets:
+      - me_config_basicauth_password
+      - mongo_initdb_root_password
+    environment:
+      ME_CONFIG_BASICAUTH_USERNAME: ${ME_CONFIG_BASICAUTH_USERNAME:-admin}
+      ME_CONFIG_BASICAUTH_PASSWORD_FILE: /run/secrets/me_config_basicauth_password
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGO_INITDB_ROOT_USERNAME:-root}
+      ME_CONFIG_MONGODB_ADMINPASSWORD_FILE: /run/secrets/mongo_initdb_root_password
+      ME_CONFIG_MONGODB_PORT: 27017
+      ME_CONFIG_MONGODB_SERVER: mongodb
+      ME_CONFIG_OPTIONS_EDITORTHEME: midnight
+    # volumes:
+    #   - /etc/timezone:/etc/timezone:ro
+    #   - /etc/localtime:/etc/localtime:ro
+    networks:
+      default: {}
+
 ################################################################################
 ################################################################################
 ################################################################################
@@ -204,6 +327,7 @@ volumes:
   mariadb: {}
   influxdb-storage: {}
   influxdb-config: {}
+  mongodb: {}
 
 secrets:
   postgres_password_file:
@@ -212,3 +336,7 @@ secrets:
     file: config/secrets/mariadb_root_password.txt
   mariadb_user_password:
     file: config/secrets/mariadb_user_password.txt
+  mongo_initdb_root_password:
+    file: config/secrets/mongo_initdb_root_password.txt
+  me_config_basicauth_password:
+    file: config/secrets/me_config_basicauth_password.txt
