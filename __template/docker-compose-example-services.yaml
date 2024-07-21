@@ -195,7 +195,7 @@ services:
   ##############################################################################
   influxdb:
     # https://hub.docker.com/_/influxdb
-    image: influxdb:${VERSION_INFLUXDB:-2.7.5-alpine}
+    image: influxdb:${VERSION_INFLUXDB:-2.7.7-alpine}
     # <<: *basic
     deploy:
       # <<: *basic-deploy
@@ -206,15 +206,22 @@ services:
         reservations:
           cpus: ${RESOURCES_RESERVATIONS_CPUS_INFLUXDB:-0.001}
           memory: ${RESOURCES_RESERVATIONS_MEMORY_INFLUXDB:-32m}
+    cap_add:
+      - SETGID
+      - SETUID
+      - DAC_OVERRIDE
+      - CHOWN
     # ports:
     #   - target: ${PORT_INFLUXDB:-8086}
     #     published: ${PORT_INFLUXDB_PUBLISH:-8086}
     #     protocol: tcp
     #     mode: host
+    secrets:
+      - influxdb_init_password
     environment:
       DOCKER_INFLUXDB_INIT_MODE: ${DOCKER_INFLUXDB_INIT_MODE:-setup}
       DOCKER_INFLUXDB_INIT_USERNAME: ${DOCKER_INFLUXDB_INIT_USERNAME:-root}
-      # DOCKER_INFLUXDB_INIT_PASSWORD: ${DOCKER_INFLUXDB_INIT_PASSWORD:-}
+      DOCKER_INFLUXDB_INIT_PASSWORD_FILE: /run/secrets/influxdb_init_password
       DOCKER_INFLUXDB_INIT_ORG: ${DOCKER_INFLUXDB_INIT_ORG:-my_orga}
       DOCKER_INFLUXDB_INIT_BUCKET: ${DOCKER_INFLUXDB_INIT_BUCKET:-db0}
       # DOCKER_INFLUXDB_INIT_RETENTION: ${DOCKER_INFLUXDB_INIT_RETENTION:-1w}
@@ -340,3 +347,5 @@ secrets:
     file: config/secrets/mongo_initdb_root_password.txt
   me_config_basicauth_password:
     file: config/secrets/me_config_basicauth_password.txt
+  influxdb_init_password:
+    file: config/secrets/influxdb_init_password.txt
