@@ -12,6 +12,13 @@
     - [setup proxy (caddy)](#setup-proxy-caddy)
     - [create `.env` file following:](#create-env-file-following)
       - [example short .env](#example-short-env)
+  - [Manual run after install](#manual-run-after-install)
+    - [set default phone region](#set-default-phone-region)
+  - [Helpers](#helpers)
+    - [Bruteforce protection - unblock ip](#bruteforce-protection---unblock-ip)
+    - [On migration](#on-migration)
+    - [Troubleshooting file encoding on external storages](#troubleshooting-file-encoding-on-external-storages)
+  - [TODO](#todo)
   - [References](#references)
 
 ---
@@ -99,6 +106,8 @@ SKIP_DOMAIN_VALIDATION=true
 # ______________________________________________________________________________
 NEXTCLOUD_NFS_IP=<NFS_SYSTEM_IP_ADDRESS>
 NEXTCLOUD_NFS_PATH_MASTER=<NFS_PATH>
+
+NEXTCLOUD_TRUSTED_DOMAINS=<DOMAIN_NAME>
 ```
 
 #### example short .env
@@ -127,6 +136,29 @@ $docker exec --user www-data nextcloud-aio-nextcloud php occ config:system:set d
 
 ```sh
 $docker exec --user www-data -it nextcloud-aio-nextcloud php occ security:bruteforce:reset <ip-address>
+```
+
+### On migration
+
+> _mimetype migrations_
+
+```sh
+$docker exec --user www-data -it nextcloud-aio-nextcloud php occ maintenance:repair --include-expensive
+```
+
+### Troubleshooting file encoding on external storages
+
+```sh
+$docker exec --user www-data -it nextcloud-aio-nextcloud php occ files:scan --all
+```
+
+---
+
+## TODO
+
+```sh
+$docker exec --user www-data -it nextcloud-aio-nextcloud php occ config:system:set trusted_domains 10 --value="<DOMAIN_NAME>"
+$docker exec --user www-data -it nextcloud-aio-nextcloud php occ maintenance:update:htaccess
 ```
 
 ---
