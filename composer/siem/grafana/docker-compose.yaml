@@ -4,13 +4,13 @@ x-basic-deploy-labels: &basic-deploy-labels
     - traefik.enable=true
     - traefik.docker.lbswarm=${LB_SWARM:-true}
     - traefik.docker.network=proxy
-    - traefik.http.routers.grafana.entrypoints=https
-    - traefik.http.routers.grafana.rule=Host(`${DOMAIN?domain variable not set}`)
-    - traefik.http.routers.grafana.tls=true
-    - traefik.http.routers.grafana.service=grafana
-    - traefik.http.services.grafana.loadbalancer.server.scheme=${PROTOCOL:-http}
-    - traefik.http.services.grafana.loadbalancer.server.port=${PORT:-3000}
-    - traefik.http.routers.grafana.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.grafana${SERVICE_NAME_POST:-}.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.grafana${SERVICE_NAME_POST:-}.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.grafana${SERVICE_NAME_POST:-}.tls=true
+    - traefik.http.routers.grafana${SERVICE_NAME_POST:-}.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.grafana${SERVICE_NAME_POST:-}.service=grafana${SERVICE_NAME_POST:-}
+    - traefik.http.services.grafana${SERVICE_NAME_POST:-}.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.grafana${SERVICE_NAME_POST:-}.loadbalancer.server.port=${PORT:-3000}
 
 x-basic-deploy: &basic-deploy
   mode: replicated
@@ -24,50 +24,45 @@ x-basic-deploy: &basic-deploy
     condition: on-failure
   resources:
     limits:
-      # cpus: "1.5"
-      memory: 1g
+      cpus: ${RESOURCES_LIMITS_CPUS:-2}
+      memory: ${RESOURCES_LIMITS_MEMORY:-2g}
     reservations:
-      cpus: "0.001"
-      memory: 32M
+      cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
+      memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
 
 x-basic: &basic
   env_file: .env
   cap_drop: ["ALL"]
   security_opt:
-    - no-new-privileges:true
+    - no-new-privileges=true
   ulimits:
     memlock:
       soft: -1
       hard: -1
     nofile:
-      soft: 65535
-      hard: 65535
+      soft: 655360
+      hard: 655360
     fsize: -1
     as: -1
   networks:
     proxy: {}
+  healthcheck:
+    disable: true
   restart: always
 
 ################################################################################
 ################################################################################
 ################################################################################
-
 services:
   ##############################################################################
   ##############################################################################
   ##############################################################################
   grafana:
-    # https://hub.docker.com/r/grafana/grafana
-    image: grafana/grafana:${VERSION:-9.4.3}
-    user: "$UID:$GID"
-    <<: *basic
+    # https://hub.docker.com/r/grafana/grafana/tags
+    image: grafana/grafana:${VERSION:-11.1.1}
+    <<: [*basic, *basic-deploy-labels]
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels]
-    # ports:
-    #   - target: ${PORT:-3000}
-    #     published: ${PORT_PUBLISH:-3000}
-    #     protocol: tcp
-    #     mode: host
     secrets:
       - admin_password_file_secret
     environment:
@@ -78,9 +73,9 @@ services:
       GF_SMTP_ENABLED: ${GF_SMTP_ENABLED:-false}
       GF_SMTP_HOST: ${GF_SMTP_HOST:-}
       GF_SMTP_USER: ${GF_SMTP_USER:-}
-      # GF_SMTP_PASSWORD: ${GF_SMTP_PASSWORD:-}
+      # GF_SMTP_PASSWORD__FILE: /run/secrets/gf_smtp_password_file_secret
       GF_SMTP_FROM_ADDRESS: ${GF_SMTP_FROM_ADDRESS:-}
-      GF_INSTALL_PLUGINS: magnesium-wordcloud-panel,flant-statusmap-panel,grafana-piechart-panel,grafana-worldmap-panel,mxswat-separator-panel
+      GF_INSTALL_PLUGINS: grafana-clock-panel,magnesium-wordcloud-panel,flant-statusmap-panel,grafana-piechart-panel,grafana-worldmap-panel,mxswat-separator-panel
       # "GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource"
     volumes:
       - /etc/timezone:/etc/timezone:ro
@@ -98,8 +93,9 @@ services:
           "--no-check-certificate",
           "${PROTOCOL:-http}://127.0.0.1:${PORT:-3000}/api/health",
         ]
-      interval: 30s
-      timeout: 10s
+      start_period: 2s
+      interval: 5s
+      timeout: 3s
       retries: 5
 
 ################################################################################
