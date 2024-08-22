@@ -1,0 +1,109 @@
+---
+x-basic-deploy-labels: &basic-deploy-labels
+  labels:
+    - traefik.enable=true
+    - traefik.docker.lbswarm=${LB_SWARM:-true}
+    - traefik.docker.network=proxy
+    - traefik.http.routers.syncthing${SERVICE_NAME_POST:-}.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.syncthing${SERVICE_NAME_POST:-}.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.syncthing${SERVICE_NAME_POST:-}.tls=true
+    - traefik.http.routers.syncthing${SERVICE_NAME_POST:-}.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.syncthing${SERVICE_NAME_POST:-}.service=syncthing${SERVICE_NAME_POST:-}
+    - traefik.http.services.syncthing${SERVICE_NAME_POST:-}.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.syncthing${SERVICE_NAME_POST:-}.loadbalancer.server.port=${PORT:-8384}
+
+x-basic-deploy: &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  restart_policy:
+    condition: on-failure
+  resources:
+    limits:
+      cpus: ${RESOURCES_LIMITS_CPUS:-1}
+      memory: ${RESOURCES_LIMITS_MEMORY:-1g}
+    reservations:
+      cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
+      memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
+
+x-basic: &basic
+  env_file: .env
+  # cap_add:
+  #   - CHOWN
+  #   - DAC_OVERRIDE
+  #   - DAC_READ_SEARCH
+  #   - SETGID
+  #   - SETUID
+  #   - FOWNER
+  #   - FSETID
+  cap_drop: ["ALL"]
+  security_opt:
+    - no-new-privileges=true
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 655360
+      hard: 655360
+    fsize: -1
+    as: -1
+  networks:
+    proxy: {}
+  healthcheck:
+    disable: true
+  restart: always
+
+################################################################################
+################################################################################
+################################################################################
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  app:
+    # https://hub.docker.com/r/syncthing/syncthing
+    image: syncthing/syncthing:${VERSION:-1.27}
+    <<: [*basic, *basic-deploy-labels]
+    deploy:
+      <<: [*basic-deploy, *basic-deploy-labels]
+    ports:
+      - target: ${PORT_TCP:-22000} # TCP file transfers
+        published: ${PORT_TCP_PUBLISH:-22000}
+        protocol: tcp
+        mode: host
+      - target: ${PORT_QUIC:-22000} # QUIC file transfers
+        published: ${PORT_QUIC_PUBLISH:-22000}
+        protocol: udp
+        mode: host
+      # - target: ${PORT:-21027} # Receive local discovery broadcasts
+      #   published: ${PORT_PUBLISH:-21027}
+      #   protocol: udp
+      #   mode: host
+    environment:
+      PUID: 1000
+      PGID: 1000
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - data:/var/syncthing
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  proxy:
+    external: true
+
+volumes:
+  ## sudo apt install nfs-common
+  nas-data:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: nfsvers=4,addr=${NAS_HOST},rw,noatime,rsize=8192,wsize=8192,tcp,timeo=14
+      device: ":${NAS_PATH}"
