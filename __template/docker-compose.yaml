@@ -246,7 +246,7 @@ networks:
 #   #   driver_opts:
 #   #     type: nfs
 #   #     o: nfsvers=4,addr=${NAS_HOST},rw,noatime,rsize=8192,wsize=8192,tcp,timeo=14
-#   #     device: ":${NAS_PATH:-/}"
+#   #     device: ":${NAS_PATH}"
 #   # smb-data:
 #   #   # name: smb-data
 #   #   driver: local
