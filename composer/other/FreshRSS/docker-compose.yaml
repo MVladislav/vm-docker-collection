@@ -32,6 +32,10 @@ x-basic-deploy: &basic-deploy
 
 x-basic: &basic
   env_file: .env
+  cap_add:
+    - CHOWN
+    - SETGID
+    - SETUID
   cap_drop: ["ALL"]
   security_opt:
     - no-new-privileges:true
