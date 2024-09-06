@@ -77,6 +77,10 @@ services:
       GF_SMTP_FROM_ADDRESS: ${GF_SMTP_FROM_ADDRESS:-}
       GF_INSTALL_PLUGINS: grafana-clock-panel,magnesium-wordcloud-panel,flant-statusmap-panel,grafana-piechart-panel,grafana-worldmap-panel,mxswat-separator-panel
       # "GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource"
+      GF_AUTH_ANONYMOUS_ENABLED: ${GF_AUTH_ANONYMOUS_ENABLED:-true}
+      GF_AUTH_ANONYMOUS_ORG_NAME: ${GF_AUTH_ANONYMOUS_ORG_NAME:-VM}
+      GF_AUTH_ANONYMOUS_ORG_ROLE: ${GF_AUTH_ANONYMOUS_ORG_ROLE:-Viewer}
+      GF_AUTH_ANONYMOUS_HIDE_VERSION: ${GF_AUTH_ANONYMOUS_HIDE_VERSION:-true}
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
