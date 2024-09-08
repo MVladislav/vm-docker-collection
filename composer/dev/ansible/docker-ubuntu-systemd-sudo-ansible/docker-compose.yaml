@@ -11,13 +11,14 @@ x-basic-deploy: &basic-deploy
     condition: on-failure
   resources:
     limits:
-      # cpus: "1.5"
-      memory: 500M
+      cpus: ${RESOURCES_LIMITS_CPUS:-1}
+      memory: ${RESOURCES_LIMITS_MEMORY:-1g}
     reservations:
-      cpus: "0.001"
-      memory: 32M
+      cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
+      memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
 
 x-basic: &basic
+  env_file: .env
   privileged: true
   stdin_open: true # docker run -i
   tty: true # docker run -t
@@ -26,8 +27,8 @@ x-basic: &basic
       soft: -1
       hard: -1
     nofile:
-      soft: 65535
-      hard: 65535
+      soft: 655360
+      hard: 655360
     fsize: -1
     as: -1
   networks:
@@ -40,21 +41,17 @@ x-basic: &basic
 ################################################################################
 ################################################################################
 ################################################################################
-
 services:
-  ##############################################################################
-  ##############################################################################
-  ##############################################################################
   ubuntu:
     build:
       context: .
       dockerfile: ./Dockerfile
       args:
-        BUILD_DATE: ${BUILD_DATE:-2023}
-        VERSION: ${VERSION_UBUNTU:-23.04}
-        VERSION_UBUNTU: ${VERSION_UBUNTU:-23.04}
-        PYTHON_ARGS: ${PYTHON_ARGS:-}
-    image: mvladislav/docker-ubuntu-systemd-sudo-ansible:${VERSION_UBUNTU:-23.04}
+        BUILD_DATE: ${BUILD_DATE}
+        VERSION: ${VERSION_UBUNTU}
+        VERSION_UBUNTU: ${VERSION_UBUNTU}
+        PYTHON_ARGS: ${PYTHON_ARGS}
+    image: mvladislav/docker-ubuntu-systemd-sudo-ansible:${VERSION_UBUNTU}
     <<: *basic
     deploy:
       <<: *basic-deploy
