@@ -40,12 +40,12 @@ x-basic: &basic
   # tty: true # docker run -t
   # cap_add:
   #   # https://dockerlabs.collabnix.com/advanced/security/capabilities/
-  #   - CHOWN
+  #   - CHOWN # (chmod)
   #   - DAC_OVERRIDE
   #   - DAC_READ_SEARCH
-  #   - SETGID
-  #   - SETUID
-  #   - FOWNER
+  #   - SETGID # (setgroups)
+  #   - SETUID # (setuid)
+  #   - FOWNER # (chmod, chown, or chgrp)
   #   - FSETID
   #   # --------------------------
   #   - NET_ADMIN
