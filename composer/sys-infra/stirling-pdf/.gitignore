@@ -1,0 +1,8 @@
+*
+!.gitignore
+!.gitempty
+
+!docker-compose.yaml
+
+!LICENCE
+!README.md

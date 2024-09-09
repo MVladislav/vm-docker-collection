@@ -1,0 +1,91 @@
+---
+x-basic-deploy-labels: &basic-deploy-labels
+  labels:
+    - traefik.enable=true
+    - traefik.docker.lbswarm=${LB_SWARM:-true}
+    - traefik.docker.network=proxy
+    - traefik.http.routers.stirling-pdf${SERVICE_NAME_POST:-}.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.stirling-pdf${SERVICE_NAME_POST:-}.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.stirling-pdf${SERVICE_NAME_POST:-}.tls=true
+    - traefik.http.routers.stirling-pdf${SERVICE_NAME_POST:-}.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.stirling-pdf${SERVICE_NAME_POST:-}.service=stirling-pdf${SERVICE_NAME_POST:-}
+    - traefik.http.services.stirling-pdf${SERVICE_NAME_POST:-}.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.stirling-pdf${SERVICE_NAME_POST:-}.loadbalancer.server.port=${PORT:-8080}
+
+x-basic-deploy: &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  restart_policy:
+    condition: on-failure
+  resources:
+    limits:
+      cpus: ${RESOURCES_LIMITS_CPUS:-1}
+      memory: ${RESOURCES_LIMITS_MEMORY:-1g}
+    reservations:
+      cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
+      memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
+
+x-basic: &basic
+  env_file: .env
+  cap_add:
+    - CHOWN
+    - SETGID
+    - SETUID
+    - FOWNER
+  cap_drop: ["ALL"]
+  security_opt:
+    - no-new-privileges=true
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 655360
+      hard: 655360
+    fsize: -1
+    as: -1
+  networks:
+    proxy: {}
+  healthcheck:
+    disable: true
+  restart: always
+
+################################################################################
+################################################################################
+################################################################################
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  stirling-pdf:
+    # https://hub.docker.com/r/frooodle/s-pdf
+    image: frooodle/s-pdf:${VERSION:-0.28.3}
+    <<: [*basic, *basic-deploy-labels]
+    deploy:
+      <<: [*basic-deploy, *basic-deploy-labels]
+    environment:
+      DOCKER_ENABLE_SECURITY: ${DOCKER_ENABLE_SECURITY:-false}
+      INSTALL_BOOK_AND_ADVANCED_HTML_OPS: ${INSTALL_BOOK_AND_ADVANCED_HTML_OPS:-false}
+      LANGS: ${LANGS:-en_GB}
+
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - trainingData:/usr/share/tessdata
+      - extraConfigs:/configs
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  proxy:
+    external: true
+
+volumes:
+  trainingData: {}
+  extraConfigs: {}
