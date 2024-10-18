@@ -38,7 +38,7 @@ HEAP_NEWSIZE=1G
 default login credentials are:
 
 - login: `admin@thehive.local`
-- password: `secret`
+- password: `secret` # pragma: allowlist secret
 
 ---
 
