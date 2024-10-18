@@ -4,19 +4,19 @@ x-basic-deploy-labels: &basic-deploy-labels
     - traefik.enable=true
     - traefik.docker.lbswarm=${LB_SWARM:-true}
     - traefik.docker.network=proxy
-    - traefik.http.routers.graylog.entrypoints=https
+    - traefik.http.routers.graylog.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
     - traefik.http.routers.graylog.rule=Host(`${DOMAIN?domain variable not set}`)
     - traefik.http.routers.graylog.tls=true
+    - traefik.http.routers.graylog.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
     - traefik.http.routers.graylog.service=graylog
     - traefik.http.services.graylog.loadbalancer.server.scheme=${PROTOCOL:-http}
     - traefik.http.services.graylog.loadbalancer.server.port=${PORT:-9000}
-    - traefik.http.routers.graylog.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
 
-    - traefik.tcp.routers.graylog-syslog.entrypoints=syslog-tls
-    - traefik.tcp.routers.graylog-syslog.rule=HostSNI(`${DOMAIN_SYSLOG_TLS?domain variable not set}`)
+    - traefik.tcp.routers.graylog-syslog.entrypoints=${SYSLOG_ENTRYPOINT:-syslog-tls}
+    - traefik.tcp.routers.graylog-syslog.rule=HostSNI(`${SYSLOG_DOMAIN_TLS?domain variable not set}`)
     - traefik.tcp.routers.graylog-syslog.tls=true
     - traefik.tcp.routers.graylog-syslog.tls.passthrough=false
-    - traefik.tcp.services.graylog-syslog.loadbalancer.server.port=${PORT_SYSLOG_TLS:-1514}
+    - traefik.tcp.services.graylog-syslog.loadbalancer.server.port=${SYSLOG_PORT_TLS:-1514}
 
 x-basic-deploy: &basic-deploy
   mode: replicated
@@ -30,11 +30,11 @@ x-basic-deploy: &basic-deploy
     condition: on-failure
   resources:
     limits:
-      cpus: "1.5"
-      memory: ${GRAYLOG_MEM_USE_LIMIT:-2g}
+      cpus: ${RESOURCES_LIMITS_CPUS:-1.5}
+      memory: ${RESOURCES_LIMITS_MEMORY:-2g}
     reservations:
-      cpus: "0.001"
-      memory: 32M
+      cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
+      memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
 
 x-basic: &basic
   env_file: .env
@@ -50,24 +50,27 @@ x-basic: &basic
       soft: -1
       hard: -1
     nofile:
-      soft: 65535
-      hard: 65535
+      soft: 655360
+      hard: 655360
     fsize: -1
     as: -1
   networks:
     default: {}
+  healthcheck:
+    disable: true
   restart: always
 
-x-graylog-cluster:
-  # minimum and maximum Java heap size, recommend setting both to 50% of system RAM
-  &graylog-cluster
-  GRAYLOG_SERVER_JAVA_OPTS: -Xms${GRAYLOG_MEM_USE:-2g} -Xmx${GRAYLOG_MEM_USE:-2g} -XX:NewRatio=1 -server -XX:+ResizeTLAB -XX:-OmitStackTraceInFastThrow
+x-graylog-cluster: &graylog-cluster
   GRAYLOG_ELASTICSEARCH_HOSTS: "http://opensearch-node-1:9200,http://opensearch-node-2:9200,http://opensearch-node-3:9200"
-
-x-opensearch-cluster:
   # minimum and maximum Java heap size, recommend setting both to 50% of system RAM
-  &opensearch-cluster
-  OPENSEARCH_JAVA_OPTS: -Xms${OPENSEARCH_MEM_USE:-1g} -Xmx${OPENSEARCH_MEM_USE:-1g} -Dlog4j2.formatMsgNoLookups=true
+  GRAYLOG_SERVER_JAVA_OPTS: -Xms${RESOURCES_LIMITS_MEMORY:-2g} -Xmx${RESOURCES_LIMITS_MEMORY:-2g} -XX:NewRatio=1 -server -XX:+ResizeTLAB -XX:-OmitStackTraceInFastThrow
+
+x-opensearch-cluster: &opensearch-cluster
+  OPENSEARCH_INITIAL_ADMIN_PASSWORD: ${OPENSEARCH_INITIAL_ADMIN_PASSWORD}
+  # OPENSEARCH_INITIAL_ADMIN_PASSWORD_FILE: /run/secrets/opensearch_initial_admin_password
+
+  # minimum and maximum Java heap size, recommend setting both to 50% of system RAM
+  OPENSEARCH_JAVA_OPTS: -Xms${RESOURCES_LIMITS_MEMORY_OPENSEARCH_JAVA:-1g} -Xmx${RESOURCES_LIMITS_MEMORY_OPENSEARCH_JAVA:-1g} -Dlog4j2.formatMsgNoLookups=true
   logger.deprecation.level: ${LOGGER_DEPRECATION_LEVEL:-warn}
   action.auto_create_index: ${ACTION_AUTO_CREATE_INDEX:-false}
   bootstrap.memory_lock: ${BOOTSTRAP_MEMORY_LOCK:-false} # along with the memlock settings below, disables swapping
@@ -88,7 +91,7 @@ services:
   ##############################################################################
   graylog:
     # https://hub.docker.com/r/graylog/graylog
-    image: graylog/graylog:${VERSION_GRAYLOG:-5.1.1}
+    image: graylog/graylog:${VERSION_GRAYLOG:-6.0.7}
     <<: *basic
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels]
@@ -136,6 +139,7 @@ services:
       GRAYLOG_PASSWORD_SECRET__FILE: /run/secrets/graylog_password_secret
       GRAYLOG_ROOT_PASSWORD_SHA2__FILE: /run/secrets/graylog_root_password_sha2
       GRAYLOG_HTTP_EXTERNAL_URI: ${GRAYLOG_HTTP_EXTERNAL_URI:-http://127.0.0.1:9000/}
+      # GRAYLOG_HTTP_PUBLISH_URI: ${GRAYLOG_HTTP_PUBLISH_URI}
       GRAYLOG_TRANSPORT_EMAIL_ENABLED: ${GRAYLOG_TRANSPORT_EMAIL_ENABLED:-true}
       GRAYLOG_TRANSPORT_EMAIL_HOSTNAME: ${GRAYLOG_TRANSPORT_EMAIL_HOSTNAME:-smtp}
       GRAYLOG_TRANSPORT_EMAIL_PORT: ${GRAYLOG_TRANSPORT_EMAIL_PORT:-465}
@@ -143,40 +147,74 @@ services:
       GRAYLOG_TRANSPORT_EMAIL_USE_TLS: ${GRAYLOG_TRANSPORT_EMAIL_USE_TLS:-true}
       GRAYLOG_TRANSPORT_EMAIL_USE_SSL: ${GRAYLOG_TRANSPORT_EMAIL_USE_SSL:-false}
       GRAYLOG_MONGODB_URI__FILE: /run/secrets/graylog_mongodb_uri
+
+      GRAYLOG_NODE_ID_FILE: "/usr/share/graylog/data/config/node-id"
+      GRAYLOG_HTTP_BIND_ADDRESS: "0.0.0.0:9000"
+
+      # To make reporting (headless_shell) work inside a Docker container
+      GRAYLOG_REPORT_DISABLE_SANDBOX: "true"
+
       <<: *graylog-cluster
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-      - graylog_data:/usr/share/graylog/data
-      - ./config/plugins:/usr/share/graylog/plugin
-      - ./config/maxmind:/etc/graylog/maxmind
-      # - ./config/configs:/usr/share/graylog/data/config
-      # - ./config/secrets/tls:/graylog-input-tls:ro
+
+      - graylog_data:/usr/share/graylog/data/data
+      - graylog_config:/usr/share/graylog/data/config
+      - graylog_journal:/usr/share/graylog/data/journal
+
+      # - ./config/plugins:/usr/share/graylog/plugin
+      # - ./config/maxmind:/etc/graylog/maxmind
     entrypoint: /usr/bin/tini -- wait-for-it opensearch:9200 -- /docker-entrypoint.sh
     networks:
       default: {}
       graylog: {}
-      mongodb: {}
       proxy: {}
-    healthcheck:
-      disable: true
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  mongodb:
+    # https://hub.docker.com/_/mongo
+    image: mongo:${VERSION_MONGODB:-8.0.1}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_MONGODB:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_MONGODB:-512M}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_MONGODB:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_MONGODB:-32m}
+    # secrets:
+    #   - mongo_initdb_root_password
+    # environment:
+    #   MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:-graylog}
+    #   MONGO_INITDB_ROOT_PASSWORD_FILE: /run/secrets/mongo_initdb_root_password
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - mongodb:/data/db
 
   ##############################################################################
   ##############################################################################
   ##############################################################################
   opensearch-node-1:
     # https://hub.docker.com/r/opensearchproject/opensearch
-    image: opensearchproject/opensearch:${VERSION_OPENSEARCH:-2.7.0}
+    image: opensearchproject/opensearch:${VERSION_OPENSEARCH:-2.15.0}
     <<: *basic
     deploy:
       <<: *basic-deploy
       resources:
         limits:
-          cpus: "1"
-          memory: ${OPENSEARCH_MEM_USE_LIMIT:-1.5G}
+          cpus: ${RESOURCES_LIMITS_CPUS_OPENSEARCH:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_OPENSEARCH:-1.5G}
         reservations:
-          cpus: "0.001"
-          memory: 32M
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_OPENSEARCH:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_OPENSEARCH:-32m}
+    # secrets:
+    #   - opensearch_initial_admin_password
     environment:
       node.name: opensearch-node-1
       discovery.seed_hosts: opensearch-node-2,opensearch-node-3
@@ -185,22 +223,22 @@ services:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - opensearch_data_1:/usr/share/opensearch/data
-    healthcheck:
-      disable: true
 
   opensearch-node-2:
     # https://hub.docker.com/r/opensearchproject/opensearch
-    image: opensearchproject/opensearch:${VERSION_OPENSEARCH:-2.7.0}
+    image: opensearchproject/opensearch:${VERSION_OPENSEARCH:-2.15.0}
     <<: *basic
     deploy:
       <<: *basic-deploy
       resources:
         limits:
-          cpus: "1"
-          memory: ${OPENSEARCH_MEM_USE_LIMIT:-1.5G}
+          cpus: ${RESOURCES_LIMITS_CPUS_OPENSEARCH:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_OPENSEARCH:-1.5G}
         reservations:
-          cpus: "0.001"
-          memory: 32M
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_OPENSEARCH:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_OPENSEARCH:-32m}
+    # secrets:
+    #   - opensearch_initial_admin_password
     environment:
       node.name: opensearch-node-2
       discovery.seed_hosts: opensearch-node-1,opensearch-node-3
@@ -209,22 +247,22 @@ services:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - opensearch_data_2:/usr/share/opensearch/data
-    healthcheck:
-      disable: true
 
   opensearch-node-3:
     # https://hub.docker.com/r/opensearchproject/opensearch
-    image: opensearchproject/opensearch:${VERSION_OPENSEARCH:-2.7.0}
+    image: opensearchproject/opensearch:${VERSION_OPENSEARCH:-2.15.0}
     <<: *basic
     deploy:
       <<: *basic-deploy
       resources:
         limits:
-          cpus: "1"
-          memory: ${OPENSEARCH_MEM_USE_LIMIT:-1.5G}
+          cpus: ${RESOURCES_LIMITS_CPUS_OPENSEARCH:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_OPENSEARCH:-1.5G}
         reservations:
-          cpus: "0.001"
-          memory: 32M
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_OPENSEARCH:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_OPENSEARCH:-32m}
+    # secrets:
+    #   - opensearch_initial_admin_password
     environment:
       node.name: opensearch-node-3
       discovery.seed_hosts: opensearch-node-1,opensearch-node-2
@@ -233,8 +271,6 @@ services:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - opensearch_data_3:/usr/share/opensearch/data
-    healthcheck:
-      disable: true
 
 ################################################################################
 ################################################################################
@@ -251,13 +287,14 @@ networks:
     attachable: true
     driver_opts:
       encrypted: "true"
-  mongodb:
-    external: true
   proxy:
     external: true
 
 volumes:
   graylog_data: {}
+  graylog_config: {}
+  graylog_journal: {}
+  mongodb: {}
   opensearch_data_1: {}
   opensearch_data_2: {}
   opensearch_data_3: {}
@@ -269,3 +306,7 @@ secrets:
     file: config/secrets/graylog_root_password_sha2.txt
   graylog_mongodb_uri:
     file: config/secrets/graylog_mongodb_uri.txt
+  # mongo_initdb_root_password:
+  #   file: config/secrets/mongo_initdb_root_password.txt
+  # opensearch_initial_admin_password:
+  #   file: config/secrets/opensearch_initial_admin_password.txt

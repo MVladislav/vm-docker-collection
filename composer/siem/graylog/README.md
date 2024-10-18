@@ -8,9 +8,10 @@
 
 - [SETUP](#setup)
   - [basic](#basic)
-    - [first startup database container (mongodb)](#first-startup-database-container-mongodb)
     - [create your `secrets`:](#create-your-secrets)
+    - [get/update plugins](#getupdate-plugins)
     - [create `.env` file following:](#create-env-file-following)
+      - [example short .env](#example-short-env)
   - [Optional: add TLS for syslog](#optional-add-tls-for-syslog)
   - [Graylog setup example](#graylog-setup-example)
     - [syslog](#syslog)
@@ -22,72 +23,99 @@
 
 > defined to work with treafik
 
-### first startup database container (mongodb)
-
-run mongodb from example here: <https://github.com/MVladislav/vm-docker-collection/tree/main/composer/db/mongodb>
-
-and create new user with database for graylog
-
-over command-line:
-
-```sh
-$mongosh 'mongodb://<USERNAME>:<PASSWORD>@127.0.0.1:27017/?authMechanism=DEFAULT'
-# $mongosh 'mongodb://root:swordfish@127.0.0.1:27017/?authMechanism=DEFAULT'
-$use graylog
-$db.createUser(
-  {
-    user: "graylog",
-    pwd:  passwordPrompt(),
-    roles: [ { role: "readWrite", db: "graylog" } ]
-  }
-)
-```
-
 ### create your `secrets`:
 
 ```sh
 #: 'must be at least 16 characters!'
-$openssl rand -base64 18 > config/secrets/graylog_password_secret.txt
-$openssl rand -base64 18 | sha256sum | awk '{ print $1 }' > config/secrets/graylog_root_password_sha2.txt
-$echo 'mongodb://graylog:swordfish@mongodb:27017/graylog' > config/secrets/graylog_mongodb_uri.txt
+$pwgen -s 24 1 > config/secrets/graylog_password_secret.txt
+$pwgen -s 24 1 > config/secrets/graylog_root_password_plain.txt
+$cat config/secrets/graylog_root_password_plain.txt | tr -d '\n' | sha256sum | awk '{ print $1 }' > config/secrets/graylog_root_password_sha2.txt
+$pwgen -s 24 1 > config/secrets/opensearch_initial_admin_password.txt
+
+# $pwgen -s 24 1 > config/secrets/mongo_initdb_root_password.txt
+# $echo "mongodb://graylog:$(cat config/secrets/mongo_initdb_root_password.txt)@mongodb:27017/graylog" > config/secrets/graylog_mongodb_uri.txt
+$echo "mongodb://mongodb:27017/graylog" > config/secrets/graylog_mongodb_uri.txt
+
+```
+
+### get/update plugins
+
+```sh
+# ... graylog-plugin-integrations-4.3.0.jar
 ```
 
 ### create `.env` file following:
 
 ```env
+# GENERAL variables (mostly by default, change as needed)
+# ______________________________________________________________________________
 NODE_ROLE=manager
-NETWORK_MODE=overlay
+NETWORK_MODE=overlay # by default "bridge"
 
-VERSION_GRAYLOG=5.1.1
-VERSION_OPENSEARCH=2.7.0
-
+# GENERAL traefik variables (set by default, change as needed)
+# ______________________________________________________________________________
 LB_SWARM=true
-
-DOMAIN=graylog.home.local
+DOMAIN=graylog.home.local # not set in docker-compose, needs to be copied to .env
 PROTOCOL=http
 PORT=9000
-
-DOMAIN_SYSLOG_TLS=*
-PORT_SYSLOG_TLS=1514
-
 # default-secured@file | public-whitelist@file | authentik@file
 MIDDLEWARE_SECURED=default-secured@file
 
-GRAYLOG_MEM_USE_LIMIT=2G
-GRAYLOG_MEM_USE=2G
+SYSLOG_ENTRYPOINT=syslog-tls
+SYSLOG_DOMAIN_TLS=*
+SYSLOG_PORT_TLS=1514
 
-OPENSEARCH_MEM_USE_LIMIT=1.5G
-OPENSEARCH_MEM_USE=1G
+# GENERAL sources to be used (set by default, change as needed)
+# ______________________________________________________________________________
+RESOURCES_LIMITS_CPUS=1.5
+RESOURCES_LIMITS_MEMORY=2g
+RESOURCES_RESERVATIONS_CPUS=0.001
+RESOURCES_RESERVATIONS_MEMORY=32m
+
+RESOURCES_LIMITS_CPUS_MONGODB=1
+RESOURCES_LIMITS_MEMORY_MONGODB=512M
+RESOURCES_RESERVATIONS_CPUS_MONGODB=0.001
+RESOURCES_RESERVATIONS_MEMORY_MONGODB=32m
+
+RESOURCES_LIMITS_CPUS_OPENSEARCH=1
+RESOURCES_LIMITS_MEMORY_OPENSEARCH=1.5G
+RESOURCES_LIMITS_MEMORY_OPENSEARCH_JAVA=1G
+RESOURCES_RESERVATIONS_CPUS_OPENSEARCH=0.001
+RESOURCES_RESERVATIONS_MEMORY_OPENSEARCH=32m
+
+# APPLICATION version for easy update
+# ______________________________________________________________________________
+VERSION_GRAYLOG=6.0.7
+VERSION_MONGODB=8.0.1
+VERSION_OPENSEARCH=2.15.0
+
+
+# APPLICATION general variable to adjust the apps
+# ______________________________________________________________________________
+OPENSEARCH_INITIAL_ADMIN_PASSWORD=<INITIAL-PASSWORD>
 
 CLUSTER_NAME=opensearch-cluster
 
 GRAYLOG_HTTP_EXTERNAL_URI=http://127.0.0.1:9000/
+
 GRAYLOG_TRANSPORT_EMAIL_ENABLED=true
 GRAYLOG_TRANSPORT_EMAIL_HOSTNAME=smtp
 GRAYLOG_TRANSPORT_EMAIL_PORT=465
 GRAYLOG_TRANSPORT_EMAIL_USE_AUTH=true
 GRAYLOG_TRANSPORT_EMAIL_USE_TLS=true
 GRAYLOG_TRANSPORT_EMAIL_USE_SSL=false
+
+MONGO_INITDB_ROOT_USERNAME=graylog
+```
+
+#### example short .env
+
+```env
+NETWORK_MODE=overlay
+DOMAIN=graylog.home.local
+SYSLOG_DOMAIN_TLS=*
+
+OPENSEARCH_INITIAL_ADMIN_PASSWORD=<INITIAL-PASSWORD>
 ```
 
 ## Optional: add TLS for syslog
@@ -105,7 +133,7 @@ create **input** by open `system > inputs` and choose **Syslog UDP** as _Lauch n
 - activate **Store full message?**
 
 on the new create **input** click on **Manage extractors** \
-than klick upper right on **actions** and than **import extractors**
+than click upper right on **actions** and than **import extractors**
 
 you can find example extractor for example here:
 
