@@ -1,4 +1,4 @@
-#!/bin/ash
+#!/bin/bash
 
 wait_for_netmaker() {
   echo "SERVER: ${NETMAKER_SERVER_HOST}"

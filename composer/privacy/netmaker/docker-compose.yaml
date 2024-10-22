@@ -197,7 +197,7 @@ services:
       - ./config/wait.sh:/mosquitto/config/wait.sh
       - mosquitto_data:/mosquitto/data
       - mosquitto_logs:/mosquitto/log
-    command: ["/mosquitto/config/wait.sh"]
+    command: ["/bin/bash", "/mosquitto/config/wait.sh"]
     networks:
       default: {}
       proxy: {}
