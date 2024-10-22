@@ -4,7 +4,7 @@
 ##### Inherited
 repos:
   - repo: https://github.com/codespell-project/codespell
-    rev: v2.2.6
+    rev: v2.3.0
     hooks:
       - id: codespell
         args:
@@ -16,7 +16,7 @@ repos:
           - json
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.6.0
+    rev: v5.0.0
     hooks:
       # Safety
       - id: detect-private-key
@@ -57,14 +57,14 @@ repos:
 
   # Scan for passwords
   - repo: https://github.com/Yelp/detect-secrets
-    rev: v1.4.0
+    rev: v1.5.0
     hooks:
       - id: detect-secrets
         args:
           - --exclude-files=tests/*
 
   - repo: https://github.com/gitleaks/gitleaks
-    rev: v8.18.2
+    rev: v8.21.1
     hooks:
       - id: gitleaks
 
