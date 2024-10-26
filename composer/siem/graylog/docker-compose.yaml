@@ -60,17 +60,12 @@ x-basic: &basic
     disable: true
   restart: always
 
-x-graylog-cluster: &graylog-cluster
-  GRAYLOG_ELASTICSEARCH_HOSTS: "http://opensearch-node-1:9200,http://opensearch-node-2:9200,http://opensearch-node-3:9200"
-  # minimum and maximum Java heap size, recommend setting both to 50% of system RAM
-  GRAYLOG_SERVER_JAVA_OPTS: -Xms${RESOURCES_LIMITS_MEMORY:-2g} -Xmx${RESOURCES_LIMITS_MEMORY:-2g} -XX:NewRatio=1 -server -XX:+ResizeTLAB -XX:-OmitStackTraceInFastThrow
-
 x-opensearch-cluster: &opensearch-cluster
-  OPENSEARCH_INITIAL_ADMIN_PASSWORD: ${OPENSEARCH_INITIAL_ADMIN_PASSWORD}
+  OPENSEARCH_INITIAL_ADMIN_PASSWORD: ${OPENSEARCH_INITIAL_ADMIN_PASSWORD?opensearch admin pw variable not set}
   # OPENSEARCH_INITIAL_ADMIN_PASSWORD_FILE: /run/secrets/opensearch_initial_admin_password
 
   # minimum and maximum Java heap size, recommend setting both to 50% of system RAM
-  OPENSEARCH_JAVA_OPTS: -Xms${RESOURCES_LIMITS_MEMORY_OPENSEARCH_JAVA:-1g} -Xmx${RESOURCES_LIMITS_MEMORY_OPENSEARCH_JAVA:-1g} -Dlog4j2.formatMsgNoLookups=true
+  # OPENSEARCH_JAVA_OPTS: -Xms${RESOURCES_LIMITS_MEMORY_OPENSEARCH_JAVA:-1g} -Xmx${RESOURCES_LIMITS_MEMORY_OPENSEARCH_JAVA:-1g} -Dlog4j2.formatMsgNoLookups=true
   logger.deprecation.level: ${LOGGER_DEPRECATION_LEVEL:-warn}
   action.auto_create_index: ${ACTION_AUTO_CREATE_INDEX:-false}
   bootstrap.memory_lock: ${BOOTSTRAP_MEMORY_LOCK:-false} # along with the memlock settings below, disables swapping
@@ -91,7 +86,7 @@ services:
   ##############################################################################
   graylog:
     # https://hub.docker.com/r/graylog/graylog
-    image: graylog/graylog:${VERSION_GRAYLOG:-6.0.7}
+    image: graylog/graylog:${VERSION_GRAYLOG:-6.1}
     <<: *basic
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels]
@@ -131,6 +126,16 @@ services:
         published: ${PORT_BEATS:-5044}
         protocol: udp
         mode: host
+      # NETFLOW TCP
+      - target: 2055
+        published: ${PORT_NETFLOW:-2055}
+        protocol: tcp
+        mode: host
+      # NETFLOW UDP
+      - target: 2055
+        published: ${PORT_NETFLOW:-2055}
+        protocol: udp
+        mode: host
     secrets:
       - graylog_password_secret
       - graylog_root_password_sha2
@@ -140,32 +145,29 @@ services:
       GRAYLOG_ROOT_PASSWORD_SHA2__FILE: /run/secrets/graylog_root_password_sha2
       GRAYLOG_HTTP_EXTERNAL_URI: ${GRAYLOG_HTTP_EXTERNAL_URI:-http://127.0.0.1:9000/}
       # GRAYLOG_HTTP_PUBLISH_URI: ${GRAYLOG_HTTP_PUBLISH_URI}
+      GRAYLOG_MONGODB_URI__FILE: /run/secrets/graylog_mongodb_uri
+      GRAYLOG_HTTP_BIND_ADDRESS: "0.0.0.0:9000"
+      GRAYLOG_NODE_ID_FILE: "/usr/share/graylog/data/config/node-id"
+      GRAYLOG_REPORT_DISABLE_SANDBOX: ${GRAYLOG_REPORT_DISABLE_SANDBOX:-true}
+
+      # # minimum and maximum Java heap size, recommend setting both to 50% of system RAM
+      # GRAYLOG_SERVER_JAVA_OPTS: -Xms${RESOURCES_LIMITS_MEMORY:-2g} -Xmx${RESOURCES_LIMITS_MEMORY:-2g} -XX:NewRatio=1 -server -XX:+ResizeTLAB -XX:-OmitStackTraceInFastThrow
+
       GRAYLOG_TRANSPORT_EMAIL_ENABLED: ${GRAYLOG_TRANSPORT_EMAIL_ENABLED:-true}
       GRAYLOG_TRANSPORT_EMAIL_HOSTNAME: ${GRAYLOG_TRANSPORT_EMAIL_HOSTNAME:-smtp}
       GRAYLOG_TRANSPORT_EMAIL_PORT: ${GRAYLOG_TRANSPORT_EMAIL_PORT:-465}
       GRAYLOG_TRANSPORT_EMAIL_USE_AUTH: ${GRAYLOG_TRANSPORT_EMAIL_USE_AUTH:-true}
       GRAYLOG_TRANSPORT_EMAIL_USE_TLS: ${GRAYLOG_TRANSPORT_EMAIL_USE_TLS:-true}
       GRAYLOG_TRANSPORT_EMAIL_USE_SSL: ${GRAYLOG_TRANSPORT_EMAIL_USE_SSL:-false}
-      GRAYLOG_MONGODB_URI__FILE: /run/secrets/graylog_mongodb_uri
 
-      GRAYLOG_NODE_ID_FILE: "/usr/share/graylog/data/config/node-id"
-      GRAYLOG_HTTP_BIND_ADDRESS: "0.0.0.0:9000"
-
-      # To make reporting (headless_shell) work inside a Docker container
-      GRAYLOG_REPORT_DISABLE_SANDBOX: "true"
-
-      <<: *graylog-cluster
+      GRAYLOG_ELASTICSEARCH_HOSTS: "http://opensearch-node-1:9200,http://opensearch-node-2:9200,http://opensearch-node-3:9200"
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-
       - graylog_data:/usr/share/graylog/data/data
       - graylog_config:/usr/share/graylog/data/config
       - graylog_journal:/usr/share/graylog/data/journal
-
-      # - ./config/plugins:/usr/share/graylog/plugin
-      # - ./config/maxmind:/etc/graylog/maxmind
-    entrypoint: /usr/bin/tini -- wait-for-it opensearch:9200 -- /docker-entrypoint.sh
+    entrypoint: /usr/bin/tini -- wait-for-it opensearch-node-1:9200 -- /docker-entrypoint.sh
     networks:
       default: {}
       graylog: {}
@@ -197,12 +199,43 @@ services:
       - /etc/localtime:/etc/localtime:ro
       - mongodb:/data/db
 
+  # ##############################################################################
+  # ##############################################################################
+  # ##############################################################################
+  # datanode:
+  #   # https://hub.docker.com/r/graylog/graylog-datanode
+  #   image: graylog/graylog-datanode:${VERSION_GRAYLOG:-6.1}
+  #   <<: *basic
+  #   deploy:
+  #     <<: *basic-deploy
+  #     resources:
+  #       limits:
+  #         cpus: ${RESOURCES_LIMITS_CPUS_GRAYLOG_DATANODE:-1}
+  #         memory: ${RESOURCES_LIMITS_MEMORY_GRAYLOG_DATANODE:-1.5G}
+  #       reservations:
+  #         cpus: ${RESOURCES_RESERVATIONS_CPUS_GRAYLOG_DATANODE:-0.001}
+  #         memory: ${RESOURCES_RESERVATIONS_MEMORY_GRAYLOG_DATANODE:-32m}
+  #   secrets:
+  #     - graylog_password_secret
+  #     - graylog_root_password_sha2
+  #     - graylog_mongodb_uri
+  #   environment:
+  #     GRAYLOG_DATANODE_PASSWORD_SECRET__FILE: /run/secrets/graylog_password_secret
+  #     # GRAYLOG_DATANODE_PASSWORD_SECRET: ""
+  #     GRAYLOG_DATANODE_ROOT_PASSWORD_SHA2__FILE: /run/secrets/graylog_root_password_sha2
+  #     # GRAYLOG_DATANODE_ROOT_PASSWORD_SHA2: ""
+  #     GRAYLOG_DATANODE_MONGODB_URI__FILE: /run/secrets/graylog_mongodb_uri
+  #     # GRAYLOG_DATANODE_MONGODB_URI: "mongodb://mongodb:27017/graylog"
+  #     GRAYLOG_DATANODE_NODE_ID_FILE: "/var/lib/graylog-datanode/node-id"
+  #   volumes:
+  #     - graylog_datanode:/var/lib/graylog-datanode
+
   ##############################################################################
   ##############################################################################
   ##############################################################################
   opensearch-node-1:
     # https://hub.docker.com/r/opensearchproject/opensearch
-    image: opensearchproject/opensearch:${VERSION_OPENSEARCH:-2.15.0}
+    image: opensearchproject/opensearch:${VERSION_OPENSEARCH:-2.17.1}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -226,7 +259,7 @@ services:
 
   opensearch-node-2:
     # https://hub.docker.com/r/opensearchproject/opensearch
-    image: opensearchproject/opensearch:${VERSION_OPENSEARCH:-2.15.0}
+    image: opensearchproject/opensearch:${VERSION_OPENSEARCH:-2.17.1}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -250,7 +283,7 @@ services:
 
   opensearch-node-3:
     # https://hub.docker.com/r/opensearchproject/opensearch
-    image: opensearchproject/opensearch:${VERSION_OPENSEARCH:-2.15.0}
+    image: opensearchproject/opensearch:${VERSION_OPENSEARCH:-2.17.1}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -295,6 +328,7 @@ volumes:
   graylog_config: {}
   graylog_journal: {}
   mongodb: {}
+  # graylog_datanode: {}
   opensearch_data_1: {}
   opensearch_data_2: {}
   opensearch_data_3: {}

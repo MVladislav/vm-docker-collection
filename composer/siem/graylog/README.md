@@ -83,6 +83,11 @@ RESOURCES_LIMITS_MEMORY_OPENSEARCH_JAVA=1G
 RESOURCES_RESERVATIONS_CPUS_OPENSEARCH=0.001
 RESOURCES_RESERVATIONS_MEMORY_OPENSEARCH=32m
 
+#RESOURCES_LIMITS_CPUS_GRAYLOG_DATANODE=1
+#RESOURCES_LIMITS_MEMORY_GRAYLOG_DATANODE=1.5G
+#RESOURCES_RESERVATIONS_CPUS_GRAYLOG_DATANODE=0.001
+#RESOURCES_RESERVATIONS_MEMORY_GRAYLOG_DATANODE=32m
+
 # APPLICATION version for easy update
 # ______________________________________________________________________________
 VERSION_GRAYLOG=6.0.7
@@ -173,3 +178,7 @@ under page `streams`, do not forget to activate the stream by click on **start s
   - <https://hub.docker.com/r/opensearchproject/opensearch>
 - infos:
   - <https://www.youtube.com/watch?v=wZxwwQ1gchI>
+- logs
+  - <https://community.graylog.org/t/graylog-encryption-between-graylog-client-and-server/29705/4>
+  - <https://graylog.org/post/how-to-guide-securing-graylog-with-tls/>
+  - <https://go2docs.graylog.org/5-1/setting_up_graylog/secured_graylog_and_beats_input.html>
