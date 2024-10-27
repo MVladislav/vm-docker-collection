@@ -1,0 +1,120 @@
+---
+x-basic-deploy-labels: &basic-deploy-labels
+  labels:
+    - traefik.enable=true
+    - traefik.docker.lbswarm=${LB_SWARM:-true}
+    - traefik.docker.network=proxy
+    - traefik.http.routers.wireguard-ui${SERVICE_NAME_POST:-}.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.wireguard-ui${SERVICE_NAME_POST:-}.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.wireguard-ui${SERVICE_NAME_POST:-}.tls=true
+    - traefik.http.routers.wireguard-ui${SERVICE_NAME_POST:-}.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.wireguard-ui${SERVICE_NAME_POST:-}.service=wireguard-ui${SERVICE_NAME_POST:-}
+    - traefik.http.services.wireguard-ui${SERVICE_NAME_POST:-}.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.wireguard-ui${SERVICE_NAME_POST:-}.loadbalancer.server.port=${PORT:-5000}
+
+x-basic-deploy: &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  restart_policy:
+    condition: on-failure
+  resources:
+    limits:
+      cpus: ${RESOURCES_LIMITS_CPUS:-1}
+      memory: ${RESOURCES_LIMITS_MEMORY:-1g}
+    reservations:
+      cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
+      memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
+
+x-basic: &basic
+  env_file: .env
+  cap_add:
+    - NET_ADMIN
+  cap_drop: ["ALL"]
+  security_opt:
+    - no-new-privileges=true
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 655360
+      hard: 655360
+    fsize: -1
+    as: -1
+  networks:
+    proxy: {}
+  healthcheck:
+    disable: true
+  restart: always
+
+x-logging: &logging
+  logging:
+    # https://docs.docker.com/config/containers/logging/configure/#supported-logging-drivers
+    driver: json-file # none|local|json-file|syslog|journald|gelf|fluentd|awslogs|splunk|etwlogs|gcplogs|logentries
+    options:
+      max-size: "50m" # Set maximum log file size
+      max-file: 3 # Set maximum number of log files
+      compress: "true" # Enable log file compression
+      labels: app=wireguard-ui # Add custom labels to log messages
+
+################################################################################
+################################################################################
+################################################################################
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  wireguard-ui:
+    build:
+      context: https://github.com/ngoduykhanh/wireguard-ui.git#master
+      dockerfile: ./Dockerfile
+    image: ngoduykhanh/wireguard-ui:${VERSION:-latest}
+    <<: [*basic, *basic-deploy-labels, *logging]
+    deploy:
+      <<: [*basic-deploy, *basic-deploy-labels]
+    secrets:
+      - session_secret
+      - wgui_password
+      # - sendgrid_api_key
+    environment:
+      SESSION_SECRET_FILE: /run/secrets/session_secret
+      WGUI_PASSWORD_FILE: /run/secrets/wgui_password
+      # SENDGRID_API_KEY_FILE: /run/secrets/sendgrid_api_key
+
+      WGUI_USERNAME: ${WGUI_USERNAME:-groot}
+
+      WGUI_DNS: ${WGUI_DNS:-9.9.9.9}
+      WGUI_LOG_LEVEL: ${WGUI_LOG_LEVEL:-INFO} # DEBUG|INFO|WARN|ERROR|OFF
+
+      WGUI_MANAGE_START: ${WGUI_MANAGE_START:-false}
+      WGUI_MANAGE_RESTART: ${WGUI_MANAGE_RESTART:-false}
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - data:/root
+      - data:/app/db
+      - /etc/wireguard:/etc/wireguard
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  proxy:
+    external: true
+
+volumes:
+  data:
+  # wireguard:
+
+secrets:
+  session_secret:
+    file: config/secrets/session_secret.txt
+  wgui_password:
+    file: config/secrets/wgui_password.txt
+  # sendgrid_api_key:
+  #   file: config/secrets/sendgrid_api_key.txt
