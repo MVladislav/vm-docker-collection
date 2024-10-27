@@ -1,0 +1,95 @@
+---
+x-basic-deploy-labels: &basic-deploy-labels
+  labels:
+    - traefik.enable=true
+    - traefik.docker.lbswarm=${LB_SWARM:-true}
+    - traefik.docker.network=proxy
+    - traefik.http.routers.web-check${SERVICE_NAME_POST:-}.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.web-check${SERVICE_NAME_POST:-}.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.web-check${SERVICE_NAME_POST:-}.tls=true
+    - traefik.http.routers.web-check${SERVICE_NAME_POST:-}.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.web-check${SERVICE_NAME_POST:-}.service=web-check${SERVICE_NAME_POST:-}
+    - traefik.http.services.web-check${SERVICE_NAME_POST:-}.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.web-check${SERVICE_NAME_POST:-}.loadbalancer.server.port=${PORT:-3000}
+
+x-basic-deploy: &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  restart_policy:
+    condition: on-failure
+  resources:
+    limits:
+      cpus: ${RESOURCES_LIMITS_CPUS:-1}
+      memory: ${RESOURCES_LIMITS_MEMORY:-1g}
+    reservations:
+      cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
+      memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
+
+x-basic: &basic
+  env_file: .env
+  cap_drop: ["ALL"]
+  security_opt:
+    - no-new-privileges=true
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 655360
+      hard: 655360
+    fsize: -1
+    as: -1
+  networks:
+    proxy: {}
+  healthcheck:
+    disable: true
+  restart: always
+
+################################################################################
+################################################################################
+################################################################################
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  web-check:
+    # build:
+    #   context: https://github.com/Lissy93/web-check.git#master
+    #   dockerfile: ./Dockerfile
+    #   args:
+    #     NODE_VERSION: ${NODE_VERSION:-21}
+    #     DEBIAN_VERSION: ${DEBIAN_VERSION:-bullseye}
+    # https://hub.docker.com/r/lissy93/web-check
+    image: lissy93/web-check:${VERSION:-latest}
+    <<: [*basic, *basic-deploy-labels]
+    deploy:
+      <<: [*basic-deploy, *basic-deploy-labels]
+    environment:
+      PORT: ${PORT:-3000}
+
+      API_ENABLE_RATE_LIMIT: ${API_ENABLE_RATE_LIMIT:-true}
+      API_TIMEOUT_LIMIT: ${API_TIMEOUT_LIMIT:-10000}
+      API_CORS_ORIGIN: ${DOMAIN}
+      DISABLE_GUI: ${DISABLE_GUI:-false}
+
+      # https://cloud.google.com/api-gateway/docs/authenticate-api-keys
+      GOOGLE_CLOUD_API_KEY: ${GOOGLE_CLOUD_API_KEY:-}
+      # https://account.shodan.io/
+      REACT_APP_SHODAN_API_KEY: ${REACT_APP_SHODAN_API_KEY:-}
+      # https://whoapi.com/
+      REACT_APP_WHO_API_KEY: ${REACT_APP_WHO_API_KEY:-}
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  proxy:
+    external: true
