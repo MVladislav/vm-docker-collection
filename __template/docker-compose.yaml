@@ -23,7 +23,7 @@ x-basic-deploy: &basic-deploy
       - "node.role==${NODE_ROLE:-manager}"
       - node.platform.os == linux
   restart_policy:
-    condition: on-failure
+    condition: any # any | on-failure | none
   resources:
     limits:
       cpus: ${RESOURCES_LIMITS_CPUS:-1}
