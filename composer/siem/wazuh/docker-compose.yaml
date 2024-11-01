@@ -27,11 +27,11 @@ x-basic-deploy: &basic-deploy
       - "node.role==${NODE_ROLE:-manager}"
       - node.platform.os == linux
   restart_policy:
-    condition: on-failure
+    condition: any # any | on-failure | none
   resources:
-    # limits:
-    #   cpus: ${RESOURCES_LIMITS_CPUS:-4}
-    #   memory: ${RESOURCES_LIMITS_MEMORY:-2g}
+    limits:
+      cpus: ${RESOURCES_LIMITS_CPUS:-4}
+      memory: ${RESOURCES_LIMITS_MEMORY:-2g}
     reservations:
       cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
       memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
@@ -52,7 +52,7 @@ x-basic: &basic
     fsize: -1
     as: -1
   networks:
-    proxy: {}
+    default: {}
   healthcheck:
     disable: true
   restart: always
@@ -61,32 +61,48 @@ x-basic: &basic
 ################################################################################
 ################################################################################
 
+x-base-env: &base-env
+  API_USERNAME: wazuh-wui
+  API_PASSWORD_FILE: api_password_file_secret # pragma: allowlist secret
+
+x-manager-env: &manager-env
+  INDEXER_USERNAME: admin
+  INDEXER_PASSWORD_FILE: indexer_password_file_secret # pragma: allowlist secret
+
+  FILEBEAT_SSL_VERIFICATION_MODE: none
+  SSL_CERTIFICATE_AUTHORITIES: /etc/ssl/root-ca.pem
+  SSL_CERTIFICATE: /etc/ssl/filebeat.pem
+  SSL_KEY: /etc/ssl/filebeat.key
+
+x-indexer-env: &indexer-env
+  bootstrap.memory_lock: ${MEM_LOCK:-false}
+  OPENSEARCH_JAVA_OPTS: -Xms${WAZUH_INDEXER_JAVA:-1g} -Xmx${WAZUH_INDEXER_JAVA:-1g}
+
 services:
   ##############################################################################
   ##############################################################################
   ##############################################################################
   wazuh-dashboard:
     # https://hub.docker.com/r/wazuh/wazuh-dashboard
-    image: wazuh/wazuh-dashboard:${VERSION:-4.8.0-beta4}
+    image: wazuh/wazuh-dashboard:${VERSION:-4.9.1}
     hostname: wazuh.dashboard
+    # ports:
+    #   - target: 5601
+    #     published: 5601
+    #     protocol: tcp
+    #     mode: host
     <<: [*basic, *basic-deploy-labels]
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels]
-    # ports:
-    #   - target: ${PORT_DASHBOARD:-5601}
-    #     published: ${PORT_DASHBOARD_PUBLISH:-5601}
-    #     protocol: tcp
-    #     mode: host
     secrets:
       - dashboard_password_file_secret
       - api_password_file_secret
     environment:
+      <<: *base-env
       OPENSEARCH_HOSTS: https://wazuh1.indexer:9200
       WAZUH_API_URL: https://wazuh.master
       DASHBOARD_USERNAME: kibanaserver
       DASHBOARD_PASSWORD_FILE: dashboard_password_file_secret # pragma: allowlist secret
-      API_USERNAME: wazuh-wui
-      API_PASSWORD_FILE: api_password_file_secret # pragma: allowlist secret
     configs:
       - source: opensearch_dashboards_config
         target: /usr/share/wazuh-dashboard/config/opensearch_dashboards.yml
@@ -98,7 +114,6 @@ services:
         mode: 0660
         uid: "1000"
         gid: "1000"
-
       - source: root_ca_cert
         target: /usr/share/wazuh-dashboard/certs/root-ca.pem
         mode: 0600
@@ -119,8 +134,12 @@ services:
       # - /etc/localtime:/etc/localtime:ro
       - wazuh-dashboard-config:/usr/share/wazuh-dashboard/data/wazuh/config
       - wazuh-dashboard-custom:/usr/share/wazuh-dashboard/plugins/wazuh/public/assets/custom
+    networks:
+      default: {}
+      proxy: {}
     links:
       - wazuh-master:wazuh-master
+      - wazuh-worker:wazuh-worker
       - wazuh1-indexer:wazuh1-indexer
 
   ##############################################################################
@@ -128,7 +147,7 @@ services:
   ##############################################################################
   wazuh-master:
     # https://hub.docker.com/r/wazuh/wazuh-manager
-    image: wazuh/wazuh-manager:${VERSION:-4.8.0-beta4}
+    image: wazuh/wazuh-manager:${VERSION:-4.9.1}
     hostname: wazuh.master
     <<: [*basic, *basic-deploy-master-labels]
     deploy:
@@ -149,6 +168,10 @@ services:
         published: ${PORT_SYSLOG_PUBLISH:-514}
         protocol: udp
         mode: host
+      - target: ${PORT_SYSLOG:-514}
+        published: ${PORT_SYSLOG_PUBLISH:-514}
+        protocol: tcp
+        mode: host
       # Wazuh server RESTful API
       - target: ${PORT_RESTFUL:-55000}
         published: ${PORT_RESTFUL_PUBLISH:-55000}
@@ -158,16 +181,8 @@ services:
       - indexer_password_file_secret
       - api_password_file_secret
     environment:
+      <<: [*base-env, *manager-env]
       INDEXER_URL: https://wazuh1.indexer:9200
-      INDEXER_USERNAME: admin
-      INDEXER_PASSWORD_FILE: indexer_password_file_secret # pragma: allowlist secret
-      API_USERNAME: wazuh-wui
-      API_PASSWORD_FILE: api_password_file_secret # pragma: allowlist secret
-
-      FILEBEAT_SSL_VERIFICATION_MODE: full
-      SSL_CERTIFICATE_AUTHORITIES: /etc/ssl/root-ca.pem
-      SSL_CERTIFICATE: /etc/ssl/filebeat.pem
-      SSL_KEY: /etc/ssl/filebeat.key
     configs:
       - source: authd_pass_secret
         target: /var/ossec/etc/authd.pass
@@ -179,7 +194,6 @@ services:
         mode: 0660
         uid: "999"
         gid: "999"
-
       - source: root_ca_manager_cert
         target: /etc/ssl/root-ca.pem
         mode: 0600
@@ -209,13 +223,18 @@ services:
       - master-wazuh-wodles:/var/ossec/wodles
       - master-filebeat-etc:/etc/filebeat
       - master-filebeat-var:/var/lib/filebeat
+    links:
+      - wazuh-worker:wazuh-worker
+      - wazuh1.indexer:wazuh1.indexer
+      - wazuh2-indexer:wazuh2-indexer
+      - wazuh3-indexer:wazuh3-indexer
 
   ##############################################################################
   ##############################################################################
   ##############################################################################
   wazuh-worker:
     # https://hub.docker.com/r/wazuh/wazuh-manager
-    image: wazuh/wazuh-manager:${VERSION:-4.8.0-beta4}
+    image: wazuh/wazuh-manager:${VERSION:-4.9.1}
     hostname: wazuh.worker
     <<: *basic
     deploy:
@@ -223,21 +242,14 @@ services:
     secrets:
       - indexer_password_file_secret
     environment:
+      <<: *manager-env
       INDEXER_URL: https://wazuh1.indexer:9200
-      INDEXER_USERNAME: admin
-      INDEXER_PASSWORD_FILE: indexer_password_file_secret # pragma: allowlist secret
-
-      FILEBEAT_SSL_VERIFICATION_MODE: full
-      SSL_CERTIFICATE_AUTHORITIES: /etc/ssl/root-ca.pem
-      SSL_CERTIFICATE: /etc/ssl/filebeat.pem
-      SSL_KEY: /etc/ssl/filebeat.key
     configs:
       - source: wazuh_worker_config
         target: /wazuh-config-mount/etc/ossec.conf
         mode: 0660
         uid: "999"
         gid: "999"
-
       - source: root_ca_manager_cert
         target: /etc/ssl/root-ca.pem
         mode: 0600
@@ -273,20 +285,28 @@ services:
   ##############################################################################
   wazuh1-indexer:
     # https://hub.docker.com/r/wazuh/wazuh-indexer
-    image: wazuh/wazuh-indexer:${VERSION:-4.8.0-beta4}
+    image: wazuh/wazuh-indexer:${VERSION:-4.9.1}
     hostname: wazuh1.indexer
     <<: [*basic, *basic-deploy-indexer-labels]
     deploy:
       <<: [*basic-deploy, *basic-deploy-indexer-labels]
-    # ports:
-    #   # Wazuh indexer RESTful API
-    #   - target: ${PORT_INDEXER:-9200}
-    #     published: ${PORT_INDEXER_PUBLISH:-9200}
-    #     protocol: tcp
-    #     mode: host
+      # ports:
+      #   # Wazuh indexer RESTful API
+      #   - target: ${PORT_INDEXER:-9200}
+      #     published: ${PORT_INDEXER_PUBLISH:-9200}
+      #     protocol: tcp
+      #     mode: host
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_INDEXER:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_INDEXER:-2g}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_INDEXER:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_INDEXER:-32m}
     environment:
-      OPENSEARCH_JAVA_OPTS: -Xms${WAZUH_INDEXER_JAVA:-1g} -Xmx${WAZUH_INDEXER_JAVA:-1g}
-      bootstrap.memory_lock: ${MEM_LOCK:-true}
+      <<: *indexer-env
+      NETWORK_HOST: wazuh1.indexer
+      NODE_NAME: wazuh1.indexer
     configs:
       - source: wazuh1_indexer_config
         target: /usr/share/wazuh-indexer/opensearch.yml
@@ -298,7 +318,6 @@ services:
         mode: 0660
         uid: "1000"
         gid: "1000"
-
       - source: root_ca_cert
         target: /usr/share/wazuh-indexer/certs/root-ca.pem
         mode: 0600
@@ -334,14 +353,22 @@ services:
   ##############################################################################
   wazuh2-indexer:
     # https://hub.docker.com/r/wazuh/wazuh-indexer
-    image: wazuh/wazuh-indexer:${VERSION:-4.8.0-beta4}
+    image: wazuh/wazuh-indexer:${VERSION:-4.9.1}
     hostname: wazuh2.indexer
     <<: *basic
     deploy:
       <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_INDEXER:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_INDEXER:-2g}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_INDEXER:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_INDEXER:-32m}
     environment:
-      OPENSEARCH_JAVA_OPTS: -Xms${WAZUH_INDEXER_JAVA:-1g} -Xmx${WAZUH_INDEXER_JAVA:-1g}
-      bootstrap.memory_lock: ${MEM_LOCK:-true}
+      <<: *indexer-env
+      NETWORK_HOST: wazuh2.indexer
+      NODE_NAME: wazuh2.indexer
     configs:
       - source: wazuh2_indexer_config
         target: /usr/share/wazuh-indexer/opensearch.yml
@@ -379,14 +406,22 @@ services:
   ##############################################################################
   wazuh3-indexer:
     # https://hub.docker.com/r/wazuh/wazuh-indexer
-    image: wazuh/wazuh-indexer:${VERSION:-4.8.0-beta4}
+    image: wazuh/wazuh-indexer:${VERSION:-4.9.1}
     hostname: wazuh3.indexer
     <<: *basic
     deploy:
       <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_INDEXER:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_INDEXER:-2g}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_INDEXER:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_INDEXER:-32m}
     environment:
-      OPENSEARCH_JAVA_OPTS: -Xms${WAZUH_INDEXER_JAVA:-1g} -Xmx${WAZUH_INDEXER_JAVA:-1g}
-      bootstrap.memory_lock: ${MEM_LOCK:-true}
+      <<: *indexer-env
+      NETWORK_HOST: wazuh3.indexer
+      NODE_NAME: wazuh3.indexer
     configs:
       - source: wazuh3_indexer_config
         target: /usr/share/wazuh-indexer/opensearch.yml
@@ -423,6 +458,11 @@ services:
 ################################################################################
 ################################################################################
 networks:
+  default:
+    driver: ${NETWORK_MODE:-bridge}
+    attachable: true
+    driver_opts:
+      encrypted: "true"
   proxy:
     external: true
 
@@ -485,6 +525,8 @@ volumes:
 configs:
   opensearch_dashboards_config:
     file: $PWD/config/wazuh_dashboard/opensearch_dashboards.yml
+  authd_pass_secret:
+    file: config/secrets/authd_pass_secret.txt
   wazuh_config:
     file: $PWD/config/wazuh_dashboard/wazuh.yml
   wazuh_manager_config:
@@ -534,8 +576,6 @@ configs:
     file: $PWD/config/wazuh_indexer_ssl_certs/wazuh3.indexer-key.pem
 
 secrets:
-  authd_pass_secret:
-    file: config/secrets/authd_pass_secret.txt
   dashboard_password_file_secret:
     file: config/secrets/dashboard_password_file_secret.txt
   indexer_password_file_secret:

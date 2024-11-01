@@ -168,6 +168,7 @@ $docker exec -it "$(docker ps -q -f name=wazuh_wazuh-master)" /var/ossec/bin/man
 - agent
   - <https://documentation.wazuh.com/current/user-manual/agent/agent-enrollment/security-options/using-password-authentication.html>
   - <https://documentation.wazuh.com/current/user-manual/capabilities/container-security/monitoring-docker.html>
+  - <https://wazuh.com/blog/benefits-of-using-aes-in-our-communications/>
 - decoder
   - <https://documentation.wazuh.com/current/user-manual/ruleset/custom.html>
   - <https://github.com/wazuh/wazuh/tree/master/ruleset/decoders>
@@ -180,3 +181,5 @@ $docker exec -it "$(docker ps -q -f name=wazuh_wazuh-master)" /var/ossec/bin/man
 - additional service include references
   - <https://www.youtube.com/watch?v=jNSYinFdWAI>
   - <https://docs.opnsense.org/manual/wazuh-agent.html>
+- YT
+  - <https://www.youtube.com/watch?v=RjvKn0Q3rgg>
