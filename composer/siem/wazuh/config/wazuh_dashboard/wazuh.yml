@@ -6,3 +6,5 @@ hosts:
       username: wazuh-wui
       password: ""
       run_as: false
+#
+# enrollment.dns: "siem.home.local"

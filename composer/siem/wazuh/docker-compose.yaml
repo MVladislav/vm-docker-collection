@@ -63,11 +63,11 @@ x-basic: &basic
 
 x-base-env: &base-env
   API_USERNAME: wazuh-wui
-  API_PASSWORD_FILE: api_password_file_secret # pragma: allowlist secret
+  API_PASSWORD_FILE: /run/secrets/api_password_file_secret # pragma: allowlist secret
 
 x-manager-env: &manager-env
   INDEXER_USERNAME: admin
-  INDEXER_PASSWORD_FILE: indexer_password_file_secret # pragma: allowlist secret
+  INDEXER_PASSWORD_FILE: /run/secrets/indexer_password_file_secret # pragma: allowlist secret
 
   FILEBEAT_SSL_VERIFICATION_MODE: none
   SSL_CERTIFICATE_AUTHORITIES: /etc/ssl/root-ca.pem
@@ -99,10 +99,11 @@ services:
       - api_password_file_secret
     environment:
       <<: *base-env
+      HTTP_PROXY: ${DOMAIN?domain variable not set}
       OPENSEARCH_HOSTS: https://wazuh1.indexer:9200
       WAZUH_API_URL: https://wazuh.master
       DASHBOARD_USERNAME: kibanaserver
-      DASHBOARD_PASSWORD_FILE: dashboard_password_file_secret # pragma: allowlist secret
+      DASHBOARD_PASSWORD_FILE: /run/secrets/dashboard_password_file_secret # pragma: allowlist secret
     configs:
       - source: opensearch_dashboards_config
         target: /usr/share/wazuh-dashboard/config/opensearch_dashboards.yml
@@ -137,10 +138,6 @@ services:
     networks:
       default: {}
       proxy: {}
-    links:
-      - wazuh-master:wazuh-master
-      - wazuh-worker:wazuh-worker
-      - wazuh1-indexer:wazuh1-indexer
 
   ##############################################################################
   ##############################################################################
@@ -172,23 +169,18 @@ services:
         published: ${PORT_SYSLOG_PUBLISH:-514}
         protocol: tcp
         mode: host
-      # Wazuh server RESTful API
-      - target: ${PORT_RESTFUL:-55000}
-        published: ${PORT_RESTFUL_PUBLISH:-55000}
-        protocol: tcp
-        mode: host
+      # # Wazuh server RESTful API
+      # - target: ${PORT_RESTFUL:-55000}
+      #   published: ${PORT_RESTFUL_PUBLISH:-55000}
+      #   protocol: tcp
+      #   mode: host
     secrets:
-      - indexer_password_file_secret
       - api_password_file_secret
+      - indexer_password_file_secret
     environment:
       <<: [*base-env, *manager-env]
       INDEXER_URL: https://wazuh1.indexer:9200
     configs:
-      - source: authd_pass_secret
-        target: /var/ossec/etc/authd.pass
-        mode: 0640
-        uid: "0"
-        gid: "999"
       - source: wazuh_manager_config
         target: /wazuh-config-mount/etc/ossec.conf
         mode: 0660
@@ -223,11 +215,6 @@ services:
       - master-wazuh-wodles:/var/ossec/wodles
       - master-filebeat-etc:/etc/filebeat
       - master-filebeat-var:/var/lib/filebeat
-    links:
-      - wazuh-worker:wazuh-worker
-      - wazuh1.indexer:wazuh1.indexer
-      - wazuh2-indexer:wazuh2-indexer
-      - wazuh3-indexer:wazuh3-indexer
 
   ##############################################################################
   ##############################################################################
@@ -290,12 +277,6 @@ services:
     <<: [*basic, *basic-deploy-indexer-labels]
     deploy:
       <<: [*basic-deploy, *basic-deploy-indexer-labels]
-      # ports:
-      #   # Wazuh indexer RESTful API
-      #   - target: ${PORT_INDEXER:-9200}
-      #     published: ${PORT_INDEXER_PUBLISH:-9200}
-      #     protocol: tcp
-      #     mode: host
       resources:
         limits:
           cpus: ${RESOURCES_LIMITS_CPUS_INDEXER:-1}
@@ -380,7 +361,6 @@ services:
         mode: 0660
         uid: "1000"
         gid: "1000"
-
       - source: root_ca_cert
         target: /usr/share/wazuh-indexer/certs/root-ca.pem
         mode: 0600
@@ -433,7 +413,6 @@ services:
         mode: 0660
         uid: "1000"
         gid: "1000"
-
       - source: root_ca_cert
         target: /usr/share/wazuh-indexer/certs/root-ca.pem
         mode: 0600
@@ -525,8 +504,6 @@ volumes:
 configs:
   opensearch_dashboards_config:
     file: $PWD/config/wazuh_dashboard/opensearch_dashboards.yml
-  authd_pass_secret:
-    file: config/secrets/authd_pass_secret.txt
   wazuh_config:
     file: $PWD/config/wazuh_dashboard/wazuh.yml
   wazuh_manager_config:

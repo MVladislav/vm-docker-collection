@@ -28,8 +28,6 @@
 ### create your `secrets`:
 
 ```sh
-$pwgen -s 24 1 > config/secrets/authd_pass_secret.txt
-
 $pwgen -s 24 1 > config/secrets/dashboard_password_file_secret.txt
 $sed "s|REPLACE_KIBANA_SERVER_HASH|$(cat config/secrets/dashboard_password_file_secret.txt | mkpasswd -m bcrypt -s -R 12)|" -i config/wazuh_indexer/internal_users.yml
 
@@ -67,7 +65,7 @@ NETWORK_MODE=overlay # by default "bridge"
 # GENERAL traefik variables (set by default, change as needed)
 # ______________________________________________________________________________
 LB_SWARM=true
-DOMAIN=wazuh.home.local # not set in docker-compose, needs to be copied to .env
+DOMAIN=siem.home.local # not set in docker-compose, needs to be copied to .env
 PROTOCOL=https
 PORT=5601
 # default-secured@file | public-whitelist@file | authentik@file
@@ -80,13 +78,19 @@ RESOURCES_LIMITS_MEMORY=2g
 RESOURCES_RESERVATIONS_CPUS=0.001
 RESOURCES_RESERVATIONS_MEMORY=32m
 
+RESOURCES_LIMITS_CPUS_INDEXER=1
+RESOURCES_LIMITS_MEMORY_INDEXER=2g
+RESOURCES_RESERVATIONS_CPUS_INDEXER=0.001
+RESOURCES_RESERVATIONS_MEMORY_INDEXER=32m
+
+WAZUH_INDEXER_JAVA=1g
+
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION=4.8.0-beta4
+VERSION=4.9.1
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
-
 
 ```
 
@@ -94,7 +98,7 @@ VERSION=4.8.0-beta4
 
 ```env
 NETWORK_MODE=overlay
-DOMAIN=wazuh.home.local
+DOMAIN=siem.home.local
 ```
 
 ## Agent
@@ -138,6 +142,8 @@ $chown root:wazuh /var/ossec/etc/authd.pass
 $docker exec -it "$(docker ps -q -f name=wazuh_wazuh-master)" /var/ossec/bin/manage_agents
 ```
 
+- <https://documentation.wazuh.com/current/user-manual/agent/agent-management/remove-agents/remove.html>
+
 ### Extend/Update agent config
 
 ```xml
@@ -169,6 +175,7 @@ $docker exec -it "$(docker ps -q -f name=wazuh_wazuh-master)" /var/ossec/bin/man
   - <https://documentation.wazuh.com/current/user-manual/agent/agent-enrollment/security-options/using-password-authentication.html>
   - <https://documentation.wazuh.com/current/user-manual/capabilities/container-security/monitoring-docker.html>
   - <https://wazuh.com/blog/benefits-of-using-aes-in-our-communications/>
+  - <https://documentation.wazuh.com/current/user-manual/wazuh-dashboard/settings.html#enrollment-dns>
 - decoder
   - <https://documentation.wazuh.com/current/user-manual/ruleset/custom.html>
   - <https://github.com/wazuh/wazuh/tree/master/ruleset/decoders>
