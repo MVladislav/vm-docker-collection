@@ -78,3 +78,18 @@ http:
         middlewares:
           - public-whitelist
           - default-headers
+tcp:
+  # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  middlewares:
+    default-whitelist:
+      IPAllowList:
+        sourceRange:
+          - 127.0.0.0/8
+          - 10.0.0.0/8
+          - 192.168.0.0/16
+          - 172.16.0.0/12
+
+    public-whitelist:
+      IPAllowList:
+        sourceRange:
+          - 0.0.0.0/0

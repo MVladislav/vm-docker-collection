@@ -4,13 +4,21 @@ x-basic-deploy-labels: &basic-deploy-labels
     - traefik.enable=true
     - traefik.docker.lbswarm=${LB_SWARM:-true}
     - traefik.docker.network=proxy
-    - traefik.http.routers.wazuh.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
-    - traefik.http.routers.wazuh.rule=Host(`${DOMAIN?domain variable not set}`)
-    - traefik.http.routers.wazuh.tls=true
-    - traefik.http.routers.wazuh.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
-    - traefik.http.routers.wazuh.service=wazuh
-    - traefik.http.services.wazuh.loadbalancer.server.scheme=${PROTOCOL:-https}
-    - traefik.http.services.wazuh.loadbalancer.server.port=${PORT:-5601}
+    # - traefik.http.routers.wazuh.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    # - traefik.http.routers.wazuh.rule=Host(`${DOMAIN?domain variable not set}`)
+    # - traefik.http.routers.wazuh.tls=true
+    # - traefik.http.routers.wazuh.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    # - traefik.http.routers.wazuh.service=wazuh
+    # - traefik.http.services.wazuh.loadbalancer.server.scheme=${PROTOCOL:-https}
+    # - traefik.http.services.wazuh.loadbalancer.server.port=${PORT:-5601}
+
+    - traefik.tcp.routers.wazuh.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.tcp.routers.wazuh.rule=HostSNI(`${DOMAIN?domain variable not set}`)
+    - traefik.tcp.routers.wazuh.tls=true
+    - traefik.tcp.routers.wazuh.tls.passthrough=true
+    - traefik.tcp.routers.wazuh.middlewares=${MIDDLEWARE_SECURED:-default-whitelist@file}
+    - traefik.tcp.routers.wazuh.service=wazuh
+    - traefik.tcp.services.wazuh.loadbalancer.server.port=${PORT:-5601}
 
 x-basic-deploy-master-labels: &basic-deploy-master-labels
   labels: []
@@ -66,10 +74,11 @@ x-base-env: &base-env
   API_PASSWORD_FILE: /run/secrets/api_password_file_secret # pragma: allowlist secret
 
 x-manager-env: &manager-env
+  INDEXER_URL: https://wazuh1.indexer:9200
   INDEXER_USERNAME: admin
   INDEXER_PASSWORD_FILE: /run/secrets/indexer_password_file_secret # pragma: allowlist secret
 
-  FILEBEAT_SSL_VERIFICATION_MODE: none
+  FILEBEAT_SSL_VERIFICATION_MODE: full
   SSL_CERTIFICATE_AUTHORITIES: /etc/ssl/root-ca.pem
   SSL_CERTIFICATE: /etc/ssl/filebeat.pem
   SSL_KEY: /etc/ssl/filebeat.key
@@ -77,6 +86,29 @@ x-manager-env: &manager-env
 x-indexer-env: &indexer-env
   bootstrap.memory_lock: ${MEM_LOCK:-false}
   OPENSEARCH_JAVA_OPTS: -Xms${WAZUH_INDEXER_JAVA:-1g} -Xmx${WAZUH_INDEXER_JAVA:-1g}
+
+  # # OPENSEARCH_PATH_CONF: /usr/share/wazuh-indexer
+  # CLUSTER_NAME: "wazuh-cluster"
+  # CLUSTER_INITIAL_MASTER_NODES: '["wazuh1.indexer", "wazuh2.indexer", "wazuh3.indexer"]'
+  # DISCOVERY_SEED_HOSTS: '["wazuh1.indexer", "wazuh2.indexer", "wazuh3.indexer"]'
+  # NODE_MAX_LOCAL_STORAGE_NODES: "3"
+  # PATH_DATA: /var/lib/wazuh-indexer
+  # PATH_LOGS: /var/log/wazuh-indexer
+  # PLUGINS_SECURITY_SSL_HTTP_PEMTRUSTEDCAS_FILEPATH: /usr/share/wazuh-indexer/certs/root-ca.pem
+  # PLUGINS_SECURITY_SSL_TRANSPORT_PEMTRUSTEDCAS_FILEPATH: /usr/share/wazuh-indexer/certs/root-ca.pem
+  # PLUGINS_SECURITY_SSL_HTTP_ENABLED: "true"
+  # PLUGINS_SECURITY_SSL_TRANSPORT_ENFORCE_HOSTNAME_VERIFICATION: "false"
+  # PLUGINS_SECURITY_SSL_TRANSPORT_RESOLVE_HOSTNAME: "false"
+  # PLUGINS_SECURITY_AUTHCZ_ADMIN_DN: "CN=admin,OU=Wazuh,O=Wazuh,L=California,C=US"
+  # PLUGINS_SECURITY_CHECK_SNAPSHOT_RESTORE_WRITE_PRIVILEGES: "true"
+  # PLUGINS_SECURITY_ENABLE_SNAPSHOT_RESTORE_PRIVILEGE: "true"
+  # PLUGINS_SECURITY_NODES_DN: '["CN=wazuh1.indexer,OU=Wazuh,O=Wazuh,L=California,C=US", "CN=wazuh2.indexer,OU=Wazuh,O=Wazuh,L=California,C=US", "CN=wazuh3.indexer,OU=Wazuh,O=Wazuh,L=California,C=US", "CN=filebeat,OU=Wazuh,O=Wazuh,L=California,C=US"]'
+  # PLUGINS_SECURITY_RESTAPI_ROLES_ENABLED: '["all_access", "security_rest_api_access"]'
+  # PLUGINS_SECURITY_SYSTEM_INDICES_ENABLED: "true"
+  # PLUGINS_SECURITY_SYSTEM_INDICES_INDICES: '[".opendistro-alerting-config", ".opendistro-alerting-alert*", ".opendistro-anomaly-results*", ".opendistro-anomaly-detector*", ".opendistro-anomaly-checkpoints", ".opendistro-anomaly-detection-state", ".opendistro-reports-*", ".opendistro-notifications-*", ".opendistro-notebooks", ".opensearch-observability", ".opendistro-asynchronous-search-response*", ".replication-metadata-store"]'
+  # PLUGINS_SECURITY_ALLOW_DEFAULT_INIT_SECURITYINDEX: "true"
+  # CLUSTER_ROUTING_ALLOCATION_DISK_THRESHOLD_ENABLED: "false"
+  # COMPATIBILITY_OVERRIDE_MAIN_RESPONSE_VERSION: "true"
 
 services:
   ##############################################################################
@@ -99,11 +131,56 @@ services:
       - api_password_file_secret
     environment:
       <<: *base-env
-      HTTP_PROXY: ${DOMAIN?domain variable not set}
       OPENSEARCH_HOSTS: https://wazuh1.indexer:9200
       WAZUH_API_URL: https://wazuh.master
       DASHBOARD_USERNAME: kibanaserver
       DASHBOARD_PASSWORD_FILE: /run/secrets/dashboard_password_file_secret # pragma: allowlist secret
+
+      # SERVER_HOST: "0.0.0.0"
+      # SERVER_PORT: "5601"
+      ENROLLMENT_DNS: ${DOMAIN?domain variable not set}
+      ENROLLMENT_PASSWORD: ${ENROLLMENT_PASSWORD:-}
+
+      # SERVER_SSL_ENABLED: "true"
+      # OPENSEARCH_SSL_VERIFICATIONMODE: certificate
+      # OPENSEARCH_REQUESTHEADERSALLOWLIST: '["securitytenant","Authorization"]'
+      # OPENSEARCH_SECURITY_READONLY_MODE_ROLES: '["kibana_read_only"]'
+      # OPENSEARCH_SECURITY_MULTITENANCY_ENABLED: "false"
+
+      # SERVER_SSL_KEY: "/usr/share/wazuh-dashboard/certs/wazuh-dashboard-key.pem"
+      # SERVER_SSL_CERTIFICATE: "/usr/share/wazuh-dashboard/certs/wazuh-dashboard.pem"
+      # OPENSEARCH_SSL_CERTIFICATEAUTHORITIES: '["/usr/share/wazuh-dashboard/certs/root-ca.pem"]'
+      # UISETTINGS_OVERRIDES_DEFAULTROUTE: /app/wz-home
+
+      EXTENSIONS_PCI: ${EXTENSIONS_PCI:-true} # Enable PCI Extension
+      EXTENSIONS_GDPR: ${EXTENSIONS_GDPR:-true} # Enable GDPR Extension
+      EXTENSIONS_HIPAA: ${EXTENSIONS_HIPAA:-true} # Enable HIPAA Extension
+      EXTENSIONS_NIST: ${EXTENSIONS_NIST:-true} # Enable NIST Extension
+      EXTENSIONS_TSC: ${EXTENSIONS_TSC:-true} # Enable TSC Extension
+      EXTENSIONS_AUDIT: ${EXTENSIONS_AUDIT:-true} # Enable Audit Extension
+      EXTENSIONS_OSCAP: ${EXTENSIONS_OSCAP:-true} # Enable OpenSCAP Extension
+      EXTENSIONS_CISCAT: ${EXTENSIONS_CISCAT:-true} # Enable CISCAT Extension
+      EXTENSIONS_AWS: ${EXTENSIONS_AWS:-true} # Enable AWS Extension
+      EXTENSIONS_GCP: ${EXTENSIONS_GCP:-true} # Enable GCP Extension
+      EXTENSIONS_VIRUSTOTAL: ${EXTENSIONS_VIRUSTOTAL:-true} # Enable Virustotal Extension
+      EXTENSIONS_OSQUERY: ${EXTENSIONS_OSQUERY:-true} # Enable OSQuery Extension
+      EXTENSIONS_DOCKER: ${EXTENSIONS_DOCKER:-true} # Enable Docker Extension
+
+      CHECKS_PATTERN: ${CHECKS_PATTERN:-true} # Defines which checks must be considered by the healthcheck
+      CHECKS_TEMPLATE: ${CHECKS_TEMPLATE:-true} # step once the Wazuh app starts. Values must be true or false
+      CHECKS_API: ${CHECKS_API:-true}
+      CHECKS_SETUP: ${CHECKS_SETUP:-true}
+
+      WAZUH_MONITORING_ENABLED: ${WAZUH_MONITORING_ENABLED:-true} # Custom settings to enable/disable wazuh-monitoring indices
+      WAZUH_MONITORING_FREQUENCY: ${WAZUH_MONITORING_FREQUENCY:-900} # Custom setting to set the frequency for wazuh-monitoring indices cron task
+      WAZUH_MONITORING_SHARDS: ${WAZUH_MONITORING_SHARDS:-1} # Configure wazuh-monitoring-* indices shards and replicas
+      WAZUH_MONITORING_REPLICAS: ${WAZUH_MONITORING_REPLICAS:-0} ##
+
+      PATTERN: ${PATTERN:-wazuh-alerts-*} # Default index pattern to use
+      APP_TIMEOUT: ${APP_TIMEOUT:-20000} # Defines maximum timeout to be used on the Wazuh app requests
+      IP_SELECTOR: ${IP_SELECTOR:-true} # Defines if the user is allowed to change the selected index pattern directly from the Wazuh app top menu
+      IP_IGNORE: ${IP_IGNORE:-[]} # List of index patterns to be ignored
+      API_SELECTOR: ${API_SELECTOR:-true} # Defines if the user is allowed to change the selected API directly from the Wazuh app top menu
     configs:
       - source: opensearch_dashboards_config
         target: /usr/share/wazuh-dashboard/config/opensearch_dashboards.yml
@@ -111,7 +188,7 @@ services:
         uid: "1000"
         gid: "1000"
       - source: wazuh_config
-        target: usr/share/wazuh-dashboard/data/wazuh/config/wazuh.yml
+        target: /usr/share/wazuh-dashboard/data/wazuh/config/wazuh.yml
         mode: 0660
         uid: "1000"
         gid: "1000"
@@ -179,7 +256,6 @@ services:
       - indexer_password_file_secret
     environment:
       <<: [*base-env, *manager-env]
-      INDEXER_URL: https://wazuh1.indexer:9200
     configs:
       - source: wazuh_manager_config
         target: /wazuh-config-mount/etc/ossec.conf
@@ -230,7 +306,6 @@ services:
       - indexer_password_file_secret
     environment:
       <<: *manager-env
-      INDEXER_URL: https://wazuh1.indexer:9200
     configs:
       - source: wazuh_worker_config
         target: /wazuh-config-mount/etc/ossec.conf
@@ -288,6 +363,10 @@ services:
       <<: *indexer-env
       NETWORK_HOST: wazuh1.indexer
       NODE_NAME: wazuh1.indexer
+      # PLUGINS_SECURITY_SSL_HTTP_PEMCERT_FILEPATH: /usr/share/wazuh-indexer/certs/wazuh1.indexer.pem
+      # PLUGINS_SECURITY_SSL_HTTP_PEMKEY_FILEPATH: /usr/share/wazuh-indexer/certs/wazuh1.indexer.key
+      # PLUGINS_SECURITY_SSL_TRANSPORT_PEMCERT_FILEPATH: /usr/share/wazuh-indexer/certs/wazuh1.indexer.pem
+      # PLUGINS_SECURITY_SSL_TRANSPORT_PEMKEY_FILEPATH: /usr/share/wazuh-indexer/certs/wazuh1.indexer.key
     configs:
       - source: wazuh1_indexer_config
         target: /usr/share/wazuh-indexer/opensearch.yml
@@ -350,6 +429,10 @@ services:
       <<: *indexer-env
       NETWORK_HOST: wazuh2.indexer
       NODE_NAME: wazuh2.indexer
+      # PLUGINS_SECURITY_SSL_HTTP_PEMCERT_FILEPATH: /usr/share/wazuh-indexer/certs/wazuh2.indexer.pem
+      # PLUGINS_SECURITY_SSL_HTTP_PEMKEY_FILEPATH: /usr/share/wazuh-indexer/certs/wazuh2.indexer.key
+      # PLUGINS_SECURITY_SSL_TRANSPORT_PEMCERT_FILEPATH: /usr/share/wazuh-indexer/certs/wazuh2.indexer.pem
+      # PLUGINS_SECURITY_SSL_TRANSPORT_PEMKEY_FILEPATH: /usr/share/wazuh-indexer/certs/wazuh2.indexer.key
     configs:
       - source: wazuh2_indexer_config
         target: /usr/share/wazuh-indexer/opensearch.yml
@@ -402,6 +485,10 @@ services:
       <<: *indexer-env
       NETWORK_HOST: wazuh3.indexer
       NODE_NAME: wazuh3.indexer
+      # PLUGINS_SECURITY_SSL_HTTP_PEMCERT_FILEPATH: /usr/share/wazuh-indexer/certs/wazuh3.indexer.pem
+      # PLUGINS_SECURITY_SSL_HTTP_PEMKEY_FILEPATH: /usr/share/wazuh-indexer/certs/wazuh3.indexer.key
+      # PLUGINS_SECURITY_SSL_TRANSPORT_PEMCERT_FILEPATH: /usr/share/wazuh-indexer/certs/wazuh3.indexer.pem
+      # PLUGINS_SECURITY_SSL_TRANSPORT_PEMKEY_FILEPATH: /usr/share/wazuh-indexer/certs/wazuh3.indexer.key
     configs:
       - source: wazuh3_indexer_config
         target: /usr/share/wazuh-indexer/opensearch.yml

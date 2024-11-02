@@ -68,8 +68,10 @@ LB_SWARM=true
 DOMAIN=siem.home.local # not set in docker-compose, needs to be copied to .env
 PROTOCOL=https
 PORT=5601
-# default-secured@file | public-whitelist@file | authentik@file
-MIDDLEWARE_SECURED=default-secured@file
+# # default-secured@file | public-whitelist@file | authentik@file
+# MIDDLEWARE_SECURED=default-secured@file
+# default-whitelist@file | public-whitelist@file
+MIDDLEWARE_SECURED=default-whitelist@file
 
 # GENERAL sources to be used (set by default, change as needed)
 # ______________________________________________________________________________
