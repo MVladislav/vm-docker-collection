@@ -1,0 +1,239 @@
+---
+x-basic-deploy-labels: &basic-deploy-labels
+  labels:
+    - traefik.enable=true
+    - traefik.docker.lbswarm=${LB_SWARM:-true}
+    - traefik.docker.network=proxy
+    - traefik.http.routers.immich${SERVICE_NAME_POST:-}.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.immich${SERVICE_NAME_POST:-}.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.immich${SERVICE_NAME_POST:-}.tls=true
+    - traefik.http.routers.immich${SERVICE_NAME_POST:-}.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.immich${SERVICE_NAME_POST:-}.service=immich${SERVICE_NAME_POST:-}
+    - traefik.http.services.immich${SERVICE_NAME_POST:-}.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.immich${SERVICE_NAME_POST:-}.loadbalancer.server.port=${PORT:-2283}
+
+x-basic-deploy: &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  restart_policy:
+    condition: any
+  resources:
+    limits:
+      cpus: ${RESOURCES_LIMITS_CPUS:-1}
+      memory: ${RESOURCES_LIMITS_MEMORY:-1g}
+    reservations:
+      cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
+      memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
+
+x-basic: &basic
+  env_file: .env
+  cap_drop: ["ALL"]
+  security_opt:
+    - no-new-privileges=true
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 655360
+      hard: 655360
+    fsize: -1
+    as: -1
+  networks:
+    default: {}
+  healthcheck:
+    disable: true
+  restart: always
+
+x-immich: &immich
+  DB_PORT: 5432
+  DB_HOSTNAME: database
+  DB_DATABASE_NAME: ${POSTGRES_DB:-immich}
+  DB_USERNAME: ${POSTGRES_USER:-immich}
+  DB_PASSWORD_FILE: /run/secrets/postgres_password_file
+
+  REDIS_HOSTNAME: valkey
+  REDIS_PORT: 6379
+
+################################################################################
+################################################################################
+################################################################################
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  immich:
+    # https://github.com/immich-app/immich/pkgs/container/immich-server
+    image: ghcr.io/immich-app/immich-server:${VERSION_IMMICH:-v1.120.1}
+    <<: [*basic, *basic-deploy-labels]
+    deploy:
+      <<: [*basic-deploy, *basic-deploy-labels]
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_IMMICH:-2}
+          memory: ${RESOURCES_LIMITS_MEMORY_IMMICH:-2G}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_IMMICH:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_IMMICH:-32m}
+    secrets:
+      - postgres_password_file
+    environment:
+      <<: *immich
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - upload:/usr/src/app/upload
+    networks:
+      default: {}
+      proxy: {}
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  immich-machine-learning:
+    # For hardware acceleration, add one of -[armnn, cuda, openvino] to the image tag.
+    # Example tag: ${VERSION_IMMICH:-release}-cuda
+    # https://github.com/immich-app/immich/pkgs/container/immich-machine-learning
+    image: ghcr.io/immich-app/immich-machine-learning:${VERSION_IMMICH:-v1.120.1}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_IMMICH_ML:-4}
+          memory: ${RESOURCES_LIMITS_MEMORY_IMMICH_ML:-4G}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_IMMICH_ML:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_IMMICH_ML:-32m}
+    environment:
+      MACHINE_LEARNING_PRELOAD__CLIP: ${PRELOAD_CLIP:-ViT-B-32__openai}
+      MACHINE_LEARNING_PRELOAD__FACIAL_RECOGNITION: ${PRELOAD_MODEL:-buffalo_l}
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - model-cache:/cache
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  valkey:
+    # https://hub.docker.com/r/valkey/valkey
+    image: valkey/valkey:${VERSION_VALKEY:-7.2.5-alpine}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_VALKEY:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_VALKEY:-128M}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_VALKEY:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_VALKEY:-32m}
+    cap_add:
+      - SETGID
+      - SETUID
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - valkey:/data
+    command: --save 300 1 --loglevel warning
+    healthcheck:
+      test: ["CMD-SHELL", "valkey-cli ping | grep PONG"]
+      start_period: 2s
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  database:
+    # https://hub.docker.com/r/tensorchord/pgvecto-rs
+    image: tensorchord/pgvecto-rs:${VERSION_POSTGRESQL:-pg16-v0.3.0}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_POSTGRESQL:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_POSTGRESQL:-512M}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_POSTGRESQL:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_POSTGRESQL:-32m}
+    cap_add:
+      - SETGID
+      - SETUID
+      - DAC_OVERRIDE
+    secrets:
+      - postgres_password_file
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-immich}
+      POSTGRES_USER: ${POSTGRES_USER:-immich}
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password_file
+      POSTGRES_INITDB_ARGS: "--data-checksums"
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - postgresql:/var/lib/postgresql/data
+    command:
+      [
+        "postgres",
+        "-c",
+        "shared_preload_libraries=vectors.so",
+        "-c",
+        'search_path="$$user", public, vectors',
+        "-c",
+        "logging_collector=on",
+        "-c",
+        "max_wal_size=2GB",
+        "-c",
+        "shared_buffers=512MB",
+        "-c",
+        "wal_compression=on",
+      ]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
+      start_period: 2s
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    # healthcheck:
+    #   test: pg_isready --dbname='${DB_DATABASE_NAME}' --username='${DB_USERNAME}' || exit 1; Chksum="$$(psql --dbname='${DB_DATABASE_NAME}' --username='${DB_USERNAME}' --tuples-only --no-align --command='SELECT COALESCE(SUM(checksum_failures), 0) FROM pg_stat_database')"; echo "checksum failure count is $$Chksum"; [ "$$Chksum" = '0' ] || exit 1
+    #   start_period: 2s
+    #   interval: 5s
+    #   timeout: 3s
+    #   retries: 5
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  default:
+    driver: ${NETWORK_MODE:-bridge}
+    attachable: true
+    driver_opts:
+      encrypted: "true"
+  proxy:
+    external: true
+
+volumes:
+  model-cache: {}
+  valkey: {}
+  postgresql: {}
+  ## sudo apt install nfs-common
+  upload: {}
+  # upload:
+  #   driver: local
+  #   driver_opts:
+  #     type: nfs
+  #     o: nfsvers=4,addr=${NAS_HOST},rw,noatime,rsize=8192,wsize=8192,tcp,timeo=14
+  #     device: ":${NAS_PATH}"
+
+secrets:
+  postgres_password_file:
+    file: config/secrets/postgres_password_file.txt
