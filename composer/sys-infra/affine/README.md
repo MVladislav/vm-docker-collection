@@ -51,9 +51,9 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_AFFINE=canary-bd02797
-VERSION_VALKEY=7.2.5-alpine
-VERSION_POSTGRESQL=16.2-alpine3.19
+VERSION_AFFINE=stable-129ccea
+VERSION_VALKEY=8.0.1-alpine
+VERSION_POSTGRESQL=17.1-alpine3.20
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________

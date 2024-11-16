@@ -69,7 +69,7 @@ services:
   ##############################################################################
   affine:
     # https://github.com/toeverything/AFFiNE/pkgs/container/affine-graphql
-    image: ghcr.io/toeverything/affine-graphql:${VERSION_AFFINE:-canary-bd02797}
+    image: ghcr.io/toeverything/affine-graphql:${VERSION_AFFINE:-stable-129ccea}
     <<: [*basic, *basic-deploy-labels]
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels]
@@ -78,6 +78,7 @@ services:
       # AFFINE_ADMIN_PASSWORD: ${AFFINE_ADMIN_PASSWORD}
 
       AFFINE_SERVER_HOST: ${DOMAIN?domain variable not set}
+      AFFINE_SERVER_HTTPS: ${AFFINE_SERVER_HTTPS:-false}
 
       NODE_ENV: production
       NODE_OPTIONS: "--import=./scripts/register.js"
@@ -86,7 +87,7 @@ services:
       REDIS_SERVER_HOST: valkey
       DATABASE_URL: postgres://${POSTGRES_USER:-affine}:${POSTGRES_PASSWORD_TMP}@postgresql:5432/${POSTGRES_DB:-affine}
 
-      TELEMETRY_ENABLE: false
+      TELEMETRY_ENABLE: ${TELEMETRY_ENABLE:-false}
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
@@ -100,7 +101,7 @@ services:
   ##############################################################################
   valkey:
     # https://hub.docker.com/r/valkey/valkey
-    image: valkey/valkey:${VERSION_VALKEY:-7.2.5-alpine}
+    image: valkey/valkey:${VERSION_VALKEY:-8.0.1-alpine}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -120,7 +121,8 @@ services:
       - valkey:/data
     command: --save 300 1 --loglevel warning
     healthcheck:
-      test: ["CMD-SHELL", "valkey-cli ping | grep PONG"]
+      # test: ["CMD-SHELL", "valkey-cli ping | grep PONG"]
+      test: ["CMD", "valkey-", "--raw", "incr", "ping"]
       start_period: 2s
       interval: 5s
       timeout: 3s
@@ -131,7 +133,7 @@ services:
   ##############################################################################
   postgresql:
     # https://hub.docker.com/_/postgres
-    image: postgres:${VERSION_POSTGRESQL:-16.2-alpine3.19}
+    image: postgres:${VERSION_POSTGRESQL:-17.1-alpine3.20}
     <<: *basic
     deploy:
       <<: *basic-deploy
