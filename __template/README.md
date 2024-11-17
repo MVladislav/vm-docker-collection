@@ -14,6 +14,7 @@
   - [Helper](#helper)
     - [verify healthcheck](#verify-healthcheck)
     - [access docker in swarm mode](#access-docker-in-swarm-mode)
+    - [some more useful commands](#some-more-useful-commands)
   - [References](#references)
 
 ---
@@ -88,6 +89,19 @@ $docker inspect --format "{{json .State.Health }}" <CONTAINER_NAME> | jq
 
 ```sh
 $docker exec -it "$(docker ps -q -f name=<SERVICE_NAME>)" <COMMAND>
+```
+
+### some more useful commands
+
+```sh
+# stop all containers
+$docker stop $(docker ps -a -q)
+# remove all containers
+$docker rm $(docker ps -a -q)
+
+# for debugs and faster cleanups also
+# remove all containers
+$docker volume rm $(docker volume ls -qf dangling=true)
 ```
 
 ---
