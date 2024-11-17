@@ -39,6 +39,45 @@ services:
   ##############################################################################
   ##############################################################################
   ##############################################################################
+  minio:
+    # https://hub.docker.com/r/minio/minio
+    image: minio/minio:${VERSION_MINIO:-RELEASE.2024-11-07T00-52-20Z-cpuv1}
+    # <<: *basic
+    deploy:
+      # <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_MINIO:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_MINIO:-1G}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_MINIO:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_MINIO:-32m}
+    # ports:
+    #   - target: ${PORT_MINIO:-9001}
+    #     published: ${PORT_MINIO_PUBLISH:-9001}
+    #     protocol: tcp
+    #     mode: host
+    secrets:
+      - minio_root_password_file
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minio}
+      MINIO_ROOT_PASSWORD_FILE: /run/secrets/minio_root_password_file
+      # MINIO_BROWSER_REDIRECT_URL: https://${DOMAIN?domain variable not set}
+    volumes:
+      # - /etc/timezone:/etc/timezone:ro
+      # - /etc/localtime:/etc/localtime:ro
+      - minio:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      start_period: 2s
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
   postgresql:
     # https://hub.docker.com/_/postgres
     image: postgres:${VERSION_POSTGRESQL:-16.2-alpine3.19}
@@ -331,6 +370,7 @@ services:
 
 volumes:
   valkey: {}
+  minio: {}
   postgresql: {}
   mariadb: {}
   influxdb-storage: {}
@@ -338,6 +378,8 @@ volumes:
   mongodb: {}
 
 secrets:
+  minio_root_password_file:
+    file: config/secrets/minio_root_password_file.txt
   postgres_password_file:
     file: config/secrets/postgres_password_file.txt
   mariadb_root_password:
