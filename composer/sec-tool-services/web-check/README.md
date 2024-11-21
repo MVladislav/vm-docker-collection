@@ -48,7 +48,16 @@ VERSION=latest
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
-# NOTE: extend additional info here ...
+GOOGLE_CLOUD_API_KEY=<CHANGEME>
+REACT_APP_SHODAN_API_KEY=<CHANGEME>
+REACT_APP_WHO_API_KEY=<CHANGEME>
+SECURITY_TRAILS_API_KEY=<CHANGEME>
+CLOUDMERSIVE_API_KEY=<CHANGEME>
+TRANCO_USERNAME=<CHANGEME>
+TRANCO_API_KEY=<CHANGEME>
+URL_SCAN_API_KEY=<CHANGEME>
+BUILT_WITH_API_KEY=<CHANGEME>
+TORRENT_IP_API_KEY=<CHANGEME>
 ```
 
 #### example short .env
@@ -57,6 +66,8 @@ VERSION=latest
 NETWORK_MODE=overlay
 DOMAIN=web-check.home.local
 VERSION=latest
+
+PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 ```
 
 ---
