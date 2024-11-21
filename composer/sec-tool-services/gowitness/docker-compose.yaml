@@ -10,7 +10,7 @@ x-basic-deploy-labels: &basic-deploy-labels
     - traefik.http.routers.gowitness${SERVICE_NAME_POST:-}.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
     - traefik.http.routers.gowitness${SERVICE_NAME_POST:-}.service=gowitness${SERVICE_NAME_POST:-}
     - traefik.http.services.gowitness${SERVICE_NAME_POST:-}.loadbalancer.server.scheme=${PROTOCOL:-http}
-    - traefik.http.services.gowitness${SERVICE_NAME_POST:-}.loadbalancer.server.port=${PORT:-80}
+    - traefik.http.services.gowitness${SERVICE_NAME_POST:-}.loadbalancer.server.port=${PORT:-7171}
 
 x-basic-deploy: &basic-deploy
   mode: replicated
@@ -73,9 +73,10 @@ services:
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-      - data:/data
+      - data:/data/sql
+      - screenshots:/data/screenshots
     command: >
-      gowitness report server --host 0.0.0.0 --screenshot-path /data/screenshots --db-uri sqlite:///data/gowitness.sqlite3
+      gowitness report server --host 0.0.0.0 --port 7171 --screenshot-path /data/screenshots --db-uri sqlite:///data/sql/gowitness.sqlite3
 
 ################################################################################
 ################################################################################
@@ -86,3 +87,4 @@ networks:
 
 volumes:
   data: {}
+  screenshots: {}
