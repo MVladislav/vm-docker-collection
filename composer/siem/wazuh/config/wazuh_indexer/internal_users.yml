@@ -17,6 +17,13 @@ admin:
     - "admin"
   description: "Demo admin user"
 
+groot:
+  hash: "REPLACE_GROOT_ADMIN_HASH"
+  # reserved: true
+  backend_roles:
+    - "admin"
+  description: "Default admin user"
+
 kibanaserver:
   hash: "REPLACE_KIBANA_SERVER_HASH"
   reserved: true

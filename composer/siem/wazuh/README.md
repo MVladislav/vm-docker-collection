@@ -34,6 +34,9 @@ $sed "s|REPLACE_KIBANA_SERVER_HASH|$(cat config/secrets/dashboard_password_file_
 $pwgen -s 24 1 > config/secrets/indexer_password_file_secret.txt
 $sed "s|REPLACE_ADMIN_HASH|$(cat config/secrets/indexer_password_file_secret.txt | mkpasswd -m bcrypt -s -R 12)|" -i config/wazuh_indexer/internal_users.yml
 
+$pwgen -s 24 1 > config/secrets/groot_password_file_secret.txt
+$sed "s|REPLACE_GROOT_ADMIN_HASH|$(cat config/secrets/groot_password_file_secret.txt | mkpasswd -m bcrypt -s -R 12)|" -i config/wazuh_indexer/internal_users.yml
+
 $echo "$(pwgen -cns 24 1).*-" > config/secrets/api_password_file_secret.txt
 $sed "s|password:.*|password: \"$(cat config/secrets/api_password_file_secret.txt)\"|" -i config/wazuh_dashboard/wazuh.yml
 
