@@ -69,9 +69,9 @@ services:
         BUILD_DATE: ${BUILD_DATE:-2024}
         VERSION: ${VERSION:-latest}
         # https://hub.docker.com/_/node
-        VERSION_NODE: ${VERSION_NODE:-21}
+        VERSION_NODE: ${VERSION_NODE:-23.2.0}
         # https://hub.docker.com/_/nginx
-        VERSION_NGINX: ${VERSION_NGINX:-1.25.4}
+        VERSION_NGINX: ${VERSION_NGINX:-1.27.2}
     # https://github.com/mitre-attack/attack-navigator
     image: attacknavigator:${VERSION:-latest}
     <<: [*basic, *basic-deploy-labels]
