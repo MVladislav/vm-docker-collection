@@ -22,6 +22,8 @@ x-basic-deploy: &basic-deploy
       # - "node.id==${NODE_ID}"
       - "node.role==${NODE_ROLE:-manager}"
       - node.platform.os == linux
+  update_config:
+    order: start-first # start-first | stop-first
   restart_policy:
     condition: any # any | on-failure | none
   resources:

@@ -9,7 +9,7 @@ services:
   ##############################################################################
   valkey:
     # https://hub.docker.com/r/valkey/valkey
-    image: valkey/valkey:${VERSION_VALKEY:-7.2.5-alpine}
+    image: valkey/valkey:${VERSION_VALKEY:-8.0.1-alpine}
     # <<: *basic
     deploy:
       # <<: *basic-deploy
@@ -29,8 +29,8 @@ services:
       - valkey:/data
     command: --save 300 1 --loglevel warning
     healthcheck:
-      # test: ["CMD-SHELL", "valkey-cli ping | grep PONG"]
-      test: ["CMD", "valkey-", "--raw", "incr", "ping"]
+      test: ["CMD-SHELL", "valkey-cli ping | grep PONG"]
+      # test: ["CMD", "valkey-", "--raw", "incr", "ping"]
       start_period: 2s
       interval: 5s
       timeout: 3s
