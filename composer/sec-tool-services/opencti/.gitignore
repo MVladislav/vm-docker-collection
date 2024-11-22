@@ -1,0 +1,16 @@
+*
+!.gitignore
+!.gitempty
+
+!docker-compose.yaml
+!docker-compose-connectors.yaml
+!docker-compose-enrichment.yaml
+
+!README.md
+
+!config/
+config/*
+
+!config/secrets/
+config/secrets/*
+!config/secrets/.gitempty

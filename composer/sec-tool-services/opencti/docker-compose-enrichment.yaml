@@ -1,0 +1,157 @@
+---
+x-basic-deploy: &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  update_config:
+    order: start-first
+  restart_policy:
+    condition: any
+  resources:
+    limits:
+      cpus: ${RESOURCES_LIMITS_CPUS:-1}
+      memory: ${RESOURCES_LIMITS_MEMORY:-1g}
+    reservations:
+      cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
+      memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
+
+x-basic: &basic
+  env_file: .env
+  cap_drop: ["ALL"]
+  security_opt:
+    - no-new-privileges=true
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 655360
+      hard: 655360
+    fsize: -1
+    as: -1
+  networks:
+    opencti: {}
+  healthcheck:
+    disable: true
+  restart: always
+
+################################################################################
+################################################################################
+################################################################################
+x-opencti: &opencti
+  OPENCTI_URL: http://opencti:8080
+  OPENCTI_TOKEN: ${OPENCTI_ADMIN_TOKEN}
+
+x-opencti-connector: &opencti-connector
+  CONNECTOR_LOG_LEVEL: info
+  CONNECTOR_TYPE: INTERNAL_ENRICHMENT
+
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  connector-crowdsec:
+    # https://hub.docker.com/r/opencti/connector-crowdsec
+    image: opencti/connector-crowdsec:${VERSION_CONNECTORS:-6.4.1}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+    environment:
+      <<: [*opencti, *opencti-connector]
+      CONNECTOR_ID: ${ENRICHMENT_CROWDSEC_ID}
+      CONNECTOR_SCOPE: IPv4-Addr,IPv6-Addr # MIME type or Stix Object
+      CONNECTOR_CONFIDENCE_LEVEL: 100 # From 0 (Unknown) to 100 (Fully trusted)
+      CONNECTOR_UPDATE_EXISTING_DATA: "false"
+      CONNECTOR_NAME: CrowdSec
+      # CROWDSEC_KEY: ChangeMe # Add CrowdSec's CTI API Key
+      CROWDSEC_API_VERSION: v2 # v2 is the only supported version for now
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  connector-virustotal:
+    # https://hub.docker.com/r/opencti/connector-virustotal
+    image: opencti/connector-virustotal:${VERSION_CONNECTORS:-6.4.1}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+    environment:
+      <<: [*opencti, *opencti-connector]
+      CONNECTOR_ID: ${ENRICHMENT_VIRUSTOTAL_ID}
+      CONNECTOR_NAME: VirusTotal
+      CONNECTOR_SCOPE: StixFile,Artifact,IPv4-Addr,Domain-Name,Url,Hostname
+      CONNECTOR_AUTO: "true" # Enable/disable auto-enrichment of observables
+      CONNECTOR_EXPOSE_METRICS: "false"
+      # VIRUSTOTAL_TOKEN: ChangeMe
+      VIRUSTOTAL_MAX_TLP: TLP:AMBER
+      VIRUSTOTAL_REPLACE_WITH_LOWER_SCORE: "true" # Whether to keep the higher of the VT or existing score (false) or force the score to be updated with the VT score even if its lower than existing score (true).
+      # File/Artifact specific config settings
+      VIRUSTOTAL_FILE_CREATE_NOTE_FULL_REPORT: "true" # Whether or not to include the full report as a Note
+      VIRUSTOTAL_FILE_UPLOAD_UNSEEN_ARTIFACTS: "true" # Whether to upload artifacts (smaller than 32MB) that VirusTotal has no record of
+      VIRUSTOTAL_FILE_INDICATOR_CREATE_POSITIVES: 10 # Create an indicator for File/Artifact based observables once this positive threshold is reached. Note: specify 0 to disable indicator creation
+      VIRUSTOTAL_FILE_INDICATOR_VALID_MINUTES: 2880 # How long the indicator is valid for in minutes
+      VIRUSTOTAL_FILE_INDICATOR_DETECT: "true" # Whether or not to set detection for the indicator to true
+      VIRUSTOTAL_FILE_IMPORT_YARA: "true" # Whether or not import Crowdsourced YARA rules
+      # IP specific config settings
+      VIRUSTOTAL_IP_INDICATOR_CREATE_POSITIVES: 10 # Create an indicator for IPv4 based observables once this positive threshold is reached. Note: specify 0 to disable indicator creation
+      VIRUSTOTAL_IP_INDICATOR_VALID_MINUTES: 2880 # How long the indicator is valid for in minutes
+      VIRUSTOTAL_IP_INDICATOR_DETECT: "true" # Whether or not to set detection for the indicator to true
+      VIRUSTOTAL_IP_ADD_RELATIONSHIPS: "true" # Whether or not to add ASN and location resolution relationships
+      # Domain specific config settings
+      VIRUSTOTAL_DOMAIN_INDICATOR_CREATE_POSITIVES: 10 # Create an indicator for Domain based observables once this positive threshold is reached. Note: specify 0 to disable indicator creation
+      VIRUSTOTAL_DOMAIN_INDICATOR_VALID_MINUTES: 2880 # How long the indicator is valid for in minutes
+      VIRUSTOTAL_DOMAIN_INDICATOR_DETECT: "true" # Whether or not to set detection for the indicator to true
+      VIRUSTOTAL_DOMAIN_ADD_RELATIONSHIPS: "true" # Whether or not to add IP resolution relationships
+      # URL specific config settings
+      VIRUSTOTAL_URL_UPLOAD_UNSEEN: "true" # Whether to upload URLs that VirusTotal has no record of for analysis
+      VIRUSTOTAL_URL_INDICATOR_CREATE_POSITIVES: 10 # Create an indicator for Url based observables once this positive threshold is reached. Note: specify 0 to disable indicator creation
+      VIRUSTOTAL_URL_INDICATOR_VALID_MINUTES: 2880 # How long the indicator is valid for in minutes
+      VIRUSTOTAL_URL_INDICATOR_DETECT: "true" # Whether or not to set detection for the indicator to true
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  connector-yara:
+    # https://hub.docker.com/r/opencti/connector-yara
+    image: opencti/connector-yara:${VERSION_CONNECTORS:-6.4.1}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+    environment:
+      <<: [*opencti, *opencti-connector]
+      CONNECTOR_ID: ${ENRICHMENT_YARA_ID}
+      CONNECTOR_NAME: YARA
+      CONNECTOR_SCOPE: Artifact # MIME type or Stix Object
+      CONNECTOR_AUTO: "true"
+      CONNECTOR_CONFIDENCE_LEVEL: 100 # From 0 (Unknown) to 100 (Fully trusted)
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  connector-greynoise-vuln:
+    # https://hub.docker.com/r/opencti/connector-greynoise-vuln
+    image: opencti/connector-greynoise-vuln:${VERSION_CONNECTORS:-6.4.1}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+    environment:
+      <<: [*opencti, *opencti-connector]
+      CONNECTOR_ID: ${ENRICHMENT_GREYNOISE_ID}
+      CONNECTOR_NAME: GreyNoise
+      CONNECTOR_SCOPE: vulnerability
+      CONNECTOR_AUTO: true
+      # GREYNOISE_KEY: ChangeMe
+      GREYNOISE_MAX_TLP: TLP:AMBER
+      GREYNOISE_NAME: GreyNoise Internet Scanner
+      GREYNOISE_DESCRIPTION: GreyNoise collects and analyzes opportunistic scan and attack activity for devices connected directly to the Internet.
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  opencti:
+    external: true

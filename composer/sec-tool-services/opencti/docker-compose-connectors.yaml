@@ -1,0 +1,269 @@
+---
+x-basic-deploy: &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  update_config:
+    order: start-first
+  restart_policy:
+    condition: any
+  resources:
+    limits:
+      cpus: ${RESOURCES_LIMITS_CPUS:-1}
+      memory: ${RESOURCES_LIMITS_MEMORY:-1g}
+    reservations:
+      cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
+      memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
+
+x-basic: &basic
+  env_file: .env
+  cap_drop: ["ALL"]
+  security_opt:
+    - no-new-privileges=true
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 655360
+      hard: 655360
+    fsize: -1
+    as: -1
+  networks:
+    opencti: {}
+  healthcheck:
+    disable: true
+  restart: always
+
+################################################################################
+################################################################################
+################################################################################
+x-opencti: &opencti
+  OPENCTI_URL: http://opencti:8080
+  OPENCTI_TOKEN: ${OPENCTI_ADMIN_TOKEN}
+
+x-opencti-connector: &opencti-connector
+  CONNECTOR_LOG_LEVEL: info
+  CONNECTOR_TYPE: EXTERNAL_IMPORT
+
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  connector-opencti:
+    # https://hub.docker.com/r/opencti/connector-opencti
+    image: opencti/connector-opencti:${VERSION_CONNECTORS:-6.4.1}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+    environment:
+      <<: [*opencti, *opencti-connector]
+      CONNECTOR_ID: ${CONNECTORS_OPENCTI_ID}
+      CONNECTOR_NAME: OpenCTI Datasets
+      CONNECTOR_SCOPE: marking-definition,identity,location
+      CONNECTOR_CONFIDENCE_LEVEL: 100
+      CONNECTOR_UPDATE_EXISTING_DATA: "true"
+      CONNECTOR_RUN_AND_TERMINATE: "false"
+      CONFIG_SECTORS_FILE_URL: https://raw.githubusercontent.com/OpenCTI-Platform/datasets/master/data/sectors.json
+      CONFIG_GEOGRAPHY_FILE_URL: https://raw.githubusercontent.com/OpenCTI-Platform/datasets/master/data/geography.json
+      CONFIG_COMPANIES_FILE_URL: https://raw.githubusercontent.com/OpenCTI-Platform/datasets/master/data/companies.json
+      CONFIG_REMOVE_CREATOR: "false"
+      CONFIG_INTERVAL: 7 # In days
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  connector-cve:
+    # https://hub.docker.com/r/opencti/connector-cve
+    image: opencti/connector-cve:${VERSION_CONNECTORS:-6.4.1}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+    environment:
+      <<: [*opencti, *opencti-connector]
+      CONNECTOR_ID: ${CONNECTORS_CVE_ID}
+      CONNECTOR_NAME: Common Vulnerabilities and Exposures
+      CONNECTOR_SCOPE: identity,vulnerability
+      CONNECTOR_RUN_AND_TERMINATE: false
+      CVE_BASE_URL: https://services.nvd.nist.gov/rest/json/cves
+      # CVE_API_KEY: ChangeMe # Required
+      CVE_INTERVAL: 2 # Required, in hours advice min 2
+      CVE_MAX_DATE_RANGE: 120 # In days, max 120
+      CVE_MAINTAIN_DATA: "true" # Required, retrieve only updated data
+      CVE_PULL_HISTORY: "false" # If true, CVE_HISTORY_START_YEAR is required
+      CVE_HISTORY_START_YEAR: 2024 # Required if pull_history is True, min 2019 (see documentation CVE and CVSS base score V3.1)
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  connector-mitre:
+    # https://hub.docker.com/r/opencti/connector-mitre
+    image: opencti/connector-mitre:${VERSION_CONNECTORS:-6.4.1}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+    environment:
+      <<: [*opencti, *opencti-connector]
+      CONNECTOR_ID: ${CONNECTORS_MITRE_ID}
+      CONNECTOR_NAME: MITRE Datasets
+      CONNECTOR_SCOPE: tool,report,malware,identity,campaign,intrusion-set,attack-pattern,course-of-action,x-mitre-data-source,x-mitre-data-component,x-mitre-matrix,x-mitre-tactic,x-mitre-collection
+      CONNECTOR_RUN_AND_TERMINATE: "false"
+      MITRE_REMOVE_STATEMENT_MARKING: "true"
+      MITRE_INTERVAL: 7 # In days
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  connector-malpedia:
+    # https://hub.docker.com/r/opencti/connector-malpedia
+    image: opencti/connector-malpedia:${VERSION_CONNECTORS:-6.4.1}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+    environment:
+      <<: [*opencti, *opencti-connector]
+      CONNECTOR_ID: ${CONNECTORS_MALPEDIA_ID}
+      CONNECTOR_NAME: Malpedia
+      CONNECTOR_SCOPE: malpedia
+      CONNECTOR_EXPOSE_METRICS: "false"
+      # MALPEDIA_AUTH_KEY:  # Empty key only fetches TLP:WHITE information
+      MALPEDIA_INTERVAL_SEC: 86400 # Run once every day
+      MALPEDIA_IMPORT_INTRUSION_SETS: "true"
+      MALPEDIA_IMPORT_YARA: "true"
+      MALPEDIA_CREATE_INDICATORS: "true"
+      MALPEDIA_CREATE_OBSERVABLES: "true"
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  connector-cisa-known-exploited-vulnerabilities:
+    # https://hub.docker.com/r/opencti/connector-cisa-known-exploited-vulnerabilities
+    image: opencti/connector-cisa-known-exploited-vulnerabilities:${VERSION_CONNECTORS:-6.4.1}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+    environment:
+      <<: [*opencti, *opencti-connector]
+      CONNECTOR_ID: ${CONNECTORS_CISA_ID}
+      CONNECTOR_NAME: CISA Known Exploited Vulnerabilities
+      CONNECTOR_SCOPE: cisa
+      CONNECTOR_RUN_AND_TERMINATE: "false"
+      CONNECTOR_DURATION_PERIOD: P2D
+      CISA_CATALOG_URL: https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json
+      CISA_CREATE_INFRASTRUCTURES: "false"
+      CISA_TLP: TLP:CLEAR
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  connector-mandiant:
+    # https://hub.docker.com/r/opencti/connector-mandiant
+    image: opencti/connector-mandiant:${VERSION_CONNECTORS:-6.4.1}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+    environment:
+      <<: [*opencti, *opencti-connector]
+      CONNECTOR_ID: ${CONNECTORS_MANDIANT_ID}
+      CONNECTOR_NAME: Mandiant
+      CONNECTOR_SCOPE: mandiant
+      CONNECTOR_DURATION_PERIOD: PT5M # In ISO8601 Format starting with "P" for Period ex: "PT5M" = Period time of 5 minutes
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  connector-urlhaus:
+    # https://hub.docker.com/r/opencti/connector-urlhaus
+    image: opencti/connector-urlhaus:${VERSION_CONNECTORS:-6.4.1}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+    environment:
+      <<: [*opencti, *opencti-connector]
+      CONNECTOR_ID: ${CONNECTORS_URLHAUS_ID}
+      CONNECTOR_NAME: Abuse.ch URLhaus
+      CONNECTOR_SCOPE: urlhaus
+      CONNECTOR_CONFIDENCE_LEVEL: 40 # From 0 (Unknown) to 100 (Fully trusted)
+      URLHAUS_CSV_URL: https://urlhaus.abuse.ch/downloads/csv_recent/
+      URLHAUS_DEFAULT_X_OPENCTI_SCORE: 80 # Optional: Defaults to 80.
+      URLHAUS_IMPORT_OFFLINE: "true"
+      URLHAUS_THREATS_FROM_LABELS: "true"
+      URLHAUS_INTERVAL: 3 # In days, must be strictly greater than 1
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  connector-alienvault:
+    # https://hub.docker.com/r/opencti/connector-alienvault
+    image: opencti/connector-alienvault:${VERSION_CONNECTORS:-6.4.1}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+    environment:
+      <<: [*opencti, *opencti-connector]
+      CONNECTOR_ID: ${CONNECTORS_ALIENVAULT_ID}
+      CONNECTOR_NAME: AlienVault
+      CONNECTOR_SCOPE: alienvault
+      CONNECTOR_DURATION_PERIOD: PT30M # In ISO8601 Format starting with "P" for Period ex: "PT30M" = Period time of 30 minutes
+      ALIENVAULT_BASE_URL: https://otx.alienvault.com
+      # ALIENVAULT_API_KEY: ChangeMe
+      ALIENVAULT_TLP: White
+      ALIENVAULT_CREATE_OBSERVABLES: "true"
+      ALIENVAULT_CREATE_INDICATORS: "true"
+      ALIENVAULT_PULSE_START_TIMESTAMP: 2022-05-01T00:00:00 # BEWARE! Could be a lot of pulses!
+      ALIENVAULT_REPORT_TYPE: threat-report
+      ALIENVAULT_REPORT_STATUS: New
+      ALIENVAULT_GUESS_MALWARE: "false" # Use tags to guess malware.
+      ALIENVAULT_GUESS_CVE: "false" # Use tags to guess CVE.
+      ALIENVAULT_EXCLUDED_PULSE_INDICATOR_TYPES: FileHash-MD5,FileHash-SHA1 # Excluded Pulse indicator types.
+      ALIENVAULT_ENABLE_RELATIONSHIPS: "true" # Enable/Disable relationship creation between SDOs.
+      ALIENVAULT_ENABLE_ATTACK_PATTERNS_INDICATES: "false" # Enable/Disable "indicates" relationships between indicators and attack patterns
+      ALIENVAULT_INTERVAL_SEC: 1800
+      ALIENVAULT_DEFAULT_X_OPENCTI_SCORE: 50
+      ALIENVAULT_X_OPENCTI_SCORE_IP: 60
+      ALIENVAULT_X_OPENCTI_SCORE_DOMAIN: 70
+      ALIENVAULT_X_OPENCTI_SCORE_HOSTNAME: 75
+      ALIENVAULT_X_OPENCTI_SCORE_EMAIL: 70
+      ALIENVAULT_X_OPENCTI_SCORE_FILE: 85
+      ALIENVAULT_X_OPENCTI_SCORE_URL: 80
+      ALIENVAULT_X_OPENCTI_SCORE_MUTEX: 60
+      ALIENVAULT_X_OPENCTI_SCORE_CRYPTOCURRENCY_WALLET: 80
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  connector-virustotal-livehunt-notifications:
+    # https://hub.docker.com/r/opencti/connector-virustotal-livehunt-notifications
+    image: opencti/connector-virustotal-livehunt-notifications:${VERSION_CONNECTORS:-6.4.1}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+    environment:
+      <<: [*opencti, *opencti-connector]
+      CONNECTOR_ID: ${CONNECTORS_VIRUSTOTAL_LIVEHUNT_NOTIFICATIONS_ID}
+      CONNECTOR_NAME: VirusTotal Livehunt Notifications
+      CONNECTOR_SCOPE: StixFile,Indicator,Incident
+      # VIRUSTOTAL_LIVEHUNT_NOTIFICATIONS_API_KEY: ChangeMe # Private API Key
+      VIRUSTOTAL_LIVEHUNT_NOTIFICATIONS_INTERVAL_SEC: 300 # Time to wait in seconds between subsequent requests
+      VIRUSTOTAL_LIVEHUNT_NOTIFICATIONS_CREATE_ALERT: "True" # Set to true to create alerts
+      VIRUSTOTAL_LIVEHUNT_NOTIFICATIONS_EXTENSIONS: "exe,dll" # (Optional) Comma separated filter to only download files matching these extensions
+      VIRUSTOTAL_LIVEHUNT_NOTIFICATIONS_MIN_FILE_SIZE: 1000 # (Optional) Don't download files smaller than this many bytes
+      VIRUSTOTAL_LIVEHUNT_NOTIFICATIONS_MAX_FILE_SIZE: 52428800 # (Optional) Don't download files larger than this many bytes
+      VIRUSTOTAL_LIVEHUNT_NOTIFICATIONS_MAX_AGE_DAYS: 3 # Only create the alert if the first submission of the file is not older than `max_age_days`
+      VIRUSTOTAL_LIVEHUNT_NOTIFICATIONS_MIN_POSITIVES: 5 # (Optional) Don't download files with less than this many vendors marking malicious
+      VIRUSTOTAL_LIVEHUNT_NOTIFICATIONS_CREATE_FILE: "True" # Set to true to create file object linked to the alerts
+      VIRUSTOTAL_LIVEHUNT_NOTIFICATIONS_UPLOAD_ARTIFACT: "False" # Set to true to upload the file to opencti
+      VIRUSTOTAL_LIVEHUNT_NOTIFICATIONS_CREATE_YARA_RULE: "True" # Set to true to create yara rule linked to the alert and the file
+      VIRUSTOTAL_LIVEHUNT_NOTIFICATIONS_DELETE_NOTIFICATION: "False" # Set to true to remove livehunt notifications
+      VIRUSTOTAL_LIVEHUNT_NOTIFICATIONS_FILTER_WITH_TAG: "VirusTotal" # Filter livehunt notifications with this tag
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  opencti:
+    external: true

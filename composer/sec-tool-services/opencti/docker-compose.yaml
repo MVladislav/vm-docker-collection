@@ -1,0 +1,441 @@
+---
+x-basic-deploy-labels: &basic-deploy-labels
+  labels:
+    - traefik.enable=true
+    - traefik.docker.lbswarm=${LB_SWARM:-true}
+    - traefik.docker.network=proxy
+    - traefik.http.routers.opencti${SERVICE_NAME_POST:-}.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.opencti${SERVICE_NAME_POST:-}.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.opencti${SERVICE_NAME_POST:-}.tls=true
+    - traefik.http.routers.opencti${SERVICE_NAME_POST:-}.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.opencti${SERVICE_NAME_POST:-}.service=opencti${SERVICE_NAME_POST:-}
+    - traefik.http.services.opencti${SERVICE_NAME_POST:-}.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.opencti${SERVICE_NAME_POST:-}.loadbalancer.server.port=${PORT:-8080}
+
+x-basic-deploy: &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  update_config:
+    order: start-first
+  restart_policy:
+    condition: any
+  resources:
+    limits:
+      cpus: ${RESOURCES_LIMITS_CPUS:-1}
+      memory: ${RESOURCES_LIMITS_MEMORY:-1g}
+    reservations:
+      cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
+      memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
+
+x-basic: &basic
+  env_file: .env
+  cap_drop: ["ALL"]
+  security_opt:
+    - no-new-privileges=true
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 655360
+      hard: 655360
+    fsize: -1
+    as: -1
+  networks:
+    default: {}
+  healthcheck:
+    disable: true
+  restart: always
+
+################################################################################
+################################################################################
+################################################################################
+x-opencti: &opencti
+  OPENCTI_URL: http://opencti:8080
+  OPENCTI_TOKEN: ${OPENCTI_ADMIN_TOKEN}
+  # OPENCTI_TOKEN_FILE: /run/secrets/opencti_token_file
+
+x-opencti-connector: &opencti-connector
+  CONNECTOR_TYPE: INTERNAL_EXPORT_FILE
+  CONNECTOR_LOG_LEVEL: info
+
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  opencti:
+    # https://hub.docker.com/r/opencti/platform
+    image: opencti/platform:${VERSION_OPENCTI:-6.4.1}
+    <<: [*basic, *basic-deploy-labels]
+    deploy:
+      <<: [*basic-deploy, *basic-deploy-labels]
+    # secrets:
+    #   - opencti_admin_password_file
+    #   - opencti_token_file
+    #   - minio_root_password_file
+    #   - rabbitmq_default_pass_file
+    environment:
+      APP__ADMIN__EMAIL: ${OPENCTI_ADMIN_EMAIL:-groot@home.local}
+      APP__ADMIN__PASSWORD: ${OPENCTI_ADMIN_PASSWORD}
+      # APP__ADMIN__PASSWORD_FILE: /run/secrets/opencti_admin_password_file
+      APP__ADMIN__TOKEN: ${OPENCTI_ADMIN_TOKEN}
+      # APP__ADMIN__TOKEN_FILE: /run/secrets/opencti_token_file
+      APP__HEALTH_ACCESS_KEY: ${APP__HEALTH_ACCESS_KEY}
+
+      APP__PORT: ${PORT:-8080}
+      APP__BASE_URL: https://${DOMAIN?domain variable not set}
+      APP__APP_LOGS__LOGS_LEVEL: error
+      NODE_OPTIONS: --max-old-space-size=8096
+      PROVIDERS__LOCAL__STRATEGY: LocalStrategy
+
+      REDIS__HOSTNAME: valkey
+      REDIS__PORT: 6379
+
+      ELASTICSEARCH__URL: http://elasticsearch:9200
+      ELASTICSEARCH__NUMBER_OF_REPLICAS: 0
+
+      MINIO__ENDPOINT: minio
+      MINIO__PORT: 9000
+      MINIO__USE_SSL: false
+      MINIO__ACCESS_KEY: ${MINIO_ROOT_USER:-minio}
+      MINIO__SECRET_KEY: ${OPENCTI_MINIO_SECRET_KEY}
+      # MINIO__SECRET_KEY_FILE: /run/secrets/minio_root_password_file
+
+      RABBITMQ__HOSTNAME: rabbitmq
+      RABBITMQ__PORT: 5672
+      RABBITMQ__PORT_MANAGEMENT: 15672
+      RABBITMQ__MANAGEMENT_SSL: false
+      RABBITMQ__USERNAME: ${RABBITMQ_DEFAULT_USER:-rabbitmq}
+      RABBITMQ__PASSWORD: ${OPENCTI_RABBITMQ_PASSWORD}
+      # RABBITMQ__PASSWORD_FILE: /run/secrets/rabbitmq_default_pass_file
+
+      SMTP__HOSTNAME: ${SMTP_HOSTNAME:-localhost}
+      SMTP__PORT: ${SMTP__PORT:-25}
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    networks:
+      default: {}
+      proxy: {}
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "-qO-",
+          "http://127.0.0.1:8080/health?health_access_key=${APP__HEALTH_ACCESS_KEY}",
+        ]
+      start_period: 2s
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  worker:
+    # https://hub.docker.com/r/opencti/worker
+    image: opencti/worker:${VERSION_OPENCTI:-6.4.1}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+      replicas: 1
+    # secrets:
+    #   - opencti_token_file
+    environment:
+      <<: *opencti
+      WORKER_LOG_LEVEL: info
+  connector-export-file-stix:
+    # https://hub.docker.com/r/opencti/connector-export-file-stix
+    image: opencti/connector-export-file-stix:${VERSION_OPENCTI:-6.4.1}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+    # secrets:
+    #   - opencti_token_file
+    environment:
+      <<: [*opencti, *opencti-connector]
+      CONNECTOR_ID: ${CONNECTOR_EXPORT_FILE_STIX_ID} # Valid UUIDv4
+      CONNECTOR_NAME: ExportFileStix2
+      CONNECTOR_SCOPE: application/json
+  connector-export-file-csv:
+    # https://hub.docker.com/r/opencti/connector-export-file-csv
+    image: opencti/connector-export-file-csv:${VERSION_OPENCTI:-6.4.1}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+    # secrets:
+    #   - opencti_token_file
+    environment:
+      <<: [*opencti, *opencti-connector]
+      CONNECTOR_ID: ${CONNECTOR_EXPORT_FILE_CSV_ID} # Valid UUIDv4
+      CONNECTOR_NAME: ExportFileCsv
+      CONNECTOR_SCOPE: text/csv
+  connector-export-file-txt:
+    # https://hub.docker.com/r/opencti/connector-export-file-txt
+    image: opencti/connector-export-file-txt:${VERSION_OPENCTI:-6.4.1}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+    # secrets:
+    #   - opencti_token_file
+    environment:
+      <<: [*opencti, *opencti-connector]
+      CONNECTOR_ID: ${CONNECTOR_EXPORT_FILE_TXT_ID} # Valid UUIDv4
+      CONNECTOR_NAME: ExportFileTxt
+      CONNECTOR_SCOPE: text/plain
+  connector-import-file-stix:
+    # https://hub.docker.com/r/opencti/connector-import-file-stix
+    image: opencti/connector-import-file-stix:${VERSION_OPENCTI:-6.4.1}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+    # secrets:
+    #   - opencti_token_file
+    environment:
+      <<: [*opencti, *opencti-connector]
+      CONNECTOR_ID: ${CONNECTOR_IMPORT_FILE_STIX_ID} # Valid UUIDv4
+      CONNECTOR_TYPE: INTERNAL_IMPORT_FILE
+      CONNECTOR_NAME: ImportFileStix
+      CONNECTOR_VALIDATE_BEFORE_IMPORT: ${CONNECTOR_VALIDATE_BEFORE_IMPORT:-true} # Validate any bundle before import
+      CONNECTOR_SCOPE: application/json,text/xml
+      CONNECTOR_AUTO: ${CONNECTOR_AUTO:-true} # Enable/disable auto-import of file
+  connector-import-document:
+    # https://hub.docker.com/r/opencti/connector-import-document
+    image: opencti/connector-import-document:${VERSION_OPENCTI:-6.4.1}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+    # secrets:
+    #   - opencti_token_file
+    environment:
+      <<: [*opencti, *opencti-connector]
+      CONNECTOR_ID: ${CONNECTOR_IMPORT_DOCUMENT_ID} # Valid UUIDv4
+      CONNECTOR_TYPE: INTERNAL_IMPORT_FILE
+      CONNECTOR_NAME: ImportDocument
+      CONNECTOR_VALIDATE_BEFORE_IMPORT: ${CONNECTOR_VALIDATE_BEFORE_IMPORT:-true} # Validate any bundle before import
+      CONNECTOR_SCOPE: application/pdf,text/plain,text/html
+      CONNECTOR_AUTO: ${CONNECTOR_AUTO:-true} # Enable/disable auto-import of file
+      CONNECTOR_ONLY_CONTEXTUAL: ${CONNECTOR_ONLY_CONTEXTUAL:-false} # Only extract data related to an entity (a report, a threat actor, etc.)
+      CONNECTOR_CONFIDENCE_LEVEL: 15 # From 0 (Unknown) to 100 (Fully trusted)
+      IMPORT_DOCUMENT_CREATE_INDICATOR: ${IMPORT_DOCUMENT_CREATE_INDICATOR:-true}
+  connector-analysis:
+    # https://hub.docker.com/r/opencti/connector-import-document
+    image: opencti/connector-import-document:${VERSION_OPENCTI:-6.4.1}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+    # secrets:
+    #   - opencti_token_file
+    environment:
+      <<: [*opencti, *opencti-connector]
+      CONNECTOR_ID: ${CONNECTOR_ANALYSIS_ID} # Valid UUIDv4
+      CONNECTOR_TYPE: INTERNAL_ANALYSIS
+      CONNECTOR_NAME: ImportDocumentAnalysis
+      CONNECTOR_VALIDATE_BEFORE_IMPORT: ${CONNECTOR_VALIDATE_BEFORE_IMPORT:-false} # Validate any bundle before import
+      CONNECTOR_SCOPE: application/pdf,text/plain,text/html
+      CONNECTOR_AUTO: ${CONNECTOR_AUTO:-true} # Enable/disable auto-import of file
+      CONNECTOR_ONLY_CONTEXTUAL: ${CONNECTOR_ONLY_CONTEXTUAL:-false} # Only extract data related to an entity (a report, a threat actor, etc.)
+      CONNECTOR_CONFIDENCE_LEVEL: 15 # From 0 (Unknown) to 100 (Fully trusted)
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  elasticsearch:
+    # https://hub.docker.com/_/elasticsearch
+    image: elasticsearch:${VERSION_ELASTIC:-8.15.4}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_ELASTIC:-2}
+          memory: ${RESOURCES_LIMITS_MEMORY_ELASTIC:-4g}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_ELASTIC:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_ELASTIC:-32m}
+    environment:
+      discovery.type: single-node
+      xpack.ml.enabled: false
+      xpack.security.enabled: false
+      thread_pool.search.queue_size: 5000
+      logger.org.elasticsearch.discovery: "ERROR"
+      # ES_JAVA_OPTS: -Xms${ELASTIC_MEMORY_SIZE:-2g} -Xmx${ELASTIC_MEMORY_SIZE:-2g} -Dlog4j2.formatMsgNoLookups=true
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - esdata:/usr/share/elasticsearch/data
+    # healthcheck:
+    #   # test: curl -s http://elasticsearch:9200 >/dev/null || exit 1
+    #   test: ["CMD", "curl", "-f", "-k", "https://localhost:9200"]
+    #   start_period: 2s
+    #   interval: 5s
+    #   timeout: 3s
+    #   retries: 5
+
+  # elasticsearch:
+  #   # https://hub.docker.com/r/opensearchproject/opensearch
+  #   image: opensearchproject/opensearch:${VERSION_OPENSEARCH:-2.18.0}
+  #   <<: *basic
+  #   deploy:
+  #     <<: *basic-deploy
+  #     resources:
+  #       limits:
+  #         cpus: ${RESOURCES_LIMITS_CPUS_ELASTIC:-2}
+  #         memory: ${RESOURCES_LIMITS_MEMORY_ELASTIC:-4g}
+  #       reservations:
+  #         cpus: ${RESOURCES_RESERVATIONS_CPUS_ELASTIC:-0.001}
+  #         memory: ${RESOURCES_RESERVATIONS_MEMORY_ELASTIC:-32m}
+  #   environment:
+  #     discovery.type: single-node
+  #     plugins.security.disabled: true
+  #     thread_pool.search.queue_size: 5000
+  #     # OPENSEARCH_INITIAL_ADMIN_PASSWORD: ${OPENSEARCH_ADMIN_PASSWORD}
+  #     # OPENSEARCH_JAVA_OPTS: -Xms${ELASTIC_MEMORY_SIZE} -Xmx${ELASTIC_MEMORY_SIZE}
+  #   volumes:
+  #     - /etc/timezone:/etc/timezone:ro
+  #     - /etc/localtime:/etc/localtime:ro
+  #     - esdata:/usr/share/opensearch/data
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  rabbitmq:
+    # https://hub.docker.com/_/rabbitmq
+    image: rabbitmq:${VERSION_RABBITMQ:-4.0.3-management}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_RABBITMQ:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_RABBITMQ:-500m}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_RABBITMQ:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_RABBITMQ:-32m}
+    cap_add:
+      - SETGID
+      - SETUID
+    # secrets:
+    #   - rabbitmq_default_pass_file
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-rabbitmq}
+      RABBITMQ_DEFAULT_PASS: ${OPENCTI_RABBITMQ_PASSWORD}
+      # RABBITMQ_DEFAULT_PASS_FILE: /run/secrets/rabbitmq_default_pass_file
+      RABBITMQ_NODENAME: ${RABBITMQ_NODENAME:-rabbit01@localhost}
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - amqpdata:/var/lib/rabbitmq
+    # healthcheck:
+    #   # test: rabbitmq-diagnostics -q ping
+    #   test: rabbitmq-diagnostics check_port_connectivity
+    #   start_period: 2s
+    #   interval: 5s
+    #   timeout: 3s
+    #   retries: 5
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  valkey:
+    # https://hub.docker.com/r/valkey/valkey
+    image: valkey/valkey:${VERSION_VALKEY:-8.0.1-alpine}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_VALKEY:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_VALKEY:-1g}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_VALKEY:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_VALKEY:-32m}
+    cap_add:
+      - SETGID
+      - SETUID
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - valkey:/data
+    command: --save 300 1 --loglevel warning
+    healthcheck:
+      test: ["CMD-SHELL", "valkey-cli ping | grep PONG"]
+      # test: ["CMD", "valkey-", "--raw", "incr", "ping"]
+      start_period: 2s
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  minio:
+    # https://hub.docker.com/r/minio/minio
+    image: minio/minio:${VERSION_MINIO:-RELEASE.2024-11-07T00-52-20Z-cpuv1}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_MINIO:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_MINIO:-1g}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_MINIO:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_MINIO:-32m}
+    # ports:
+    #   - target: ${PORT_MINIO:-9001}
+    #     published: ${PORT_MINIO_PUBLISH:-9001}
+    #     protocol: tcp
+    #     mode: host
+    secrets:
+      - minio_root_password_file
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minio}
+      MINIO_ROOT_PASSWORD_FILE: /run/secrets/minio_root_password_file
+      # MINIO_BROWSER_REDIRECT_URL: https://${DOMAIN?domain variable not set}
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - minio:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      start_period: 2s
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  default:
+    name: opencti
+    driver: ${NETWORK_MODE:-bridge}
+    attachable: true
+    driver_opts:
+      encrypted: "true"
+  proxy:
+    external: true
+
+volumes:
+  esdata: {}
+  amqpdata: {}
+  valkey: {}
+  minio: {}
+
+secrets:
+  opencti_admin_password_file:
+    file: config/secrets/opencti_admin_password_file.txt
+  opencti_token_file:
+    file: config/secrets/opencti_token_file.txt
+  rabbitmq_default_pass_file:
+    file: config/secrets/rabbitmq_default_pass_file.txt
+  minio_root_password_file:
+    file: config/secrets/minio_root_password_file.txt
