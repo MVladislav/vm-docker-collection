@@ -43,7 +43,7 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION=v2.27.0
+VERSION=v2.31.2
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
@@ -57,8 +57,8 @@ NFS_PATH=<ADD-NFS-PATH>
 #### example short .env
 
 ```env
+NETWORK_MODE=overlay
 DOMAIN=share.home.local
-VERSION=v2.27.0
 
 NFS_HOST=<ADD-NFS-HOST>
 NFS_PATH=<ADD-NFS-PATH>
