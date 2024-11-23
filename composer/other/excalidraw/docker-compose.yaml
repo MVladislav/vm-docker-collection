@@ -12,6 +12,19 @@ x-basic-deploy-labels: &basic-deploy-labels
     - traefik.http.services.excalidraw.loadbalancer.server.scheme=${PROTOCOL:-http}
     - traefik.http.services.excalidraw.loadbalancer.server.port=${PORT:-80}
 
+x-room-deploy-labels: &room-deploy-labels
+  labels:
+    - traefik.enable=true
+    - traefik.docker.lbswarm=${LB_SWARM:-true}
+    - traefik.docker.network=proxy
+    - traefik.http.routers.excalidraw-room.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.excalidraw-room.rule=Host(`${DOMAIN_ROOM?domain variable not set}`)
+    - traefik.http.routers.excalidraw-room.tls=true
+    - traefik.http.routers.excalidraw-room.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.excalidraw-room.service=excalidraw-room
+    - traefik.http.services.excalidraw-room.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.excalidraw-room.loadbalancer.server.port=${PORT:-80}
+
 x-basic-deploy: &basic-deploy
   mode: replicated
   replicas: 1
@@ -20,8 +33,10 @@ x-basic-deploy: &basic-deploy
     constraints:
       - "node.role==${NODE_ROLE:-manager}"
       - node.platform.os == linux
+  update_config:
+    order: start-first
   restart_policy:
-    condition: on-failure
+    condition: any
   resources:
     limits:
       cpus: ${RESOURCES_LIMITS_CPUS:-1}
@@ -32,7 +47,6 @@ x-basic-deploy: &basic-deploy
 
 x-basic: &basic
   env_file: .env
-  # stdin_open: true # docker run -i
   cap_add:
     - CHOWN
     - SETGID
@@ -45,8 +59,8 @@ x-basic: &basic
       soft: -1
       hard: -1
     nofile:
-      soft: 65535
-      hard: 65535
+      soft: 655360
+      hard: 655360
     fsize: -1
     as: -1
   networks:
@@ -59,27 +73,38 @@ x-basic: &basic
 ################################################################################
 ################################################################################
 
+x-basic-env: &basic-env
+  NODE_ENV: ${NODE_ENV:-production}
+  # VITE_APP_BACKEND_V2_GET_URL: https://${DOMAIN_STORAGE?domain variable not set}/api/v2/
+  # VITE_APP_BACKEND_V2_POST_URL: https://${DOMAIN_STORAGE?domain variable not set}/api/v2/post/
+  VITE_APP_FIREBASE_CONFIG: "{}"
+  VITE_APP_WS_SERVER_URL: https://${DOMAIN_ROOM?domain variable not set}
+  VITE_APP_PORTAL_URL: https://${DOMAIN_ROOM?domain variable not set}
+
+  VITE_APP_ENABLE_TRACKING: ${VITE_APP_ENABLE_TRACKING:-false}
+  VITE_APP_DEBUG_ENABLE_TEXT_CONTAINER_BOUNDING_BOX: ${VITE_APP_DEBUG_ENABLE_TEXT_CONTAINER_BOUNDING_BOX:-false}
+  VITE_APP_COLLAPSE_OVERLAY: ${VITE_APP_COLLAPSE_OVERLAY:-false}
+  VITE_APP_ENABLE_ESLINT: ${VITE_APP_ENABLE_ESLINT:-false}
+
 services:
   ##############################################################################
   ##############################################################################
   ##############################################################################
   excalidraw:
     build:
-      context: https://github.com/excalidraw/excalidraw.git#${VERSION:-v0.17.0}
+      context: .
       dockerfile: ./Dockerfile
+      # context: https://github.com/excalidraw/excalidraw.git#${VERSION_EXCALIDRAW:-v0.17.6}
+      # dockerfile: ./Dockerfile
       args:
-        NODE_ENV: ${NODE_ENV:-development}
-    image: excalidraw:${VERSION:-v0.17.0}
+        <<: *basic-env
+        VERSION_EXCALIDRAW: v0.17.6
+    image: excalidraw:${VERSION_EXCALIDRAW:-v0.17.6}
     <<: [*basic, *basic-deploy-labels]
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels]
-    # ports:
-    #   - target: ${PORT:-80}
-    #     published: ${PORT_PUBLISH:-80}
-    #     protocol: tcp
-    #     mode: host
     environment:
-      NODE_ENV: ${NODE_ENV:-development}
+      <<: *basic-env
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
@@ -87,6 +112,32 @@ services:
       # - ./package.json:/opt/node_app/package.json
       # - ./yarn.lock:/opt/node_app/yarn.lock
       - notused:/opt/node_app/app/node_modules
+    # healthcheck:
+    #   test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost || exit 1"]
+    #   start_period: 2s
+    #   interval: 5s
+    #   timeout: 3s
+    #   retries: 5
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  excalidraw-room:
+    build:
+      context: https://github.com/excalidraw/excalidraw-room.git#${VERSION_EXCALIDRAW_ROOM_GIT:-master}
+      dockerfile: ./Dockerfile
+      args:
+        NODE_ENV: ${NODE_ENV:-production}
+    image: excalidraw-room:${VERSION_EXCALIDRAW_ROOM:-v0.17.6}
+    <<: [*basic, *room-deploy-labels]
+    deploy:
+      <<: [*basic-deploy, *room-deploy-labels]
+    environment:
+      PORT: ${PORT:-80}
+      CORS_ORIGIN: ${DOMAIN_ROOM?domain variable not set}
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
 
 ################################################################################
 ################################################################################

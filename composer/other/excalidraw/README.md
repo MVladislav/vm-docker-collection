@@ -23,14 +23,14 @@
 ```env
 # GENERAL variables (mostly by default, change as needed)
 # ______________________________________________________________________________
-NODE_ID=
 NODE_ROLE=manager
 NETWORK_MODE=overlay # by default "bridge"
 
 # GENERAL traefik variables (set by default, change as needed)
 # ______________________________________________________________________________
 LB_SWARM=true
-DOMAIN=excalidraw.home.local # not set in docker-compose, needs to be copied to .env
+DOMAIN=draw.home.local # not set in docker-compose, needs to be copied to .env
+DOMAIN_ROOM=draw-room.home.local # not set in docker-compose, needs to be copied to .env
 PROTOCOL=http
 PORT=80
 # default-secured@file | public-whitelist@file | authentik@file
@@ -45,19 +45,16 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION=v0.17.0
-
-# APPLICATION general variable to adjust the apps
-# ______________________________________________________________________________
-NODE_ENV=production
+VERSION_EXCALIDRAW=v0.17.6
+VERSION_EXCALIDRAW_ROOM=v0.17.6
 ```
 
 #### example short .env
 
 ```env
 NETWORK_MODE=overlay
-DOMAIN=excalidraw.home.local
-VERSION=v0.17.0
+DOMAIN=draw.home.local
+DOMAIN_ROOM=draw-room.home.local
 ```
 
 ---
@@ -65,3 +62,4 @@ VERSION=v0.17.0
 ## References
 
 - <https://github.com/excalidraw/excalidraw>
+- <https://github.com/excalidraw/excalidraw-room>
