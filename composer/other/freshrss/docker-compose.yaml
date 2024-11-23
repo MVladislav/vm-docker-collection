@@ -20,8 +20,10 @@ x-basic-deploy: &basic-deploy
     constraints:
       - "node.role==${NODE_ROLE:-manager}"
       - node.platform.os == linux
+  update_config:
+    order: start-first
   restart_policy:
-    condition: on-failure
+    condition: any
   resources:
     limits:
       cpus: ${RESOURCES_LIMITS_CPUS:-0.5}
@@ -34,6 +36,8 @@ x-basic: &basic
   env_file: .env
   cap_add:
     - CHOWN
+    - FOWNER
+    - FSETID
     - SETGID
     - SETUID
   cap_drop: ["ALL"]
@@ -44,8 +48,8 @@ x-basic: &basic
       soft: -1
       hard: -1
     nofile:
-      soft: 65535
-      hard: 65535
+      soft: 655360
+      hard: 655360
     fsize: -1
     as: -1
   networks:
@@ -64,23 +68,17 @@ services:
   ##############################################################################
   freshrss:
     # https://hub.docker.com/r/freshrss/freshrss
-    image: freshrss/freshrss:${VERSION:-1.22.1}
+    image: freshrss/freshrss:${VERSION:-1.24.3}
     <<: *basic
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels]
-    cap_add:
-      - CHOWN
-      - FOWNER
-      - FSETID
-      - SETGID
-      - SETUID
     environment:
       TZ: ${TZ:-Europe/Berlin}
       # Cron job to refresh feeds at specified minutes
       CRON_MIN: ${CRON_MIN:-3,33}
       # Published port if running locally
-      PUBLISHED_PORT: ${PUBLISHED_PORT:-8080}
-      LISTEN: 0.0.0.0:${PUBLISHED_PORT:-8080}
+      PUBLISHED_PORT: ${PORT:-8080}
+      LISTEN: 0.0.0.0:${PORT:-8080}
       FRESHRSS_ENV: production
     volumes:
       - /etc/localtime:/etc/localtime:ro

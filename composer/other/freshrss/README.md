@@ -26,14 +26,13 @@
 
 # GENERAL variables (mostly by default, change as needed)
 # ______________________________________________________________________________
-NODE_ID=
 NODE_ROLE=manager
 NETWORK_MODE=overlay # by default "bridge"
 
 # GENERAL traefik variables (set by default, change as needed)
 # ______________________________________________________________________________
 LB_SWARM=true
-DOMAIN=freshrss.home.local # not set in docker-compose, needs to be copied to .env
+DOMAIN=news.home.local # not set in docker-compose, needs to be copied to .env
 PROTOCOL=http
 PORT=8080
 # default-secured@file | public-whitelist@file | authentik@file
@@ -48,7 +47,7 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION=1.22.1
+VERSION=1.24.3
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
@@ -60,7 +59,7 @@ CRON_MIN=3,33
 
 ```env
 NETWORK_MODE=overlay
-DOMAIN=freshrss.home.local
+DOMAIN=news.home.local
 ```
 
 ---
