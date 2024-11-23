@@ -20,8 +20,10 @@ x-basic-deploy: &basic-deploy
     constraints:
       - "node.role==${NODE_ROLE:-manager}"
       - node.platform.os == linux
+  update_config:
+    order: start-first
   restart_policy:
-    condition: on-failure
+    condition: any
   resources:
     limits:
       cpus: ${RESOURCES_LIMITS_CPUS:-0.2}
@@ -33,7 +35,6 @@ x-basic-deploy: &basic-deploy
 x-basic: &basic
   env_file: .env
   cap_add:
-    # https://dockerlabs.collabnix.com/advanced/security/capabilities/
     - CHOWN
     - SETGID
     - SETUID
@@ -45,8 +46,8 @@ x-basic: &basic
       soft: -1
       hard: -1
     nofile:
-      soft: 65535
-      hard: 65535
+      soft: 655360
+      hard: 655360
     fsize: -1
     as: -1
   networks:
@@ -65,18 +66,29 @@ services:
   ##############################################################################
   homepage:
     # https://github.com/gethomepage/homepage/pkgs/container/homepage
-    image: ghcr.io/gethomepage/homepage:${VERSION:-v0.8.11}
+    image: ghcr.io/gethomepage/homepage:${VERSION:-v0.9.12}
     <<: *basic
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels]
     environment:
       PUID: ${PUID:-1000}
       PGID: ${PGID:-1000}
+      PORT: ${PORT:-3000}
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - config:/app/config
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget --no-verbose --tries=1 --spider --no-check-certificate http://localhost:$${PORT}/api/healthcheck || exit 1",
+        ]
+      start_period: 2s
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
 ################################################################################
 ################################################################################
