@@ -59,8 +59,9 @@ DOMAIN=ai.home.local
 #### download model
 
 ```sh
-$docker exec -it "$(docker ps -q -f name=ollama-ollama)" ollama pull llama3
+$docker exec -it "$(docker ps -q -f name=ollama-ollama)" ollama pull qwen2.5-coder:32b
 # => https://ollama.com/library
+# llama3
 # llama3:70b
 # codellama
 # mistral
@@ -80,3 +81,5 @@ $docker exec -it "$(docker ps -q -f name=ollama-ollama)" ollama pull llama3
 - <https://github.com/ollama/ollama>
 - <https://hub.docker.com/r/ollama/ollama>
 - <https://github.com/open-webui/open-webui>
+- YT
+  - <https://www.youtube.com/watch?v=PnIY1Ure6Nc>
