@@ -77,6 +77,24 @@ services:
   ##############################################################################
   ##############################################################################
   ##############################################################################
+  connector-mitre:
+    # https://hub.docker.com/r/opencti/connector-mitre
+    image: opencti/connector-mitre:${VERSION_CONNECTORS:-6.4.1}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+    environment:
+      <<: [*opencti, *opencti-connector]
+      CONNECTOR_ID: ${CONNECTORS_MITRE_ID}
+      CONNECTOR_NAME: MITRE Datasets
+      CONNECTOR_SCOPE: tool,report,malware,identity,campaign,intrusion-set,attack-pattern,course-of-action,x-mitre-data-source,x-mitre-data-component,x-mitre-matrix,x-mitre-tactic,x-mitre-collection
+      CONNECTOR_RUN_AND_TERMINATE: "false"
+      MITRE_REMOVE_STATEMENT_MARKING: "true"
+      MITRE_INTERVAL: 7 # In days
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
   connector-cve:
     # https://hub.docker.com/r/opencti/connector-cve
     image: opencti/connector-cve:${VERSION_CONNECTORS:-6.4.1}
@@ -96,24 +114,6 @@ services:
       CVE_MAINTAIN_DATA: "true" # Required, retrieve only updated data
       CVE_PULL_HISTORY: "false" # If true, CVE_HISTORY_START_YEAR is required
       CVE_HISTORY_START_YEAR: 2024 # Required if pull_history is True, min 2019 (see documentation CVE and CVSS base score V3.1)
-
-  ##############################################################################
-  ##############################################################################
-  ##############################################################################
-  connector-mitre:
-    # https://hub.docker.com/r/opencti/connector-mitre
-    image: opencti/connector-mitre:${VERSION_CONNECTORS:-6.4.1}
-    <<: *basic
-    deploy:
-      <<: *basic-deploy
-    environment:
-      <<: [*opencti, *opencti-connector]
-      CONNECTOR_ID: ${CONNECTORS_MITRE_ID}
-      CONNECTOR_NAME: MITRE Datasets
-      CONNECTOR_SCOPE: tool,report,malware,identity,campaign,intrusion-set,attack-pattern,course-of-action,x-mitre-data-source,x-mitre-data-component,x-mitre-matrix,x-mitre-tactic,x-mitre-collection
-      CONNECTOR_RUN_AND_TERMINATE: "false"
-      MITRE_REMOVE_STATEMENT_MARKING: "true"
-      MITRE_INTERVAL: 7 # In days
 
   ##############################################################################
   ##############################################################################

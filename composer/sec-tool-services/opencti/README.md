@@ -171,10 +171,12 @@ $docker compose -f docker-compose-enrichment.yaml up
   - <https://github.com/OpenCTI-Platform/connectors/tree/master/external-import/opencti>
   - <https://github.com/OpenCTI-Platform/connectors/tree/master/external-import/mitre>
   - <https://github.com/OpenCTI-Platform/connectors/tree/master/external-import/cve>
-  - <https://github.com/OpenCTI-Platform/connectors/tree/master/external-import/cisa-known-exploited-vulnerabilities>
   - <https://github.com/OpenCTI-Platform/connectors/tree/master/external-import/malpedia>
+  - <https://github.com/OpenCTI-Platform/connectors/tree/master/external-import/cisa-known-exploited-vulnerabilities>
+  - <https://github.com/OpenCTI-Platform/connectors/tree/master/external-import/mandiant>
+  - <https://github.com/OpenCTI-Platform/connectors/tree/master/external-import/urlhaus>
+  - <https://github.com/OpenCTI-Platform/connectors/tree/master/external-import/alienvault>
   - <https://github.com/OpenCTI-Platform/connectors/tree/master/external-import/virustotal-livehunt-notifications>
-  - <https://github.com/OpenCTI-Platform/connectors/tree/master/external-import/misp-feed>
 - enrichment
   - <https://github.com/OpenCTI-Platform/connectors/tree/master/internal-enrichment/crowdsec>
   - <https://github.com/OpenCTI-Platform/connectors/tree/master/internal-enrichment/virustotal>
