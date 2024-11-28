@@ -116,7 +116,7 @@ services:
   ##############################################################################
   wazuh-dashboard:
     # https://hub.docker.com/r/wazuh/wazuh-dashboard
-    image: wazuh/wazuh-dashboard:${VERSION:-4.9.1}
+    image: wazuh/wazuh-dashboard:${VERSION:-4.9.2}
     hostname: wazuh.dashboard
     # ports:
     #   - target: 5601
@@ -219,13 +219,23 @@ services:
     networks:
       default: {}
       proxy: {}
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -kI https://127.0.0.1:5601/app/login > /dev/null 2>&1 || exit 1",
+        ]
+      start_period: 10s
+      interval: 10s
+      timeout: 3s
+      retries: 10
 
   ##############################################################################
   ##############################################################################
   ##############################################################################
   wazuh-master:
     # https://hub.docker.com/r/wazuh/wazuh-manager
-    image: wazuh/wazuh-manager:${VERSION:-4.9.1}
+    image: wazuh/wazuh-manager:${VERSION:-4.9.2}
     hostname: wazuh.master
     <<: [*basic, *basic-deploy-master-labels]
     deploy:
@@ -266,6 +276,11 @@ services:
       #   mode: 0660
       #   uid: "999"
       #   gid: "999"
+      # - source: wazuh_rules_config
+      #   target: /var/ossec/etc/rules/local_rules.xml
+      #   mode: 0660
+      #   uid: "999"
+      #   gid: "999"
       - source: root_ca_manager_cert
         target: /etc/ssl/root-ca.pem
         mode: 0600
@@ -298,13 +313,23 @@ services:
       - master-wazuh-wodles:/var/ossec/wodles
       - master-filebeat-etc:/etc/filebeat
       - master-filebeat-var:/var/lib/filebeat
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -kI https://127.0.0.1:55000 > /dev/null 2>&1 || exit 1",
+        ]
+      start_period: 10s
+      interval: 10s
+      timeout: 3s
+      retries: 10
 
   ##############################################################################
   ##############################################################################
   ##############################################################################
   wazuh-worker:
     # https://hub.docker.com/r/wazuh/wazuh-manager
-    image: wazuh/wazuh-manager:${VERSION:-4.9.1}
+    image: wazuh/wazuh-manager:${VERSION:-4.9.2}
     hostname: wazuh.worker
     <<: *basic
     deploy:
@@ -351,13 +376,23 @@ services:
       - worker-wazuh-wodles:/var/ossec/wodles
       - worker-filebeat-etc:/etc/filebeat
       - worker-filebeat-var:/var/lib/filebeat
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -kI https://127.0.0.1:55000 > /dev/null 2>&1 || exit 1",
+        ]
+      start_period: 10s
+      interval: 10s
+      timeout: 3s
+      retries: 10
 
   ##############################################################################
   ##############################################################################
   ##############################################################################
   wazuh1-indexer:
     # https://hub.docker.com/r/wazuh/wazuh-indexer
-    image: wazuh/wazuh-indexer:${VERSION:-4.9.1}
+    image: wazuh/wazuh-indexer:${VERSION:-4.9.2}
     hostname: wazuh1.indexer
     <<: [*basic, *basic-deploy-indexer-labels]
     deploy:
@@ -371,6 +406,7 @@ services:
           memory: ${RESOURCES_RESERVATIONS_MEMORY_INDEXER:-32m}
     environment:
       <<: *indexer-env
+      WAZUH_INDEXER_ID: "1"
       NETWORK_HOST: wazuh1.indexer
       NODE_NAME: wazuh1.indexer
       # PLUGINS_SECURITY_SSL_HTTP_PEMCERT_FILEPATH: /usr/share/wazuh-indexer/certs/wazuh1.indexer.pem
@@ -418,16 +454,27 @@ services:
       # - /etc/localtime:/etc/localtime:ro
 
       - $PWD/config/wazuh_indexer/internal_users.yml:/usr/share/wazuh-indexer/opensearch-security/internal_users.yml
-      - $PWD/config/wazuh_indexer/wazuh1.indexer.yml:/usr/share/wazuh-indexer/opensearch.yml
+      # - $PWD/config/wazuh_indexer/wazuh1.indexer.yml:/usr/share/wazuh-indexer/opensearch.yml
+      - $PWD/config/wazuh_indexer/wazuh.indexer.yml:/usr/share/wazuh-indexer/opensearch.yml
 
       - wazuh-indexer-data-1:/var/lib/wazuh-indexer
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -kI https://wazuh1.indexer:9200 > /dev/null 2>&1 || exit 1",
+        ]
+      start_period: 10s
+      interval: 10s
+      timeout: 3s
+      retries: 10
 
   ##############################################################################
   ##############################################################################
   ##############################################################################
   wazuh2-indexer:
     # https://hub.docker.com/r/wazuh/wazuh-indexer
-    image: wazuh/wazuh-indexer:${VERSION:-4.9.1}
+    image: wazuh/wazuh-indexer:${VERSION:-4.9.2}
     hostname: wazuh2.indexer
     <<: *basic
     deploy:
@@ -441,6 +488,7 @@ services:
           memory: ${RESOURCES_RESERVATIONS_MEMORY_INDEXER:-32m}
     environment:
       <<: *indexer-env
+      WAZUH_INDEXER_ID: "2"
       NETWORK_HOST: wazuh2.indexer
       NODE_NAME: wazuh2.indexer
       # PLUGINS_SECURITY_SSL_HTTP_PEMCERT_FILEPATH: /usr/share/wazuh-indexer/certs/wazuh2.indexer.pem
@@ -478,16 +526,27 @@ services:
       # - /etc/localtime:/etc/localtime:ro
 
       - $PWD/config/wazuh_indexer/internal_users.yml:/usr/share/wazuh-indexer/opensearch-security/internal_users.yml
-      - $PWD/config/wazuh_indexer/wazuh2.indexer.yml:/usr/share/wazuh-indexer/opensearch.yml
+      # - $PWD/config/wazuh_indexer/wazuh2.indexer.yml:/usr/share/wazuh-indexer/opensearch.yml
+      - $PWD/config/wazuh_indexer/wazuh.indexer.yml:/usr/share/wazuh-indexer/opensearch.yml
 
       - wazuh-indexer-data-2:/var/lib/wazuh-indexer
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -kI https://wazuh2.indexer:9200 > /dev/null 2>&1 || exit 1",
+        ]
+      start_period: 10s
+      interval: 10s
+      timeout: 3s
+      retries: 10
 
   ##############################################################################
   ##############################################################################
   ##############################################################################
   wazuh3-indexer:
     # https://hub.docker.com/r/wazuh/wazuh-indexer
-    image: wazuh/wazuh-indexer:${VERSION:-4.9.1}
+    image: wazuh/wazuh-indexer:${VERSION:-4.9.2}
     hostname: wazuh3.indexer
     <<: *basic
     deploy:
@@ -501,6 +560,7 @@ services:
           memory: ${RESOURCES_RESERVATIONS_MEMORY_INDEXER:-32m}
     environment:
       <<: *indexer-env
+      WAZUH_INDEXER_ID: "3"
       NETWORK_HOST: wazuh3.indexer
       NODE_NAME: wazuh3.indexer
       # PLUGINS_SECURITY_SSL_HTTP_PEMCERT_FILEPATH: /usr/share/wazuh-indexer/certs/wazuh3.indexer.pem
@@ -538,9 +598,20 @@ services:
       # - /etc/localtime:/etc/localtime:ro
 
       - $PWD/config/wazuh_indexer/internal_users.yml:/usr/share/wazuh-indexer/opensearch-security/internal_users.yml
-      - $PWD/config/wazuh_indexer/wazuh3.indexer.yml:/usr/share/wazuh-indexer/opensearch.yml
+      # - $PWD/config/wazuh_indexer/wazuh3.indexer.yml:/usr/share/wazuh-indexer/opensearch.yml
+      - $PWD/config/wazuh_indexer/wazuh.indexer.yml:/usr/share/wazuh-indexer/opensearch.yml
 
       - wazuh-indexer-data-3:/var/lib/wazuh-indexer
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -kI https://wazuh3.indexer:9200 > /dev/null 2>&1 || exit 1",
+        ]
+      start_period: 10s
+      interval: 10s
+      timeout: 3s
+      retries: 10
 
 ################################################################################
 ################################################################################
@@ -617,6 +688,9 @@ configs:
   #   file: $PWD/config/wazuh_dashboard/wazuh.yml
   # wazuh_manager_config:
   #   file: $PWD/config/wazuh_cluster/wazuh_manager.conf
+  #   # file: $PWD/config/wazuh_cluster/ossec.conf
+  # wazuh_rules_config:
+  #   file: $PWD/resources/rules/local_rules.xml
   # wazuh_worker_config:
   #   file: $PWD/config/wazuh_cluster/wazuh_worker.conf
   # internal_users_config:

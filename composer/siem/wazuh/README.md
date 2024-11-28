@@ -23,7 +23,7 @@
 
 ## basic
 
-> defined to work with treafik
+> defined to work with traefik
 
 ### create your `secrets`:
 
@@ -92,7 +92,7 @@ WAZUH_INDEXER_JAVA=1g
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION=4.9.1
+VERSION=4.9.2
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
