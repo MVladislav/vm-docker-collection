@@ -112,5 +112,5 @@ volumes:
     driver: local
     driver_opts:
       type: nfs
-      o: nfsvers=4,addr=${NEXTCLOUD_NFS_IP},rw
+      o: nfsvers=4.2,addr=${NEXTCLOUD_NFS_IP},rsize=2097152,wsize=2097152,tcp,nconnect=${NEXTCLOUD_NFS_NCON:-8}
       device: ":${NEXTCLOUD_NFS_PATH_MASTER}/master"

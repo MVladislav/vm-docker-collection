@@ -23,7 +23,8 @@ x-basic-deploy: &basic-deploy
       - "node.role==${NODE_ROLE:-manager}"
       - node.platform.os == linux
   update_config:
-    order: start-first # start-first | stop-first
+    # NOTE: use 'start-first' only if 'max_replicas_per_node > 1'
+    order: stop-first # start-first | stop-first
   restart_policy:
     condition: any # any | on-failure | none
   resources:
@@ -247,7 +248,7 @@ networks:
 #   #   driver: local
 #   #   driver_opts:
 #   #     type: nfs
-#   #     o: nfsvers=4,addr=${NAS_HOST},rw,noatime,rsize=8192,wsize=8192,tcp,timeo=14
+#   #     o: nfsvers=4.2,addr=${NFS_HOST},rsize=2097152,wsize=2097152,tcp,nconnect=${NFS_NCON:-8}
 #   #     device: ":${NAS_PATH}"
 #   # smb-data:
 #   #   # name: smb-data

@@ -50,7 +50,7 @@ $docker volume create \
   --name nextcloud_aio_nextcloud_datadir \
   --driver local \
   --opt type=nfs \
-  --opt o=nfsvers=4,addr=<NEXTCLOUD_NFS_IP>,rw \
+  --opt o=nfsvers=4.2,addr=${NEXTCLOUD_NFS_IP},rsize=2097152,wsize=2097152,tcp,nconnect=8 \
   --opt device=":<NEXTCLOUD_NFS_PATH_DATA>/data"
 ```
 

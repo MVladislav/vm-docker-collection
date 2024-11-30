@@ -21,7 +21,7 @@ x-basic-deploy: &basic-deploy
       - "node.role==${NODE_ROLE:-manager}"
       - node.platform.os == linux
   update_config:
-    order: start-first
+    order: stop-first
   restart_policy:
     condition: any
   resources:
@@ -85,10 +85,10 @@ services:
           "CMD-SHELL",
           "wget --no-verbose --tries=1 --spider --no-check-certificate http://localhost:$${PORT}/api/healthcheck || exit 1",
         ]
-      start_period: 2s
+      start_period: 10s
       interval: 5s
-      timeout: 3s
-      retries: 5
+      timeout: 5s
+      retries: 10
 
 ################################################################################
 ################################################################################
