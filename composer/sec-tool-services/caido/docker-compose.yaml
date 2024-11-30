@@ -20,8 +20,10 @@ x-basic-deploy: &basic-deploy
     constraints:
       - "node.role==${NODE_ROLE:-manager}"
       - node.platform.os == linux
+  update_config:
+    order: stop-first
   restart_policy:
-    condition: on-failure
+    condition: any
   resources:
     limits:
       cpus: ${RESOURCES_LIMITS_CPUS:-1}
@@ -40,17 +42,16 @@ x-basic: &basic
       soft: -1
       hard: -1
     nofile:
-      soft: 65535
-      hard: 65535
+      soft: 655360
+      hard: 655360
     fsize: -1
     as: -1
   networks:
     default: {}
     proxy: {}
-  # network_mode: host
   healthcheck:
     disable: true
-  restart: always # always | on-failure
+  restart: always
 
 ################################################################################
 ################################################################################
@@ -61,24 +62,58 @@ services:
   ##############################################################################
   ##############################################################################
   caido:
-    build:
-      context: .
-      dockerfile: ./Dockerfile
-      args:
-        VERSION_DEBIAN: bullseye-slim
-    image: caido:${VERSION:-latest}
+    # build:
+    #   context: .
+    #   dockerfile: ./Dockerfile
+    #   args:
+    #     VERSION_DEBIAN: bullseye-slim
+    image: caido/caido:${VERSION:-latest}
     <<: [*basic, *basic-deploy-labels]
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels]
     ports:
-      - target: ${PORT:-8080}
-        published: ${PORT_PUBLISH:-8080}
+      - target: ${PORT_PROXY:-9999}
+        published: ${PORT_PROXY_PUBLISH:-9999}
         protocol: tcp
         mode: host
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-      - ./data:/mnt/caido
+      - data:/mnt/caido
+    entrypoint: /bin/sh
+    command:
+      - "-c"
+      - |
+        echo "Waiting for ownership change..." && \
+        sleep 5 && \
+        caido-cli \
+          --no-renderer-sandbox \
+          --no-open \
+          --no-logging \
+          --proxy-listen 0.0.0.0:${PORT_PROXY:-9999} \
+          --ui-listen 0.0.0.0:${PORT:-8080} \
+          --data-path /mnt/caido
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  change-vol-ownership:
+    image: alpine:3.18
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+      restart_policy:
+        condition: none
+    cap_add:
+      - CHOWN
+    user: "root"
+    volumes:
+      - data:/mnt/caido
+    entrypoint: /bin/sh
+    command:
+      - "-c"
+      - "chown -R 996:996 /mnt/caido"
+    restart: on-failure
 
 ################################################################################
 ################################################################################
@@ -91,3 +126,6 @@ networks:
       encrypted: "true"
   proxy:
     external: true
+
+volumes:
+  data: {}

@@ -8,7 +8,6 @@
 
 - [SETUP](#setup)
   - [basic](#basic)
-    - [change "data" folder user](#change-data-folder-user)
     - [create `.env` file following:](#create-env-file-following)
       - [example short .env](#example-short-env)
   - [References](#references)
@@ -18,12 +17,6 @@
 ## basic
 
 > defined to work with treafik
-
-### change "data" folder user
-
-```sh
-$sudo chown 999 data
-```
 
 ### create `.env` file following:
 
@@ -52,6 +45,10 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 # APPLICATION version for easy update
 # ______________________________________________________________________________
 VERSION=latest
+
+# APPLICATION general variable to adjust the apps
+# ______________________________________________________________________________
+PORT_PROXY=9999
 ```
 
 #### example short .env
@@ -59,7 +56,6 @@ VERSION=latest
 ```env
 NETWORK_MODE=overlay
 DOMAIN=caido.home.local
-VERSION=latest
 ```
 
 ---

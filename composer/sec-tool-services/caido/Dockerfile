@@ -39,7 +39,9 @@ RUN \
 ## Runtime ##
 FROM base
 
-RUN groupadd -r caido && useradd --no-log-init -m -r -g caido caido
+RUN \
+    groupadd -g 996 -r caido && \
+    useradd --no-log-init -m -r -g caido -u 996 caido
 RUN mkdir -p /mnt/caido && chown caido:caido /mnt/caido
 
 COPY --from=download caido-cli /usr/bin/caido-cli
