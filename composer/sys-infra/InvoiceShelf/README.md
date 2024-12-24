@@ -11,7 +11,6 @@
     - [create your `secrets`:](#create-your-secrets)
     - [create `.env` file following:](#create-env-file-following)
       - [example short .env](#example-short-env)
-  - [Helper](#helper)
   - [References](#references)
 
 ---
@@ -23,7 +22,6 @@
 ### create your `secrets`:
 
 ```sh
-$pwgen -s 32 1 > config/secrets/app_key_password.txt
 $pwgen -s 32 1 > config/secrets/mariadb_user_password.txt
 ```
 
@@ -38,9 +36,9 @@ NETWORK_MODE=overlay # by default "bridge"
 # GENERAL traefik variables (set by default, change as needed)
 # ______________________________________________________________________________
 LB_SWARM=true
-DOMAIN=crater.home.local # not set in docker-compose, needs to be copied to .env
+DOMAIN=invoice.home.local # not set in docker-compose, needs to be copied to .env
 PROTOCOL=http
-PORT=8080
+PORT=80
 # default-secured@file | public-whitelist@file | authentik@file
 MIDDLEWARE_SECURED=default-secured@file
 
@@ -53,9 +51,8 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_CRATER=latest
-VERSION_MARIADB=11.3
-VERSION_NGNIX=1.25-alpine-slim
+VERSION_INVOICE_SHELF=latest
+VERSION_MARIADB=11.6
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
@@ -66,24 +63,14 @@ VERSION_NGNIX=1.25-alpine-slim
 
 ```env
 NETWORK_MODE=overlay
-DOMAIN=crater.home.local
-```
-
-## Helper
-
-after run application, you need create a key as follow:
-
-```sh
-$docker exec -it "$(docker ps -q -f name=crater_crater)" composer install --no-interaction --prefer-dist --optimize-autoloader
-$docker exec -it "$(docker ps -q -f name=crater_crater)" php artisan storage:link || true
-$docker exec -it "$(docker ps -q -f name=crater_crater)" php artisan key:generate
+DOMAIN=invoice.home.local
 ```
 
 ---
 
 ## References
 
-- <https://crater.financial/>
-- <https://github.com/crater-invoice/crater>
-- <https://docs.craterapp.com/installation.html#docker-installation>
-  - <https://github.com/crater-invoice/crater/blob/master/docker-compose.yml>
+- <https://invoiceshelf.com>
+- <https://github.com/InvoiceShelf/InvoiceShelf>
+- <https://github.com/InvoiceShelf/docker>
+  - <https://hub.docker.com/r/invoiceshelf/invoiceshelf>

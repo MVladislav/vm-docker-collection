@@ -36,7 +36,7 @@ repos:
         language: python
         types: [text]
         args: [--markdown-linebreak-ext=md]
-      - id: end-of-file-fixer
+      # - id: end-of-file-fixer
       - id: requirements-txt-fixer
       - id: check-toml
       - id: check-json
