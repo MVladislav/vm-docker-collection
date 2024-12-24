@@ -93,8 +93,8 @@ RESOURCES_LIMITS_MEMORY=4096M
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_NEXTCLOUD=20240308_092935-latest
-VERSION_CADDY=2.7.6-alpine
+VERSION_NEXTCLOUD=20241216_102930-latest
+VERSION_CADDY=2.9-alpine
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
@@ -113,8 +113,8 @@ NEXTCLOUD_TRUSTED_DOMAINS=<DOMAIN_NAME>
 #### example short .env
 
 ```env
-VERSION_NEXTCLOUD=20240308_092935-latest
-VERSION_CADDY=2.7.6-alpine
+VERSION_NEXTCLOUD=20241216_102930-latest
+VERSION_CADDY=2.9-alpine
 
 NEXTCLOUD_NFS_IP=<NFS_SYSTEM_IP_ADDRESS>
 NEXTCLOUD_NFS_PATH_MASTER=<NFS_PATH>

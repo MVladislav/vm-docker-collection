@@ -34,7 +34,7 @@ services:
   ##############################################################################
   nextcloud:
     # https://hub.docker.com/r/nextcloud/all-in-one
-    image: nextcloud/all-in-one:${VERSION_NEXTCLOUD:-20240308_092935-latest}
+    image: nextcloud/all-in-one:${VERSION_NEXTCLOUD:-20241216_102930-latest}
     <<: *basic
     init: true
     container_name: nextcloud-aio-mastercontainer
@@ -78,7 +78,7 @@ services:
   ##############################################################################
   caddy:
     # https://hub.docker.com/_/caddy
-    image: caddy:${VERSION_CADDY:-2.7.6-alpine}
+    image: caddy:${VERSION_CADDY:-2.9-alpine}
     container_name: caddy
     <<: *basic
     volumes:
