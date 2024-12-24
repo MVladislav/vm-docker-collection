@@ -125,7 +125,7 @@ services:
       - --log-bin=mysql-bin
       - --expire-logs-days=7
     healthcheck:
-      test: ["CMD-SHELL", "/usr/local/bin/healthcheck.sh --no-defaults"]
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       start_period: 5s
       interval: 10s
       retries: 5
