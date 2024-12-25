@@ -40,7 +40,7 @@ x-basic-deploy: &basic-deploy
       memory: 32M
 
 x-basic: &basic
-  env_file: .env
+  env_file: ${ENV_FILE:-.env}
   cap_add:
     - NET_BIND_SERVICE
   cap_drop: ["ALL"]

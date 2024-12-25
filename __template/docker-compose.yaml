@@ -36,7 +36,7 @@ x-basic-deploy: &basic-deploy
       memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
 
 x-basic: &basic
-  env_file: .env
+  env_file: ${ENV_FILE:-.env}
   # user: "${GID:-1000}:${UID:-1000}"
   # privileged: true
   # stdin_open: true # docker run -i

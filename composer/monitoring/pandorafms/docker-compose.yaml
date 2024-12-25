@@ -5,7 +5,7 @@ services:
   ##############################################################################
   pandorafms:
     image: pandorafms/pandorafms-open-stack-el8:${VERSION:-latest}
-    env_file: .env
+    env_file: ${ENV_FILE:-.env}
     ulimits:
       memlock:
         soft: -1

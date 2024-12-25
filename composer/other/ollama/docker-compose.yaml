@@ -35,7 +35,7 @@ x-basic-deploy: &basic-deploy
       #     capabilities: [gpu]
 
 x-basic: &basic
-  env_file: .env
+  env_file: ${ENV_FILE:-.env}
   # cap_add: ["ALL"]
   # cap_drop: ["ALL"]
   security_opt:

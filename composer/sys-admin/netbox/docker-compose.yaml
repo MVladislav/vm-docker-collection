@@ -31,7 +31,7 @@ x-basic-deploy: &basic-deploy
       memory: 32M
 
 x-basic: &basic
-  env_file: .env
+  env_file: ${ENV_FILE:-.env}
   # cap_add:
   #   # https://dockerlabs.collabnix.com/advanced/security/capabilities/
   #   - CHOWN

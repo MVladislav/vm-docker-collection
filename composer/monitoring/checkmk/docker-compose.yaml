@@ -5,7 +5,7 @@ services:
   ##############################################################################
   checkmk:
     image: checkmk/${TYPE:-check-mk-raw}:${VERSION:-2.1.0}
-    env_file: .env
+    env_file: ${ENV_FILE:-.env}
     stdin_open: true # docker run -i
     tty: true # docker run -t
     ulimits:

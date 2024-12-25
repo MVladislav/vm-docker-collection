@@ -11,7 +11,7 @@ services:
         BUILD_DATE: ${BUILD_DATE:-2022}
         VERSION: ${VERSION:-latest}
     image: focalboard:${VERSION:-latest}
-    env_file: .env
+    env_file: ${ENV_FILE:-.env}
     ulimits:
       memlock:
         soft: -1

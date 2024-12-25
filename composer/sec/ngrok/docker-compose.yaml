@@ -13,7 +13,7 @@ services:
         VERSION_ALPINE: ${VERSION_ALPINE:-3.16.2}
         GLIBC_VERSION: ${GLIBC_VERSION:-2.35-r0}
     image: ngrok:${VERSION:-latest}
-    # env_file: .env
+    # env_file: ${ENV_FILE:-.env}
     stdin_open: true # docker run -i
     tty: true # docker run -t
     ulimits:

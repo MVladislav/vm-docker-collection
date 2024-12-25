@@ -33,7 +33,7 @@ x-basic-deploy: &basic-deploy
       memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
 
 x-basic: &basic
-  env_file: .env
+  env_file: ${ENV_FILE:-.env}
   cap_add:
     - CHOWN
     - SETGID

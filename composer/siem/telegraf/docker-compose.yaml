@@ -5,7 +5,7 @@ services:
   ##############################################################################
   telegraf:
     image: telegraf:${VERSION:-latest}
-    env_file: .env
+    env_file: ${ENV_FILE:-.env}
     # run to check "$(stat -c '%g' /var/run/docker.sock)"
     user: telegraf:999
     ulimits:

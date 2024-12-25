@@ -14,7 +14,7 @@ services:
         GROUP: 1000
         USER: 1000
     image: mvladislav/sophos:${VERSION:-2022-10-17}
-    env_file: .env
+    env_file: ${ENV_FILE:-.env}
     ulimits:
       memlock:
         soft: -1

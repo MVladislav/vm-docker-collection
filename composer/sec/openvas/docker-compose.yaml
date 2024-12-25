@@ -53,7 +53,7 @@ x-basic-deploy-conf: &basic-deploy-conf
       memory: ${RESOURCES_RESERVATIONS_MEMORY_CONF:-32m}
 
 x-basic: &basic
-  env_file: .env
+  env_file: ${ENV_FILE:-.env}
   cap_add: ["ALL"]
   cap_drop: ["ALL"]
   security_opt:

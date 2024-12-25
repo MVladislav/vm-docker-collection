@@ -6,7 +6,7 @@ x-backend: &backend
     args:
       VERSION_PAPERMERGE: ${VERSION_PAPERMERGE:-latest}
   image: papermerge:${VERSION_PAPERMERGE:-latest}
-  env_file: .env
+  env_file: ${ENV_FILE:-.env}
   ulimits:
     memlock:
       soft: -1
