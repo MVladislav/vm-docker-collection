@@ -83,7 +83,7 @@ services:
     configs:
       - source: ca_cert_file
         target: /var/coder/ca.pem
-        mode: 0444
+        mode: "0444"
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro

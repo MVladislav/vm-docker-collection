@@ -1,3 +1,4 @@
+---
 type: http
 
 name: http_elasticsearch # this must match with the registered plugin in the profile

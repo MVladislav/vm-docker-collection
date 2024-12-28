@@ -42,7 +42,7 @@ MIDDLEWARE_SECURED=default-secured@file
 
 ## enterprise free from checkmk-page
 
-download **tar.gz** from site as choosed for docker download:
+download **tar.gz** from site as chosen for docker download:
 
 ```sh
 $wget https://download.checkmk.com/checkmk/2.0.0p12/check-mk-free-docker-2.0.0p12.tar.gz

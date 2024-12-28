@@ -4,7 +4,7 @@ FROM ${ARCH}python:${VERSION_PYTHON} as builder
 
 # ------------------------------------------------------------------------------
 
-# set version label
+# Set version label
 ARG BUILD_DATE
 ARG VERSION
 LABEL build_version="MVladislav version:- ${VERSION} Build-date:- ${BUILD_DATE}"
@@ -12,17 +12,13 @@ LABEL maintainer="MVladislav"
 
 # ------------------------------------------------------------------------------
 
-ENV DEBIAN_FRONTEND noninteractive
+ENV DEBIAN_FRONTEND=noninteractive
 
 # ------------------------------------------------------------------------------
 
 RUN \
   echo "**** install updates ****" \
   && apt-get update -q \
-  && apt-get upgrade -y -q
-
-RUN \
-  echo "**** install MAIN packages ****" \
   && apt-get install -y --no-install-recommends \
   git \
   wget \
@@ -33,7 +29,7 @@ RUN \
   apt-transport-https \
   ca-certificates \
   make \
-  build-essential\
+  build-essential \
   cmake \
   gfortran \
   gnupg \
@@ -47,25 +43,22 @@ RUN \
   liblapack3 \
   libpq-dev \
   libssl-dev \
-  libtiff5-dev
+  libtiff5-dev \
+  && rm -rf /var/lib/apt/lists/*
 
 # Install Node & Yarn
 RUN curl -sL https://deb.nodesource.com/setup_14.x | bash - && \
-  apt-get install -y nodejs
-RUN npm install --global --unsafe-perm yarn
+  apt-get install -y --no-install-recommends nodejs && \
+  npm install --global --unsafe-perm yarn
 
 RUN \
   echo "**** cleanup ****" \
   && apt-get clean \
-  && rm -rf \
-  /tmp/* \
-  /var/tmp/* \
-  /var/lib/apt/lists/* \
-  /var/log/* \
-  /var/www
+  && rm -rf /tmp/* /var/tmp/* /var/log/* /var/www /var/lib/apt/lists/*
+
 RUN \
   echo "**** cleanup ****" \
-  rm -f /etc/ssh/ssh_host_* \
+  && rm -f /etc/ssh/ssh_host_* \
   /etc/apache2/sites-available/* \
   /dev/log \
   /var/lib/syslog-ng/syslog-ng.ctl \
@@ -145,7 +138,7 @@ FROM ${ARCH}python:${VERSION_PYTHON}
 
 # ------------------------------------------------------------------------------
 
-# set version label
+# Set version label
 ARG BUILD_DATE
 ARG VERSION
 LABEL build_version="MVladislav version:- ${VERSION} Build-date:- ${BUILD_DATE}"
@@ -153,17 +146,13 @@ LABEL maintainer="MVladislav"
 
 # ------------------------------------------------------------------------------
 
-ENV DEBIAN_FRONTEND noninteractive
+ENV DEBIAN_FRONTEND=noninteractive
 
 # ------------------------------------------------------------------------------
 
 RUN \
   echo "**** install updates ****" \
   && apt-get update -q \
-  && apt-get upgrade -y -q
-
-RUN \
-  echo "**** install MAIN packages ****" \
   && apt-get install -y --no-install-recommends \
   git \
   wget \
@@ -188,20 +177,17 @@ RUN \
   libtiff5-dev \
   netcat \
   nginx-light \
-  xz-utils
+  xz-utils \
+  && rm -rf /var/lib/apt/lists/*
 
 RUN \
   echo "**** cleanup ****" \
   && apt-get clean \
-  && rm -rf \
-  /tmp/* \
-  /var/tmp/* \
-  /var/lib/apt/lists/* \
-  /var/log/* \
-  /var/www
+  && rm -rf /tmp/* /var/tmp/* /var/log/* /var/www /var/lib/apt/lists/*
+
 RUN \
   echo "**** cleanup ****" \
-  rm -f /etc/ssh/ssh_host_* \
+  && rm -f /etc/ssh/ssh_host_* \
   /etc/apache2/sites-available/* \
   /dev/log \
   /var/lib/syslog-ng/syslog-ng.ctl \
@@ -245,12 +231,12 @@ RUN DJANGO_SECRET_KEY=test python photonix/manage.py collectstatic --noinput --l
 
 # ------------------------------------------------------------------------------
 
-# expose tcp port
+# Expose tcp port
 EXPOSE 80/tcp
-# set volumes
+# Set volumes
 VOLUME ["/data/photos", "/data/raw-photos-processed", "/data/cache", "/data/models"]
 
-# configure entry point
+# Configure entry point
 COPY config/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod 750 /usr/local/bin/docker-entrypoint.sh
 

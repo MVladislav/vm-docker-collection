@@ -51,7 +51,7 @@ services:
     configs:
       - source: telegraf_config
         target: /etc/telegraf/telegraf.conf
-        mode: 0440
+        mode: "0440"
         # uid: "1000"
         gid: "999"
     volumes:

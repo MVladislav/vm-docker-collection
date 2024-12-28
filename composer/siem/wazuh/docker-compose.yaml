@@ -194,17 +194,17 @@ services:
       #   gid: "1000"
       - source: root_ca_cert
         target: /usr/share/wazuh-dashboard/certs/root-ca.pem
-        mode: 0600
+        mode: "0600"
         uid: "1000"
         gid: "1000"
       - source: wazuh_dashboard_cert
         target: /usr/share/wazuh-dashboard/certs/wazuh-dashboard.pem
-        mode: 0600
+        mode: "0600"
         uid: "1000"
         gid: "1000"
       - source: wazuh_dashboard_cert_key
         target: /usr/share/wazuh-dashboard/certs/wazuh-dashboard-key.pem
-        mode: 0600
+        mode: "0600"
         uid: "1000"
         gid: "1000"
     volumes:
@@ -283,17 +283,17 @@ services:
       #   gid: "999"
       - source: root_ca_manager_cert
         target: /etc/ssl/root-ca.pem
-        mode: 0600
+        mode: "0600"
         uid: "999"
         gid: "999"
       - source: wazuh_master_cert
         target: /etc/ssl/filebeat.pem
-        mode: 0600
+        mode: "0600"
         uid: "999"
         gid: "999"
       - source: wazuh_master_cert_key
         target: /etc/ssl/filebeat.key
-        mode: 0600
+        mode: "0600"
         uid: "999"
         gid: "999"
     volumes:
@@ -346,17 +346,17 @@ services:
       #   gid: "999"
       - source: root_ca_manager_cert
         target: /etc/ssl/root-ca.pem
-        mode: 0600
+        mode: "0600"
         uid: "999"
         gid: "999"
       - source: wazuh_worker_cert
         target: /etc/ssl/filebeat.pem
-        mode: 0600
+        mode: "0600"
         uid: "999"
         gid: "999"
       - source: wazuh_worker_cert_key
         target: /etc/ssl/filebeat.key
-        mode: 0600
+        mode: "0600"
         uid: "999"
         gid: "999"
     volumes:
@@ -426,27 +426,27 @@ services:
       #   gid: "1000"
       - source: root_ca_cert
         target: /usr/share/wazuh-indexer/certs/root-ca.pem
-        mode: 0600
+        mode: "0600"
         uid: "1000"
         gid: "1000"
       - source: admin_cert
         target: /usr/share/wazuh-indexer/certs/admin.pem
-        mode: 0600
+        mode: "0600"
         uid: "1000"
         gid: "1000"
       - source: admin_cert_key
         target: /usr/share/wazuh-indexer/certs/admin-key.pem
-        mode: 0600
+        mode: "0600"
         uid: "1000"
         gid: "1000"
       - source: wazuh1_indexer_cert
         target: /usr/share/wazuh-indexer/certs/wazuh1.indexer.pem
-        mode: 0600
+        mode: "0600"
         uid: "1000"
         gid: "1000"
       - source: wazuh1_indexer_cert_key
         target: /usr/share/wazuh-indexer/certs/wazuh1.indexer.key
-        mode: 0600
+        mode: "0600"
         uid: "1000"
         gid: "1000"
     volumes:
@@ -508,17 +508,17 @@ services:
       #   gid: "1000"
       - source: root_ca_cert
         target: /usr/share/wazuh-indexer/certs/root-ca.pem
-        mode: 0600
+        mode: "0600"
         uid: "1000"
         gid: "1000"
       - source: wazuh2_indexer_cert
         target: /usr/share/wazuh-indexer/certs/wazuh2.indexer.pem
-        mode: 0600
+        mode: "0600"
         uid: "1000"
         gid: "1000"
       - source: wazuh2_indexer_cert_key
         target: /usr/share/wazuh-indexer/certs/wazuh2.indexer.key
-        mode: 0600
+        mode: "0600"
         uid: "1000"
         gid: "1000"
     volumes:
@@ -580,17 +580,17 @@ services:
       #   gid: "1000"
       - source: root_ca_cert
         target: /usr/share/wazuh-indexer/certs/root-ca.pem
-        mode: 0600
+        mode: "0600"
         uid: "1000"
         gid: "1000"
       - source: wazuh3_indexer_cert
         target: /usr/share/wazuh-indexer/certs/wazuh3.indexer.pem
-        mode: 0600
+        mode: "0600"
         uid: "1000"
         gid: "1000"
       - source: wazuh3_indexer_cert_key
         target: /usr/share/wazuh-indexer/certs/wazuh3.indexer.key
-        mode: 0600
+        mode: "0600"
         uid: "1000"
         gid: "1000"
     volumes:

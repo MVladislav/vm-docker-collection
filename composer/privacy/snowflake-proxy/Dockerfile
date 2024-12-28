@@ -1,4 +1,11 @@
-FROM --platform=$BUILDPLATFORM docker.io/library/golang:1.18 AS builder
+FROM --platform=$BUILDPLATFORM docker.io/library/golang:1.21 AS builder
+
+# Set the io.containers.autoupdate label. This label will instruct podman to
+# reach out to the corres corresponding registry to check if the image has been
+# updated. If an image must be updated, Podman pulls it down and restarts the
+# systemd unit executing the container. See podman-auto-update(1) for more
+# details, https://docs.podman.io/en/latest/markdown/podman-auto-update.1.html
+LABEL io.containers.autoupdate=registry
 
 ARG VERSION=main
 

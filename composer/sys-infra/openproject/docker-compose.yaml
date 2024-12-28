@@ -93,7 +93,7 @@ x-op-app: &app
   configs:
     - source: ca_cert_file
       target: /var/openproject/ca.crt
-      mode: 0444
+      mode: "0444"
   volumes:
     - /etc/timezone:/etc/timezone:ro
     - /etc/localtime:/etc/localtime:ro
