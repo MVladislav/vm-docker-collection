@@ -1,0 +1,93 @@
+---
+x-basic-deploy-labels: &basic-deploy-labels
+  labels:
+    - traefik.enable=true
+    - traefik.docker.lbswarm=${LB_SWARM:-true}
+    - traefik.docker.network=proxy
+    - traefik.http.routers.akkudoktor${SERVICE_NAME_POST:-}.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.akkudoktor${SERVICE_NAME_POST:-}.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.akkudoktor${SERVICE_NAME_POST:-}.tls=true
+    - traefik.http.routers.akkudoktor${SERVICE_NAME_POST:-}.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.akkudoktor${SERVICE_NAME_POST:-}.service=akkudoktor${SERVICE_NAME_POST:-}
+    - traefik.http.services.akkudoktor${SERVICE_NAME_POST:-}.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.akkudoktor${SERVICE_NAME_POST:-}.loadbalancer.server.port=${PORT:-8503}
+
+x-basic-deploy: &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  update_config:
+    order: stop-first
+  restart_policy:
+    condition: any
+  resources:
+    limits:
+      cpus: ${RESOURCES_LIMITS_CPUS:-1}
+      memory: ${RESOURCES_LIMITS_MEMORY:-1g}
+    reservations:
+      cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
+      memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
+
+x-basic: &basic
+  env_file: ${ENV_FILE:-.env}
+  # cap_add:
+  #   # https://dockerlabs.collabnix.com/advanced/security/capabilities/
+  #   - CHOWN # (chmod)
+  #   - DAC_OVERRIDE
+  #   - DAC_READ_SEARCH
+  #   - SETGID # (setgroups)
+  #   - SETUID # (setuid)
+  #   - FOWNER # (chmod, chown, or chgrp)
+  #   - FSETID
+  cap_drop: ["ALL"]
+  security_opt:
+    - no-new-privileges=true
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 655360
+      hard: 655360
+    fsize: -1
+    as: -1
+  networks:
+    proxy: {}
+  healthcheck:
+    disable: true
+  restart: always
+
+################################################################################
+################################################################################
+################################################################################
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  akkudoktor:
+    image: akkudoktor/eos:${VERSION:-main}
+    <<: [*basic, *basic-deploy-labels]
+    deploy:
+      <<: [*basic-deploy, *basic-deploy-labels]
+    # environment:
+    configs:
+      - source: eos_config
+        target: /opt/eos/EOS.config.json
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  proxy:
+    external: true
+
+configs:
+  eos_config:
+    file: $PWD/config/default.config.json
