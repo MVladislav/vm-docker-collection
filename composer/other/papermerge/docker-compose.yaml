@@ -184,7 +184,7 @@ services:
   ##############################################################################
   ##############################################################################
   postgres:
-    image: postgres:14.4
+    image: postgres:${VERSION_POSTGRES:-14.15}
     ulimits:
       memlock:
         soft: -1
@@ -222,7 +222,7 @@ services:
     restart: always
 
   redis:
-    image: redis:6
+    image: redis:${VERSION_REDIS:-7}
     ulimits:
       memlock:
         soft: -1
@@ -254,7 +254,7 @@ services:
     restart: always
 
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.16.2
+    image: docker.elastic.co/elasticsearch/elasticsearch:${VERSION_ELASTIC:-8.17.0}
     ulimits:
       memlock:
         soft: -1
