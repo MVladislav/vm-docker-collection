@@ -222,7 +222,7 @@ services:
     restart: always
 
   redis:
-    image: redis:6
+    image: redis:7
     ulimits:
       memlock:
         soft: -1
