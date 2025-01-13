@@ -51,7 +51,7 @@ services:
     configs:
       - source: app_config
         target: /etc/thehive/application.conf
-        mode: "0444"
+        mode: 0444
         # uid: "1000"
         # gid: "1000"
     volumes:

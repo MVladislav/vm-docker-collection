@@ -61,7 +61,7 @@ services:
     configs:
       - source: focalboard_config
         target: /opt/focalboard/config.json
-        mode: "0550"
+        mode: 0550
         # uid: "1000"
         # gid: "1000"
     volumes:

@@ -81,15 +81,15 @@ services:
     configs:
       - source: installer_ext
         target: /entrypoint.d/install-ext.sh
-        mode: "0777"
+        mode: 0777
       - source: settings_config
         target: /home/coder/.local/share/code-server/User/settings.json
-        mode: "0644"
+        mode: 0644
         uid: "${UID:-1000}"
         gid: "${GID:-1000}"
       - source: keybindings_config
         target: /home/coder/.local/share/code-server/User/keybindings.json
-        mode: "0644"
+        mode: 0644
         uid: "${UID:-1000}"
         gid: "${GID:-1000}"
     environment:

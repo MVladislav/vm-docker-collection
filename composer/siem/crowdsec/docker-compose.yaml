@@ -41,22 +41,22 @@ services:
     configs:
       - source: acquis_config
         target: /etc/crowdsec/acquis.yaml
-        mode: "0440"
+        mode: 0440
         uid: "1000"
         gid: "1000"
       - source: profiles_config
         target: /etc/crowdsec/profiles.yaml
-        mode: "0440"
+        mode: 0440
         uid: "1000"
         gid: "1000"
       - source: http_elasticsearch_config
         target: /etc/crowdsec/notifications/http.yaml
-        mode: "0440"
+        mode: 0440
         uid: "1000"
         gid: "1000"
       - source: http_telegram_config
         target: /etc/crowdsec/notifications/telegram.yaml
-        mode: "0440"
+        mode: 0440
         uid: "1000"
         gid: "1000"
     volumes:

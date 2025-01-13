@@ -49,7 +49,7 @@ services:
     configs:
       - source: paper_config
         target: /config/papermerge.conf.py
-        mode: "0644"
+        mode: 0644
         uid: ${PUID:-1000}
         gid: ${PUID:-1000}
     volumes:
