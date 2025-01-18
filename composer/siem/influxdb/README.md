@@ -53,7 +53,7 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_INFLUXDB=2.7.7-alpine
+VERSION_INFLUXDB=2.7.11-alpine
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
@@ -65,7 +65,6 @@ VERSION_INFLUXDB=2.7.7-alpine
 ```env
 NETWORK_MODE=overlay
 DOMAIN=influx.home.local
-VERSION_INFLUXDB=2.7.7-alpine
 ```
 
 ---

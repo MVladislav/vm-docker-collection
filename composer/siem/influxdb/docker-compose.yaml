@@ -20,8 +20,10 @@ x-basic-deploy: &basic-deploy
     constraints:
       - "node.role==${NODE_ROLE:-manager}"
       - node.platform.os == linux
+  update_config:
+    order: stop-first
   restart_policy:
-    condition: on-failure
+    condition: any
   resources:
     limits:
       cpus: ${RESOURCES_LIMITS_CPUS:-1}
@@ -64,7 +66,7 @@ services:
   ##############################################################################
   influxdb:
     # https://hub.docker.com/_/influxdb
-    image: influxdb:${VERSION_INFLUXDB:-2.7.7-alpine}
+    image: influxdb:${VERSION_INFLUXDB:-2.7.11-alpine}
     <<: [*basic, *basic-deploy-labels]
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels]
