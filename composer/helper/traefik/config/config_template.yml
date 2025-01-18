@@ -21,6 +21,11 @@ http:
 
   # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   middlewares:
+    traefik-basic-auth:
+      basicAuth:
+        usersFile: "/run/secrets/traefik_basicauth_secret"
+        realm: "Traefik Basic Auth"
+
     default-headers:
       headers:
         frameDeny: true

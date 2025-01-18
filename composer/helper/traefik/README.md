@@ -8,6 +8,7 @@
 
 - [SETUP](#setup)
   - [basic](#basic)
+    - [create your `secrets`:](#create-your-secrets)
     - [traefik setup](#traefik-setup)
     - [traefik_dynamic setup](#traefik_dynamic-setup)
     - [config setup](#config-setup)
@@ -22,6 +23,12 @@
 ---
 
 ## basic
+
+### create your `secrets`:
+
+```sh
+$echo $(htpasswd -nB traefik) > config/secrets/traefik_basicauth_secret.txt
+```
 
 ### traefik setup
 
@@ -113,11 +120,6 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 # APPLICATION version for easy update
 # ______________________________________________________________________________
 VERSION=v3.3.1
-
-# APPLICATION general variable to adjust the apps
-# ______________________________________________________________________________
-# new: `echo $(htpasswd -nB traefik) | sed -e 's|\$|$$|g'`
-TRAEFIK_DASHBOARD_CREDENTIALS=
 ```
 
 #### example short .env
@@ -125,9 +127,6 @@ TRAEFIK_DASHBOARD_CREDENTIALS=
 ```env
 NETWORK_MODE=overlay
 DOMAIN=traefik.home.local
-
-# new: `echo $(htpasswd -nB traefik) | sed -e 's|\$|$$|g'`
-TRAEFIK_DASHBOARD_CREDENTIALS=
 ```
 
 ## label setup

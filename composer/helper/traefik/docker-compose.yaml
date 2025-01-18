@@ -13,8 +13,7 @@ x-basic-deploy-labels: &basic-deploy-labels
     - traefik.http.routers.traefik.service=api@internal
     - traefik.http.services.traefik.loadbalancer.server.scheme=${PROTOCOL:-http}
     - traefik.http.services.traefik.loadbalancer.server.port=${PORT:-8080}
-    - traefik.http.routers.traefik.middlewares=admin-auth
-    - traefik.http.middlewares.admin-auth.basicauth.users=${TRAEFIK_DASHBOARD_CREDENTIALS?dashboard credential variable not set}
+    - traefik.http.routers.traefik.middlewares=traefik-basic-auth@file
 
 x-basic-deploy: &basic-deploy
   mode: replicated
@@ -25,7 +24,7 @@ x-basic-deploy: &basic-deploy
       - "node.role==${NODE_ROLE:-manager}"
       - node.platform.os == linux
   restart_policy:
-    condition: any # any | on-failure | none
+    condition: any
   resources:
     limits:
       cpus: ${RESOURCES_LIMITS_CPUS:-0.5}
@@ -75,9 +74,11 @@ services:
         published: 443
         protocol: tcp
         mode: host
-    # secrets:
-    #   - cf_api_token_secret
+    secrets:
+      - traefik_basicauth_secret
+      # - cf_api_token_secret
     # environment:
+    #   TRAEFIK_AUTH_FILE: /run/secrets/traefik_basicauth_secret
     #   CF_DNS_API_TOKEN_FILE: /run/secrets/cf_api_token_secret
     configs:
       - source: traefik_config
@@ -142,7 +143,9 @@ configs:
     file: $PWD/config/ssl/cert.pem
   traefik_key_config:
     file: $PWD/config/ssl/cert-key.pem
-#
-# secrets:
+
+secrets:
+  traefik_basicauth_secret:
+    file: config/secrets/traefik_basicauth_secret.txt
 #   cf_api_token_secret:
 #     file: config/secrets/cf_api_token_secret.txt
