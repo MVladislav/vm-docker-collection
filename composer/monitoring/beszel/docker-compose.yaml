@@ -1,0 +1,105 @@
+---
+x-basic-deploy-labels: &basic-deploy-labels
+  labels:
+    - traefik.enable=true
+    - traefik.docker.lbswarm=${LB_SWARM:-true}
+    - traefik.docker.network=proxy
+    - traefik.http.routers.beszel${SERVICE_NAME_POST:-}.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.beszel${SERVICE_NAME_POST:-}.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.beszel${SERVICE_NAME_POST:-}.tls=true
+    - traefik.http.routers.beszel${SERVICE_NAME_POST:-}.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.beszel${SERVICE_NAME_POST:-}.service=beszel${SERVICE_NAME_POST:-}
+    - traefik.http.services.beszel${SERVICE_NAME_POST:-}.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.beszel${SERVICE_NAME_POST:-}.loadbalancer.server.port=${PORT:-8090}
+
+x-basic-deploy: &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  update_config:
+    order: stop-first
+  restart_policy:
+    condition: any
+  resources:
+    limits:
+      cpus: ${RESOURCES_LIMITS_CPUS:-1}
+      memory: ${RESOURCES_LIMITS_MEMORY:-1g}
+    reservations:
+      cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
+      memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
+
+x-basic: &basic
+  env_file: ${ENV_FILE:-.env}
+  cap_drop: ["ALL"]
+  security_opt:
+    - no-new-privileges=true
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 655360
+      hard: 655360
+    fsize: -1
+    as: -1
+  networks:
+    default: {}
+  healthcheck:
+    disable: true
+  restart: always
+
+################################################################################
+################################################################################
+################################################################################
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  beszel:
+    # https://hub.docker.com/r/henrygd/beszel
+    image: henrygd/beszel:${VERSION:-0.9.1}
+    <<: [*basic, *basic-deploy-labels]
+    deploy:
+      <<: [*basic-deploy, *basic-deploy-labels]
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - beszel_data:/beszel_data
+    networks:
+      default: {}
+      proxy: {}
+
+  # beszel-agent:
+  #   # https://hub.docker.com/r/henrygd/beszel-agent
+  #   image: henrygd/beszel-agent:${VERSION:-0.9.1}
+  #   <<: *basic
+  #   deploy:
+  #     <<: *basic-deploy
+  #   environment:
+  #     PORT: ${PORT_AGENT:-45876}
+  #     KEY: ${KEY?key for agent is not set}
+  #   volumes:
+  #     - /etc/timezone:/etc/timezone:ro
+  #     - /etc/localtime:/etc/localtime:ro
+  #     - /var/run/docker.sock:/var/run/docker.sock:ro
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  default:
+    # name: proxy${SERVICE_NAME_POST:-}
+    driver: ${NETWORK_MODE:-bridge}
+    attachable: true
+    driver_opts:
+      encrypted: "true"
+  proxy:
+    external: true
+
+volumes:
+  beszel_data:
+    name: beszel_data${SERVICE_NAME_POST:-}
