@@ -66,7 +66,7 @@ services:
   ##############################################################################
   homepage:
     # https://github.com/gethomepage/homepage/pkgs/container/homepage
-    image: ghcr.io/gethomepage/homepage:${VERSION:-v0.9.12}
+    image: ghcr.io/gethomepage/homepage:${VERSION:-v0.10.9}
     <<: *basic
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels]
@@ -100,3 +100,8 @@ networks:
 volumes:
   config:
     name: homepage${SERVICE_NAME_POST:-}
+    # driver: local
+    # driver_opts:
+    #   type: nfs
+    #   o: nfsvers=4.2,addr=${NFS_HOST?nfs host is not defined},rsize=2097152,wsize=2097152,tcp,nconnect=${NFS_NCON:-8}
+    #   device: ":${NAS_PATH?nfs path is not defined}${SERVICE_NAME_POST:-}"

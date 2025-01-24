@@ -45,12 +45,17 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION=v0.9.12
+VERSION=v0.10.9
 
 # APPLICATION general variable to adjust the apps (optional set by default)
 # ______________________________________________________________________________
 PUID=1000
 PGID=1000
+
+# (optional) NFS to store data on a NFS-Storage (commented in compose)
+# ______________________________________________________________________________
+NFS_HOST=<ADD>
+NAS_PATH=<ADD>
 ```
 
 #### example short .env
