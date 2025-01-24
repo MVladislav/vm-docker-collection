@@ -47,7 +47,13 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION=0.6.9-nbxyz2
+VERSION=0.7.3-nbxyz3
+
+# (optional) NFS to store data on a NFS-Storage (commented in compose)
+# ______________________________________________________________________________
+NFS_HOST=<ADD>
+NFS_PATH_CONFIG=<ADD>
+NFS_PATH_ASSETS=<ADD>
 ```
 
 #### example short .env
@@ -56,7 +62,6 @@ VERSION=0.6.9-nbxyz2
 NETWORK_MODE=overlay
 DOMAIN=netboot.home.local
 DOMAIN_ASSETS=netboot-img.home.local
-VERSION=0.6.9-nbxyz2
 ```
 
 ---
@@ -67,3 +72,6 @@ VERSION=0.6.9-nbxyz2
 - <https://netboot.xyz>
 - <https://netboot.xyz/docs/docker/>
 - <https://github.com/netbootxyz/docker-netbootxyz>
+- dhcp
+  - <https://docs.linuxserver.io/images/docker-netbootxyz/?h=netboo#router-setup-examples>
+  - <https://netboot.xyz/docs/docker/#dhcp-configurations>
