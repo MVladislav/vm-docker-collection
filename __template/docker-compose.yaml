@@ -2,8 +2,8 @@
 x-basic-deploy-labels: &basic-deploy-labels
   labels:
     - traefik.enable=true
-    - traefik.docker.lbswarm=${LB_SWARM:-true}
-    - traefik.docker.network=proxy
+    - traefik.swarm.lbswarm=${LB_SWARM:-true}
+    - traefik.swarm.network=proxy
     - traefik.http.routers.<router_name>${SERVICE_NAME_POST:-}.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
     - traefik.http.routers.<router_name>${SERVICE_NAME_POST:-}.rule=Host(`${DOMAIN?domain variable not set}`)
     - traefik.http.routers.<router_name>${SERVICE_NAME_POST:-}.tls=true
@@ -43,10 +43,10 @@ x-basic: &basic
   # tty: true # docker run -t
   # cap_add:
   #   # https://dockerlabs.collabnix.com/advanced/security/capabilities/
-  #   - CHOWN # (chmod)
+  #   - CHOWN # (chown, chmod)
   #   - DAC_OVERRIDE
   #   - DAC_READ_SEARCH
-  #   - SETGID # (setgroups)
+  #   - SETGID # (setgid, setgroups)
   #   - SETUID # (setuid)
   #   - FOWNER # (chmod, chown, or chgrp)
   #   - FSETID
@@ -152,6 +152,7 @@ services:
   ##############################################################################
   ##############################################################################
   app:
+    # https://hub.docker.com/r/...
     build:
       context: .
       dockerfile: ./Dockerfile
@@ -205,25 +206,30 @@ services:
     healthcheck:
       # test:
       #   [
-      #     "CMD",
-      #     "curl",
-      #     "-f",
-      #     "${PROTOCOL:-https}://127.0.0.1:${PORT:-443}",
-      #     ".......................",
-      #     "CMD",
-      #     "wget",
-      #     "--no-verbose",
-      #     "--tries=1",
-      #     "--spider",
-      #     "--no-check-certificate",
-      #     "${PROTOCOL:-https}://127.0.0.1:${PORT:-443}",
       #     "CMD-SHELL",
-      #     "wget --no-verbose --tries=1 --spider --no-check-certificate ${PROTOCOL:-https}://127.0.0.1:${PORT:-443} || exit 1"
+      #     "curl -kI https://127.0.0.1:55000 > /dev/null 2>&1 || exit 1",
       #   ]
-      # start_period: 5s
+      #   # [
+      #   #   "CMD",
+      #   #   "curl",
+      #   #   "-f",
+      #   #   "${PROTOCOL:-https}://127.0.0.1:${PORT:-443}",
+      #   # ]
+      #   # [
+      #   #   "CMD",
+      #   #   "wget",
+      #   #   "--no-verbose",
+      #   #   "--tries=1",
+      #   #   "--spider",
+      #   #   "--no-check-certificate",
+      #   #   "${PROTOCOL:-https}://127.0.0.1:${PORT:-443}",
+      #   #   "CMD-SHELL",
+      #   #   "wget --no-verbose --tries=1 --spider --no-check-certificate ${PROTOCOL:-https}://127.0.0.1:${PORT:-443} || exit 1"
+      #   # ]
+      # start_period: 10s
       # interval: 10s
-      # retries: 5
       # timeout: 3s
+      # retries: 10
       disable: true
 
 ################################################################################
@@ -243,15 +249,15 @@ networks:
 #   data:
 #     name: data${SERVICE_NAME_POST:-}
 #   ## sudo apt install nfs-common
-#   # nas-data:
-#   #   # name: nas-data
+#   # data-nfs:
+#   #   # name: data-nfs${SERVICE_NAME_POST:-}
 #   #   driver: local
 #   #   driver_opts:
 #   #     type: nfs
-#   #     o: nfsvers=4.2,addr=${NFS_HOST},rsize=2097152,wsize=2097152,tcp,nconnect=${NFS_NCON:-8}
-#   #     device: ":${NAS_PATH}"
-#   # smb-data:
-#   #   # name: smb-data
+#   #     o: nfsvers=4.2,addr=${NFS_HOST?nfs host is not defined},rsize=2097152,wsize=2097152,tcp,nconnect=${NFS_NCON:-8}
+#   #     device: ":${NFS_PATH?nfs path is not defined}${SERVICE_NAME_POST:-}"
+#   # data-smb:
+#   #   # name: data-smb${SERVICE_NAME_POST:-}
 #   #   driver: local
 #   #   driver_opts:
 #   #     type: cifs
