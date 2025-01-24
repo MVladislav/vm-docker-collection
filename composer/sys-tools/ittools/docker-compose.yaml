@@ -1,0 +1,88 @@
+---
+x-basic-deploy-labels: &basic-deploy-labels
+  labels:
+    - traefik.enable=true
+    - traefik.swarm.lbswarm=${LB_SWARM:-true}
+    - traefik.swarm.network=proxy
+    - traefik.http.routers.it-tools.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.it-tools.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.it-tools.tls=true
+    - traefik.http.routers.it-tools.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.it-tools.service=it-tools
+    - traefik.http.services.it-tools.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.it-tools.loadbalancer.server.port=${PORT:-80}
+
+x-basic-deploy: &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  update_config:
+    order: stop-first
+  restart_policy:
+    condition: any
+  resources:
+    limits:
+      cpus: ${RESOURCES_LIMITS_CPUS:-1}
+      memory: ${RESOURCES_LIMITS_MEMORY:-500m}
+    reservations:
+      cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
+      memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
+
+x-basic: &basic
+  env_file: ${ENV_FILE:-.env}
+  cap_add:
+    - CHOWN
+    - SETGID
+    - SETUID
+  cap_drop: ["ALL"]
+  security_opt:
+    - no-new-privileges=true
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 655360
+      hard: 655360
+    fsize: -1
+    as: -1
+  networks:
+    proxy: {}
+  healthcheck:
+    disable: true
+  restart: always
+
+################################################################################
+################################################################################
+################################################################################
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  it-tools:
+    # https://github.com/corentinth/it-tools/pkgs/container/it-tools
+    image: ghcr.io/corentinth/it-tools:${VERSION:-2024.10.22-7ca5933}
+    <<: [*basic, *basic-deploy-labels]
+    deploy:
+      <<: [*basic-deploy, *basic-deploy-labels]
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    healthcheck:
+      test:
+        ["CMD-SHELL", "curl -I http://127.0.0.1:80 > /dev/null 2>&1 || exit 1"]
+      start_period: 10s
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  proxy:
+    external: true
