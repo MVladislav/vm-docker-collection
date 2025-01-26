@@ -1,0 +1,144 @@
+---
+x-basic-deploy-labels: &basic-deploy-labels
+  labels:
+    - traefik.enable=true
+    - traefik.swarm.lbswarm=${LB_SWARM:-true}
+    - traefik.swarm.network=proxy
+    - traefik.http.routers.odoo.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.odoo.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.odoo.tls=true
+    - traefik.http.routers.odoo.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.odoo.service=odoo
+    - traefik.http.services.odoo.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.odoo.loadbalancer.server.port=${PORT:-8069}
+
+x-basic-deploy: &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  update_config:
+    order: stop-first
+  restart_policy:
+    condition: any
+  resources:
+    limits:
+      cpus: ${RESOURCES_LIMITS_CPUS:-2}
+      memory: ${RESOURCES_LIMITS_MEMORY:-2g}
+    reservations:
+      cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
+      memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
+
+x-basic: &basic
+  env_file: ${ENV_FILE:-.env}
+  cap_drop: ["ALL"]
+  security_opt:
+    - no-new-privileges=true
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 655360
+      hard: 655360
+    fsize: -1
+    as: -1
+  networks:
+    default: {}
+  healthcheck:
+    disable: true
+  restart: always
+
+################################################################################
+################################################################################
+################################################################################
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  odoo:
+    # https://hub.docker.com/_/odoo/
+    image: odoo:${VERSION_ODOO:-17.0}
+    <<: [*basic, *basic-deploy-labels]
+    deploy:
+      <<: [*basic-deploy, *basic-deploy-labels]
+    secrets:
+      - postgres_password_file
+    environment:
+      HOST: postgresql
+      USER: ${POSTGRES_USER:-odoo}
+      PASSWORD_FILE: /run/secrets/postgres_password_file
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - odoo-web-data:/var/lib/odoo
+      - odoo-config:/etc/odoo
+      - odoo-addons:/mnt/extra-addons
+    networks:
+      default: {}
+      proxy: {}
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  postgresql:
+    # https://hub.docker.com/_/postgres
+    image: postgres:${VERSION_POSTGRESQL:-17.2-alpine}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_POSTGRESQL:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_POSTGRESQL:-1G}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_POSTGRESQL:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_POSTGRESQL:-32m}
+    cap_add:
+      - SETGID
+      - SETUID
+      - DAC_OVERRIDE
+    secrets:
+      - postgres_password_file
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-postgres}
+      POSTGRES_USER: ${POSTGRES_USER:-odoo}
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password_file
+      PGDATA: /var/lib/postgresql/data
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - postgresql:/var/lib/postgresql/data
+    networks:
+      default: {}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
+      start_period: 2s
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  default:
+    driver: ${NETWORK_MODE:-bridge}
+    attachable: true
+    driver_opts:
+      encrypted: "true"
+  proxy:
+    external: true
+
+volumes:
+  odoo-web-data: {}
+  odoo-config: {}
+  odoo-addons: {}
+  postgresql: {}
+
+secrets:
+  postgres_password_file:
+    file: config/secrets/postgres_password_file.txt
