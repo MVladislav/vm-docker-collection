@@ -118,6 +118,7 @@ A docker collection with composer for a fast start-up.
 |                       | Time Tracking      | [kimai](https://github.com/kimai/kimai)                                                     | Time-tracking software for freelancers and teams.                                   |
 |                       | Cloud Storage      | [nextcloud](https://github.com/nextcloud/docker)                                            | Open-source file sharing and collaboration platform.                                |
 |                       | Cloud Storage      | [nextcloud-aio](https://github.com/nextcloud/all-in-one)                                    | All-in-one Dockerized Nextcloud solution.                                           |
+|                       | Project Management | [odoo-project](https://www.odoo.com/app/project)                                            | Odoo app for managing projects and tasks.                                           |
 |                       | Project Management | [openproject](https://github.com/opf/openproject-deploy)                                    | Open-source project management software.                                            |
 |                       | Cloud Storage      | [owncloud](https://hub.docker.com/r/owncloud/server)                                        | Enterprise file sharing and collaboration platform.                                 |
 |                       | PDF Tool           | [stirling-pdf](https://github.com/Stirling-Tools/Stirling-PDF)                              | Tool for PDF document manipulation and editing.                                     |
@@ -141,7 +142,7 @@ A docker collection with composer for a fast start-up.
 |                       | Static Site Gen    | [pocketbase](https://github.com/pocketbase/pocketbase)                                      | Open Source realtime backend in 1 file                                              |
 |                       | VPN                | [algo](https://github.com/trailofbits/algo)                                                 | Set up a personal VPN in the cloud                                                  |
 |                       | Email Marketing    | [listmonk](https://listmonk.app)                                                            | High-performance self-hosted newsletter and mailing list manager.                   |
-|                       | Project Management | [odoo-project](https://www.odoo.com/app/project)                                            | Odoo app for managing projects and tasks.                                           |
+|                       | HRM                | [orangehrm](https://github.com/orangehrm/orangehrm)                                         | .                                                                                   |
 |                       | Ticketing System   | [zammad-docker-compose](https://docs.zammad.org/en/latest/install/docker-compose.html)      | Self-hosted ticketing and customer support system.                                  |
 |                       | File Management    | [pydio-cells](https://github.com/pydio/cells)                                               | Enterprise file sharing and collaboration platform.                                 |
 |                       | Customer Support   | [chatwoot](https://github.com/chatwoot/chatwoot)                                            | Open-source customer support and engagement platform.                               |
@@ -157,6 +158,8 @@ A docker collection with composer for a fast start-up.
 |                       | Monitoring         | [OpenTelemetry](https://opentelemetry.io/docs/demo/docker-deployment/)                      | High-quality, ubiquitous, and portable telemetry to enable effective observability. |
 |                       | Reporting          | [BugZilla](https://github.com/bugzilla/bugzilla)                                            | The software solution designed to drive software development                        |
 |                       | Testing            | [netpicker](https://github.com/netpicker/netpicker)                                         | Test your network compliance, design and security.                                  |
+|                       | Wiki               | [outline](https://github.com/outline/outline)                                               | The fastest knowledge base for growing teams.                                       |
+|                       | Wiki               | [wiki.js](https://github.com/requarks/wiki)                                                 | A modern and powerful wiki app built on Node.js                                     |
 |                       |                    |                                                                                             |                                                                                     |
 
 ## best practice start-up
