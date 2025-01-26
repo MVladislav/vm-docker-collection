@@ -54,8 +54,8 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_KIMAI=apache-2.15.0-prod
-VERSION_MARIADB=11.3.2
+VERSION_KIMAI=apache-2.28.0
+VERSION_MARIADB=11.6.2
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
@@ -71,9 +71,6 @@ MAILER_URL=smtps://{username}:{password}@{smtp-host}:465
 ```env
 NETWORK_MODE=overlay
 DOMAIN=kimai.home.local
-
-VERSION_KIMAI=apache-2.15.0-prod
-VERSION_MARIADB=11.3.2
 
 DB_PASS=$(cat config/secrets/mariadb_user_password.txt)
 ```

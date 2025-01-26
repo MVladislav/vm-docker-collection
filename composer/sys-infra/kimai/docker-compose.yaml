@@ -20,8 +20,10 @@ x-basic-deploy: &basic-deploy
     constraints:
       - "node.role==${NODE_ROLE:-manager}"
       - node.platform.os == linux
+  update_config:
+    order: stop-first
   restart_policy:
-    condition: on-failure
+    condition: any
   resources:
     limits:
       cpus: ${RESOURCES_LIMITS_CPUS:-0.5}
@@ -60,7 +62,7 @@ services:
   ##############################################################################
   kimai:
     # https://hub.docker.com/r/kimai/kimai2
-    image: kimai/kimai2:${VERSION_KIMAI:-apache-2.15.0-prod}
+    image: kimai/kimai2:${VERSION_KIMAI:-apache-2.28.0}
     <<: [*basic, *basic-deploy-labels]
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels]
@@ -94,7 +96,7 @@ services:
   ##############################################################################
   mariadb:
     # https://hub.docker.com/_/mariadb
-    image: mariadb:${VERSION_MARIADB:-11.3.2}
+    image: mariadb:${VERSION_MARIADB:-11.6.2}
     <<: *basic
     deploy:
       <<: *basic-deploy
