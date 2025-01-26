@@ -7,30 +7,30 @@ x-basic-deploy: &basic-deploy
     constraints:
       - "node.role==${NODE_ROLE:-manager}"
       - node.platform.os == linux
+  update_config:
+    order: stop-first
   restart_policy:
-    condition: on-failure
+    condition: any
   resources:
     limits:
-      # cpus: "1.0"
-      memory: 500M
+      cpus: ${RESOURCES_LIMITS_CPUS:-1}
+      memory: ${RESOURCES_LIMITS_MEMORY:-1g}
     reservations:
-      cpus: "0.0001"
-      memory: 20M
+      cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
+      memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
 
 x-basic: &basic
   cap_add:
     - NET_ADMIN
     - NET_RAW
   cap_drop: ["ALL"]
-  # stdin_open: true # docker run -i
-  # tty: true # docker run -t
   ulimits:
     memlock:
       soft: -1
       hard: -1
     nofile:
-      soft: 65535
-      hard: 65535
+      soft: 655360
+      hard: 655360
     fsize: -1
     as: -1
   network_mode: host
@@ -41,32 +41,29 @@ x-basic: &basic
 ################################################################################
 ################################################################################
 ################################################################################
-
 services:
-  ##############################################################################
-  ##############################################################################
-  ##############################################################################
   zeek:
-    image: zeekurity/zeek:${VERSION:-5.1.1}
+    image: zeek/zeek:${VERSION:-7.1}
     <<: *basic
     deploy:
       <<: *basic-deploy
-    # configs:
-    #   - source: node_cfg_config
-    #     target: /usr/local/zeek/etc/node.cfg
+    configs:
+      - source: node_cfg_config
+        target: /usr/local/zeek/etc/node.cfg
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - ./config/logs:/usr/local/zeek/logs/
-      - ./config/node.cfg:/usr/local/zeek/etc/node.cfg
+      # - ./config/node.cfg:/usr/local/zeek/etc/node.cfg
     # HINT: start with "docker-compose run zeek" when you finished with sniffing, type "stop" to let zeek write logs
-    command: bash -c "zeekctl install && zeekctl start && zeekctl"
+    command: bash -c "zeekctl deploy && zeekctl"
 
 ################################################################################
 ################################################################################
 ################################################################################
 volumes:
   data: {}
-# configs:
-#   node_cfg_config:
-#     file: $PWD/config/node.cfg
+
+configs:
+  node_cfg_config:
+    file: $PWD/config/node.cfg

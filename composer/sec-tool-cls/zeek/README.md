@@ -8,7 +8,6 @@
 
 - [SETUP](#setup)
   - [basic](#basic)
-    - [edit node.cfg](#edit-nodecfg)
     - [create `.env` file following:](#create-env-file-following)
   - [References](#references)
 
@@ -16,22 +15,33 @@
 
 ## basic
 
-### edit node.cfg
-
-change **interface** to which interface you will monitor
+> defined to work with treafik
 
 ### create `.env` file following:
 
 ```env
-# NODE_ROLE=manager
-NETWORK_MODE=overlay
+# GENERAL variables (mostly by default, change as needed)
+# ______________________________________________________________________________
+NODE_ROLE=manager
 
-VERSION=VERSION:-5.1.1
+# GENERAL sources to be used (set by default, change as needed)
+# ______________________________________________________________________________
+RESOURCES_LIMITS_CPUS=1
+RESOURCES_LIMITS_MEMORY=1g
+RESOURCES_RESERVATIONS_CPUS=0.001
+RESOURCES_RESERVATIONS_MEMORY=32m
+
+# APPLICATION version for easy update
+# ______________________________________________________________________________
+VERSION=7.1
 ```
 
 ---
 
 ## References
 
+- <https://github.com/zeek/zeek>
+  - <https://github.com/zeek/zeek/tree/master/docker>
+- <https://hub.docker.com/r/zeek/zeek>
 - <https://docs.zeek.org/en/master/install.html#docker-images>
-- <https://hub.docker.com/r/zeekurity/zeek>
+- <https://docs.zeek.org/en/master/quickstart.html>
