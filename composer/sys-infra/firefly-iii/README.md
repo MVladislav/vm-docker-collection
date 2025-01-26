@@ -58,9 +58,9 @@ RESOURCES_RESERVATIONS_MEMORY_MARIADB=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_FIREFLY=version-6.1.13
-VERSION_MARIADB=11.3.2
-VERSION_ALPINE=3.19.1
+VERSION_FIREFLY=version-6.1.25
+VERSION_MARIADB=11.6.2
+VERSION_ALPINE=3.21.2
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________

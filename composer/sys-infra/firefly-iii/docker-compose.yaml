@@ -4,13 +4,13 @@ x-basic-deploy-labels: &basic-deploy-labels
     - traefik.enable=true
     - traefik.docker.lbswarm=${LB_SWARM:-true}
     - traefik.docker.network=proxy
-    - traefik.http.routers.fireflyiii.entrypoints=https
+    - traefik.http.routers.fireflyiii.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
     - traefik.http.routers.fireflyiii.rule=Host(`${DOMAIN?domain variable not set}`)
     - traefik.http.routers.fireflyiii.tls=true
+    - traefik.http.routers.fireflyiii.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
     - traefik.http.routers.fireflyiii.service=fireflyiii
     - traefik.http.services.fireflyiii.loadbalancer.server.scheme=${PROTOCOL:-http}
     - traefik.http.services.fireflyiii.loadbalancer.server.port=${PORT:-8080}
-    - traefik.http.routers.fireflyiii.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
 
 x-basic-deploy: &basic-deploy
   mode: replicated
@@ -20,8 +20,10 @@ x-basic-deploy: &basic-deploy
     constraints:
       - "node.role==${NODE_ROLE:-manager}"
       - node.platform.os == linux
+  update_config:
+    order: stop-first
   restart_policy:
-    condition: on-failure
+    condition: any
   resources:
     limits:
       cpus: ${RESOURCES_LIMITS_CPUS:-1}
@@ -69,7 +71,7 @@ services:
   ##############################################################################
   fireflyiii:
     # https://hub.docker.com/r/fireflyiii/core
-    image: fireflyiii/core:${VERSION_FIREFLY:-version-6.1.13}
+    image: fireflyiii/core:${VERSION_FIREFLY:-version-6.1.25}
     <<: [*basic, *basic-deploy-labels]
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels]
@@ -145,7 +147,7 @@ services:
   ##############################################################################
   mariadb:
     # https://hub.docker.com/_/mariadb
-    image: mariadb:${VERSION_MARIADB:-11.3.2}
+    image: mariadb:${VERSION_MARIADB:-11.6.2}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -187,7 +189,7 @@ services:
   ##############################################################################
   fireflyiii_cron:
     # https://hub.docker.com/_/alpine
-    image: alpine:${VERSION_ALPINE:-3.19.1}
+    image: alpine:${VERSION_ALPINE:-3.21.2}
     <<: *basic
     deploy:
       <<: *basic-deploy
