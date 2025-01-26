@@ -20,8 +20,10 @@ x-basic-deploy: &basic-deploy
     constraints:
       - "node.role==${NODE_ROLE:-manager}"
       - node.platform.os == linux
+  update_config:
+    order: stop-first
   restart_policy:
-    condition: on-failure
+    condition: any
   resources:
     limits:
       cpus: ${RESOURCES_LIMITS_CPUS:-4}
@@ -65,8 +67,8 @@ x-basic: &basic
 ################################################################################
 ################################################################################
 ################################################################################
-x-op-image: &image
-  image: openproject/openproject:${VERSION_OPENPROJECT:-14-slim}
+x-op-image: &image # https://hub.docker.com/r/openproject/openproject
+  image: openproject/openproject:${VERSION_OPENPROJECT:-15-slim}
 x-op-app: &app
   <<: *image
   environment:
@@ -159,7 +161,7 @@ services:
   ##############################################################################
   cache:
     # https://hub.docker.com/_/memcached
-    image: memcached:${VERSION_MEMCACHED:-1.6.27-alpine}
+    image: memcached:${VERSION_MEMCACHED:-1.6.34-alpine}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -172,7 +174,7 @@ services:
   ##############################################################################
   postgresql:
     # https://hub.docker.com/_/postgres
-    image: postgres:${VERSION_POSTGRESQL:-16.2-alpine3.19}
+    image: postgres:${VERSION_POSTGRESQL:-17.2-alpine}
     <<: *basic
     deploy:
       <<: *basic-deploy

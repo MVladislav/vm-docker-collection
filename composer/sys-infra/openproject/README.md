@@ -51,9 +51,9 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_OPENPROJECT=14-slim
-VERSION_MEMCACHED=1.6.27-alpine
-VERSION_POSTGRESQL=16.2-alpine3.19
+VERSION_OPENPROJECT=15-slim
+VERSION_MEMCACHED=1.6.34-alpine
+VERSION_POSTGRESQL=17.2-alpine
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
