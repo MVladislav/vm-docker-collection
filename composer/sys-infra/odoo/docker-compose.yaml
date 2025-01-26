@@ -61,7 +61,7 @@ services:
   ##############################################################################
   odoo:
     # https://hub.docker.com/_/odoo/
-    image: odoo:${VERSION_ODOO:-17.0}
+    image: odoo:${VERSION_ODOO:-18.0}
     <<: [*basic, *basic-deploy-labels]
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels]

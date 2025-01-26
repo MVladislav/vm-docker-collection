@@ -58,7 +58,7 @@ RESOURCES_RESERVATIONS_MEMORY_POSTGRESQL=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_ODOO=17.0
+VERSION_ODOO=18.0
 VERSION_POSTGRESQL=17.2-alpine
 ```
 
