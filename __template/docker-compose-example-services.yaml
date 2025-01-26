@@ -101,6 +101,7 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-postgresql}
       POSTGRES_USER: ${POSTGRES_USER:-postgresql}
       POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password_file
+      PGDATA: /var/lib/postgresql/data
     volumes:
       # - /etc/timezone:/etc/timezone:ro
       # - /etc/localtime:/etc/localtime:ro
