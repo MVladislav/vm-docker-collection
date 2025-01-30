@@ -25,7 +25,7 @@ and can trigger alerts if some condition is observed to be true.
 
 ## basic
 
-> defined to work with treafik
+> defined to work with traefik
 
 ### base config setup
 

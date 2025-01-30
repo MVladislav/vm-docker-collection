@@ -16,7 +16,7 @@
 
 ## basic
 
-> defined to work with treafik
+> defined to work with traefik
 
 > **this is not working in swarm mode** \
 > **it can only be started with network in bride mode**

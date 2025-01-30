@@ -20,7 +20,7 @@
 
 ## basic
 
-> defined to work with treafik
+> defined to work with traefik
 
 ### create your `secrets`:
 

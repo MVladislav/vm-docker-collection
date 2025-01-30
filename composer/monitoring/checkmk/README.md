@@ -20,7 +20,7 @@ A tool for Infrastructure & Application Monitoring. It is a software developed f
 
 ## basic
 
-> defined to work with treafik
+> defined to work with traefik
 
 ### create `.env` file following:
 
