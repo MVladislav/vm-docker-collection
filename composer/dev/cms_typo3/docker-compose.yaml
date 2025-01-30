@@ -75,13 +75,15 @@ services:
     cap_add:
       - SETGID
       - SETUID
+    environment:
+      - TYPO3_CONTEXT=Development
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - uploads:/var/www/html/uploads
-      - ./fileadmin/:/var/www/html/fileadmin
-      - ./typo3conf:/var/www/html/typo3conf
-      - ./typo3conf/ext:/var/www/html/typo3conf/ext
+      - ${PWD}/typo3/fileadmin/:/var/www/html/fileadmin
+      - ${PWD}/typo3/typo3conf:/var/www/html/typo3conf
+      - ${PWD}/typo3/typo3conf/ext:/var/www/html/typo3conf/ext
     networks:
       default: {}
       proxy: {}

@@ -12,6 +12,7 @@
     - [create `.env` file following:](#create-env-file-following)
       - [example short .env](#example-short-env)
   - [Helper](#helper)
+    - [mysql dump db](#mysql-dump-db)
     - [traefik and logging](#traefik-and-logging)
     - [mariadb import](#mariadb-import)
       - [install from shell](#install-from-shell)
@@ -80,6 +81,12 @@ DOMAIN=page.home.local
 ```
 
 ## Helper
+
+### mysql dump db
+
+```sh
+$mysqldump --opt --no-tablespaces -h <HOST> -u <USERNAME> -p <DBNAME> > db-dump.sql
+```
 
 ### traefik and logging
 

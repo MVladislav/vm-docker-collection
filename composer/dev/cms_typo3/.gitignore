@@ -19,21 +19,24 @@ config/secrets/*
 sql/*
 !sql/.gitempty
 
-!fileadmin/
-fileadmin/*
-!fileadmin/.gitempty
+!typo3/
+typo3/*
 
-!typo3conf/
-typo3conf/*
+!typo3/fileadmin/
+typo3/fileadmin/*
+!typo3/fileadmin/.gitempty
 
-!typo3conf/ext/
-typo3conf/ext/*
-!typo3conf/ext/.gitempty
+!typo3/typo3conf/
+typo3/typo3conf/*
 
-!typo3conf/sites/
-typo3conf/sites/*
-!typo3conf/sites/.gitempty
+!typo3/typo3conf/ext/
+typo3/typo3conf/ext/*
+!typo3/typo3conf/ext/.gitempty
 
-!typo3conf/system/
-typo3conf/system/*
-!typo3conf/system/.gitempty
+!typo3/typo3conf/sites/
+typo3/typo3conf/sites/*
+!typo3/typo3conf/sites/.gitempty
+
+!typo3/typo3conf/system/
+typo3/typo3conf/system/*
+!typo3/typo3conf/system/.gitempty
