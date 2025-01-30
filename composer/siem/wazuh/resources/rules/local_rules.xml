@@ -1,0 +1,6 @@
+<group name="clamd,freshclam,">
+  <rule id="52502" level="8" overwrite="yes">
+    <!-- TODO -->
+    <match>FOUND$</match>
+  </rule>
+</group>

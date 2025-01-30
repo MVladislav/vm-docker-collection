@@ -5,6 +5,6 @@ hosts:
       port: 55000
       username: wazuh-wui
       password: ""
-      run_as: false
-#
-# enrollment.dns: "siem.home.local"
+      run_as: true
+
+enrollment.dns: "siem.home.local"
