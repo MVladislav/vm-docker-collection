@@ -21,7 +21,7 @@
 
 ## basic
 
-> defined to work with treafik
+> defined to work with traefik
 
 ### create your `secrets`:
 
@@ -47,7 +47,7 @@ LB_SWARM=true
 DOMAIN=<HOST>.home.local # not set in docker-compose, needs to be copied to .env
 PROTOCOL=https
 PORT=443
-# default-secured@file | public-whitelist@file | authentik@file
+# default-secured@file | public-secured@file | authentik@file
 MIDDLEWARE_SECURED=default-secured@file
 
 # GENERAL sources to be used (set by default, change as needed)
