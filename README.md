@@ -160,6 +160,7 @@ A docker collection with composer for a fast start-up.
 |                       | Testing            | [netpicker](https://github.com/netpicker/netpicker)                                         | Test your network compliance, design and security.                                  |
 |                       | Wiki               | [outline](https://github.com/outline/outline)                                               | The fastest knowledge base for growing teams.                                       |
 |                       | Wiki               | [wiki.js](https://github.com/requarks/wiki)                                                 | A modern and powerful wiki app built on Node.js                                     |
+|                       | VPN                | [WGDashboard](https://github.com/donaldzou/WGDashboard)                                     | Simple dashboard for WireGuard VPN                                                  |
 |                       |                    |                                                                                             |                                                                                     |
 
 ## best practice start-up
