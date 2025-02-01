@@ -1,0 +1,248 @@
+---
+x-basic-deploy-labels: &basic-deploy-labels
+  labels:
+    - traefik.enable=true
+    - traefik.swarm.lbswarm=${LB_SWARM:-true}
+    - traefik.swarm.network=proxy
+    - traefik.http.routers.dawarich.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.dawarich.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.dawarich.tls=true
+    - traefik.http.routers.dawarich.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.dawarich.service=dawarich
+    - traefik.http.services.dawarich.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.dawarich.loadbalancer.server.port=${PORT:-3000}
+
+x-basic-deploy: &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  update_config:
+    order: stop-first
+  restart_policy:
+    condition: any
+  resources:
+    limits:
+      cpus: ${RESOURCES_LIMITS_CPUS:-0.50}
+      memory: ${RESOURCES_LIMITS_MEMORY:-4g}
+    reservations:
+      cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
+      memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
+
+x-basic: &basic
+  env_file: ${ENV_FILE:-.env}
+  cap_drop: ["ALL"]
+  security_opt:
+    - no-new-privileges=true
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 655360
+      hard: 655360
+    fsize: -1
+    as: -1
+  networks:
+    default: {}
+  healthcheck:
+    disable: true
+  restart: always
+
+x-logging: &logging
+  logging:
+    driver: "json-file"
+    options:
+      max-size: "100m"
+      max-file: "5"
+
+################################################################################
+################################################################################
+################################################################################
+
+x-base-env: &base-env
+  RAILS_ENV: ${RAILS_ENV:-production}
+  # TIME_ZONE: ${TIME_ZONE:-Europe/Berlin}
+  REDIS_URL: redis://valkey:6379/0
+  DATABASE_HOST: postgresql
+  DATABASE_NAME: ${POSTGRES_DB:-postgresql}
+  DATABASE_USERNAME: ${POSTGRES_USER:-postgresql}
+  DATABASE_PASSWORD_FILE: /run/secrets/postgres_password_file
+  APPLICATION_HOSTS: localhost,::1,127.0.0.1,${DOMAIN?domain variable not set}
+  APPLICATION_PROTOCOL: ${APPLICATION_PROTOCOL:-http}
+  DISTANCE_UNIT: ${DISTANCE_UNIT:-km}
+  PROMETHEUS_EXPORTER_ENABLED: ${PROMETHEUS_EXPORTER_ENABLED:-false}
+  PROMETHEUS_EXPORTER_PORT: ${PROMETHEUS_EXPORTER_PORT:-9394}
+  # More on telemetry: https://dawarich.app/docs/tutorials/telemetry
+  ENABLE_TELEMETRY: ${ENABLE_TELEMETRY:-false}
+  SECRET_KEY_BASE: ${SECRET_KEY_BASE:-1234567890}
+  RAILS_LOG_TO_STDOUT: ${RAILS_LOG_TO_STDOUT:-true}
+
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  dawarich_app:
+    # https://hub.docker.com/r/freikin/dawarich
+    image: freikin/dawarich:${VERSION_DAWARICH:-0.23.5}
+    <<: [*basic, *basic-deploy-labels, *logging]
+    deploy:
+      <<: [*basic-deploy, *basic-deploy-labels]
+    stdin_open: true
+    tty: true
+    secrets:
+      - postgres_password_file
+    environment:
+      <<: *base-env
+      MIN_MINUTES_SPENT_IN_CITY: ${MIN_MINUTES_SPENT_IN_CITY:-60}
+      PROMETHEUS_EXPORTER_HOST: 0.0.0.0
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - dawarich_public:/var/app/public
+      - dawarich_watched:/var/app/tmp/imports/watched
+    entrypoint: web-entrypoint.sh
+    command: ["bin/rails", "server", "-p", "3000", "-b", "::"]
+    networks:
+      default: {}
+      proxy: {}
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget -qO - http://127.0.0.1:3000/api/v1/health | grep -q '\"status\"\\s*:\\s*\"ok\"'",
+        ]
+      interval: 10s
+      retries: 30
+      start_period: 30s
+      timeout: 10s
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  dawarich_sidekiq:
+    # https://hub.docker.com/r/freikin/dawarich
+    image: freikin/dawarich:${VERSION_DAWARICH:-0.23.5}
+    <<: [*basic, *logging]
+    deploy:
+      <<: *basic-deploy
+    stdin_open: true
+    tty: true
+    secrets:
+      - postgres_password_file
+    environment:
+      <<: *base-env
+      BACKGROUND_PROCESSING_CONCURRENCY: ${BACKGROUND_PROCESSING_CONCURRENCY:-10}
+      PROMETHEUS_EXPORTER_HOST: dawarich_app
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - dawarich_public:/var/app/public
+      - dawarich_watched:/var/app/tmp/imports/watched
+    entrypoint: sidekiq-entrypoint.sh
+    command: ["sidekiq"]
+    healthcheck:
+      test:
+        ["CMD-SHELL", "bundle exec sidekiqmon processes | grep $${HOSTNAME}"]
+      interval: 10s
+      retries: 30
+      start_period: 30s
+      timeout: 10s
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  postgresql:
+    # https://hub.docker.com/_/postgres
+    image: postgres:${VERSION_POSTGRESQL:-17.2-alpine}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_POSTGRESQL:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_POSTGRESQL:-512M}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_POSTGRESQL:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_POSTGRESQL:-32m}
+    cap_add:
+      - SETGID
+      - SETUID
+      - DAC_OVERRIDE
+    secrets:
+      - postgres_password_file
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-postgresql}
+      POSTGRES_USER: ${POSTGRES_USER:-postgresql}
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password_file
+      PGDATA: /var/lib/postgresql/data
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - postgresql:/var/lib/postgresql/data
+      - valkey:/var/shared
+    shm_size: 1G
+    networks:
+      default: {}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
+      start_period: 2s
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  valkey:
+    # https://hub.docker.com/r/valkey/valkey
+    image: valkey/valkey:${VERSION_VALKEY:-8.0.2-alpine}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_VALKEY:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_VALKEY:-128M}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_VALKEY:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_VALKEY:-32m}
+    cap_add:
+      - SETGID
+      - SETUID
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - valkey:/data
+    command: --save 300 1 --loglevel warning
+    healthcheck:
+      test: ["CMD-SHELL", "valkey-cli ping | grep PONG"]
+      start_period: 2s
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  default:
+    driver: ${NETWORK_MODE:-bridge}
+    attachable: true
+    driver_opts:
+      encrypted: "true"
+  proxy:
+    external: true
+
+volumes:
+  postgresql:
+  valkey:
+  dawarich_public:
+  dawarich_watched:
+
+secrets:
+  postgres_password_file:
+    file: config/secrets/postgres_password_file.txt
