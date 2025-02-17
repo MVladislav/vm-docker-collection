@@ -218,6 +218,7 @@ services:
 
       - wazuh-dashboard-config:/usr/share/wazuh-dashboard/data/wazuh/config
       - wazuh-dashboard-custom:/usr/share/wazuh-dashboard/plugins/wazuh/public/assets/custom
+      - wazuh-dashboard-plugins:/usr/share/wazuh-dashboard/plugins
     networks:
       default: {}
       proxy: {}
@@ -629,6 +630,8 @@ volumes:
     name: wazuh-dashboard-config
   wazuh-dashboard-custom:
     name: wazuh-dashboard-custom
+  wazuh-dashboard-plugins:
+    name: wazuh-dashboard-plugins
   master-wazuh-api-configuration:
     name: master-wazuh-api-configuration
   master-wazuh-etc:

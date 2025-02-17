@@ -13,6 +13,7 @@
     - [create `.env` file following:](#create-env-file-following)
       - [example short .env](#example-short-env)
   - [Notes](#notes)
+    - [Plugin install](#plugin-install)
     - [Password protected enrollment](#password-protected-enrollment)
       - [Remove an agent](#remove-an-agent)
   - [References](#references)
@@ -107,6 +108,28 @@ DOMAIN=siem.home.local
 
 ## Notes
 
+### Plugin install
+
+```sh
+$docker exec -it "$(docker ps -q -f name=wazuh_wazuh-dashboard)" /usr/share/wazuh-dashboard/bin/opensearch-dashboards-plugin install anomalyDetectionDashboards
+$docker exec -it "$(docker ps -q -f name=wazuh_wazuh-dashboard)" /usr/share/wazuh-dashboard/bin/opensearch-dashboards-plugin install observabilityDashboards
+$docker exec -it "$(docker ps -q -f name=wazuh_wazuh-dashboard)" /usr/share/wazuh-dashboard/bin/opensearch-dashboards-plugin install mlCommonsDashboards
+$docker exec -it "$(docker ps -q -f name=wazuh_wazuh-dashboard)" /usr/share/wazuh-dashboard/bin/opensearch-dashboards-plugin install assistantDashboards
+$docker service update wazuh_wazuh-master
+$docker exec -it "$(docker ps -q -f name=wazuh_wazuh-dashboard)" /usr/share/wazuh-dashboard/bin/opensearch-dashboards-plugin list
+```
+
+> Navigate to the Indexer management > DevTools tab.
+
+```txt
+PUT /_cluster/settings
+{
+  "persistent" : {
+    "plugins.ml_commons.only_run_on_ml_node":"false"
+  }
+}
+```
+
 ### Password protected enrollment
 
 ```sh
@@ -142,6 +165,9 @@ $docker exec -it "$(docker ps -q -f name=wazuh_wazuh-master)" /var/ossec/bin/man
 - logs
   - <https://docs.microsoft.com/en-us/sysinternals/downloads/sysmon>
     - <https://wazuh.com/blog/learn-to-detect-threats-on-windows-by-monitoring-sysmon-events/>
+  - <https://documentation.wazuh.com/current/user-manual/manager/event-logging.html>
+  - <https://documentation.wazuh.com/current/user-manual/wazuh-indexer/wazuh-indexer-indices.html#wazuh-archives-indices>
+  - <https://fluentbit.io/how-it-works/>
 - decoder
   - <https://documentation.wazuh.com/current/user-manual/ruleset/custom.html>
   - <https://github.com/wazuh/wazuh/tree/master/ruleset/decoders>
@@ -152,9 +178,14 @@ $docker exec -it "$(docker ps -q -f name=wazuh_wazuh-master)" /var/ossec/bin/man
   - <https://documentation.wazuh.com/current/user-manual/ruleset/decoders/sibling-decoders.html>
   - <https://medium.com/@HirushanTech/creating-custom-decoders-on-wazuh-siem-67563dfe9aff>
   - <https://github.com/socfortress/Wazuh-Rules>
+- rules
+  - <https://documentation.wazuh.com/current/user-manual/ruleset/ruleset-xml-syntax/rules.html#rules-options>
 - additional service include references
   - <https://www.youtube.com/watch?v=jNSYinFdWAI>
   - <https://docs.opnsense.org/manual/wazuh-agent.html>
 - YT
   - <https://www.youtube.com/watch?v=RjvKn0Q3rgg>
   - <https://www.youtube.com/@taylorwalton_socfortress/videos>
+- plugins
+  - llm
+    - <https://wazuh.com/blog/leveraging-claude-haiku-in-the-wazuh-dashboard-for-llm-powered-insights/>
