@@ -26,7 +26,7 @@ x-basic-deploy: &basic-deploy
     condition: any
   resources:
     limits:
-      cpus: ${RESOURCES_LIMITS_CPUS:-0.2}
+      cpus: ${RESOURCES_LIMITS_CPUS:-0.5}
       memory: ${RESOURCES_LIMITS_MEMORY:-250m}
     reservations:
       cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
