@@ -2,15 +2,15 @@
 x-basic-deploy-labels: &basic-deploy-labels
   labels:
     - traefik.enable=true
-    - traefik.docker.lbswarm=${LB_SWARM:-true}
-    - traefik.docker.network=proxy
-    - traefik.http.routers.<router_name>${SERVICE_NAME_POST:-}.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
-    - traefik.http.routers.<router_name>${SERVICE_NAME_POST:-}.rule=Host(`${DOMAIN?domain variable not set}`)
-    - traefik.http.routers.<router_name>${SERVICE_NAME_POST:-}.tls=true
-    - traefik.http.routers.<router_name>${SERVICE_NAME_POST:-}.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
-    - traefik.http.routers.<router_name>${SERVICE_NAME_POST:-}.service=<router_name>${SERVICE_NAME_POST:-}
-    - traefik.http.services.<router_name>${SERVICE_NAME_POST:-}.loadbalancer.server.scheme=${PROTOCOL:-http}
-    - traefik.http.services.<router_name>${SERVICE_NAME_POST:-}.loadbalancer.server.port=${PORT:-8000}
+    - traefik.swarm.lbswarm=${LB_SWARM:-true}
+    - traefik.swarm.network=proxy
+    - traefik.http.routers.paperless.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.paperless.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.paperless.tls=true
+    - traefik.http.routers.paperless.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.paperless.service=paperless
+    - traefik.http.services.paperless.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.paperless.loadbalancer.server.port=${PORT:-8000}
 
 x-basic-deploy: &basic-deploy
   mode: replicated
@@ -20,12 +20,14 @@ x-basic-deploy: &basic-deploy
     constraints:
       - "node.role==${NODE_ROLE:-manager}"
       - node.platform.os == linux
+  update_config:
+    order: stop-first
   restart_policy:
-    condition: on-failure
+    condition: any
   resources:
     limits:
-      cpus: ${RESOURCES_LIMITS_CPUS:-8}
-      memory: ${RESOURCES_LIMITS_MEMORY:-8g}
+      cpus: ${RESOURCES_LIMITS_CPUS:-4}
+      memory: ${RESOURCES_LIMITS_MEMORY:-4g}
     reservations:
       cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
       memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
@@ -34,14 +36,14 @@ x-basic: &basic
   env_file: ${ENV_FILE:-.env}
   cap_drop: ["ALL"]
   security_opt:
-    - no-new-privileges:true
+    - no-new-privileges=true
   ulimits:
     memlock:
       soft: -1
       hard: -1
     nofile:
-      soft: 65535
-      hard: 65535
+      soft: 655360
+      hard: 655360
     fsize: -1
     as: -1
   networks:
@@ -59,13 +61,14 @@ services:
   ##############################################################################
   paperless:
     # https://github.com/paperless-ngx/paperless-ngx/pkgs/container/paperless-ngx
-    image: ghcr.io/paperless-ngx/paperless-ngx:${VERSION_PAPERLESS:-2.8}
+    image: ghcr.io/paperless-ngx/paperless-ngx:${VERSION_PAPERLESS:-2.14}
     <<: [*basic, *basic-deploy-labels]
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels]
     cap_add:
       - DAC_OVERRIDE
       - CHOWN
+      - FOWNER
       - SETGID
       - SETUID
     secrets:
@@ -88,12 +91,16 @@ services:
       PAPERLESS_SECRET_KEY: /run/secrets/paperless_secret_key
 
       # https://packages.debian.org/search?keywords=tesseract-ocr-&searchon=names&suite=buster
-      PAPERLESS_OCR_LANGUAGES: eng+deu
+      PAPERLESS_OCR_LANGUAGES: ${PAPERLESS_OCR_LANGUAGES:-eng+deu}
 
-      # PAPERLESS_TIKA_ENABLED: 1
-      # PAPERLESS_TIKA_GOTENBERG_ENDPOINT: http://gotenberg:3000
-      # PAPERLESS_TIKA_ENDPOINT: http://tika:9998
+      # PAPERLESS_FILENAME_FORMAT: "{{ created_year }}/{{ correspondent }}/{{ title }}"
+
+      PAPERLESS_TIKA_ENABLED: ${PAPERLESS_TIKA_ENABLED:-1}
+      PAPERLESS_TIKA_GOTENBERG_ENDPOINT: http://gotenberg:3000
+      PAPERLESS_TIKA_ENDPOINT: http://tika:9998
     volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
       - data:/usr/src/paperless/data
       - media:/usr/src/paperless/media
       - export:/usr/src/paperless/export
@@ -110,42 +117,56 @@ services:
   ##############################################################################
   ##############################################################################
   ##############################################################################
-  # gotenberg:
-  #   # https://hub.docker.com/r/gotenberg/gotenberg
-  #   image: gotenberg/gotenberg:${VERSION_GOTENBERG:-8.5.1}
-  #   <<: *basic
-  #   deploy:
-  #     <<: *basic-deploy
-  #   volumes:
-  #     - /etc/timezone:/etc/timezone:ro
-  #     - /etc/localtime:/etc/localtime:ro
-  #   command:
-  #     - "gotenberg"
-  #     - "--chromium-disable-javascript=true"
-  #     - "--chromium-allow-list=file:///tmp/.*"
+  gotenberg:
+    # https://hub.docker.com/r/gotenberg/gotenberg
+    image: gotenberg/gotenberg:${VERSION_GOTENBERG:-8.17}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_GOTENBERG:-2}
+          memory: ${RESOURCES_LIMITS_MEMORY_GOTENBERG:-1g}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_GOTENBERG:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_GOTENBERG:-32m}
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    command:
+      - "gotenberg"
+      - "--chromium-disable-javascript=true"
+      - "--chromium-allow-list=file:///tmp/.*"
 
-  # tika:
-  #   # https://hub.docker.com/r/apache/tika
-  #   image: apache/tika:${VERSION_TIKA:-2.9.2.1}
-  #   <<: *basic
-  #   deploy:
-  #     <<: *basic-deploy
-  #   volumes:
-  #     - /etc/timezone:/etc/timezone:ro
-  #     - /etc/localtime:/etc/localtime:ro
+  tika:
+    # https://hub.docker.com/r/apache/tika
+    image: apache/tika:${VERSION_TIKA:-3.1.0.0}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_TIKA:-2}
+          memory: ${RESOURCES_LIMITS_MEMORY_TIKA:-1g}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_TIKA:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_TIKA:-32m}
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
 
   ##############################################################################
   ##############################################################################
   ##############################################################################
   mariadb:
     # https://hub.docker.com/_/mariadb
-    image: mariadb:${VERSION_MARIADB:-11.3.2}
+    image: mariadb:${VERSION_MARIADB:-11.7.2}
     <<: *basic
     deploy:
       <<: *basic-deploy
       resources:
         limits:
-          cpus: ${RESOURCES_LIMITS_CPUS_MARIADB:-1}
+          cpus: ${RESOURCES_LIMITS_CPUS_MARIADB:-2}
           memory: ${RESOURCES_LIMITS_MEMORY_MARIADB:-512M}
         reservations:
           cpus: ${RESOURCES_RESERVATIONS_CPUS_MARIADB:-0.001}
@@ -180,14 +201,14 @@ services:
   ##############################################################################
   valkey:
     # https://hub.docker.com/r/valkey/valkey
-    image: valkey/valkey:${VERSION_VALKEY:-7.2.5-alpine}
+    image: valkey/valkey:${VERSION_VALKEY:-8.0.2-alpine}
     <<: *basic
     deploy:
       <<: *basic-deploy
       resources:
         limits:
           cpus: ${RESOURCES_LIMITS_CPUS_VALKEY:-2}
-          memory: ${RESOURCES_LIMITS_MEMORY_VALKEY:-8G}
+          memory: ${RESOURCES_LIMITS_MEMORY_VALKEY:-1G}
         reservations:
           cpus: ${RESOURCES_RESERVATIONS_CPUS_VALKEY:-0.001}
           memory: ${RESOURCES_RESERVATIONS_MEMORY_VALKEY:-32m}
@@ -220,11 +241,17 @@ networks:
 
 volumes:
   data: {}
-  media: {}
   export: {}
   consume: {}
   mariadb: {}
   valkey: {}
+
+  media:
+    driver: local
+    driver_opts:
+      type: cifs
+      device: "//${NAS_HOST}${NAS_PATH:-/}"
+      o: "username=${NAS_USERNAME},password=${NAS_PASSWORD},vers=3.0,uid=${NAS_PUID:-1000},gid=${NAS_PGID:-1000}"
 
 secrets:
   paperless_admin_password:
