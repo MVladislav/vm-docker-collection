@@ -28,13 +28,15 @@ http:
 
     default-headers:
       headers:
-        frameDeny: true
         browserXssFilter: true
         contentTypeNosniff: true
         forceSTSHeader: true
+        frameDeny: true
+        referrerPolicy: "strict-origin-when-cross-origin"
         stsIncludeSubdomains: true
         stsPreload: true
         stsSeconds: 15552000
+        # contentSecurityPolicy: "default-src 'self'"
         customFrameOptionsValue: SAMEORIGIN
         customRequestHeaders:
           X-Forwarded-Proto: https
