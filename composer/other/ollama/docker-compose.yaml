@@ -4,13 +4,35 @@ x-basic-deploy-labels: &basic-deploy-labels
     - traefik.enable=true
     - traefik.docker.lbswarm=${LB_SWARM:-true}
     - traefik.docker.network=proxy
+    - traefik.http.routers.webui.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.webui.rule=Host(`${DOMAIN_WEBUI?domain variable not set}`)
+    - traefik.http.routers.webui.tls=true
+    - traefik.http.routers.webui.middlewares=${MIDDLEWARE_SECURED_WEBUI:-default-secured@file}
+    - traefik.http.routers.webui.service=webui
+    - traefik.http.services.webui.loadbalancer.server.scheme=${PROTOCOL_WEBUI:-http}
+    - traefik.http.services.webui.loadbalancer.server.port=${PORT_WEBUI:-8080}
+
+x-basic-deploy-labels-ollama: &basic-deploy-labels-ollama
+  labels:
+    - traefik.enable=true
+    - traefik.docker.lbswarm=${LB_SWARM:-true}
+    - traefik.docker.network=proxy
     - traefik.http.routers.ollama.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
-    - traefik.http.routers.ollama.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.ollama.rule=Host(`${DOMAIN_OLLAMA?domain variable not set}`)
     - traefik.http.routers.ollama.tls=true
-    - traefik.http.routers.ollama.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.ollama.middlewares=${MIDDLEWARE_SECURED_OLLAMA:-default-secured@file}
     - traefik.http.routers.ollama.service=ollama
-    - traefik.http.services.ollama.loadbalancer.server.scheme=${PROTOCOL:-http}
-    - traefik.http.services.ollama.loadbalancer.server.port=${PORT:-8080}
+    - traefik.http.services.ollama.loadbalancer.server.scheme=${PROTOCOL_OLLAMA:-http}
+    - traefik.http.services.ollama.loadbalancer.server.port=${PORT_OLLAMA:-11434}
+  # labels:
+  #   - traefik.tcp.routers.ollama.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+  #   - traefik.tcp.routers.ollama.rule=HostSNI(`${DOMAIN_OLLAMA?domain variable not set}`)
+  #   - traefik.tcp.routers.ollama.tls=true
+  #   - traefik.tcp.routers.ollama.tls.passthrough=false
+  #   - traefik.tcp.routers.ollama.middlewares=${MIDDLEWARE_SECURED_OLLAMA:-default-whitelist@file}
+  #   - traefik.tcp.routers.ollama.service=ollama
+  #   - traefik.tcp.services.ollama.loadbalancer.server.scheme=${PROTOCOL_OLLAMA:-http}
+  #   - traefik.tcp.services.ollama.loadbalancer.server.port=${PORT_OLLAMA:-11434}
 
 x-basic-deploy: &basic-deploy
   mode: replicated
@@ -51,7 +73,6 @@ x-basic: &basic
     fsize: -1
     as: -1
   networks:
-    default: {}
     proxy: {}
   healthcheck:
     disable: true
@@ -64,12 +85,31 @@ services:
   ##############################################################################
   ##############################################################################
   ##############################################################################
+  open-webui:
+    # https://github.com/open-webui/open-webui/pkgs/container/open-webui
+    image: ghcr.io/open-webui/open-webui:${VERSION_OPEN_WEBUI:-latest}
+    <<: [*basic, *basic-deploy-labels]
+    deploy:
+      <<: [*basic-deploy, *basic-deploy-labels]
+    environment:
+      OLLAMA_BASE_URL: http://ollama:11434
+      SCARF_NO_ANALYTICS: ${SCARF_NO_ANALYTICS:-true}
+      DO_NOT_TRACK: ${DO_NOT_TRACK:-true}
+      ANONYMIZED_TELEMETRY: ${ANONYMIZED_TELEMETRY:-false}
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - open-webui:/app/backend/data
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
   ollama:
     # https://hub.docker.com/r/ollama/ollama
     image: ollama/ollama:${VERSION_OLLAMA:-rocm}
-    <<: *basic
+    <<: [*basic, *basic-deploy-labels-ollama]
     deploy:
-      <<: *basic-deploy
+      <<: [*basic-deploy, *basic-deploy-labels-ollama]
     ports:
       - target: 11434
         published: 11434
@@ -80,7 +120,6 @@ services:
     devices:
       - /dev/kfd # main compute interface
       - /dev/dri # Direct Rendering Interface
-      # - /dev/dri/renderD128 # instead of dri, pass each device individually (number needs to be adjust)
     group_add:
       - video
     volumes:
@@ -88,32 +127,10 @@ services:
       - /etc/localtime:/etc/localtime:ro
       - ollama:/root/.ollama
 
-  ##############################################################################
-  ##############################################################################
-  ##############################################################################
-  open-webui:
-    # https://github.com/open-webui/open-webui/pkgs/container/open-webui
-    image: ghcr.io/open-webui/open-webui:${VERSION_OPEN_WEBUI:-latest}
-    <<: [*basic, *basic-deploy-labels]
-    deploy:
-      <<: [*basic-deploy, *basic-deploy-labels]
-    environment:
-      OLLAMA_BASE_URL: http://ollama:11434
-    volumes:
-      - /etc/timezone:/etc/timezone:ro
-      - /etc/localtime:/etc/localtime:ro
-      - open-webui:/app/backend/data
-
 ################################################################################
 ################################################################################
 ################################################################################
 networks:
-  default:
-    name: ollama
-    driver: ${NETWORK_MODE:-bridge}
-    attachable: true
-    driver_opts:
-      encrypted: "true"
   proxy:
     external: true
 

@@ -30,11 +30,15 @@ NETWORK_MODE=overlay # by default "bridge"
 # GENERAL traefik variables (set by default, change as needed)
 # ______________________________________________________________________________
 LB_SWARM=true
-DOMAIN=ai.home.local # not set in docker-compose, needs to be copied to .env
-PROTOCOL=http
-PORT=8080
+DOMAIN_WEBUI=ai.home.local # not set in docker-compose, needs to be copied to .env
+DOMAIN_OLLAMA=ollama.home.local # not set in docker-compose, needs to be copied to .env
+PROTOCOL_WEBUI=http
+PORT_WEBUI=8080
+PORT_OLLAMA=11434
 # default-secured@file | public-whitelist@file | authentik@file
-MIDDLEWARE_SECURED=default-secured@file
+MIDDLEWARE_SECURED_WEBUI=default-secured@file
+# default-whitelist@file | public-whitelist@file
+MIDDLEWARE_SECURED_OLLAMA=default-whitelist@file
 
 # GENERAL sources to be used (set by default, change as needed)
 # ______________________________________________________________________________
@@ -45,7 +49,7 @@ RESOURCES_RESERVATIONS_MEMORY=8g
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_OLLAMA=0.1.34-rocm
+VERSION_OLLAMA=rocm
 VERSION_OPEN_WEBUI=git-90503be
 ```
 
@@ -53,7 +57,8 @@ VERSION_OPEN_WEBUI=git-90503be
 
 ```env
 NETWORK_MODE=overlay
-DOMAIN=ai.home.local
+DOMAIN_WEBUI=ai.home.local
+DOMAIN_OLLAMA=ollama.home.local
 ```
 
 #### download model
@@ -69,6 +74,10 @@ $docker exec -it "$(docker ps -q -f name=ollama-ollama)" ollama pull qwen2.5-cod
 #   openhermes
 #   openchat
 # deepseek-coder
+# deepseek-r1:7b
+# deepseek-r1:8b
+# deepseek-r1:14b
+# deepseek-r1:32b
 # starling-lm - summarisation and text analysis
 # zephyr - summarization
 ```
