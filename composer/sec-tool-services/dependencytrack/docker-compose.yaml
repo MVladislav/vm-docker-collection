@@ -1,0 +1,202 @@
+---
+x-basic-deploy-labels: &basic-deploy-labels
+  labels:
+    - traefik.enable=true
+    - traefik.swarm.lbswarm=${LB_SWARM:-true}
+    - traefik.swarm.network=proxy
+    - traefik.http.routers.dependencytrack.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.dependencytrack.rule=Host(`${DOMAIN_FRONT?domain variable not set}`)
+    - traefik.http.routers.dependencytrack.tls=true
+    - traefik.http.routers.dependencytrack.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.dependencytrack.service=dependencytrack
+    - traefik.http.services.dependencytrack.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.dependencytrack.loadbalancer.server.port=${PORT:-8080}
+
+x-basic-deploy-labels-api: &basic-deploy-labels-api
+  labels:
+    - traefik.enable=true
+    - traefik.swarm.lbswarm=${LB_SWARM:-true}
+    - traefik.swarm.network=proxy
+    - traefik.http.routers.dependencytrack-api.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.dependencytrack-api.rule=Host(`${DOMAIN_API?domain variable not set}`)
+    - traefik.http.routers.dependencytrack-api.tls=true
+    - traefik.http.routers.dependencytrack-api.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.dependencytrack-api.service=dependencytrack-api
+    - traefik.http.services.dependencytrack-api.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.dependencytrack-api.loadbalancer.server.port=${PORT:-8080}
+
+x-basic-deploy: &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  update_config:
+    order: stop-first
+  restart_policy:
+    condition: any
+  resources:
+    limits:
+      cpus: ${RESOURCES_LIMITS_CPUS:-2}
+      memory: ${RESOURCES_LIMITS_MEMORY:-4.5g}
+    reservations:
+      cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
+      memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
+
+x-basic: &basic
+  env_file: ${ENV_FILE:-.env}
+  # cap_add:
+  #   - CHOWN # (chown, chmod)
+  #   - DAC_OVERRIDE
+  #   - DAC_READ_SEARCH
+  #   - SETGID # (setgid, setgroups)
+  #   - SETUID # (setuid)
+  #   - FOWNER # (chmod, chown, or chgrp)
+  #   - FSETID
+  cap_drop: ["ALL"]
+  security_opt:
+    - no-new-privileges=true
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 655360
+      hard: 655360
+    fsize: -1
+    as: -1
+  networks:
+    default: {}
+    proxy: {}
+  healthcheck:
+    disable: true
+  restart: always
+
+################################################################################
+################################################################################
+################################################################################
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  apiserver:
+    # https://hub.docker.com/r/dependencytrack/apiserver
+    image: dependencytrack/apiserver:${VERSION_DTRACK:-4.12.5}
+    <<: [*basic, *basic-deploy-labels-api]
+    deploy:
+      <<: [*basic-deploy, *basic-deploy-labels-api]
+    secrets:
+      - postgres_password_file
+    environment:
+      ALPINE_DATABASE_MODE: "external"
+      ALPINE_DATABASE_URL: "jdbc:postgresql://postgresql:5432/${POSTGRES_DB:-dtrack}"
+      ALPINE_DATABASE_DRIVER: "org.postgresql.Driver"
+      ALPINE_DATABASE_USERNAME: ${POSTGRES_USER:-dtrack}
+      # ALPINE_DATABASE_PASSWORD: "dtrack"
+      ALPINE_DATABASE_PASSWORD_FILE: /run/secrets/postgres_password_file
+
+      # Optional Cross-Origin Resource Sharing (CORS) Headers
+      ALPINE_CORS_ENABLED: "true"
+      ALPINE_CORS_ALLOW_ORIGIN: "*"
+      ALPINE_CORS_ALLOW_METHODS: "GET, POST, PUT, DELETE, OPTIONS"
+      ALPINE_CORS_ALLOW_HEADERS: "Origin, Content-Type, Authorization, X-Requested-With, Content-Length, Accept, Origin, X-Api-Key, X-Total-Count, *"
+      ALPINE_CORS_EXPOSE_HEADERS: "Origin, Content-Type, Authorization, X-Requested-With, Content-Length, Accept, Origin, X-Api-Key, X-Total-Count"
+      ALPINE_CORS_ALLOW_CREDENTIALS: "true"
+      ALPINE_CORS_MAX_AGE: "3600"
+
+      # Optional HTTP Outbound Connection Timeout Settings. All values are in seconds.
+      # ALPINE_HTTP_TIMEOUT_CONNECTION: "30"
+      # ALPINE_HTTP_TIMEOUT_SOCKET: "30"
+      # ALPINE_HTTP_TIMEOUT_POOL: "60"
+
+      # Optional configuration for the Snyk analyzer
+      # SNYK_THREAD_BATCH_SIZE: "10"
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - dtrack-data:/data
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  frontend:
+    # https://hub.docker.com/r/dependencytrack/frontend
+    image: dependencytrack/frontend:${VERSION_DTRACK:-4.12.5}
+    <<: [*basic, *basic-deploy-labels]
+    deploy:
+      <<: [*basic-deploy, *basic-deploy-labels]
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_FRONT:-2}
+          memory: ${RESOURCES_LIMITS_MEMORY_FRONT:-1g}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_FRONT:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_FRONT:-32m}
+    environment:
+      API_BASE_URL: "https://${DOMAIN_API?domain variable not set}"
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      # - /host/path/to/config.json:/app/static/config.json
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  postgresql:
+    # https://hub.docker.com/_/postgres
+    image: postgres:${VERSION_POSTGRESQL:-17.3-alpine}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_POSTGRESQL:-2}
+          memory: ${RESOURCES_LIMITS_MEMORY_POSTGRESQL:-1G}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_POSTGRESQL:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_POSTGRESQL:-32m}
+    cap_add:
+      - SETGID
+      - SETUID
+      - DAC_OVERRIDE
+    secrets:
+      - postgres_password_file
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-dtrack}
+      POSTGRES_USER: ${POSTGRES_USER:-dtrack}
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password_file
+      PGDATA: /var/lib/postgresql/data
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - postgresql:/var/lib/postgresql/data
+    networks:
+      default: {}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
+      start_period: 2s
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  default:
+    driver: ${NETWORK_MODE:-bridge}
+    attachable: true
+    driver_opts:
+      encrypted: "true"
+  proxy:
+    external: true
+
+volumes:
+  dtrack-data: {}
+  postgresql: {}
+
+secrets:
+  postgres_password_file:
+    file: config/secrets/postgres_password_file.txt
