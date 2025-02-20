@@ -1,0 +1,145 @@
+<!--
+  -  Watchguard firebox decoders
+-->
+
+<!-- FILTER LOGS
+
+172.30.40.254	Feb 13 10:58:41	T85-PoE	local1	warning	C03D05D2E2EF1 firewall	msg_id="3000-0148" Deny Vlan100__DataLan Firebox 52 tcp 20 64 192.168.221.109 3.163.248.4 49998 443 offset 8 AF 540736517 win 38656 msg="tcp syn checking failed (expecting SYN packet for new TCP connection, but received ACK, FIN, or RST instead)."  (Internal Policy)
+
+172.30.40.254	Feb 13 11:23:17	T85-PoE	local1	info	C03D05D2E2EF1 firewall	msg_id="3000-0151" Allow Firebox External udp 2.207.221.10 34.240.115.208 44662 53  geo_src="DEU"  geo_dst="IRL" flags="Dd" duration="44" sent_pkts="1" rcvd_pkts="1" sent_bytes="70" rcvd_bytes="175"  (Any From Firebox-00)
+
+172.30.40.254	Feb 13 11:23:16	T85-PoE	local1	info	C03D05D2E2EF1 firewall	msg_id="3000-0149" Allow Vlan100__DataLan External 1278 udp 20 56 192.168.221.195 8.8.8.8 62453 443 app_name="unknown" cat_name="unknown" app_beh_name="unknown" app_id="65535" app_cat_id="255" app_ctl_disp="2" sig_vers="18.355" action="Global"  geo_dst="USA" msg="Application identified"  (Outgoing-00)
+
+172.30.40.254	Feb 12 19:27:27	T85-PoE	local1	warning	C03D05D2E2EF1 firewall	msg_id="3000-0173" Deny External Firebox 220 udp 20 231 147.203.255.20 2.207.221.10 40116 123  geo_src="USA"  geo_dst="DEU" msg="blocked sites" flags="SR" duration="0" sent_pkts="1" rcvd_pkts="0" sent_bytes="220" rcvd_bytes="0" botnet="source"  (Unhandled External Packet-00)
+
+172.30.40.254	Feb 13 12:30:02	T85-PoE	local2	info	C03D05D2E2EF1 loggerd[2576]	msg_id="3D01-0003" Archived log file /var/log/traffic.log which reached max size
+
+172.30.40.254	Feb 13 12:34:52	T85-PoE	local3	info	C03D05D2E2EF1 systemd	is_lte_modem_enabled: modem_enabled = 0
+172.30.40.254	Feb 13 12:22:50	T85-PoE	local3	warning	C03D05D2E2EF1 kernel	[7572315.196663] Hash bucket in set fqdn:ms365 is full due to the same key maxelem 4 reached
+
+172.30.40.254	Feb 13 11:15:26	T85-PoE	local2	info	C03D05D2E2EF1 sessiond[2849]	msg_id="3E00-0002" SSL VPN user vmasepohl@Firebox-DB from 80.34.181.61 logged in assigned virtual IP is 192.168.118.2
+
+-->
+
+<decoder name="watchguard-firewall-1-de">
+  <prematch>\t+(\w*)\t+C03D05D2E2EF1\s+firewall\t+msg_id="</prematch>
+  <type>firewall</type>
+</decoder>
+
+<!-- 3000-(0148|0149|0173) -->
+<decoder name="watchguard-firewall-1-de-fields">
+  <parent>watchguard-firewall-1-de</parent>
+  <prematch offset="after_parent" type="pcre2">^3000-(0148|0149|0173)</prematch>
+  <regex>\t+(\w*)\t+(C03D05D2E2EF1)\s+(firewall)\t+msg_id="</regex>
+  <order>severity,serial,program_name</order>
+</decoder>
+<decoder name="watchguard-firewall-1-de-fields">
+  <parent>watchguard-firewall-1-de</parent>
+  <regex offset="after_regex">(\S+)" (\S*) (\S*) \S* \S* (\S*) \d* \d* (\S*) (\S*) (\d*) (\d*)</regex>
+  <order>msg_id,action,ifname,protocol,srcip,dstip,srcport,dstport</order>
+</decoder>
+
+<!-- 3000-0151 -->
+<decoder name="watchguard-firewall-2-de-fields">
+  <parent>watchguard-firewall-1-de</parent>
+  <prematch offset="after_parent" type="pcre2">3000-0151</prematch>
+  <regex>\t+(\w*)\t+(C03D05D2E2EF1)\s+(firewall)\t+msg_id="</regex>
+  <order>severity,serial,program_name</order>
+</decoder>
+<decoder name="watchguard-firewall-2-de-fields">
+  <parent>watchguard-firewall-1-de</parent>
+  <regex offset="after_regex">(\S+)" (\S*) (\S*) \S* (\S*) (\S*) (\S*) (\d*) (\d*)</regex>
+  <order>msg_id,action,ifname,protocol,srcip,dstip,srcport,dstport</order>
+</decoder>
+
+<!-- sessiond|sslvpn|dhcpd|loggerd|daas|fqdnd|sigd|wgagent|admd|wrapper|certd|ethmond|configd|iked|discoverd|homer -->
+<decoder name="watchguard-types-1-de">
+  <prematch type="pcre2">\t+(\w*)\t+C03D05D2E2EF1\s+(sessiond|sslvpn|dhcpd|loggerd|daas|fqdnd|sigd|wgagent|admd|wrapper|certd|ethmond|configd|iked|discoverd|homer)\[\d+\]</prematch>
+  <type>syslog</type>
+</decoder>
+
+<decoder name="watchguard-types-1-de-fields">
+  <parent>watchguard-types-1-de</parent>
+  <regex type="pcre2">\t+(\w*)\t+(C03D05D2E2EF1)\s+(sessiond|sslvpn|dhcpd|loggerd|daas|fqdnd|sigd|wgagent|admd|wrapper|certd|ethmond|configd|iked|discoverd|homer)\[\d+\]</regex>
+  <order>severity,serial,program_name</order>
+</decoder>
+
+<decoder name="watchguard-types-1-de-fields">
+  <parent>watchguard-types-1-de</parent>
+  <regex offset="after_regex">msg_id="(\S+)"</regex>
+  <order>msg_id</order>
+</decoder>
+
+<!-- sessiond -->
+<decoder name="watchguard-types-1-de-fields">
+  <parent>watchguard-types-1-de</parent>
+  <regex offset="after_regex">SSL VPN user (\S+)@(\S+) </regex>
+  <order>username,domain</order>
+</decoder>
+<decoder name="watchguard-types-1-de-fields">
+  <parent>watchguard-types-1-de</parent>
+  <regex offset="after_regex">Management user (\S+)@(\S+) </regex>
+  <order>username,domain</order>
+</decoder>
+<decoder name="watchguard-types-1-de-fields">
+  <parent>watchguard-types-1-de</parent>
+  <regex offset="after_regex">from (\S+) </regex>
+  <order>srcip</order>
+</decoder>
+<decoder name="watchguard-types-1-de-fields">
+  <parent>watchguard-types-1-de</parent>
+  <regex offset="after_regex">logged in assigned virtual IP is (\S+)$</regex>
+  <order>virtualip</order>
+</decoder>
+<decoder name="watchguard-types-1-de-fields">
+  <parent>watchguard-types-1-de</parent>
+  <regex type="pcre2"> (logged in|logged out)$</regex>
+  <order>action</order>
+</decoder>
+
+<!-- TODO: admd -->
+<!-- TODO: wrapper -->
+<!-- TODO: configd -->
+<!-- TODO: iked -->
+
+<!-- systemd|kernel -->
+<decoder name="watchguard-types-2-de">
+  <prematch type="pcre2">\t+(\w*)\t+C03D05D2E2EF1\s+(systemd|kernel)</prematch>
+  <type>syslog</type>
+</decoder>
+
+<decoder name="watchguard-types-2-de-fields">
+  <parent>watchguard-types-2-de</parent>
+  <regex type="pcre2">\t+(\w*)\t+(C03D05D2E2EF1)\s+(systemd|kernel)</regex>
+  <order>severity,serial,program_name</order>
+</decoder>
+
+<decoder name="watchguard-types-2-de-fields">
+  <parent>watchguard-types-2-de</parent>
+  <regex offset="after_regex">msg_id="(\S+)"</regex>
+  <order>msg_id</order>
+</decoder>
+
+<!--
+systemd
+kernel
+
+sessiond[2849] msg_id="3E00-0004"
+sslvpn[2854] msg_id="2500-0001"
+dhcpd[2838] msg_id="1600-0002"
+loggerd[2576] msg_id="3D01-0003"
+sigd[29123] msg_id="2E02-0069"
+admd[2805] msg_id="1100-0004"
+certd[2581] msg_id="4001-0004"
+configd[2574] msg_id="0101-0001"
+iked[2830] msg_id="0207-0001"
+
+discoverd[2583]: msg_id="6800-0001"
+
+ethmond[29022]
+wrapper[2837]
+wgagent[2859]
+daas[2817]
+fqdnd[2639]
+homer[2861]
+-->

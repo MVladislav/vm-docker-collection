@@ -12,3 +12,6 @@ server.ssl.certificate: "/usr/share/wazuh-dashboard/certs/wazuh-dashboard.pem"
 opensearch.ssl.certificateAuthorities:
   ["/usr/share/wazuh-dashboard/certs/root-ca.pem"]
 uiSettings.overrides.defaultRoute: /app/wz-home
+#
+# assistant.chat.enabled: true
+# observability.query_assist.enabled: true

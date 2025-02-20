@@ -1,0 +1,24 @@
+<!--
+  -  UniFi decoders
+-->
+
+<!-- FILTER LOGS
+
+Feb 15 02:09:25 USW-Aggregation 7845586a7afa,USW-Aggregation-7.1.26+15869: kernel: [9447521.080000] sh (8550): drop_caches: 3
+
+Feb 15 02:18:02 U6-LiteEG f492bfac0c6c,U6-Lite-6.6.78+15404: kernel: [12054834.440912] rai1:[send deauth] TA:[f6:92:bf:9c: c:6e], RA:[ 8:8b:c8:47:51:10] machdr_seq=0, reason:6, protection=0
+
+Feb 15 02:09:07 USW-16-PoE e063dac0ce9e,USW-16-PoE-7.1.26+15869: mcad: mcad[15547]: ace_reporter.reporter_save_config(): Saving mgmt_url as https://192.168.50.11:8443/manage/site/default
+
+-->
+
+<decoder name="unifi">
+  <prematch type="pcre2">(USW-Aggregation|U6-LiteEG|USW-16-PoE) </prematch>
+  <type>syslog</type>
+</decoder>
+
+<decoder name="unifi-fields">
+  <parent>unifi</parent>
+  <regex type="pcre2">(USW-Aggregation|U6-LiteEG|USW-16-PoE) \S*,(\S*): (\S*): </regex>
+  <order>device,device_version,program_name</order>
+</decoder>

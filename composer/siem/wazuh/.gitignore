@@ -42,3 +42,7 @@ resources/decoders/*
 !resources/rules/
 resources/rules/*
 !resources/rules/*.xml
+
+!resources/pipelines/
+resources/pipelines/*
+!resources/pipelines/*.json

@@ -13,6 +13,7 @@
     - [create `.env` file following:](#create-env-file-following)
       - [example short .env](#example-short-env)
   - [Notes](#notes)
+    - [Pipeline changes](#pipeline-changes)
     - [Plugin install](#plugin-install)
     - [Password protected enrollment](#password-protected-enrollment)
       - [Remove an agent](#remove-an-agent)
@@ -108,6 +109,14 @@ DOMAIN=siem.home.local
 
 ## Notes
 
+### Pipeline changes
+
+When changing the `pipelines.json` you need to run this command in `master`:
+
+```sh
+$docker exec -it "$(docker ps -q -f name=wazuh_wazuh-master)" filebeat setup --pipelines --modules wazuh
+```
+
 ### Plugin install
 
 ```sh
@@ -189,3 +198,5 @@ $docker exec -it "$(docker ps -q -f name=wazuh_wazuh-master)" /var/ossec/bin/man
 - plugins
   - llm
     - <https://wazuh.com/blog/leveraging-claude-haiku-in-the-wazuh-dashboard-for-llm-powered-insights/>
+- other
+  - <https://wazuh-blog.max-it.de/ziel-ip-in-wazuh-auch-mit-geo-daten-anreichern/>
