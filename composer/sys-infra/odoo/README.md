@@ -11,6 +11,8 @@
     - [create your `secrets`:](#create-your-secrets)
     - [create `.env` file following:](#create-env-file-following)
       - [example short .env](#example-short-env)
+  - [FAQ](#faq)
+    - [Report fixing](#report-fixing)
   - [References](#references)
 
 ---
@@ -71,8 +73,24 @@ DOMAIN=odoo.home.local
 
 ---
 
+## FAQ
+
+### Report fixing
+
+Go to: `settings > Technical > System Parameters` and create the below entries or update existing
+
+```sh
+web.base.url = "https://<DOMAIN>"
+report.url = "http://0.0.0.0:8069"
+report.url.freeze = True
+```
+
+---
+
 ## References
 
 - <https://www.odoo.com/app/project>
 - <https://github.com/odoo/odoo>
 - <https://hub.docker.com/_/odoo/>
+- FAQ
+  - <https://www.odoo.com/forum/help-1/custom-report-236164>
