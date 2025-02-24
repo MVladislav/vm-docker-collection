@@ -3,6 +3,29 @@ services:
   ##############################################################################
   ##############################################################################
   ##############################################################################
+  dragonfly:
+    # https://github.com/dragonflydb/dragonfly/releases
+    image: docker.dragonflydb.io/dragonflydb/dragonfly:${VERSION_DRAGONFLY:-v1.27.1}
+    # <<: *basic
+    deploy:
+      # <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_DRAGONFLY:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_DRAGONFLY:-512M}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_DRAGONFLY:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_DRAGONFLY:-32m}
+    volumes:
+      # - /etc/timezone:/etc/timezone:ro
+      # - /etc/localtime:/etc/localtime:ro
+      - dragonfly:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
+      start_period: 2s
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
   ##############################################################################
   ##############################################################################
@@ -92,6 +115,7 @@ services:
           cpus: ${RESOURCES_RESERVATIONS_CPUS_POSTGRESQL:-0.001}
           memory: ${RESOURCES_RESERVATIONS_MEMORY_POSTGRESQL:-32m}
     cap_add:
+      - FOWNER
       - SETGID
       - SETUID
       - DAC_OVERRIDE
@@ -370,6 +394,7 @@ services:
 ################################################################################
 
 volumes:
+  dragonfly: {}
   valkey: {}
   minio: {}
   postgresql: {}
