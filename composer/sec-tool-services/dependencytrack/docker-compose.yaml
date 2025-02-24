@@ -158,6 +158,7 @@ services:
           cpus: ${RESOURCES_RESERVATIONS_CPUS_POSTGRESQL:-0.001}
           memory: ${RESOURCES_RESERVATIONS_MEMORY_POSTGRESQL:-32m}
     cap_add:
+      - FOWNER
       - SETGID
       - SETUID
       - DAC_OVERRIDE
