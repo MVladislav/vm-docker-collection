@@ -208,24 +208,11 @@ services:
       # test:
       #   [
       #     "CMD-SHELL",
-      #     "curl -kI https://127.0.0.1:55000 > /dev/null 2>&1 || exit 1",
+      #     "curl -kIf ${PROTOCOL:-https}://127.0.0.1:${PORT:-443} > /dev/null 2>&1 || exit 1",
       #   ]
       #   # [
-      #   #   "CMD",
-      #   #   "curl",
-      #   #   "-f",
-      #   #   "${PROTOCOL:-https}://127.0.0.1:${PORT:-443}",
-      #   # ]
-      #   # [
-      #   #   "CMD",
-      #   #   "wget",
-      #   #   "--no-verbose",
-      #   #   "--tries=1",
-      #   #   "--spider",
-      #   #   "--no-check-certificate",
-      #   #   "${PROTOCOL:-https}://127.0.0.1:${PORT:-443}",
       #   #   "CMD-SHELL",
-      #   #   "wget --no-verbose --tries=1 --spider --no-check-certificate ${PROTOCOL:-https}://127.0.0.1:${PORT:-443} || exit 1"
+      #   #   "wget --no-verbose --tries=1 --spider --no-check-certificate ${PROTOCOL:-https}://127.0.0.1:${PORT:-443} || exit 1",
       #   # ]
       # start_period: 10s
       # interval: 10s

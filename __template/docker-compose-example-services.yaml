@@ -16,6 +16,9 @@ services:
         reservations:
           cpus: ${RESOURCES_RESERVATIONS_CPUS_DRAGONFLY:-0.001}
           memory: ${RESOURCES_RESERVATIONS_MEMORY_DRAGONFLY:-32m}
+    cap_add:
+      - SETGID
+      - SETUID
     volumes:
       # - /etc/timezone:/etc/timezone:ro
       # - /etc/localtime:/etc/localtime:ro
