@@ -2,8 +2,8 @@
 x-basic-deploy-labels: &basic-deploy-labels
   labels:
     - traefik.enable=true
-    - traefik.docker.lbswarm=${LB_SWARM:-true}
-    - traefik.docker.network=proxy
+    - traefik.swarm.lbswarm=${LB_SWARM:-true}
+    - traefik.swarm.network=proxy
     - traefik.http.routers.freshrss.entrypoints=https
     - traefik.http.routers.freshrss.rule=Host(`${DOMAIN?domain variable not set}`)
     - traefik.http.routers.freshrss.tls=true
@@ -68,7 +68,7 @@ services:
   ##############################################################################
   freshrss:
     # https://hub.docker.com/r/freshrss/freshrss
-    image: freshrss/freshrss:${VERSION:-1.24.3}
+    image: freshrss/freshrss:${VERSION:-1.26.0}
     <<: *basic
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels]
@@ -84,6 +84,18 @@ services:
       - /etc/localtime:/etc/localtime:ro
       - data:/var/www/FreshRSS/data
       - extensions:/var/www/FreshRSS/extensions
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "php",
+          "-r",
+          '$$url = "${PROTOCOL:-http}://localhost:${PORT:-8080}/i/"; $$response = @file_get_contents($$url); if ($$response !== false) { exit(0); } else { exit(1); }',
+        ]
+      start_period: 10s
+      interval: 10s
+      timeout: 3s
+      retries: 10
 
 ################################################################################
 ################################################################################

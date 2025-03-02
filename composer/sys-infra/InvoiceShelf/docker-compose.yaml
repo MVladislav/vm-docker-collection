@@ -2,8 +2,8 @@
 x-basic-deploy-labels: &basic-deploy-labels
   labels:
     - traefik.enable=true
-    - traefik.docker.lbswarm=${LB_SWARM:-true}
-    - traefik.docker.network=proxy
+    - traefik.swarm.lbswarm=${LB_SWARM:-true}
+    - traefik.swarm.network=proxy
     - traefik.http.routers.invoiceshelf.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
     - traefik.http.routers.invoiceshelf.rule=Host(`${DOMAIN?domain variable not set}`)
     - traefik.http.routers.invoiceshelf.tls=true
@@ -109,13 +109,23 @@ services:
     networks:
       default: {}
       proxy: {}
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -kIf ${PROTOCOL:-http}://127.0.0.1:${PORT:-80} > /dev/null 2>&1 || exit 1",
+        ]
+      start_period: 10s
+      interval: 10s
+      timeout: 3s
+      retries: 10
 
   ##############################################################################
   ##############################################################################
   ##############################################################################
   mariadb:
     # https://hub.docker.com/_/mariadb
-    image: mariadb:${VERSION_MARIADB:-11.6}
+    image: mariadb:${VERSION_MARIADB:-11.7}
     <<: *basic
     deploy:
       <<: *basic-deploy

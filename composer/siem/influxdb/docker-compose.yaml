@@ -2,15 +2,15 @@
 x-basic-deploy-labels: &basic-deploy-labels
   labels:
     - traefik.enable=true
-    - traefik.docker.lbswarm=${LB_SWARM:-true}
-    - traefik.docker.network=proxy
-    - traefik.http.routers.influxdb${SERVICE_NAME_POST:-}.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
-    - traefik.http.routers.influxdb${SERVICE_NAME_POST:-}.rule=Host(`${DOMAIN?domain variable not set}`)
-    - traefik.http.routers.influxdb${SERVICE_NAME_POST:-}.tls=true
-    - traefik.http.routers.influxdb${SERVICE_NAME_POST:-}.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
-    - traefik.http.routers.influxdb${SERVICE_NAME_POST:-}.service=influxdb${SERVICE_NAME_POST:-}
-    - traefik.http.services.influxdb${SERVICE_NAME_POST:-}.loadbalancer.server.scheme=${PROTOCOL:-http}
-    - traefik.http.services.influxdb${SERVICE_NAME_POST:-}.loadbalancer.server.port=${PORT:-8086}
+    - traefik.swarm.lbswarm=${LB_SWARM:-true}
+    - traefik.swarm.network=proxy
+    - traefik.http.routers.influxdb.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.influxdb.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.influxdb.tls=true
+    - traefik.http.routers.influxdb.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.influxdb.service=influxdb
+    - traefik.http.services.influxdb.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.influxdb.loadbalancer.server.port=${PORT:-8086}
 
 x-basic-deploy: &basic-deploy
   mode: replicated
@@ -83,8 +83,18 @@ services:
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-      - influxdb-storage:/var/lib/influxdb2
-      - influxdb-config:/etc/influxdb2
+      - storage:/var/lib/influxdb2
+      - config:/etc/influxdb2
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -kIf ${PROTOCOL:-http}://127.0.0.1:${PORT:-8086}/ping > /dev/null 2>&1 || exit 1",
+        ]
+      start_period: 10s
+      interval: 10s
+      timeout: 3s
+      retries: 10
 
 ################################################################################
 ################################################################################
@@ -94,10 +104,8 @@ networks:
     external: true
 
 volumes:
-  influxdb-storage:
-    name: influxdb-storage${SERVICE_NAME_POST:-}
-  influxdb-config:
-    name: influxdb-config${SERVICE_NAME_POST:-}
+  storage:
+  config:
 
 secrets:
   init_password_secret:

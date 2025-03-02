@@ -107,7 +107,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - certs:/etc/traefik/certs
       - resolver_certs:/resolver-certs
-      - traefik_logs:/var/log/traefik
+      # - traefik_logs:/var/log/traefik
     healthcheck:
       test: "traefik healthcheck --ping"
       start_period: 5s
@@ -129,8 +129,8 @@ networks:
 volumes:
   certs: {}
   resolver_certs: {}
-  traefik_logs:
-    name: traefik_logs
+  # traefik_logs:
+  #   name: traefik_logs
 
 configs:
   traefik_config:

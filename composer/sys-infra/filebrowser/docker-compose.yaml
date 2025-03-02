@@ -2,8 +2,8 @@
 x-basic-deploy-labels: &basic-deploy-labels
   labels:
     - traefik.enable=true
-    - traefik.docker.lbswarm=${LB_SWARM:-true}
-    - traefik.docker.network=proxy
+    - traefik.swarm.lbswarm=${LB_SWARM:-true}
+    - traefik.swarm.network=proxy
     - traefik.http.routers.filebrowser.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
     - traefik.http.routers.filebrowser.rule=Host(`${DOMAIN?domain variable not set}`)
     - traefik.http.routers.filebrowser.tls=true
@@ -62,7 +62,7 @@ services:
   ##############################################################################
   filebrowser:
     # https://hub.docker.com/r/filebrowser/filebrowser
-    image: filebrowser/filebrowser:${VERSION:-v2.31.2}
+    image: filebrowser/filebrowser:${VERSION:-v2.32.0}
     <<: [*basic, *basic-deploy-labels]
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels]
@@ -84,6 +84,12 @@ services:
         "-l",
         "stdout",
       ]
+    healthcheck:
+      test: ["CMD", "/healthcheck.sh"]
+      start_period: 10s
+      interval: 10s
+      timeout: 3s
+      retries: 10
 
 ################################################################################
 ################################################################################

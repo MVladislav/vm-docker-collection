@@ -62,7 +62,7 @@ x-basic: &basic
   # cap_drop: ["ALL"]
   security_opt:
     - no-new-privileges=true
-    - seccomp=unconfined
+    # - seccomp=unconfined
   ulimits:
     memlock:
       soft: -1

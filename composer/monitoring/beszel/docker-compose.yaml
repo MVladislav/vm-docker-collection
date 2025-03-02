@@ -2,15 +2,15 @@
 x-basic-deploy-labels: &basic-deploy-labels
   labels:
     - traefik.enable=true
-    - traefik.docker.lbswarm=${LB_SWARM:-true}
-    - traefik.docker.network=proxy
-    - traefik.http.routers.beszel${SERVICE_NAME_POST:-}.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
-    - traefik.http.routers.beszel${SERVICE_NAME_POST:-}.rule=Host(`${DOMAIN?domain variable not set}`)
-    - traefik.http.routers.beszel${SERVICE_NAME_POST:-}.tls=true
-    - traefik.http.routers.beszel${SERVICE_NAME_POST:-}.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
-    - traefik.http.routers.beszel${SERVICE_NAME_POST:-}.service=beszel${SERVICE_NAME_POST:-}
-    - traefik.http.services.beszel${SERVICE_NAME_POST:-}.loadbalancer.server.scheme=${PROTOCOL:-http}
-    - traefik.http.services.beszel${SERVICE_NAME_POST:-}.loadbalancer.server.port=${PORT:-8090}
+    - traefik.swarm.lbswarm=${LB_SWARM:-true}
+    - traefik.swarm.network=proxy
+    - traefik.http.routers.beszel.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.beszel.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.beszel.tls=true
+    - traefik.http.routers.beszel.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.beszel.service=beszel
+    - traefik.http.services.beszel.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.beszel.loadbalancer.server.port=${PORT:-8090}
 
 x-basic-deploy: &basic-deploy
   mode: replicated
@@ -68,7 +68,7 @@ services:
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-      - beszel_data:/beszel_data
+      - data:/beszel_data
     networks:
       default: {}
       proxy: {}
@@ -92,7 +92,6 @@ services:
 ################################################################################
 networks:
   default:
-    # name: proxy${SERVICE_NAME_POST:-}
     driver: ${NETWORK_MODE:-bridge}
     attachable: true
     driver_opts:
@@ -101,5 +100,4 @@ networks:
     external: true
 
 volumes:
-  beszel_data:
-    name: beszel_data${SERVICE_NAME_POST:-}
+  data: {}

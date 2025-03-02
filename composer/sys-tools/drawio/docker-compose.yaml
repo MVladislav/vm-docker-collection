@@ -2,15 +2,15 @@
 x-basic-deploy-labels: &basic-deploy-labels
   labels:
     - traefik.enable=true
-    - traefik.docker.lbswarm=${LB_SWARM:-true}
-    - traefik.docker.network=proxy
-    - traefik.http.routers.drawio${SERVICE_NAME_POST:-}.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
-    - traefik.http.routers.drawio${SERVICE_NAME_POST:-}.rule=Host(`${DOMAIN?domain variable not set}`)
-    - traefik.http.routers.drawio${SERVICE_NAME_POST:-}.tls=true
-    - traefik.http.routers.drawio${SERVICE_NAME_POST:-}.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
-    - traefik.http.routers.drawio${SERVICE_NAME_POST:-}.service=drawio${SERVICE_NAME_POST:-}
-    - traefik.http.services.drawio${SERVICE_NAME_POST:-}.loadbalancer.server.scheme=${PROTOCOL:-http}
-    - traefik.http.services.drawio${SERVICE_NAME_POST:-}.loadbalancer.server.port=${PORT:-8080}
+    - traefik.swarm.lbswarm=${LB_SWARM:-true}
+    - traefik.swarm.network=proxy
+    - traefik.http.routers.drawio.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.drawio.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.drawio.tls=true
+    - traefik.http.routers.drawio.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.drawio.service=drawio
+    - traefik.http.services.drawio.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.drawio.loadbalancer.server.port=${PORT:-8080}
 
 x-basic-deploy: &basic-deploy
   mode: replicated
@@ -61,7 +61,7 @@ services:
   ##############################################################################
   drawio:
     # https://hub.docker.com/r/jgraph/drawio
-    image: jgraph/drawio:${VERSION:-26.0.4}
+    image: jgraph/drawio:${VERSION:-26.0.9}
     <<: [*basic, *basic-deploy-labels]
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels]

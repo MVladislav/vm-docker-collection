@@ -2,15 +2,15 @@
 x-basic-deploy-labels: &basic-deploy-labels
   labels:
     - traefik.enable=true
-    - traefik.docker.lbswarm=${LB_SWARM:-true}
-    - traefik.docker.network=proxy
-    - traefik.http.routers.grafana${SERVICE_NAME_POST:-}.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
-    - traefik.http.routers.grafana${SERVICE_NAME_POST:-}.rule=Host(`${DOMAIN?domain variable not set}`)
-    - traefik.http.routers.grafana${SERVICE_NAME_POST:-}.tls=true
-    - traefik.http.routers.grafana${SERVICE_NAME_POST:-}.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
-    - traefik.http.routers.grafana${SERVICE_NAME_POST:-}.service=grafana${SERVICE_NAME_POST:-}
-    - traefik.http.services.grafana${SERVICE_NAME_POST:-}.loadbalancer.server.scheme=${PROTOCOL:-http}
-    - traefik.http.services.grafana${SERVICE_NAME_POST:-}.loadbalancer.server.port=${PORT:-3000}
+    - traefik.swarm.lbswarm=${LB_SWARM:-true}
+    - traefik.swarm.network=proxy
+    - traefik.http.routers.grafana.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.grafana.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.grafana.tls=true
+    - traefik.http.routers.grafana.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.grafana.service=grafana
+    - traefik.http.services.grafana.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.grafana.loadbalancer.server.port=${PORT:-3000}
 
 x-basic-deploy: &basic-deploy
   mode: replicated
@@ -60,8 +60,8 @@ services:
   ##############################################################################
   ##############################################################################
   grafana:
-    # https://hub.docker.com/r/grafana/grafana/tags
-    image: grafana/grafana:${VERSION:-11.4.0}
+    # https://hub.docker.com/r/grafana/grafana
+    image: grafana/grafana:${VERSION:-11.5.2}
     <<: [*basic, *basic-deploy-labels]
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels]

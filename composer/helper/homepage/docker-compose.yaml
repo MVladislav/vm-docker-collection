@@ -2,8 +2,8 @@
 x-basic-deploy-labels: &basic-deploy-labels
   labels:
     - traefik.enable=true
-    - traefik.docker.lbswarm=${LB_SWARM:-true}
-    - traefik.docker.network=proxy
+    - traefik.swarm.lbswarm=${LB_SWARM:-true}
+    - traefik.swarm.network=proxy
     - traefik.http.routers.homepage${SERVICE_NAME_POST:-}.entrypoints=https
     - traefik.http.routers.homepage${SERVICE_NAME_POST:-}.rule=Host(`${DOMAIN?domain variable not set}`)
     - traefik.http.routers.homepage${SERVICE_NAME_POST:-}.tls=true
@@ -83,10 +83,10 @@ services:
       test:
         [
           "CMD-SHELL",
-          "wget --no-verbose --tries=1 --spider --no-check-certificate http://localhost:$${PORT}/api/healthcheck || exit 1",
+          "wget --no-verbose --tries=1 --spider --no-check-certificate ${PROTOCOL:-http}://127.0.0.1:${PORT:-3000}/api/healthcheck || exit 1",
         ]
       start_period: 10s
-      interval: 5s
+      interval: 10s
       timeout: 5s
       retries: 10
 
@@ -100,8 +100,3 @@ networks:
 volumes:
   config:
     name: homepage${SERVICE_NAME_POST:-}
-    # driver: local
-    # driver_opts:
-    #   type: nfs
-    #   o: nfsvers=4.2,addr=${NFS_HOST?nfs host is not defined},rsize=2097152,wsize=2097152,tcp,nconnect=${NFS_NCON:-8}
-    #   device: ":${NAS_PATH?nfs path is not defined}${SERVICE_NAME_POST:-}"
