@@ -1,0 +1,111 @@
+---
+http:
+  middlewares:
+    # --------------------------------------------------------------------------
+    traefik-basic-auth:
+      basicAuth:
+        usersFile: "/run/secrets/traefik_basicauth_secret"
+        realm: "Traefik Basic Auth"
+
+    # --------------------------------------------------------------------------
+    default-headers:
+      headers:
+        browserXssFilter: true
+        contentTypeNosniff: true
+        forceSTSHeader: true
+        frameDeny: true
+        referrerPolicy: "strict-origin-when-cross-origin"
+        stsIncludeSubdomains: true
+        stsPreload: true
+        stsSeconds: 15552000
+        # contentSecurityPolicy: "default-src 'self'"
+        customFrameOptionsValue: SAMEORIGIN
+        customRequestHeaders:
+          X-Forwarded-Proto: https
+
+    # --------------------------------------------------------------------------
+    default-whitelist:
+      IPAllowList:
+        sourceRange:
+          - 127.0.0.0/8
+          - 10.0.0.0/8
+          - 192.168.0.0/16
+          - 172.16.0.0/12
+
+    public-whitelist:
+      IPAllowList:
+        sourceRange:
+          - 0.0.0.0/0
+
+    # --------------------------------------------------------------------------
+    default-secured:
+      chain:
+        middlewares:
+          - default-whitelist
+          - default-headers
+
+    public-secured:
+      chain:
+        middlewares:
+          - default-whitelist
+          - public-whitelist
+          - default-headers
+
+  # ############################################################################
+  routers:
+    # Traefik
+    traefik-router:
+      rule: "Host(`<REPLACE_TRAEFIK_DOMAIN>`)" # REPLACE THIS WITH YOUR DOMAIN
+      service: api@internal
+      entryPoints:
+        - websecure
+      middlewares:
+        - public-secured
+        - traefik-basic-auth@file
+      tls:
+        certResolver: letsencrypt
+
+    # Next.js router (handles everything except API and WebSocket paths)
+    next-router:
+      rule: "Host(`<REPLACE_DASHBOARDURL_DOMAIN>`) && !PathPrefix(`/api/v1`)" # REPLACE THIS WITH YOUR DOMAIN
+      service: next-service
+      entryPoints:
+        - websecure
+      middlewares:
+        - public-secured
+      tls:
+        certResolver: letsencrypt
+
+    # API router (handles /api/v1 paths)
+    api-router:
+      rule: "Host(`<REPLACE_DASHBOARDURL_DOMAIN>`) && PathPrefix(`/api/v1`)" # REPLACE THIS WITH YOUR DOMAIN
+      service: api-service
+      entryPoints:
+        - websecure
+      middlewares:
+        - public-secured
+      tls:
+        certResolver: letsencrypt
+
+    # WebSocket router
+    ws-router:
+      rule: "Host(`<REPLACE_DASHBOARDURL_DOMAIN>`)" # REPLACE THIS WITH YOUR DOMAIN
+      service: api-service
+      entryPoints:
+        - websecure
+      middlewares:
+        - public-secured
+      tls:
+        certResolver: letsencrypt
+
+  # ############################################################################
+  services:
+    next-service:
+      loadBalancer:
+        servers:
+          - url: "http://pangolin:3002" # Next.js server
+
+    api-service:
+      loadBalancer:
+        servers:
+          - url: "http://pangolin:3000" # API/WebSocket server

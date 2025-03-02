@@ -1,0 +1,117 @@
+---
+################################################################
+#
+# Configuration sample for Traefik v3.
+# Schema: https://json.schemastore.org/traefik-v2.json
+#
+# For Traefik v3: https://github.com/traefik/traefik/blob/v3.0/traefik.sample.yml
+#
+################################################################
+
+################################################################
+# Global configuration
+################################################################
+global:
+  checkNewVersion: true
+  sendAnonymousUsage: false
+
+################################################################
+# EntryPoints configuration
+################################################################
+entryPoints:
+  web:
+    address: ":80"
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+          permanent: true
+  websecure:
+    address: ":443"
+    transport:
+      respondingTimeouts:
+        readTimeout: "30m"
+    http:
+      tls:
+        certResolver: "letsencrypt"
+
+################################################################
+# Traefik logs configuration
+################################################################
+log:
+  level: WARN # TRACE, DEBUG, PANIC, FATAL, ERROR, WARN, INFO
+  format: common
+
+################################################################
+# Access logs configuration
+################################################################
+accesslog:
+  format: common
+  fields:
+    defaultMode: keep
+    names:
+      ClientUsername: drop
+    headers:
+      defaultMode: keep
+      names:
+        User-Agent: keep
+        Authorization: drop
+        Content-Type: keep
+
+################################################################
+# API and dashboard configuration
+################################################################
+api:
+  dashboard: true
+  insecure: false
+  debug: false
+
+################################################################
+# Ping configuration
+################################################################
+ping: {}
+
+################################################################
+# Docker configuration backend
+################################################################
+providers:
+  http:
+    endpoint: "http://pangolin:3001/api/v1/traefik-config"
+    pollInterval: "5s"
+  file:
+    filename: "/etc/traefik/dynamic_config.yml"
+
+################################################################
+# TLS
+################################################################
+serversTransport:
+  insecureSkipVerify: true
+
+# Configure your CertificateResolver here...
+# https://doc.traefik.io/traefik/https/acme
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      email: <REPLACE_EMAIL_ACME>
+      storage: "/letsencrypt/acme.json"
+      keyType: EC256
+      caServer: "https://acme-staging-v02.api.letsencrypt.org/directory"
+      # caServer: "https://acme-v02.api.letsencrypt.org/directory"
+
+      dnsChallenge:
+        provider: ionos
+        resolvers:
+          - "ns1107.ui-dns.de"
+          - "ns1117.ui-dns.com"
+          - "ns1032.ui-dns.org"
+          - "ns1067.ui-dns.biz"
+
+################################################################
+# PLUGINS
+################################################################
+experimental:
+  plugins:
+    badger:
+      moduleName: "github.com/fosrl/badger"
+      version: "v1.0.0-beta.3"
