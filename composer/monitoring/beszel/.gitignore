@@ -3,5 +3,6 @@
 !.gitempty
 
 !docker-compose.yaml
+composer/monitoring/beszel/docker-compose-agent.yaml
 
 !README.md

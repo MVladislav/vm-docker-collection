@@ -60,8 +60,8 @@ services:
   ##############################################################################
   ##############################################################################
   beszel:
-    # https://hub.docker.com/r/henrygd/beszel
-    image: henrygd/beszel:${VERSION:-0.9.1}
+    # https://github.com/henrygd/beszel/pkgs/container/beszel%2Fbeszel
+    image: ghcr.io/henrygd/beszel/beszel:${VERSION:-0.10.1}
     <<: [*basic, *basic-deploy-labels]
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels]
@@ -69,23 +69,25 @@ services:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - data:/beszel_data
+      - socket:/beszel_socket
     networks:
       default: {}
       proxy: {}
 
-  # beszel-agent:
-  #   # https://hub.docker.com/r/henrygd/beszel-agent
-  #   image: henrygd/beszel-agent:${VERSION:-0.9.1}
-  #   <<: *basic
-  #   deploy:
-  #     <<: *basic-deploy
-  #   environment:
-  #     PORT: ${PORT_AGENT:-45876}
-  #     KEY: ${KEY?key for agent is not set}
-  #   volumes:
-  #     - /etc/timezone:/etc/timezone:ro
-  #     - /etc/localtime:/etc/localtime:ro
-  #     - /var/run/docker.sock:/var/run/docker.sock:ro
+  beszel-agent:
+    # https://github.com/henrygd/beszel/pkgs/container/beszel%2Fbeszel-agent
+    image: ghcr.io/henrygd/beszel/beszel-agent:${VERSION:-0.10.1}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+    environment:
+      LISTEN: /beszel_socket/beszel.sock
+      KEY: ${KEY?key for agent is not set}
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - socket:/beszel_socket
+      - /var/run/docker.sock:/var/run/docker.sock:ro
 
 ################################################################################
 ################################################################################
@@ -101,3 +103,4 @@ networks:
 
 volumes:
   data: {}
+  socket: {}
