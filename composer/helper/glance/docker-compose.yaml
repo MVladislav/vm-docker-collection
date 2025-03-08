@@ -1,0 +1,125 @@
+---
+x-basic-deploy-labels: &basic-deploy-labels
+  labels:
+    - traefik.enable=true
+    - traefik.swarm.lbswarm=${LB_SWARM:-true}
+    - traefik.swarm.network=proxy
+    - traefik.http.routers.glance.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.glance.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.glance.tls=true
+    - traefik.http.routers.glance.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.glance.service=glance
+    - traefik.http.services.glance.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.glance.loadbalancer.server.port=${PORT:-8080}
+
+x-basic-deploy: &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  update_config:
+    order: stop-first
+  restart_policy:
+    condition: any
+  resources:
+    limits:
+      cpus: ${RESOURCES_LIMITS_CPUS:-1}
+      memory: ${RESOURCES_LIMITS_MEMORY:-1g}
+    reservations:
+      cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
+      memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
+
+x-basic: &basic
+  env_file: ${ENV_FILE:-.env}
+  cap_drop: ["ALL"]
+  security_opt:
+    - no-new-privileges=true
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 655360
+      hard: 655360
+    fsize: -1
+    as: -1
+  networks:
+    proxy: {}
+  healthcheck:
+    disable: true
+  restart: always
+
+################################################################################
+################################################################################
+################################################################################
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  glance:
+    # https://hub.docker.com/r/glanceapp/glance
+    image: glanceapp/glance:${VERSION_GLANCE:-v0.7.3}
+    <<: [*basic, *basic-deploy-labels]
+    deploy:
+      <<: [*basic-deploy, *basic-deploy-labels]
+    configs:
+      - source: glance_config
+        target: /app/config/glance.yml
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - config:/app/config
+      - assets:/app/assets
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget --no-verbose --tries=1 --spider --no-check-certificate ${PROTOCOL:-http}://127.0.0.1:${PORT:-8080} || exit 1",
+        ]
+      start_period: 10s
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  simple-icons:
+    image: alpine:${VERSION_ALPINE:-latest}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+      restart_policy:
+        condition: none
+    volumes:
+      - assets:/icons
+    entrypoint: >
+      sh -c 'if [ "${SKIP_LOAD_ICONS:-true}" = "true" ]; then echo "Download skipped"; exit 0; fi &&
+             apk add --no-cache git &&
+             rm -rf /tmp/simple-icons &&
+             git clone --depth 1 https://github.com/simple-icons/simple-icons /tmp/simple-icons &&
+             git clone --depth 1 https://github.com/homarr-labs/dashboard-icons /tmp/dashboard-icons &&
+             cd /tmp/simple-icons &&
+             cp -R icons/* /icons/ &&
+             cd /tmp/dashboard-icons &&
+             cp -R svg/* /icons/'
+    restart: always
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  proxy:
+    external: true
+
+volumes:
+  config: {}
+  assets: {}
+
+configs:
+  glance_config:
+    file: $PWD/config/glance.yml
+    name: glance_config${GLANCE_CONFIG:-}
