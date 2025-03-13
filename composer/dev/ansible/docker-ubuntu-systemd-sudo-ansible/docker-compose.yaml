@@ -7,8 +7,10 @@ x-basic-deploy: &basic-deploy
     constraints:
       - "node.role==${NODE_ROLE:-manager}"
       - node.platform.os == linux
+  update_config:
+    order: stop-first
   restart_policy:
-    condition: on-failure
+    condition: any
   resources:
     limits:
       cpus: ${RESOURCES_LIMITS_CPUS:-1}
@@ -36,7 +38,9 @@ x-basic: &basic
   tmpfs:
     - /tmp
     - /run
-  restart: on-failure
+  healthcheck:
+    disable: true
+  restart: always
 
 ################################################################################
 ################################################################################
@@ -48,7 +52,6 @@ services:
       dockerfile: ./Dockerfile
       args:
         BUILD_DATE: ${BUILD_DATE}
-        VERSION: ${VERSION_UBUNTU}
         VERSION_UBUNTU: ${VERSION_UBUNTU}
         PYTHON_ARGS: ${PYTHON_ARGS}
     image: mvladislav/docker-ubuntu-systemd-sudo-ansible:${VERSION_UBUNTU}
