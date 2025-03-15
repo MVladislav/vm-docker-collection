@@ -37,14 +37,14 @@ MIDDLEWARE_SECURED=default-secured@file
 
 # GENERAL sources to be used (set by default, change as needed)
 # ______________________________________________________________________________
-RESOURCES_LIMITS_CPUS=0.2
-RESOURCES_LIMITS_MEMORY=250m
+RESOURCES_LIMITS_CPUS=2
+RESOURCES_LIMITS_MEMORY=500m
 RESOURCES_RESERVATIONS_CPUS=0.001
 RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION=v2.0.4
+VERSION=v2.0.6
 ```
 
 #### example short .env
@@ -52,7 +52,6 @@ VERSION=v2.0.4
 ```env
 NETWORK_MODE=overlay
 DOMAIN=speed.home.local
-VERSION=v2.0.4
 ```
 
 ---

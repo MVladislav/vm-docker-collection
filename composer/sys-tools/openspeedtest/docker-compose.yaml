@@ -2,8 +2,8 @@
 x-basic-deploy-labels: &basic-deploy-labels
   labels:
     - traefik.enable=true
-    - traefik.docker.lbswarm=${LB_SWARM:-true}
-    - traefik.docker.network=proxy
+    - traefik.swarm.lbswarm=${LB_SWARM:-true}
+    - traefik.swarm.network=proxy
     - traefik.http.routers.openspeedtest.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
     - traefik.http.routers.openspeedtest.rule=Host(`${DOMAIN?domain variable not set}`)
     - traefik.http.routers.openspeedtest.tls=true
@@ -20,11 +20,13 @@ x-basic-deploy: &basic-deploy
     constraints:
       - "node.role==${NODE_ROLE:-manager}"
       - node.platform.os == linux
+  update_config:
+    order: stop-first
   restart_policy:
-    condition: on-failure
+    condition: any
   resources:
     limits:
-      cpus: ${RESOURCES_LIMITS_CPUS:-0.2}
+      cpus: ${RESOURCES_LIMITS_CPUS:-2}
       memory: ${RESOURCES_LIMITS_MEMORY:-500m}
     reservations:
       cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
@@ -43,8 +45,8 @@ x-basic: &basic
       soft: -1
       hard: -1
     nofile:
-      soft: 65535
-      hard: 65535
+      soft: 655360
+      hard: 655360
     fsize: -1
     as: -1
   networks:
@@ -63,18 +65,28 @@ services:
   ##############################################################################
   openspeedtest:
     # https://hub.docker.com/r/openspeedtest/latest
-    image: openspeedtest/latest:${VERSION:-v2.0.4}
-    <<: *basic
+    image: openspeedtest/latest:${VERSION:-v2.0.6}
+    <<: [*basic, *basic-deploy-labels]
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels]
+    ports:
+      - target: ${PORT:-3000}
+        published: ${PORT_PUBLISH:-3000}
+        protocol: tcp
+        mode: host
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
     healthcheck:
-      test: ["CMD", "curl", "-f", "${PROTOCOL:-http}://localhost:${PORT:-3000}"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
+      test:
+        [
+          "CMD-SHELL",
+          "curl -kIf ${PROTOCOL:-http}://127.0.0.1:${PORT:-3000} > /dev/null 2>&1 || exit 1",
+        ]
+      start_period: 10s
+      interval: 10s
+      timeout: 3s
+      retries: 10
 
 ################################################################################
 ################################################################################
