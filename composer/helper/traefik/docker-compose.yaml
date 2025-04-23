@@ -63,7 +63,7 @@ services:
   ##############################################################################
   traefik:
     # https://hub.docker.com/_/traefik
-    image: traefik:${VERSION:-v3.3.3}
+    image: traefik:${VERSION:-v3.3.6}
     <<: [*basic, *basic-deploy-labels]
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels]
@@ -85,22 +85,22 @@ services:
     configs:
       - source: traefik_config
         target: /etc/traefik/traefik.yml
-        mode: 440
+        mode: "0440"
       - source: traefik_config_traefik_dynamic
         target: /etc/traefik/config/traefik_dynamic.yml
-        mode: 440
+        mode: "0440"
       - source: traefik_config_http
         target: /etc/traefik/config/config.yml
-        mode: 440
+        mode: "0440"
       - source: traefik_ca_config
         target: /etc/traefik/certs/ca.pem
-        mode: 440
+        mode: "0440"
       - source: traefik_crt_config
         target: /etc/traefik/certs/cert.pem
-        mode: 440
+        mode: "0440"
       - source: traefik_key_config
         target: /etc/traefik/certs/cert-key.pem
-        mode: 440
+        mode: "0440"
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
