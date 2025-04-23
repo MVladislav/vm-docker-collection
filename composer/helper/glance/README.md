@@ -44,7 +44,7 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_GLANCE=v0.7.3
+VERSION_GLANCE=v0.7.13
 VERSION_ALPINE=latest
 
 # APPLICATION general variable to adjust the apps

@@ -61,7 +61,7 @@ services:
   ##############################################################################
   glance:
     # https://hub.docker.com/r/glanceapp/glance
-    image: glanceapp/glance:${VERSION_GLANCE:-v0.7.3}
+    image: glanceapp/glance:${VERSION_GLANCE:-v0.7.13}
     <<: [*basic, *basic-deploy-labels]
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels]
