@@ -5,7 +5,7 @@ services:
   ##############################################################################
   dragonfly:
     # https://github.com/dragonflydb/dragonfly/releases
-    image: docker.dragonflydb.io/dragonflydb/dragonfly:${VERSION_DRAGONFLY:-v1.27.1}
+    image: docker.dragonflydb.io/dragonflydb/dragonfly:${VERSION_DRAGONFLY:-v1.29.0}
     # <<: *basic
     deploy:
       # <<: *basic-deploy
@@ -35,7 +35,7 @@ services:
   ##############################################################################
   valkey:
     # https://hub.docker.com/r/valkey/valkey
-    image: valkey/valkey:${VERSION_VALKEY:-8.0.1-alpine}
+    image: valkey/valkey:${VERSION_VALKEY:-8.1.0-alpine}
     # <<: *basic
     deploy:
       # <<: *basic-deploy
@@ -67,7 +67,7 @@ services:
   ##############################################################################
   minio:
     # https://hub.docker.com/r/minio/minio
-    image: minio/minio:${VERSION_MINIO:-RELEASE.2024-11-07T00-52-20Z-cpuv1}
+    image: minio/minio:${VERSION_MINIO:-RELEASE.2025-04-22T22-12-26Z-cpuv1}
     # <<: *basic
     deploy:
       # <<: *basic-deploy
@@ -106,7 +106,7 @@ services:
   ##############################################################################
   postgresql:
     # https://hub.docker.com/_/postgres
-    image: postgres:${VERSION_POSTGRESQL:-16.2-alpine3.19}
+    image: postgres:${VERSION_POSTGRESQL:-17.4-alpine}
     # <<: *basic
     deploy:
       # <<: *basic-deploy
@@ -147,7 +147,7 @@ services:
   ##############################################################################
   mariadb:
     # https://hub.docker.com/_/mariadb
-    image: mariadb:${VERSION_MARIADB:-11.3.2}
+    image: mariadb:${VERSION_MARIADB:-11.7.2}
     # <<: *basic
     deploy:
       # <<: *basic-deploy
@@ -188,6 +188,7 @@ services:
       default: {}
     healthcheck:
       test: ["CMD-SHELL", "/usr/local/bin/healthcheck.sh --no-defaults"]
+      # test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       start_period: 2s
       interval: 5s
       timeout: 3s
@@ -263,7 +264,7 @@ services:
   ##############################################################################
   influxdb:
     # https://hub.docker.com/_/influxdb
-    image: influxdb:${VERSION_INFLUXDB:-2.7.7-alpine}
+    image: influxdb:${VERSION_INFLUXDB:-2.7.11-alpine}
     # <<: *basic
     deploy:
       # <<: *basic-deploy
@@ -322,7 +323,7 @@ services:
   ##############################################################################
   mongodb:
     # https://hub.docker.com/_/mongo
-    image: mongo:${VERSION_MONGODB:-6.0.6}
+    image: mongo:${VERSION_MONGODB:-8.0.8}
     # <<: *basic
     deploy:
       # <<: *basic-deploy
