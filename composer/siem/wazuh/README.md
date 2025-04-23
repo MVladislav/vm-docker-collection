@@ -17,6 +17,7 @@
     - [Plugin install](#plugin-install)
     - [Password protected enrollment](#password-protected-enrollment)
       - [Remove an agent](#remove-an-agent)
+      - [Upgrade](#upgrade)
   - [References](#references)
 
 ---
@@ -91,7 +92,7 @@ WAZUH_INDEXER_JAVA=1g
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION=4.10.1
+VERSION=4.11.1
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
@@ -154,6 +155,68 @@ $docker exec -it "$(docker ps -q -f name=wazuh_wazuh-master)" /var/ossec/bin/man
 ```
 
 - <https://documentation.wazuh.com/current/user-manual/agent/agent-management/remove-agents/remove.html>
+
+#### Upgrade
+
+> you need to remove the plugins folder, and afterwards reinstall the plugins like described above
+
+```sh
+docker volume rm wazuh-dashboard-plugins
+
+$curl -k -u "admin:$(cat /run/secrets/indexer_password_file_secret)" \
+-X PUT "https://wazuh1.indexer:9200/_cluster/settings" \
+-H "Content-Type: application/json" -d '
+{
+   "persistent": {
+      "cluster.routing.allocation.enable": "primaries"
+   }
+}'
+$curl -k -u "admin:$(cat /run/secrets/indexer_password_file_secret)" \
+-X PUT "https://wazuh2.indexer:9200/_cluster/settings" \
+-H "Content-Type: application/json" -d '
+{
+   "persistent": {
+      "cluster.routing.allocation.enable": "primaries"
+   }
+}'
+$curl -k -u "admin:$(cat /run/secrets/indexer_password_file_secret)" \
+-X PUT "https://wazuh3.indexer:9200/_cluster/settings" \
+-H "Content-Type: application/json" -d '
+{
+   "persistent": {
+      "cluster.routing.allocation.enable": "primaries"
+   }
+}'
+$curl -k -u "admin:$(cat /run/secrets/indexer_password_file_secret)" -X POST "https://wazuh1.indexer:9200/_flush"
+$curl -k -u "admin:$(cat /run/secrets/indexer_password_file_secret)" -X POST "https://wazuh2.indexer:9200/_flush"
+$curl -k -u "admin:$(cat /run/secrets/indexer_password_file_secret)" -X POST "https://wazuh3.indexer:9200/_flush"
+
+$curl -k -u "admin:$(cat /run/secrets/indexer_password_file_secret)" https://wazuh1.indexer:9200/_cat/nodes?v
+$curl -k -u "admin:$(cat /run/secrets/indexer_password_file_secret)" \
+-X PUT "https://wazuh1.indexer:9200/_cluster/settings" \
+-H "Content-Type: application/json" -d '
+{
+   "persistent": {
+      "cluster.routing.allocation.enable": "all"
+   }
+}'
+$curl -k -u "admin:$(cat /run/secrets/indexer_password_file_secret)" \
+-X PUT "https://wazuh2.indexer:9200/_cluster/settings" \
+-H "Content-Type: application/json" -d '
+{
+   "persistent": {
+      "cluster.routing.allocation.enable": "all"
+   }
+}'
+$curl -k -u "admin:$(cat /run/secrets/indexer_password_file_secret)" \
+-X PUT "https://wazuh3.indexer:9200/_cluster/settings" \
+-H "Content-Type: application/json" -d '
+{
+   "persistent": {
+      "cluster.routing.allocation.enable": "all"
+   }
+}'
+```
 
 ---
 
