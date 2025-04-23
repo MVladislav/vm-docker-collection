@@ -23,6 +23,7 @@
 
 ```sh
 $pwgen -s 18 1 > config/secrets/mariadb_user_password.txt
+$echo "MARIADB_PASSWORD_TMP=$(cat config/secrets/mariadb_user_password.txt)" >> .env
 ```
 
 ### create `.env` file following:
@@ -64,8 +65,6 @@ MARIADB_PASSWORD_TMP=$(cat config/secrets/mariadb_user_password.txt)
 ```env
 NETWORK_MODE=overlay
 DOMAIN=ghost.home.local
-
-MARIADB_PASSWORD_TMP=$(cat config/secrets/mariadb_user_password.txt)
 ```
 
 ---

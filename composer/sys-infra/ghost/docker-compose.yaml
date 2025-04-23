@@ -32,17 +32,12 @@ x-basic-deploy: &basic-deploy
 
 x-basic: &basic
   env_file: ${ENV_FILE:-.env}
-  # cap_add:
-  #   - CHOWN
-  #   - DAC_OVERRIDE
-  #   - DAC_READ_SEARCH
-  #   - SETGID
-  #   - SETUID
-  #   - FOWNER
-  #   - FSETID
-  # cap_drop: ["ALL"]
-  # security_opt:
-  #   - no-new-privileges=true
+  cap_add:
+    - SETGID
+    - SETUID
+  cap_drop: ["ALL"]
+  security_opt:
+    - no-new-privileges=true
   ulimits:
     memlock:
       soft: -1
@@ -71,21 +66,17 @@ services:
     <<: [*basic, *basic-deploy-labels]
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels]
-    # ports:
-    #   - target: ${PORT:-...}
-    #     published: ${PORT_PUBLISH:-...}
-    #     protocol: tcp
-    #     mode: host
     secrets:
       - mariadb_user_password
     environment:
       # see https://ghost.org/docs/config/#configuration-options
+      url: https://${DOMAIN?domain variable not set}
+
       database__client: mysql
       database__connection__host: mariadb
       database__connection__user: ${MARIADB_USER:-ghost}
       database__connection__password: ${MARIADB_PASSWORD_TMP}
       database__connection__database: ${MARIADB_DATABASE:-ghost}
-      url: https://${DOMAIN?domain variable not set}
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
@@ -99,7 +90,7 @@ services:
   ##############################################################################
   mariadb:
     # https://hub.docker.com/_/mariadb
-    image: mariadb:${VERSION_MARIADB:-11.3.2}
+    image: mariadb:${VERSION_MARIADB:-11.7.2}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -141,7 +132,6 @@ services:
 ################################################################################
 networks:
   default:
-    # name: ghost${SERVICE_NAME_POST:-}
     driver: ${NETWORK_MODE:-bridge}
     attachable: true
     driver_opts:
