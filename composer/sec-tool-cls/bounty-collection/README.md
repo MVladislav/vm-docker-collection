@@ -82,3 +82,4 @@ VERSION=latest
 - <https://docs.docker.com/engine/swarm/secrets/>
 - <https://docs.docker.com/compose/use-secrets/>
 - <https://...>
+- <https://github.com/aaaguirrep/offensive-docker/blob/master/Dockerfile>
