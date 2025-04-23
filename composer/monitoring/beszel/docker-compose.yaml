@@ -61,7 +61,7 @@ services:
   ##############################################################################
   beszel:
     # https://github.com/henrygd/beszel/pkgs/container/beszel%2Fbeszel
-    image: ghcr.io/henrygd/beszel/beszel:${VERSION:-0.10.1}
+    image: ghcr.io/henrygd/beszel/beszel:${VERSION:-0.10.2}
     <<: [*basic, *basic-deploy-labels]
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels]
@@ -76,7 +76,7 @@ services:
 
   beszel-agent:
     # https://github.com/henrygd/beszel/pkgs/container/beszel%2Fbeszel-agent
-    image: ghcr.io/henrygd/beszel/beszel-agent:${VERSION:-0.10.1}
+    image: ghcr.io/henrygd/beszel/beszel-agent:${VERSION:-0.10.2}
     <<: *basic
     deploy:
       <<: *basic-deploy
