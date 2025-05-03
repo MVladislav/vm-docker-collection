@@ -17,8 +17,8 @@ services:
           cpus: ${RESOURCES_RESERVATIONS_CPUS_DRAGONFLY:-0.001}
           memory: ${RESOURCES_RESERVATIONS_MEMORY_DRAGONFLY:-32m}
     cap_add:
-      - SETGID
       - SETUID
+      - SETGID
     volumes:
       # - /etc/timezone:/etc/timezone:ro
       # - /etc/localtime:/etc/localtime:ro
@@ -47,8 +47,8 @@ services:
           cpus: ${RESOURCES_RESERVATIONS_CPUS_VALKEY:-0.001}
           memory: ${RESOURCES_RESERVATIONS_MEMORY_VALKEY:-32m}
     cap_add:
-      - SETGID
       - SETUID
+      - SETGID
     volumes:
       # - /etc/timezone:/etc/timezone:ro
       # - /etc/localtime:/etc/localtime:ro
@@ -118,9 +118,9 @@ services:
           cpus: ${RESOURCES_RESERVATIONS_CPUS_POSTGRESQL:-0.001}
           memory: ${RESOURCES_RESERVATIONS_MEMORY_POSTGRESQL:-32m}
     cap_add:
-      - FOWNER
-      - SETGID
       - SETUID
+      - SETGID
+      - FOWNER
       - DAC_OVERRIDE
     secrets:
       - postgres_password_file
@@ -159,8 +159,8 @@ services:
           cpus: ${RESOURCES_RESERVATIONS_CPUS_MARIADB:-0.001}
           memory: ${RESOURCES_RESERVATIONS_MEMORY_MARIADB:-32m}
     cap_add:
-      - SETGID
       - SETUID
+      - SETGID
       - DAC_OVERRIDE
     # ports:
     #   - target: ${PORT_MARIADB:-3306}
@@ -276,10 +276,10 @@ services:
           cpus: ${RESOURCES_RESERVATIONS_CPUS_INFLUXDB:-0.001}
           memory: ${RESOURCES_RESERVATIONS_MEMORY_INFLUXDB:-32m}
     cap_add:
-      - SETGID
       - SETUID
-      - DAC_OVERRIDE
+      - SETGID
       - CHOWN
+      - DAC_OVERRIDE
     # ports:
     #   - target: ${PORT_INFLUXDB:-8086}
     #     published: ${PORT_INFLUXDB_PUBLISH:-8086}
@@ -334,6 +334,10 @@ services:
         reservations:
           cpus: ${RESOURCES_RESERVATIONS_CPUS_MONGODB:-0.001}
           memory: ${RESOURCES_RESERVATIONS_MEMORY_MONGODB:-32m}
+    cap_add:
+      - SETUID
+      - SETGID
+      - CHOWN
     # ports:
     #   - target: ${PORT_MONGODB:-27017}
     #     published: ${PORT_MONGODB_PUBLISH:-27017}
@@ -350,8 +354,6 @@ services:
     volumes:
       # - /etc/timezone:/etc/timezone:ro
       # - /etc/localtime:/etc/localtime:ro
-      - /etc/timezone:/etc/timezone:ro
-      - /etc/localtime:/etc/localtime:ro
       - mongodb:/data/db
 
   ##############################################################################
