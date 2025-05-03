@@ -61,7 +61,7 @@ services:
   ##############################################################################
   beszel:
     # https://github.com/henrygd/beszel/pkgs/container/beszel%2Fbeszel
-    image: ghcr.io/henrygd/beszel/beszel:${VERSION:-0.10.2}
+    image: ghcr.io/henrygd/beszel/beszel:${VERSION:-0.11.1}
     <<: [*basic, *basic-deploy-labels]
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels]
@@ -73,10 +73,26 @@ services:
     networks:
       default: {}
       proxy: {}
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "/beszel",
+          "health",
+          "--url",
+          "${PROTOCOL:-http}://0.0.0.0:${PORT:-8090}",
+        ]
+      start_period: 10s
+      interval: 10s
+      timeout: 3s
+      retries: 10
 
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
   beszel-agent:
     # https://github.com/henrygd/beszel/pkgs/container/beszel%2Fbeszel-agent
-    image: ghcr.io/henrygd/beszel/beszel-agent:${VERSION:-0.10.2}
+    image: ghcr.io/henrygd/beszel/beszel-agent:${VERSION:-0.11.1}
     <<: *basic
     deploy:
       <<: *basic-deploy
