@@ -126,6 +126,8 @@ services:
     networks:
       default: {}
       proxy: {}
+    depends_on:
+      - gvmd
 
   gvmd:
     image: registry.community.greenbone.net/community/gvmd:${VERSION_GVMD:-stable}
@@ -143,6 +145,19 @@ services:
       - gvmd_socket_vol:/run/gvmd
       - ospd_openvas_socket_vol:/run/ospd
       - psql_socket_vol:/var/run/postgresql
+    depends_on:
+      pg-gvm:
+        condition: service_started
+      scap-data:
+        condition: service_completed_successfully
+      cert-bund-data:
+        condition: service_completed_successfully
+      dfn-cert-data:
+        condition: service_completed_successfully
+      data-objects:
+        condition: service_completed_successfully
+      report-formats:
+        condition: service_completed_successfully
 
   openvasd:
     image: registry.community.greenbone.net/community/openvas-scanner:${VERSION_NOTUS_SCANNER:-stable}
@@ -159,6 +174,13 @@ services:
       - openvas_log_data_vol:/var/log/openvas
       - gpg_data_vol:/etc/openvas/gnupg
       - notus_data_vol:/var/lib/notus
+    depends_on:
+      vulnerability-tests:
+        condition: service_completed_successfully
+      configure-openvas:
+        condition: service_completed_successfully
+      gpg-data:
+        condition: service_completed_successfully
 
   ospd-openvas:
     image: registry.community.greenbone.net/community/ospd-openvas:${VERSION_OSPD_OPENVAS:-stable}
@@ -166,12 +188,12 @@ services:
     deploy:
       <<: *basic-deploy
     restart: on-failure
-    # cap_add:
-    #   - NET_ADMIN # for capturing packages in promiscuous mode
-    #   - NET_RAW # for raw sockets e.g. used for the boreas alive detection
-    # security_opt:
-    #   - seccomp=unconfined
-    #   - apparmor=unconfined
+    cap_add:
+      - NET_ADMIN # for capturing packages in promiscuous mode
+      - NET_RAW # for raw sockets e.g. used for the boreas alive detection
+    security_opt:
+      - seccomp=unconfined
+      - apparmor=unconfined
     # configs:
     #   - source: openvas_config
     #     target: /etc/openvas/openvas.conf
@@ -197,6 +219,15 @@ services:
       - redis_socket_vol:/run/redis/
       - openvas_data_vol:/etc/openvas/
       - openvas_log_data_vol:/var/log/openvas
+    depends_on:
+      redis-server:
+        condition: service_started
+      gpg-data:
+        condition: service_completed_successfully
+      vulnerability-tests:
+        condition: service_completed_successfully
+      configure-openvas:
+        condition: service_completed_successfully
 
   pg-gvm:
     image: registry.community.greenbone.net/community/pg-gvm:${VERSION_PG_GVM:-stable}
@@ -221,20 +252,6 @@ services:
   ##############################################################################
   ##############################################################################
 
-  vulnerability-tests:
-    image: registry.community.greenbone.net/community/vulnerability-tests:${VERSION_LATEST:-latest}
-    <<: *basic
-    deploy:
-      <<: *basic-deploy
-    environment:
-      FEED_RELEASE: ${FEED_RELEASE:-24.10}
-    volumes:
-      - vt_data_vol:/mnt
-
-  ##############################################################################
-  ##############################################################################
-  ##############################################################################
-
   # shows logs of openvas
   openvas:
     image: registry.community.greenbone.net/community/openvas-scanner:${VERSION_NOTUS_SCANNER:-stable}
@@ -251,6 +268,40 @@ services:
       - |
         cat /etc/openvas/openvas.conf
         tail -f /var/log/openvas/openvas.log
+    depends_on:
+      configure-openvas:
+        condition: service_completed_successfully
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+
+  greenbone-feed-sync:
+    image: registry.community.greenbone.net/community/greenbone-feed-sync:${VERSION_LATEST:-latest}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy-conf
+    volumes:
+      - vt_data_vol:/var/lib/openvas/plugins
+      - notus_data_vol:/var/lib/notus
+      - gvmd_data_vol:/var/lib/gvm
+      - scap_data_vol:/var/lib/gvm/scap-data
+      - cert_data_vol:/var/lib/gvm/cert-data
+      - data_objects_vol:/var/lib/gvm/data-objects/gvmd
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+
+  vulnerability-tests:
+    image: registry.community.greenbone.net/community/vulnerability-tests:${VERSION_LATEST:-latest}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+    environment:
+      FEED_RELEASE: ${FEED_RELEASE:-24.10}
+    volumes:
+      - vt_data_vol:/mnt
 
   ##############################################################################
   ##############################################################################
@@ -287,6 +338,8 @@ services:
       <<: *basic-deploy-conf
     volumes:
       - cert_data_vol:/mnt
+    depends_on:
+      - cert-bund-data
 
   data-objects:
     image: registry.community.greenbone.net/community/data-objects:${VERSION_LATEST:-latest}
@@ -307,6 +360,8 @@ services:
       FEED_RELEASE: ${FEED_RELEASE:-24.10}
     volumes:
       - data_objects_vol:/mnt
+    depends_on:
+      - data-objects
 
   gpg-data:
     image: registry.community.greenbone.net/community/gpg-data:${VERSION_LATEST:-latest}
@@ -324,6 +379,9 @@ services:
     volumes:
       - gvmd_socket_vol:/run/gvmd
       - ospd_openvas_socket_vol:/run/ospd
+    depends_on:
+      - gvmd
+      - ospd-openvas
 
   # Sets log level of openvas to the set LOG_LEVEL within the env
   # and changes log output to /var/log/openvas instead /var/log/gvm

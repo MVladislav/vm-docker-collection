@@ -12,6 +12,8 @@
       - [example short .env](#example-short-env)
   - [info](#info)
   - [useful log checks](#useful-log-checks)
+  - [Performing a Manual Feed Sync (TODO)](#performing-a-manual-feed-sync-todo)
+  - [gvm-tools](#gvm-tools)
   - [FAQ](#faq)
   - [References](#references)
 
@@ -55,9 +57,12 @@ FEED_RELEASE=24.10
 
 #### example short .env
 
+> NOTE: swarm mode seams not to be work.
+
 ```env
 NETWORK_MODE=overlay
 DOMAIN=openvas.home.local
+LB_SWARM=false
 ```
 
 ## info
@@ -71,20 +76,47 @@ change password:
 
 ```sh
 $docker-compose exec -u gvmd gvmd gvmd --user=admin --new-password=<PASSWORD>
+#$docker exec -it -u gvmd "$(docker ps -q -f name=openvas_gvmd)" gvmd --user=admin --new-password=<PASSWORD>
 ```
 
 ## useful log checks
 
 ```sh
-: 'see feed status update process'
-$docker logs -f "$(docker ps -q -f name=openvas_gvmd)"
+: 'see service status update process'
+$docker logs -f "$(docker ps -q -f name=gvmd)"
 
-$docker logs -f "$(docker ps -q -f name=openvas_ospd-openvas)"
-$docker logs -f "$(docker ps -q -f name=openvas_gsa)"
-$docker logs -f "$(docker ps -q -f name=openvas_notus-scanner)"
-$docker logs -f "$(docker ps -q -f name=openvas_mqtt-broker)"
-$docker logs -f "$(docker ps -q -f name=openvas_pg-gvm)"
-$docker logs -f "$(docker ps -q -f name=openvas_redis-server)"
+$docker logs -f "$(docker ps -q -f name=gsa)"
+$docker logs -f "$(docker ps -q -f name=openvasd)"
+$docker logs -f "$(docker ps -q -f name=ospd-openvas)"
+$docker logs -f "$(docker ps -q -f name=openvas-openvas)"
+$docker logs -f "$(docker ps -q -f name=pg-gvm)"
+$docker logs -f "$(docker ps -q -f name=redis-server)"
+
+$docker logs -f "$(docker ps -q -f name=openvas)"
+$docker logs -f "$(docker ps -q -f name=vulnerability-tests)"
+```
+
+## Performing a Manual Feed Sync (TODO)
+
+```sh
+$docker-compose exec greenbone-feed-sync greenbone-feed-sync greenbone-feed-sync --type nasl
+$docker-compose exec greenbone-feed-sync greenbone-feed-sync greenbone-feed-sync --type notus
+$docker-compose exec greenbone-feed-sync greenbone-feed-sync greenbone-feed-sync --type scap
+$docker-compose exec greenbone-feed-sync greenbone-feed-sync greenbone-feed-sync --type cert
+$docker-compose exec greenbone-feed-sync greenbone-feed-sync greenbone-feed-sync --type gvmd-data
+
+# $docker exec -it "$(docker ps -q -f name=greenbone-feed-sync)" greenbone-feed-sync greenbone-feed-sync --type nasl
+# $docker exec -it "$(docker ps -q -f name=greenbone-feed-sync)" greenbone-feed-sync greenbone-feed-sync --type notus
+# $docker exec -it "$(docker ps -q -f name=greenbone-feed-sync)" greenbone-feed-sync greenbone-feed-sync --type scap
+# $docker exec -it "$(docker ps -q -f name=greenbone-feed-sync)" greenbone-feed-sync greenbone-feed-sync --type cert
+# $docker exec -it "$(docker ps -q -f name=greenbone-feed-sync)" greenbone-feed-sync greenbone-feed-sync --type gvmd-data
+```
+
+## gvm-tools
+
+```sh
+$docker-compose exec -it gvm-tools bash
+#$docker exec -it "$(docker ps -q -f name=gvm-tools)" bash
 ```
 
 ---
@@ -106,6 +138,9 @@ $docker logs -f "$(docker ps -q -f name=openvas_redis-server)"
 
 - <https://greenbone.github.io/docs/latest/22.4/container/index.html>
 - <https://hub.docker.com/r/greenbone/openvas-scanner>
+- <https://greenbone.github.io/docs/latest/22.4/container/workflows.html#loading-the-feed-changes>
+- <https://greenbone.github.io/docs/latest/22.4/container/workflows.html#performing-a-manual-feed-sync>
+  - <https://github.com/greenbone/greenbone-feed-sync/>
 - info
   - <https://greenbone.github.io/docs/latest/architecture.html>
   - <https://www.greenbone.net/en/roadmap-lifecycle/>
