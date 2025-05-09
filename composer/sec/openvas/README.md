@@ -26,7 +26,6 @@
 ```env
 # GENERAL variables (mostly by default, change as needed)
 # ______________________________________________________________________________
-NODE_ID=
 NODE_ROLE=manager
 NETWORK_MODE=overlay # by default "bridge"
 
@@ -38,10 +37,6 @@ PROTOCOL=http
 PORT=80
 # default-secured@file | public-whitelist@file | authentik@file
 MIDDLEWARE_SECURED=default-secured@file
-
-# GENERAL sources to be used (set by default, change as needed)
-# ______________________________________________________________________________
-...
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
@@ -55,7 +50,7 @@ VERSION_NOTUS_SCANNER=stable # 22.4.0
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
-# NOTE: extend additional info here ...
+FEED_RELEASE=24.10
 ```
 
 #### example short .env
@@ -63,13 +58,6 @@ VERSION_NOTUS_SCANNER=stable # 22.4.0
 ```env
 NETWORK_MODE=overlay
 DOMAIN=openvas.home.local
-
-VERSION_LATEST=latest
-VERSION_PG_GVM=stable        # 22.4.0
-VERSION_GVMD=stable          # 22.4.0
-VERSION_GSA=stable           # 22.4.0
-VERSION_OSPD_OPENVAS=stable  # 22.4.0
-VERSION_NOTUS_SCANNER=stable # 22.4.0
 ```
 
 ## info

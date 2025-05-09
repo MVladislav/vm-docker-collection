@@ -2,9 +2,9 @@
 x-basic-deploy-labels: &basic-deploy-labels
   labels:
     - traefik.enable=true
-    - traefik.docker.lbswarm=${LB_SWARM:-true}
-    - traefik.docker.network=proxy
-    - traefik.http.routers.openvas.entrypoints=https
+    - traefik.swarm.lbswarm=${LB_SWARM:-true}
+    - traefik.swarm.network=proxy
+    - traefik.http.routers.openvas.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
     - traefik.http.routers.openvas.rule=Host(`${DOMAIN?domain variable not set}`)
     - traefik.http.routers.openvas.tls=true
     - traefik.http.routers.openvas.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
@@ -24,15 +24,17 @@ x-basic-deploy: &basic-deploy
     constraints:
       - "node.role==${NODE_ROLE:-manager}"
       - node.platform.os == linux
+  update_config:
+    order: stop-first
   restart_policy:
     condition: on-failure
   resources:
     limits:
       cpus: ${RESOURCES_LIMITS_CPUS:-2}
-      memory: ${RESOURCES_LIMITS_MEMORY:-3G}
+      memory: ${RESOURCES_LIMITS_MEMORY:-3g}
     reservations:
-      cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.01}
-      memory: ${RESOURCES_RESERVATIONS_MEMORY:-100m}
+      cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
+      memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
 
 x-basic-deploy-conf: &basic-deploy-conf
   mode: replicated
@@ -42,11 +44,13 @@ x-basic-deploy-conf: &basic-deploy-conf
     constraints:
       - "node.role==${NODE_ROLE:-manager}"
       - node.platform.os == linux
+  update_config:
+    order: stop-first
   restart_policy:
     condition: on-failure
   resources:
     limits:
-      cpus: ${RESOURCES_LIMITS_CPUS_CONF:-0.2}
+      cpus: ${RESOURCES_LIMITS_CPUS_CONF:-0.5}
       memory: ${RESOURCES_LIMITS_MEMORY_CONF:-250m}
     reservations:
       cpus: ${RESOURCES_RESERVATIONS_CPUS_CONF:-0.001}
@@ -63,8 +67,8 @@ x-basic: &basic
       soft: -1
       hard: -1
     nofile:
-      soft: 65535
-      hard: 65535
+      soft: 655360
+      hard: 655360
     fsize: -1
     as: -1
   networks:
@@ -111,33 +115,26 @@ x-basic: &basic
 ################################################################################
 ################################################################################
 ################################################################################
-
 services:
   gsa:
-    image: greenbone/gsa:${VERSION_GSA:-stable}
+    image: registry.community.greenbone.net/community/gsa:${VERSION_GSA:-stable}
     <<: [*basic, *basic-deploy-labels]
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels]
     restart: on-failure
-    # ports:
-    #   - 9392:80
     volumes:
-      # - /etc/timezone:/etc/timezone:ro
-      # - /etc/localtime:/etc/localtime:ro
       - gvmd_socket_vol:/run/gvmd
     networks:
       default: {}
       proxy: {}
 
   gvmd:
-    image: greenbone/gvmd:${VERSION_GVMD:-stable}
+    image: registry.community.greenbone.net/community/gvmd:${VERSION_GVMD:-stable}
     <<: *basic
     deploy:
       <<: *basic-deploy
     restart: on-failure
     volumes:
-      # - /etc/timezone:/etc/timezone:ro
-      # - /etc/localtime:/etc/localtime:ro
       - gvmd_data_vol:/var/lib/gvm
       - scap_data_vol:/var/lib/gvm/scap-data/
       - cert_data_vol:/var/lib/gvm/cert-data
@@ -148,23 +145,24 @@ services:
       - ospd_openvas_socket_vol:/run/ospd
       - psql_socket_vol:/var/run/postgresql
 
-  notus-scanner:
-    image: greenbone/notus-scanner:${VERSION_NOTUS_SCANNER:-stable}
+  openvasd:
+    image: registry.community.greenbone.net/community/openvas-scanner:${VERSION_NOTUS_SCANNER:-stable}
     <<: *basic
     deploy:
       <<: *basic-deploy
     restart: on-failure
-    volumes:
-      # - /etc/timezone:/etc/timezone:ro
-      # - /etc/localtime:/etc/localtime:ro
-      - notus_data_vol:/var/lib/notus
-      - gpg_data_vol:/etc/openvas/gnupg
     environment:
-      NOTUS_SCANNER_MQTT_BROKER_ADDRESS: mqtt-broker
-      NOTUS_SCANNER_PRODUCTS_DIRECTORY: /var/lib/notus/products
+      OPENVASD_MODE: service_notus
+      GNUPGHOME: /etc/openvas/gnupg
+      LISTENING: 0.0.0.0:80
+    volumes:
+      - openvas_data_vol:/etc/openvas
+      - openvas_log_data_vol:/var/log/openvas
+      - gpg_data_vol:/etc/openvas/gnupg
+      - notus_data_vol:/var/lib/notus
 
   ospd-openvas:
-    image: greenbone/ospd-openvas:${VERSION_OSPD_OPENVAS:-stable}
+    image: registry.community.greenbone.net/community/ospd-openvas:${VERSION_OSPD_OPENVAS:-stable}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -187,58 +185,37 @@ services:
         "-f",
         "--config",
         "/etc/gvm/ospd-openvas.conf",
-        "--mqtt-broker-address",
-        "mqtt-broker",
         "--notus-feed-dir",
         "/var/lib/notus/advisories",
         "-m",
         "666",
       ]
     volumes:
-      # - /etc/timezone:/etc/timezone:ro
-      # - /etc/localtime:/etc/localtime:ro
       - gpg_data_vol:/etc/openvas/gnupg
       - vt_data_vol:/var/lib/openvas/plugins
       - notus_data_vol:/var/lib/notus
       - ospd_openvas_socket_vol:/run/ospd
       - redis_socket_vol:/run/redis/
-
-  mqtt-broker:
-    image: greenbone/mqtt-broker:${VERSION_LATEST:-latest}
-    <<: *basic
-    deploy:
-      <<: *basic-deploy
-    restart: on-failure
-    # volumes:
-    #   - /etc/timezone:/etc/timezone:ro
-    #   - /etc/localtime:/etc/localtime:ro
-    networks:
-      default:
-        aliases:
-          - mqtt-broker
-          - broker
+      - openvas_data_vol:/etc/openvas/
+      - openvas_log_data_vol:/var/log/openvas
 
   pg-gvm:
-    image: greenbone/pg-gvm:${VERSION_PG_GVM:-stable}
+    image: registry.community.greenbone.net/community/pg-gvm:${VERSION_PG_GVM:-stable}
     <<: *basic
     deploy:
       <<: *basic-deploy
     restart: on-failure
     volumes:
-      # - /etc/timezone:/etc/timezone:ro
-      # - /etc/localtime:/etc/localtime:ro
       - psql_data_vol:/var/lib/postgresql
       - psql_socket_vol:/var/run/postgresql
 
   redis-server:
-    image: greenbone/redis-server:${VERSION_LATEST:-latest}
+    image: registry.community.greenbone.net/community/redis-server:${VERSION_LATEST:-latest}
     <<: *basic
     deploy:
       <<: *basic-deploy
     restart: on-failure
     volumes:
-      # - /etc/timezone:/etc/timezone:ro
-      # - /etc/localtime:/etc/localtime:ro
       - redis_socket_vol:/run/redis/
 
   ##############################################################################
@@ -246,101 +223,130 @@ services:
   ##############################################################################
 
   vulnerability-tests:
-    image: greenbone/vulnerability-tests:${VERSION_LATEST:-latest}
+    image: registry.community.greenbone.net/community/vulnerability-tests:${VERSION_LATEST:-latest}
     <<: *basic
     deploy:
       <<: *basic-deploy
     environment:
-      STORAGE_PATH: /var/lib/openvas/22.04/vt-data/nasl
+      FEED_RELEASE: ${FEED_RELEASE:-24.10}
     volumes:
-      # - /etc/timezone:/etc/timezone:ro
-      # - /etc/localtime:/etc/localtime:ro
       - vt_data_vol:/mnt
 
   ##############################################################################
   ##############################################################################
   ##############################################################################
 
+  # shows logs of openvas
+  openvas:
+    image: registry.community.greenbone.net/community/openvas-scanner:${VERSION_NOTUS_SCANNER:-stable}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy-conf
+    restart: on-failure
+    volumes:
+      - openvas_data_vol:/etc/openvas
+      - openvas_log_data_vol:/var/log/openvas
+    command:
+      - /bin/sh
+      - -c
+      - |
+        cat /etc/openvas/openvas.conf
+        tail -f /var/log/openvas/openvas.log
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+
   notus-data:
-    image: greenbone/notus-data:${VERSION_LATEST:-latest}
+    image: registry.community.greenbone.net/community/notus-data:${VERSION_LATEST:-latest}
     <<: *basic
     deploy:
       <<: *basic-deploy-conf
     volumes:
-      # - /etc/timezone:/etc/timezone:ro
-      # - /etc/localtime:/etc/localtime:ro
       - notus_data_vol:/mnt
 
   scap-data:
-    image: greenbone/scap-data:${VERSION_LATEST:-latest}
+    image: registry.community.greenbone.net/community/scap-data:${VERSION_LATEST:-latest}
     <<: *basic
     deploy:
       <<: *basic-deploy-conf
     volumes:
-      # - /etc/timezone:/etc/timezone:ro
-      # - /etc/localtime:/etc/localtime:ro
       - scap_data_vol:/mnt
 
   cert-bund-data:
-    image: greenbone/cert-bund-data:${VERSION_LATEST:-latest}
+    image: registry.community.greenbone.net/community/cert-bund-data:${VERSION_LATEST:-latest}
     <<: *basic
     deploy:
       <<: *basic-deploy-conf
     volumes:
-      # - /etc/timezone:/etc/timezone:ro
-      # - /etc/localtime:/etc/localtime:ro
       - cert_data_vol:/mnt
 
   dfn-cert-data:
-    image: greenbone/dfn-cert-data:${VERSION_LATEST:-latest}
+    image: registry.community.greenbone.net/community/dfn-cert-data:${VERSION_LATEST:-latest}
     <<: *basic
     deploy:
       <<: *basic-deploy-conf
     volumes:
-      # - /etc/timezone:/etc/timezone:ro
-      # - /etc/localtime:/etc/localtime:ro
       - cert_data_vol:/mnt
 
   data-objects:
-    image: greenbone/data-objects:${VERSION_LATEST:-latest}
+    image: registry.community.greenbone.net/community/data-objects:${VERSION_LATEST:-latest}
     <<: *basic
     deploy:
       <<: *basic-deploy-conf
+    environment:
+      FEED_RELEASE: ${FEED_RELEASE:-24.10}
     volumes:
-      # - /etc/timezone:/etc/timezone:ro
-      # - /etc/localtime:/etc/localtime:ro
       - data_objects_vol:/mnt
 
   report-formats:
-    image: greenbone/report-formats:${VERSION_LATEST:-latest}
+    image: registry.community.greenbone.net/community/report-formats:${VERSION_LATEST:-latest}
     <<: *basic
     deploy:
       <<: *basic-deploy-conf
+    environment:
+      FEED_RELEASE: ${FEED_RELEASE:-24.10}
     volumes:
-      # - /etc/timezone:/etc/timezone:ro
-      # - /etc/localtime:/etc/localtime:ro
       - data_objects_vol:/mnt
 
   gpg-data:
-    image: greenbone/gpg-data:${VERSION_LATEST:-latest}
+    image: registry.community.greenbone.net/community/gpg-data:${VERSION_LATEST:-latest}
     <<: *basic
     deploy:
       <<: *basic-deploy-conf
     volumes:
-      # - /etc/timezone:/etc/timezone:ro
-      # - /etc/localtime:/etc/localtime:ro
       - gpg_data_vol:/mnt
 
   gvm-tools:
-    image: greenbone/gvm-tools:${VERSION_LATEST:-latest}
+    image: registry.community.greenbone.net/community/gvm-tools:${VERSION_LATEST:-latest}
     <<: *basic
     deploy:
       <<: *basic-deploy-conf
     volumes:
-      # - /etc/timezone:/etc/timezone:ro
-      # - /etc/localtime:/etc/localtime:ro
       - gvmd_socket_vol:/run/gvmd
       - ospd_openvas_socket_vol:/run/ospd
+
+  # Sets log level of openvas to the set LOG_LEVEL within the env
+  # and changes log output to /var/log/openvas instead /var/log/gvm
+  # to reduce likelihood of unwanted log interferences
+  configure-openvas:
+    image: registry.community.greenbone.net/community/openvas-scanner:${VERSION_NOTUS_SCANNER:-stable}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy-conf
+    volumes:
+      - openvas_data_vol:/mnt
+      - openvas_log_data_vol:/var/log/openvas
+    command:
+      - /bin/sh
+      - -c
+      - |
+        printf "table_driven_lsc = yes\nopenvasd_server = http://openvasd:80\n" > /mnt/openvas.conf
+        sed "s/127/128/" /etc/openvas/openvas_log.conf | sed 's/gvm/openvas/' > /mnt/openvas_log.conf
+        chmod 644 /mnt/openvas.conf
+        chmod 644 /mnt/openvas_log.conf
+        touch /var/log/openvas/openvas.log
+        chmod 666 /var/log/openvas/openvas.log
 
 ################################################################################
 ################################################################################
@@ -367,6 +373,8 @@ volumes:
   gvmd_socket_vol:
   ospd_openvas_socket_vol:
   redis_socket_vol:
+  openvas_data_vol:
+  openvas_log_data_vol:
 # configs:
 #   openvas_config:
 #     file: $PWD/config/openvas.conf
