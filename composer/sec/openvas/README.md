@@ -12,6 +12,7 @@
       - [example short .env](#example-short-env)
   - [info](#info)
   - [useful log checks](#useful-log-checks)
+  - [Feed/Data updates](#feeddata-updates)
   - [Performing a Manual Feed Sync (TODO)](#performing-a-manual-feed-sync-todo)
   - [gvm-tools](#gvm-tools)
   - [FAQ](#faq)
@@ -57,12 +58,9 @@ FEED_RELEASE=24.10
 
 #### example short .env
 
-> NOTE: swarm mode seams not to be work.
-
 ```env
 NETWORK_MODE=overlay
 DOMAIN=openvas.home.local
-LB_SWARM=false
 ```
 
 ## info
@@ -75,8 +73,10 @@ default credentials:
 change password:
 
 ```sh
+# SWARM
+$docker exec -u gvmd "$(docker ps -q -f name=openvas_gvmd)" gvmd --user=admin --new-password=<PASSWORD>
+# COMPOSE
 $docker-compose exec -u gvmd gvmd gvmd --user=admin --new-password=<PASSWORD>
-#$docker exec -it -u gvmd "$(docker ps -q -f name=openvas_gvmd)" gvmd --user=admin --new-password=<PASSWORD>
 ```
 
 ## useful log checks
@@ -88,35 +88,52 @@ $docker logs -f "$(docker ps -q -f name=gvmd)"
 $docker logs -f "$(docker ps -q -f name=gsa)"
 $docker logs -f "$(docker ps -q -f name=openvasd)"
 $docker logs -f "$(docker ps -q -f name=ospd-openvas)"
-$docker logs -f "$(docker ps -q -f name=openvas-openvas)"
 $docker logs -f "$(docker ps -q -f name=pg-gvm)"
 $docker logs -f "$(docker ps -q -f name=redis-server)"
 
-$docker logs -f "$(docker ps -q -f name=openvas)"
+$docker logs -f "$(docker ps -q -f 'name=openvas_openvas\.')"
 $docker logs -f "$(docker ps -q -f name=vulnerability-tests)"
+
+$docker logs -f "$(docker ps -q -f name=openvas_data-objects)"
+```
+
+## Feed/Data updates
+
+> When a error appears while update, try restart `ospd-openvas`
+
+```sh
+# SWARM
+$docker service update --force "$(docker ps -q -f name=ospd-openvas)"
+#$docker exec "$(docker ps -q -f name=ospd-openvas)" openvas --update-vt-info
+# COMPOSE
+$docker-compose exec "$(docker ps -q -f name=ospd-openvas)" openvas --update-vt-info
 ```
 
 ## Performing a Manual Feed Sync (TODO)
 
 ```sh
+# SWARM
+$docker exec "$(docker ps -q -f name=greenbone-feed-sync)" greenbone-feed-sync greenbone-feed-sync --type nasl
+$docker exec "$(docker ps -q -f name=greenbone-feed-sync)" greenbone-feed-sync greenbone-feed-sync --type notus
+$docker exec "$(docker ps -q -f name=greenbone-feed-sync)" greenbone-feed-sync greenbone-feed-sync --type scap
+$docker exec "$(docker ps -q -f name=greenbone-feed-sync)" greenbone-feed-sync greenbone-feed-sync --type cert
+$docker exec "$(docker ps -q -f name=greenbone-feed-sync)" greenbone-feed-sync greenbone-feed-sync --type gvmd-data
+# COMPOSE
 $docker-compose exec greenbone-feed-sync greenbone-feed-sync greenbone-feed-sync --type nasl
 $docker-compose exec greenbone-feed-sync greenbone-feed-sync greenbone-feed-sync --type notus
 $docker-compose exec greenbone-feed-sync greenbone-feed-sync greenbone-feed-sync --type scap
 $docker-compose exec greenbone-feed-sync greenbone-feed-sync greenbone-feed-sync --type cert
 $docker-compose exec greenbone-feed-sync greenbone-feed-sync greenbone-feed-sync --type gvmd-data
 
-# $docker exec -it "$(docker ps -q -f name=greenbone-feed-sync)" greenbone-feed-sync greenbone-feed-sync --type nasl
-# $docker exec -it "$(docker ps -q -f name=greenbone-feed-sync)" greenbone-feed-sync greenbone-feed-sync --type notus
-# $docker exec -it "$(docker ps -q -f name=greenbone-feed-sync)" greenbone-feed-sync greenbone-feed-sync --type scap
-# $docker exec -it "$(docker ps -q -f name=greenbone-feed-sync)" greenbone-feed-sync greenbone-feed-sync --type cert
-# $docker exec -it "$(docker ps -q -f name=greenbone-feed-sync)" greenbone-feed-sync greenbone-feed-sync --type gvmd-data
 ```
 
 ## gvm-tools
 
 ```sh
+# SWARM
+$docker exec -it "$(docker ps -q -f name=gvm-tools)" bash
+# COMPOSE
 $docker-compose exec -it gvm-tools bash
-#$docker exec -it "$(docker ps -q -f name=gvm-tools)" bash
 ```
 
 ---
@@ -128,9 +145,12 @@ $docker-compose exec -it gvm-tools bash
   - openvas needs the functionality for IPv6, also without connection
   - else it will always fail
 - Boreas:: failure when show `0% interrupted`
-  - <https://forum.greenbone.net/t/failed-to-open-icmpv4-socket-operation-not-permitted/13791/9>
-  - `$docker exec -it  "$(docker ps -q -f name=openvas_ospd-openvas)" bash`
-    - `# $echo "test_alive_hosts_only = no" >> /etc/openvas/openvas.conf`
+  - solution 1:
+    - if you run swarm mode check `/etc/docker/daemon.json` that `no-new-privileges` is set to `false`
+  - solution 2:
+    - <https://forum.greenbone.net/t/failed-to-open-icmpv4-socket-operation-not-permitted/13791/9>
+    - `$docker exec -it  "$(docker ps -q -f name=openvas_ospd-openvas)" bash`
+      - `# $echo "test_alive_hosts_only = no" >> /etc/openvas/openvas.conf`
 
 ---
 
