@@ -34,7 +34,7 @@ NETWORK_MODE=overlay # by default "bridge"
 
 # GENERAL traefik variables (set by default, change as needed)
 # ______________________________________________________________________________
-LB_SWARM=true
+LB_SWARM=false
 DOMAIN=openvas.home.local # not set in docker-compose, needs to be copied to .env
 PROTOCOL=http
 PORT=80
@@ -59,7 +59,6 @@ FEED_RELEASE=24.10
 #### example short .env
 
 ```env
-NETWORK_MODE=overlay
 DOMAIN=openvas.home.local
 ```
 
