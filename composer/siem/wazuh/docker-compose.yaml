@@ -118,7 +118,7 @@ services:
   ##############################################################################
   wazuh-dashboard:
     # https://hub.docker.com/r/wazuh/wazuh-dashboard
-    image: wazuh/wazuh-dashboard:${VERSION:-4.11.1}
+    image: wazuh/wazuh-dashboard:${VERSION:-4.12.0}
     hostname: wazuh.dashboard
     <<: [*basic, *basic-deploy-labels]
     deploy:
@@ -230,7 +230,7 @@ services:
   ##############################################################################
   wazuh-master:
     # https://hub.docker.com/r/wazuh/wazuh-manager
-    image: wazuh/wazuh-manager:${VERSION:-4.11.1}
+    image: wazuh/wazuh-manager:${VERSION:-4.12.0}
     hostname: wazuh.master
     <<: [*basic, *basic-deploy-master-labels]
     deploy:
@@ -319,7 +319,7 @@ services:
   ##############################################################################
   wazuh-worker:
     # https://hub.docker.com/r/wazuh/wazuh-manager
-    image: wazuh/wazuh-manager:${VERSION:-4.11.1}
+    image: wazuh/wazuh-manager:${VERSION:-4.12.0}
     hostname: wazuh.worker
     <<: *basic
     deploy:
@@ -387,7 +387,7 @@ services:
   ##############################################################################
   wazuh1-indexer:
     # https://hub.docker.com/r/wazuh/wazuh-indexer
-    image: wazuh/wazuh-indexer:${VERSION:-4.11.1}
+    image: wazuh/wazuh-indexer:${VERSION:-4.12.0}
     hostname: wazuh1.indexer
     <<: [*basic, *basic-deploy-indexer-labels]
     deploy:
@@ -465,7 +465,7 @@ services:
   ##############################################################################
   wazuh2-indexer:
     # https://hub.docker.com/r/wazuh/wazuh-indexer
-    image: wazuh/wazuh-indexer:${VERSION:-4.11.1}
+    image: wazuh/wazuh-indexer:${VERSION:-4.12.0}
     hostname: wazuh2.indexer
     <<: *basic
     deploy:
@@ -533,7 +533,7 @@ services:
   ##############################################################################
   wazuh3-indexer:
     # https://hub.docker.com/r/wazuh/wazuh-indexer
-    image: wazuh/wazuh-indexer:${VERSION:-4.11.1}
+    image: wazuh/wazuh-indexer:${VERSION:-4.12.0}
     hostname: wazuh3.indexer
     <<: *basic
     deploy:

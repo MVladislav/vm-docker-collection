@@ -92,7 +92,7 @@ WAZUH_INDEXER_JAVA=1g
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION=4.11.1
+VERSION=4.12.0
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
