@@ -266,6 +266,11 @@ services:
         mode: 0660
         uid: "999"
         gid: "999"
+      - source: wazuh_filebeat_modules_wazuh
+        target: /etc/filebeat/modules.d/wazuh.yml
+        mode: 0644
+        uid: "0"
+        gid: "0"
       - source: wazuh_pipeline_config
         target: /usr/share/filebeat/module/wazuh/archives/ingest/pipeline.json
         mode: 0644
@@ -334,6 +339,11 @@ services:
         mode: 0660
         uid: "999"
         gid: "999"
+      - source: wazuh_filebeat_modules_wazuh
+        target: /etc/filebeat/modules.d/wazuh.yml
+        mode: 0644
+        uid: "0"
+        gid: "0"
       - source: wazuh_pipeline_config
         target: /usr/share/filebeat/module/wazuh/archives/ingest/pipeline.json
         mode: 0644
@@ -673,6 +683,8 @@ configs:
     file: $PWD/config/wazuh_dashboard/wazuh.yml
   wazuh_manager_config:
     file: $PWD/config/wazuh_cluster/wazuh_manager.conf
+  wazuh_filebeat_modules_wazuh:
+    file: $PWD/config/wazuh_cluster/wazuh.yml
   wazuh_pipeline_config:
     file: $PWD/resources/pipelines/pipelines.json
   wazuh_decoder_0455_config:

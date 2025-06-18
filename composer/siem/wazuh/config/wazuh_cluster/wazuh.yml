@@ -1,0 +1,5 @@
+- module: wazuh
+  alerts:
+    enabled: true
+  archives:
+    enabled: true

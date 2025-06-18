@@ -23,6 +23,7 @@ config/secrets/*
 !config/wazuh_cluster/
 config/wazuh_cluster/*
 !config/wazuh_cluster/*.conf
+!config/wazuh_cluster/*.yml
 
 !config/wazuh_dashboard/
 config/wazuh_dashboard/*

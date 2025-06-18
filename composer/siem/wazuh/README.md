@@ -13,6 +13,7 @@
     - [create `.env` file following:](#create-env-file-following)
       - [example short .env](#example-short-env)
   - [Notes](#notes)
+    - [Archive Index](#archive-index)
     - [Pipeline changes](#pipeline-changes)
     - [Plugin install](#plugin-install)
     - [Password protected enrollment](#password-protected-enrollment)
@@ -109,6 +110,20 @@ DOMAIN=siem.home.local
 ---
 
 ## Notes
+
+### Archive Index
+
+Should be by default, with here defined configuration, auto created.
+But if not, follow this:
+
+- Inside master container update `/etc/filebeat/filebeat.yml` and verify `archives` is enabled
+  - See also: [Visualizing the events on the dashboard](https://documentation.wazuh.com/current/user-manual/manager/event-logging.html#visualizing-the-events-on-the-dashboard)
+  - Path with:
+    - `docker exec -i "$(docker ps -q -f name=wazuh_wazuh-master)" sed -i '/archives:/,/^[^[:space:]]/s/enabled: false/enabled: true/' /etc/filebeat/filebeat.yml`
+    - `docker exec -i "$(docker ps -q -f name=wazuh_wazuh-worker)" sed -i '/archives:/,/^[^[:space:]]/s/enabled: false/enabled: true/' /etc/filebeat/filebeat.yml`
+    - and restart
+- On Wazuh Dashboard, go to `Dashboards Management -> Index patterns`.
+- Create new `index pattern` named `wazuh-archives-*`.
 
 ### Pipeline changes
 
