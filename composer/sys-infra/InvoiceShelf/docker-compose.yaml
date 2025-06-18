@@ -149,6 +149,8 @@ services:
       MARIADB_PASSWORD_FILE: /run/secrets/mariadb_user_password
       MARIADB_RANDOM_ROOT_PASSWORD: ${MARIADB_RANDOM_ROOT_PASSWORD:-true}
     volumes:
+      # - /etc/timezone:/etc/timezone:ro
+      # - /etc/localtime:/etc/localtime:ro
       - mariadb:/var/lib/mysql
     command:
       - --log-bin=mysql-bin
