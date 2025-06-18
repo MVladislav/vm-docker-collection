@@ -26,6 +26,7 @@
 
 ```sh
 $pwgen -s 32 1 > config/secrets/mariadb_user_password.txt
+$echo "DB_PASS=$(cat config/secrets/mariadb_user_password.txt)" >> .env
 ```
 
 ### create `.env` file following:
@@ -54,12 +55,15 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_KIMAI=apache-2.28.0
+VERSION_KIMAI=apache-2.33.0
 VERSION_MARIADB=11.6.2
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
 DB_PASS=$(cat config/secrets/mariadb_user_password.txt)
+
+ADMINMAIL=<MAIL>
+ADMINPASS=<PASSWORD>
 
 # https://www.kimai.org/documentation/emails.html
 MAILER_FROM=changeme@example.com
@@ -71,8 +75,6 @@ MAILER_URL=smtps://{username}:{password}@{smtp-host}:465
 ```env
 NETWORK_MODE=overlay
 DOMAIN=kimai.home.local
-
-DB_PASS=$(cat config/secrets/mariadb_user_password.txt)
 ```
 
 ---

@@ -62,7 +62,7 @@ services:
   ##############################################################################
   kimai:
     # https://hub.docker.com/r/kimai/kimai2
-    image: kimai/kimai2:${VERSION_KIMAI:-apache-2.28.0}
+    image: kimai/kimai2:${VERSION_KIMAI:-apache-2.33.0}
     <<: [*basic, *basic-deploy-labels]
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels]
@@ -86,7 +86,8 @@ services:
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-      - kimai:/opt/kimai/var
+      - data:/opt/kimai/var
+      - plugins:/opt/kimai/var/plugins
     networks:
       default: {}
       proxy: {}
@@ -96,7 +97,7 @@ services:
   ##############################################################################
   mariadb:
     # https://hub.docker.com/_/mariadb
-    image: mariadb:${VERSION_MARIADB:-11.6.2}
+    image: mariadb:${VERSION_MARIADB:-11.7.2}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -108,8 +109,8 @@ services:
           cpus: ${RESOURCES_RESERVATIONS_CPUS_MARIADB:-0.001}
           memory: ${RESOURCES_RESERVATIONS_MEMORY_MARIADB:-32m}
     cap_add:
-      - SETGID
       - SETUID
+      - SETGID
       - DAC_OVERRIDE
     secrets:
       - mariadb_user_password
@@ -128,10 +129,10 @@ services:
       - --expire-logs-days=7
     healthcheck:
       test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
-      start_period: 5s
-      interval: 10s
-      retries: 5
+      start_period: 2s
+      interval: 5s
       timeout: 3s
+      retries: 5
 
 ################################################################################
 ################################################################################
@@ -150,7 +151,8 @@ networks:
 #     file: $PWD/config/local.yaml
 
 volumes:
-  kimai: {}
+  data: {}
+  plugins: {}
   mariadb: {}
 
 secrets:
