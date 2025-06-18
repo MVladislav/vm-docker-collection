@@ -187,8 +187,8 @@ services:
     networks:
       default: {}
     healthcheck:
-      test: ["CMD-SHELL", "/usr/local/bin/healthcheck.sh --no-defaults"]
-      # test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      # test: ["CMD-SHELL", "/usr/local/bin/healthcheck.sh --no-defaults"]
       start_period: 2s
       interval: 5s
       timeout: 3s

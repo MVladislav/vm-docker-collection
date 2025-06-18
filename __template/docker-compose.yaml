@@ -109,12 +109,13 @@ x-basic: &basic
     disable: true
   tmpfs:
     - /tmp
+    - /run
+    - /run/lock
   sysctls:
     - net.ipv4.ip_forward=1
     - net.ipv4.conf.all.src_valid_mark=1
     - net.ipv4.conf.all.rp_filter=0
     - net.ipv4.conf.default.rp_filter=0
-    - net.ipv4.conf.eth0.rp_filter=0
     - net.ipv4.conf.lo.rp_filter=0
     - net.ipv6.conf.all.forwarding=1
     - net.ipv6.conf.all.disable_ipv6=0
