@@ -45,11 +45,11 @@ MIDDLEWARE_SECURED=default-secured@file
 # ______________________________________________________________________________
 VERSION_LATEST=latest
 
-VERSION_PG_GVM=stable        # 22.4.0
-VERSION_GVMD=stable          # 22.4.0
-VERSION_GSA=stable           # 22.4.0
-VERSION_OSPD_OPENVAS=stable  # 22.4.0
-VERSION_NOTUS_SCANNER=stable # 22.4.0
+VERSION_PG_GVM=stable        # 24.6.1
+VERSION_GVMD=stable          # 24.6.1
+VERSION_GSA=stable           # 24.6.1
+VERSION_OSPD_OPENVAS=stable  # 24.6.1
+VERSION_NOTUS_SCANNER=stable # 24.6.1
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
