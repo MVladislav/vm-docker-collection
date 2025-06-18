@@ -42,8 +42,10 @@ x-basic-deploy: &basic-deploy
     constraints:
       - "node.role==${NODE_ROLE:-manager}"
       - node.platform.os == linux
+  update_config:
+    order: stop-first
   restart_policy:
-    condition: on-failure
+    condition: any
   resources:
     limits:
       cpus: ${RESOURCES_LIMITS_CPUS:-8}
@@ -51,18 +53,13 @@ x-basic-deploy: &basic-deploy
     reservations:
       cpus: ${RESOURCES_RESERVATIONS_CPUS:-4}
       memory: ${RESOURCES_RESERVATIONS_MEMORY:-8g}
-      # devices:
-      #   - driver: amdgpu
-      #     count: 1
-      #     capabilities: [gpu]
 
 x-basic: &basic
   env_file: ${ENV_FILE:-.env}
   # cap_add: ["ALL"]
-  # cap_drop: ["ALL"]
+  cap_drop: ["ALL"]
   security_opt:
     - no-new-privileges=true
-    # - seccomp=unconfined
   ulimits:
     memlock:
       soft: -1
@@ -76,6 +73,10 @@ x-basic: &basic
     proxy: {}
   healthcheck:
     disable: true
+  tmpfs:
+    - /tmp
+    - /run
+    - /run/lock
   restart: on-failure
 
 ################################################################################
@@ -110,6 +111,17 @@ services:
     <<: [*basic, *basic-deploy-labels-ollama]
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels-ollama]
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS:-8}
+          memory: ${RESOURCES_LIMITS_MEMORY:-16g}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS:-4}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY:-8g}
+          # devices:
+          #   - driver: nvidia
+          #     count: all
+          #     capabilities: [gpu]
     ports:
       - target: 11434
         published: 11434
@@ -118,7 +130,7 @@ services:
     # environment:
     #   HSA_OVERRIDE_GFX_VERSION: 11.0.0
     devices:
-      - /dev/kfd # main compute interface
+      # - /dev/kfd # main compute interface (AMD)
       - /dev/dri # Direct Rendering Interface
     group_add:
       - video
