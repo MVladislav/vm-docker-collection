@@ -30,12 +30,6 @@
 $pwgen -s 24 1 > config/secrets/graylog_password_secret.txt
 $pwgen -s 24 1 > config/secrets/graylog_root_password_plain.txt
 $cat config/secrets/graylog_root_password_plain.txt | tr -d '\n' | sha256sum | awk '{ print $1 }' > config/secrets/graylog_root_password_sha2.txt
-$pwgen -s 24 1 > config/secrets/opensearch_initial_admin_password.txt
-
-# $pwgen -s 24 1 > config/secrets/mongo_initdb_root_password.txt
-# $echo "mongodb://graylog:$(cat config/secrets/mongo_initdb_root_password.txt)@mongodb:27017/graylog" > config/secrets/graylog_mongodb_uri.txt
-$echo "mongodb://mongodb:27017/graylog" > config/secrets/graylog_mongodb_uri.txt
-
 ```
 
 ### get/update plugins
@@ -72,35 +66,23 @@ RESOURCES_LIMITS_MEMORY=2g
 RESOURCES_RESERVATIONS_CPUS=0.001
 RESOURCES_RESERVATIONS_MEMORY=32m
 
+RESOURCES_LIMITS_CPUS_GRAYLOG_DATANODE=2
+RESOURCES_LIMITS_MEMORY_GRAYLOG_DATANODE=3g
+RESOURCES_RESERVATIONS_CPUS_GRAYLOG_DATANODE=0.001
+RESOURCES_RESERVATIONS_MEMORY_GRAYLOG_DATANODE=32m
+
 RESOURCES_LIMITS_CPUS_MONGODB=1
-RESOURCES_LIMITS_MEMORY_MONGODB=512M
+RESOURCES_LIMITS_MEMORY_MONGODB=512m
 RESOURCES_RESERVATIONS_CPUS_MONGODB=0.001
 RESOURCES_RESERVATIONS_MEMORY_MONGODB=32m
 
-RESOURCES_LIMITS_CPUS_OPENSEARCH=1
-RESOURCES_LIMITS_MEMORY_OPENSEARCH=1.5G
-RESOURCES_LIMITS_MEMORY_OPENSEARCH_JAVA=1G
-RESOURCES_RESERVATIONS_CPUS_OPENSEARCH=0.001
-RESOURCES_RESERVATIONS_MEMORY_OPENSEARCH=32m
-
-#RESOURCES_LIMITS_CPUS_GRAYLOG_DATANODE=1
-#RESOURCES_LIMITS_MEMORY_GRAYLOG_DATANODE=1.5G
-#RESOURCES_RESERVATIONS_CPUS_GRAYLOG_DATANODE=0.001
-#RESOURCES_RESERVATIONS_MEMORY_GRAYLOG_DATANODE=32m
-
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_GRAYLOG=6.0.7
-VERSION_MONGODB=8.0.1
-VERSION_OPENSEARCH=2.15.0
-
+VERSION_GRAYLOG=6.1
+VERSION_MONGODB=8.0.8
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
-OPENSEARCH_INITIAL_ADMIN_PASSWORD=<INITIAL-PASSWORD>
-
-CLUSTER_NAME=opensearch-cluster
-
 GRAYLOG_HTTP_EXTERNAL_URI=http://127.0.0.1:9000/
 
 GRAYLOG_TRANSPORT_EMAIL_ENABLED=true
@@ -109,8 +91,6 @@ GRAYLOG_TRANSPORT_EMAIL_PORT=465
 GRAYLOG_TRANSPORT_EMAIL_USE_AUTH=true
 GRAYLOG_TRANSPORT_EMAIL_USE_TLS=true
 GRAYLOG_TRANSPORT_EMAIL_USE_SSL=false
-
-MONGO_INITDB_ROOT_USERNAME=graylog
 ```
 
 #### example short .env
@@ -119,8 +99,6 @@ MONGO_INITDB_ROOT_USERNAME=graylog
 NETWORK_MODE=overlay
 DOMAIN=graylog.home.local
 SYSLOG_DOMAIN_TLS=*
-
-OPENSEARCH_INITIAL_ADMIN_PASSWORD=<INITIAL-PASSWORD>
 ```
 
 ## Optional: add TLS for syslog
@@ -170,10 +148,14 @@ under page `streams`, do not forget to activate the stream by click on **start s
 
 - <https://www.graylog.org/>
 - <https://hub.docker.com/r/graylog/graylog>
+  - <https://hub.docker.com/r/graylog/graylog-datanode>
+- <https://github.com/Graylog2/docker-compose>
 - <https://github.com/Graylog2/graylog-docker>
 - <https://docs.graylog.org/docs/docker>
 - <https://www.youtube.com/watch?v=rtfj6W5X0YA>
 - <https://github.com/Graylog2/graylog-docker/blob/261b48d65b48a7c35f8934e6a6b4a13a67ab6fbe/test/docker-compose.tpl>
+- <https://go2docs.graylog.org/current/downloading_and_installing_graylog/docker_installation.htm>
+- <https://go2docs.graylog.org/current/setting_up_graylog/server.conf.html>
 - opensearch
   - <https://hub.docker.com/r/opensearchproject/opensearch>
 - infos:

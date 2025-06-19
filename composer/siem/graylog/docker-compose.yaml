@@ -2,8 +2,8 @@
 x-basic-deploy-labels: &basic-deploy-labels
   labels:
     - traefik.enable=true
-    - traefik.docker.lbswarm=${LB_SWARM:-true}
-    - traefik.docker.network=proxy
+    - traefik.swarm.lbswarm=${LB_SWARM:-true}
+    - traefik.swarm.network=proxy
     - traefik.http.routers.graylog.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
     - traefik.http.routers.graylog.rule=Host(`${DOMAIN?domain variable not set}`)
     - traefik.http.routers.graylog.tls=true
@@ -16,7 +16,7 @@ x-basic-deploy-labels: &basic-deploy-labels
     - traefik.tcp.routers.graylog-syslog.rule=HostSNI(`${SYSLOG_DOMAIN_TLS?domain variable not set}`)
     - traefik.tcp.routers.graylog-syslog.tls=true
     - traefik.tcp.routers.graylog-syslog.tls.passthrough=false
-    - traefik.tcp.services.graylog-syslog.loadbalancer.server.port=${SYSLOG_PORT_TLS:-1514}
+    - traefik.tcp.services.graylog-syslog.loadbalancer.server.port=${SYSLOG_PORT_TLS:-5140}
 
 x-basic-deploy: &basic-deploy
   mode: replicated
@@ -26,8 +26,12 @@ x-basic-deploy: &basic-deploy
     constraints:
       - "node.role==${NODE_ROLE:-manager}"
       - node.platform.os == linux
+  update_config:
+    order: stop-first
   restart_policy:
-    condition: on-failure
+    condition: any
+
+x-basic-deploy-resources-graylog: &basic-deploy-resources-graylog
   resources:
     limits:
       cpus: ${RESOURCES_LIMITS_CPUS:-1.5}
@@ -35,6 +39,24 @@ x-basic-deploy: &basic-deploy
     reservations:
       cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
       memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
+
+x-basic-deploy-resources-datanode: &basic-deploy-resources-datanode
+  resources:
+    limits:
+      cpus: ${RESOURCES_LIMITS_CPUS_GRAYLOG_DATANODE:-2}
+      memory: ${RESOURCES_LIMITS_MEMORY_GRAYLOG_DATANODE:-3g}
+    reservations:
+      cpus: ${RESOURCES_RESERVATIONS_CPUS_GRAYLOG_DATANODE:-0.001}
+      memory: ${RESOURCES_RESERVATIONS_MEMORY_GRAYLOG_DATANODE:-32m}
+
+x-basic-deploy-resources-mongodb: &basic-deploy-resources-mongodb
+  resources:
+    limits:
+      cpus: ${RESOURCES_LIMITS_CPUS_MONGODB:-1}
+      memory: ${RESOURCES_LIMITS_MEMORY_MONGODB:-512m}
+    reservations:
+      cpus: ${RESOURCES_RESERVATIONS_CPUS_MONGODB:-0.001}
+      memory: ${RESOURCES_RESERVATIONS_MEMORY_MONGODB:-32m}
 
 x-basic: &basic
   env_file: ${ENV_FILE:-.env}
@@ -58,24 +80,11 @@ x-basic: &basic
     default: {}
   healthcheck:
     disable: true
+  tmpfs:
+    - /tmp
+    - /run
+    - /run/lock
   restart: always
-
-x-opensearch-cluster: &opensearch-cluster
-  OPENSEARCH_INITIAL_ADMIN_PASSWORD: ${OPENSEARCH_INITIAL_ADMIN_PASSWORD?opensearch admin pw variable not set}
-  # OPENSEARCH_INITIAL_ADMIN_PASSWORD_FILE: /run/secrets/opensearch_initial_admin_password
-
-  # minimum and maximum Java heap size, recommend setting both to 50% of system RAM
-  # OPENSEARCH_JAVA_OPTS: -Xms${RESOURCES_LIMITS_MEMORY_OPENSEARCH_JAVA:-1g} -Xmx${RESOURCES_LIMITS_MEMORY_OPENSEARCH_JAVA:-1g} -Dlog4j2.formatMsgNoLookups=true
-  logger.deprecation.level: ${LOGGER_DEPRECATION_LEVEL:-warn}
-  action.auto_create_index: ${ACTION_AUTO_CREATE_INDEX:-false}
-  bootstrap.memory_lock: ${BOOTSTRAP_MEMORY_LOCK:-false} # along with the memlock settings below, disables swapping
-  plugins.security.ssl.http.enabled: ${PLUGINS_SECURITY_SSL_HTTP_ENABLED:-false}
-  plugins.security.disabled: ${PLUGINS_SECURITY_DISABLED:-true}
-
-  # discovery.type: ${DISCOVERY_TYPE:-single-node}
-  cluster.name: ${CLUSTER_NAME:-opensearch-cluster}
-  discovery.seed_hosts: opensearch-node-1,opensearch-node-2,opensearch-node-3
-  cluster.initial_cluster_manager_nodes: opensearch-node-1,opensearch-node-2,opensearch-node-3
 
 ################################################################################
 ################################################################################
@@ -84,26 +93,57 @@ services:
   ##############################################################################
   ##############################################################################
   ##############################################################################
-  graylog:
+  graylog1:
+    hostname: "graylog1"
     # https://hub.docker.com/r/graylog/graylog
     image: graylog/graylog:${VERSION_GRAYLOG:-6.1}
     <<: *basic
     deploy:
-      <<: [*basic-deploy, *basic-deploy-labels]
+      <<: [*basic-deploy, *basic-deploy-resources-graylog, *basic-deploy-labels]
     ports:
       # # Graylog web interface and REST API
       # - target: 9000
       #   published: ${PORT:-9000}
       #   protocol: tcp
       #   mode: host
+      # NETFLOW TCP
+      - target: 2055
+        published: ${PORT_NETFLOW:-2055}
+        protocol: tcp
+        mode: host
+      # NETFLOW UDP
+      - target: 2055
+        published: ${PORT_NETFLOW:-2055}
+        protocol: udp
+        mode: host
+      # BEATS TCP
+      - target: 5044
+        published: ${PORT_BEATS:-5044}
+        protocol: tcp
+        mode: host
+      # # BEATS UDP
+      # - target: 5044
+      #   published: ${PORT_BEATS:-5044}
+      #   protocol: udp
+      #   mode: host
       # Syslog TCP
-      - target: 1514
-        published: ${PORT_SYSLOG:-1514}
+      - target: 5140
+        published: ${PORT_SYSLOG:-5140}
         protocol: tcp
         mode: host
       # Syslog UDP
-      - target: 1514
-        published: ${PORT_SYSLOG:-1514}
+      - target: 5140
+        published: ${PORT_SYSLOG:-5140}
+        protocol: udp
+        mode: host
+      # RAW TCP
+      - target: 5555
+        published: ${PORT_RAW:-5555}
+        protocol: tcp
+        mode: host
+      # RAW UDP
+      - target: 5555
+        published: ${PORT_RAW:-5555}
         protocol: udp
         mode: host
       # GELF TCP
@@ -116,38 +156,27 @@ services:
         published: ${PORT_GELF:-12201}
         protocol: udp
         mode: host
-      # BEATS TCP
-      - target: 5044
-        published: ${PORT_BEATS:-5044}
+      # Forwarder data
+      - target: 13301
+        published: ${PORT_FORWARDER_DATA:-13301}
         protocol: tcp
         mode: host
-      # BEATS UDP
-      - target: 5044
-        published: ${PORT_BEATS:-5044}
-        protocol: udp
-        mode: host
-      # NETFLOW TCP
-      - target: 2055
-        published: ${PORT_NETFLOW:-2055}
+      # Forwarder config
+      - target: 13302
+        published: ${PORT_FORWARDER_CONFIG:-13302}
         protocol: tcp
-        mode: host
-      # NETFLOW UDP
-      - target: 2055
-        published: ${PORT_NETFLOW:-2055}
-        protocol: udp
         mode: host
     secrets:
       - graylog_password_secret
       - graylog_root_password_sha2
-      - graylog_mongodb_uri
     environment:
       GRAYLOG_PASSWORD_SECRET__FILE: /run/secrets/graylog_password_secret
       GRAYLOG_ROOT_PASSWORD_SHA2__FILE: /run/secrets/graylog_root_password_sha2
       GRAYLOG_HTTP_EXTERNAL_URI: ${GRAYLOG_HTTP_EXTERNAL_URI:-http://127.0.0.1:9000/}
       # GRAYLOG_HTTP_PUBLISH_URI: ${GRAYLOG_HTTP_PUBLISH_URI}
-      GRAYLOG_MONGODB_URI__FILE: /run/secrets/graylog_mongodb_uri
-      GRAYLOG_HTTP_BIND_ADDRESS: "0.0.0.0:9000"
-      GRAYLOG_NODE_ID_FILE: "/usr/share/graylog/data/config/node-id"
+      GRAYLOG_MONGODB_URI: mongodb://mongodb1:27017/graylog
+      GRAYLOG_HTTP_BIND_ADDRESS: 0.0.0.0:9000
+      GRAYLOG_NODE_ID_FILE: /usr/share/graylog/data/config/node-id
       GRAYLOG_REPORT_DISABLE_SANDBOX: ${GRAYLOG_REPORT_DISABLE_SANDBOX:-true}
 
       # # minimum and maximum Java heap size, recommend setting both to 50% of system RAM
@@ -159,15 +188,13 @@ services:
       GRAYLOG_TRANSPORT_EMAIL_USE_AUTH: ${GRAYLOG_TRANSPORT_EMAIL_USE_AUTH:-true}
       GRAYLOG_TRANSPORT_EMAIL_USE_TLS: ${GRAYLOG_TRANSPORT_EMAIL_USE_TLS:-true}
       GRAYLOG_TRANSPORT_EMAIL_USE_SSL: ${GRAYLOG_TRANSPORT_EMAIL_USE_SSL:-false}
-
-      GRAYLOG_ELASTICSEARCH_HOSTS: "http://opensearch-node-1:9200,http://opensearch-node-2:9200,http://opensearch-node-3:9200"
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-      - graylog_data:/usr/share/graylog/data/data
-      - graylog_config:/usr/share/graylog/data/config
-      - graylog_journal:/usr/share/graylog/data/journal
-    entrypoint: /usr/bin/tini -- wait-for-it opensearch-node-1:9200 -- /docker-entrypoint.sh
+      - graylog_data_01:/usr/share/graylog/data/data
+      - graylog_config_01:/usr/share/graylog/data/config
+      - graylog_journal_01:/usr/share/graylog/data/journal
+    entrypoint: /usr/bin/tini -- wait-for-it datanode1:8999 -- /docker-entrypoint.sh
     networks:
       default: {}
       graylog: {}
@@ -176,134 +203,95 @@ services:
   ##############################################################################
   ##############################################################################
   ##############################################################################
-  mongodb:
+  datanode1:
+    hostname: "datanode1"
+    # https://hub.docker.com/r/graylog/graylog-datanode
+    image: graylog/graylog-datanode:${VERSION_GRAYLOG:-6.1}
+    <<: *basic
+    deploy:
+      <<: [*basic-deploy, *basic-deploy-resources-datanode]
+    secrets:
+      - graylog_password_secret
+    environment:
+      GRAYLOG_DATANODE_ROOT_USERNAME: admin
+      GRAYLOG_DATANODE_PASSWORD_SECRET__FILE: /run/secrets/graylog_password_secret
+      GRAYLOG_DATANODE_MONGODB_URI: mongodb://mongodb1:27017/graylog
+      GRAYLOG_DATANODE_DATA_DIR: /var/lib/graylog-datanode
+      GRAYLOG_DATANODE_NODE_ID_FILE: /var/lib/graylog-datanode/node-id
+      opensearch.bootstrap.system_call_filter: "false"
+      OPENSEARCH_BOOTSTRAP_SYSTEM_CALL_FILTER: "false"
+      GRAYLOG_DATANODE_OPENSEARCH_BOOTSTRAP_SYSTEM_CALL_FILTER: "false"
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - graylog_datanode_01:/var/lib/graylog-datanode
+
+  datanode2:
+    hostname: "datanode2"
+    # https://hub.docker.com/r/graylog/graylog-datanode
+    image: graylog/graylog-datanode:${VERSION_GRAYLOG:-6.1}
+    <<: *basic
+    deploy:
+      <<: [*basic-deploy, *basic-deploy-resources-datanode]
+    secrets:
+      - graylog_password_secret
+    environment:
+      GRAYLOG_DATANODE_ROOT_USERNAME: admin
+      GRAYLOG_DATANODE_PASSWORD_SECRET__FILE: /run/secrets/graylog_password_secret
+      GRAYLOG_DATANODE_MONGODB_URI: mongodb://mongodb1:27017/graylog
+      GRAYLOG_DATANODE_DATA_DIR: /var/lib/graylog-datanode
+      GRAYLOG_DATANODE_NODE_ID_FILE: /var/lib/graylog-datanode/node-id
+      opensearch.bootstrap.system_call_filter: "false"
+      OPENSEARCH_BOOTSTRAP_SYSTEM_CALL_FILTER: "false"
+      GRAYLOG_DATANODE_OPENSEARCH_BOOTSTRAP_SYSTEM_CALL_FILTER: "false"
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - graylog_datanode_02:/var/lib/graylog-datanode
+
+  datanode3:
+    hostname: "datanode3"
+    # https://hub.docker.com/r/graylog/graylog-datanode
+    image: graylog/graylog-datanode:${VERSION_GRAYLOG:-6.1}
+    <<: *basic
+    deploy:
+      <<: [*basic-deploy, *basic-deploy-resources-datanode]
+    secrets:
+      - graylog_password_secret
+    environment:
+      GRAYLOG_DATANODE_ROOT_USERNAME: admin
+      GRAYLOG_DATANODE_PASSWORD_SECRET__FILE: /run/secrets/graylog_password_secret
+      GRAYLOG_DATANODE_MONGODB_URI: mongodb://mongodb1:27017/graylog
+      GRAYLOG_DATANODE_DATA_DIR: /var/lib/graylog-datanode
+      GRAYLOG_DATANODE_NODE_ID_FILE: /var/lib/graylog-datanode/node-id
+      opensearch.bootstrap.system_call_filter: "false"
+      OPENSEARCH_BOOTSTRAP_SYSTEM_CALL_FILTER: "false"
+      GRAYLOG_DATANODE_OPENSEARCH_BOOTSTRAP_SYSTEM_CALL_FILTER: "false"
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - graylog_datanode_03:/var/lib/graylog-datanode
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  mongodb1:
+    hostname: "mongodb1"
     # https://hub.docker.com/_/mongo
-    image: mongo:${VERSION_MONGODB:-8.0.1}
+    image: mongo:${VERSION_MONGODB:-8.0.8}
     <<: *basic
     deploy:
-      <<: *basic-deploy
-      resources:
-        limits:
-          cpus: ${RESOURCES_LIMITS_CPUS_MONGODB:-1}
-          memory: ${RESOURCES_LIMITS_MEMORY_MONGODB:-512M}
-        reservations:
-          cpus: ${RESOURCES_RESERVATIONS_CPUS_MONGODB:-0.001}
-          memory: ${RESOURCES_RESERVATIONS_MEMORY_MONGODB:-32m}
-    # secrets:
-    #   - mongo_initdb_root_password
-    # environment:
-    #   MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:-graylog}
-    #   MONGO_INITDB_ROOT_PASSWORD_FILE: /run/secrets/mongo_initdb_root_password
+      <<: [*basic-deploy, *basic-deploy-resources-mongodb]
+    cap_add:
+      - SETUID
+      - SETGID
+      - CHOWN
+    # command: ["mongod", "--bind_ip_all", "--replSet", "rs0"]
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-      - mongodb:/data/db
-
-  # ##############################################################################
-  # ##############################################################################
-  # ##############################################################################
-  # datanode:
-  #   # https://hub.docker.com/r/graylog/graylog-datanode
-  #   image: graylog/graylog-datanode:${VERSION_GRAYLOG:-6.1}
-  #   <<: *basic
-  #   deploy:
-  #     <<: *basic-deploy
-  #     resources:
-  #       limits:
-  #         cpus: ${RESOURCES_LIMITS_CPUS_GRAYLOG_DATANODE:-1}
-  #         memory: ${RESOURCES_LIMITS_MEMORY_GRAYLOG_DATANODE:-1.5G}
-  #       reservations:
-  #         cpus: ${RESOURCES_RESERVATIONS_CPUS_GRAYLOG_DATANODE:-0.001}
-  #         memory: ${RESOURCES_RESERVATIONS_MEMORY_GRAYLOG_DATANODE:-32m}
-  #   secrets:
-  #     - graylog_password_secret
-  #     - graylog_root_password_sha2
-  #     - graylog_mongodb_uri
-  #   environment:
-  #     GRAYLOG_DATANODE_PASSWORD_SECRET__FILE: /run/secrets/graylog_password_secret
-  #     # GRAYLOG_DATANODE_PASSWORD_SECRET: ""
-  #     GRAYLOG_DATANODE_ROOT_PASSWORD_SHA2__FILE: /run/secrets/graylog_root_password_sha2
-  #     # GRAYLOG_DATANODE_ROOT_PASSWORD_SHA2: ""
-  #     GRAYLOG_DATANODE_MONGODB_URI__FILE: /run/secrets/graylog_mongodb_uri
-  #     # GRAYLOG_DATANODE_MONGODB_URI: "mongodb://mongodb:27017/graylog"
-  #     GRAYLOG_DATANODE_NODE_ID_FILE: "/var/lib/graylog-datanode/node-id"
-  #   volumes:
-  #     - graylog_datanode:/var/lib/graylog-datanode
-
-  ##############################################################################
-  ##############################################################################
-  ##############################################################################
-  opensearch-node-1:
-    # https://hub.docker.com/r/opensearchproject/opensearch
-    image: opensearchproject/opensearch:${VERSION_OPENSEARCH:-2.17.1}
-    <<: *basic
-    deploy:
-      <<: *basic-deploy
-      resources:
-        limits:
-          cpus: ${RESOURCES_LIMITS_CPUS_OPENSEARCH:-1}
-          memory: ${RESOURCES_LIMITS_MEMORY_OPENSEARCH:-1.5G}
-        reservations:
-          cpus: ${RESOURCES_RESERVATIONS_CPUS_OPENSEARCH:-0.001}
-          memory: ${RESOURCES_RESERVATIONS_MEMORY_OPENSEARCH:-32m}
-    # secrets:
-    #   - opensearch_initial_admin_password
-    environment:
-      node.name: opensearch-node-1
-      discovery.seed_hosts: opensearch-node-2,opensearch-node-3
-      <<: *opensearch-cluster
-    volumes:
-      - /etc/timezone:/etc/timezone:ro
-      - /etc/localtime:/etc/localtime:ro
-      - opensearch_data_1:/usr/share/opensearch/data
-
-  opensearch-node-2:
-    # https://hub.docker.com/r/opensearchproject/opensearch
-    image: opensearchproject/opensearch:${VERSION_OPENSEARCH:-2.17.1}
-    <<: *basic
-    deploy:
-      <<: *basic-deploy
-      resources:
-        limits:
-          cpus: ${RESOURCES_LIMITS_CPUS_OPENSEARCH:-1}
-          memory: ${RESOURCES_LIMITS_MEMORY_OPENSEARCH:-1.5G}
-        reservations:
-          cpus: ${RESOURCES_RESERVATIONS_CPUS_OPENSEARCH:-0.001}
-          memory: ${RESOURCES_RESERVATIONS_MEMORY_OPENSEARCH:-32m}
-    # secrets:
-    #   - opensearch_initial_admin_password
-    environment:
-      node.name: opensearch-node-2
-      discovery.seed_hosts: opensearch-node-1,opensearch-node-3
-      <<: *opensearch-cluster
-    volumes:
-      - /etc/timezone:/etc/timezone:ro
-      - /etc/localtime:/etc/localtime:ro
-      - opensearch_data_2:/usr/share/opensearch/data
-
-  opensearch-node-3:
-    # https://hub.docker.com/r/opensearchproject/opensearch
-    image: opensearchproject/opensearch:${VERSION_OPENSEARCH:-2.17.1}
-    <<: *basic
-    deploy:
-      <<: *basic-deploy
-      resources:
-        limits:
-          cpus: ${RESOURCES_LIMITS_CPUS_OPENSEARCH:-1}
-          memory: ${RESOURCES_LIMITS_MEMORY_OPENSEARCH:-1.5G}
-        reservations:
-          cpus: ${RESOURCES_RESERVATIONS_CPUS_OPENSEARCH:-0.001}
-          memory: ${RESOURCES_RESERVATIONS_MEMORY_OPENSEARCH:-32m}
-    # secrets:
-    #   - opensearch_initial_admin_password
-    environment:
-      node.name: opensearch-node-3
-      discovery.seed_hosts: opensearch-node-1,opensearch-node-2
-      <<: *opensearch-cluster
-    volumes:
-      - /etc/timezone:/etc/timezone:ro
-      - /etc/localtime:/etc/localtime:ro
-      - opensearch_data_3:/usr/share/opensearch/data
+      - mongodb_data_01:/data/db
+      - mongodb_config_01:/data/configdb
 
 ################################################################################
 ################################################################################
@@ -324,23 +312,17 @@ networks:
     external: true
 
 volumes:
-  graylog_data: {}
-  graylog_config: {}
-  graylog_journal: {}
-  mongodb: {}
-  # graylog_datanode: {}
-  opensearch_data_1: {}
-  opensearch_data_2: {}
-  opensearch_data_3: {}
+  graylog_data_01: {}
+  graylog_config_01: {}
+  graylog_journal_01: {}
+  graylog_datanode_01: {}
+  graylog_datanode_02: {}
+  graylog_datanode_03: {}
+  mongodb_data_01: {}
+  mongodb_config_01: {}
 
 secrets:
   graylog_password_secret:
     file: config/secrets/graylog_password_secret.txt
   graylog_root_password_sha2:
     file: config/secrets/graylog_root_password_sha2.txt
-  graylog_mongodb_uri:
-    file: config/secrets/graylog_mongodb_uri.txt
-  # mongo_initdb_root_password:
-  #   file: config/secrets/mongo_initdb_root_password.txt
-  # opensearch_initial_admin_password:
-  #   file: config/secrets/opensearch_initial_admin_password.txt
