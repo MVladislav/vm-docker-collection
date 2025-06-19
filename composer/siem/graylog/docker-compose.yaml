@@ -96,7 +96,7 @@ services:
   graylog1:
     hostname: "graylog1"
     # https://hub.docker.com/r/graylog/graylog
-    image: graylog/graylog:${VERSION_GRAYLOG:-6.1}
+    image: graylog/graylog:${VERSION_GRAYLOG:-6.2}
     <<: *basic
     deploy:
       <<: [*basic-deploy, *basic-deploy-resources-graylog, *basic-deploy-labels]
@@ -206,7 +206,7 @@ services:
   datanode1:
     hostname: "datanode1"
     # https://hub.docker.com/r/graylog/graylog-datanode
-    image: graylog/graylog-datanode:${VERSION_GRAYLOG:-6.1}
+    image: graylog/graylog-datanode:${VERSION_GRAYLOG:-6.2}
     <<: *basic
     deploy:
       <<: [*basic-deploy, *basic-deploy-resources-datanode]
@@ -229,7 +229,7 @@ services:
   datanode2:
     hostname: "datanode2"
     # https://hub.docker.com/r/graylog/graylog-datanode
-    image: graylog/graylog-datanode:${VERSION_GRAYLOG:-6.1}
+    image: graylog/graylog-datanode:${VERSION_GRAYLOG:-6.2}
     <<: *basic
     deploy:
       <<: [*basic-deploy, *basic-deploy-resources-datanode]
@@ -252,7 +252,7 @@ services:
   datanode3:
     hostname: "datanode3"
     # https://hub.docker.com/r/graylog/graylog-datanode
-    image: graylog/graylog-datanode:${VERSION_GRAYLOG:-6.1}
+    image: graylog/graylog-datanode:${VERSION_GRAYLOG:-6.2}
     <<: *basic
     deploy:
       <<: [*basic-deploy, *basic-deploy-resources-datanode]
