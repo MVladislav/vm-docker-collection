@@ -6,6 +6,7 @@
 !Dockerfile
 !Dockerfile_*
 !docker-compose.yaml
+!docker-hwaccl.yaml
 !docker-compose-example-services.yaml
 
 !CHANGELOG.md

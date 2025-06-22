@@ -10,7 +10,8 @@
   - [basic](#basic)
     - [create your `secrets`:](#create-your-secrets)
     - [create `.env` file following:](#create-env-file-following)
-      - [example short .env](#example-short-env)
+      - [example short .env (swarm)](#example-short-env-swarm)
+      - [example short .env (bridge)](#example-short-env-bridge)
   - [Helper](#helper)
     - [verify healthcheck](#verify-healthcheck)
     - [access docker in swarm mode](#access-docker-in-swarm-mode)
@@ -39,7 +40,7 @@ $openssl rand -base64 18 > config/secrets/my_file_secret.txt
 # ______________________________________________________________________________
 NODE_ID=
 NODE_ROLE=manager
-NETWORK_MODE=overlay # by default "bridge"
+NETWORK_MODE=overlay # overlay | bridge
 
 # GENERAL traefik variables (set by default, change as needed)
 # ______________________________________________________________________________
@@ -67,12 +68,19 @@ VERSION=latest
 # NOTE: extend additional info here ...
 ```
 
-#### example short .env
+#### example short .env (swarm)
 
 ```env
-NETWORK_MODE=overlay
 DOMAIN=<HOST>.home.local
-VERSION=latest
+```
+
+#### example short .env (bridge)
+
+```env
+NETWORK_MODE=bridge
+LB_SWARM=false
+
+DOMAIN=<HOST>.home.local
 ```
 
 ---

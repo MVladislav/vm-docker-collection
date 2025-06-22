@@ -145,7 +145,6 @@ x-logging: &logging
 ################################################################################
 ################################################################################
 ################################################################################
-
 x-base-env: &base-env
   TZ: ${TIMEZONE:-Europe/Berlin}
   PUID: ${PUID:-$UID}
@@ -166,9 +165,14 @@ services:
         BUILD_DATE: ${BUILD_DATE:-2022}
         VERSION: ${VERSION:-latest}
     image: localhost:5000/...:${VERSION:-latest}
-    <<: [*basic, *basic-deploy-labels, *logging]
+    <<:
+      - *basic
+      - *basic-deploy-labels
+      - *logging
     deploy:
-      <<: [*basic-deploy, *basic-deploy-labels]
+      <<:
+        - *basic-deploy
+        - *basic-deploy-labels
     # ports:
     #   - target: ${PORT:-...}
     #     published: ${PORT_PUBLISH:-...}
@@ -199,12 +203,12 @@ services:
       #   source: ./logstash/config/logstash.yml
       #   target: /usr/share/logstash/config/logstash.yml
       #   read_only: true
-    # devices:
-    #   - /dev/kfd # main compute interface
-    #   - /dev/dri # Direct Rendering Interface
-    #   # - /dev/dri/renderD128 # instead of dri, pass each device individually (number needs to be adjust)
-    # group_add:
-    #   - video
+    # extends:
+    #   file: docker-hwaccel.yaml
+    #   service: hwaccel-amd
+    # extends:
+    #   file: docker-hwaccel.yaml
+    #   service: hwaccel-nvidia
     # command: >
     #   ...
     healthcheck:
@@ -229,7 +233,7 @@ services:
 networks:
   default:
     # name: proxy${SERVICE_NAME_POST:-}
-    driver: ${NETWORK_MODE:-bridge}
+    driver: ${NETWORK_MODE:-overlay}
     attachable: true
     driver_opts:
       encrypted: "true"
