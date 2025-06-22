@@ -28,7 +28,6 @@ $openssl rand -base64 18 > config/secrets/owncloud_db_password.txt
 
 ```env
 NODE_ROLE=manager
-NETWORK_MODE=overlay
 
 VERSION_OWNCLOUD=10
 VERSION_REDIS=7.0.7

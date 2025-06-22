@@ -20,8 +20,6 @@
 ### create `.env` file following:
 
 ```env
-NETWORK_MODE=overlay
-
 VERSION=latest
 
 LB_SWARM=true

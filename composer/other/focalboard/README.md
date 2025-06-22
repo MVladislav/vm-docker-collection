@@ -27,9 +27,7 @@ $openssl rand -base64 18 > config/secrets/my_file_secret.txt
 ### create `.env` file following:
 
 ```env
-NODE_ID=
 NODE_ROLE=manager
-NETWORK_MODE=overlay
 
 VERSION=latest
 

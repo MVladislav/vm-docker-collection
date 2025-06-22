@@ -34,7 +34,7 @@ $pwgen -s 18 1 > config/secrets/wgui_password.txt
 # ______________________________________________________________________________
 NODE_ID=
 NODE_ROLE=manager
-NETWORK_MODE=overlay # by default "bridge"
+NETWORK_MODE=overlay # overlay | bridge
 
 # GENERAL traefik variables (set by default, change as needed)
 # ______________________________________________________________________________
@@ -66,7 +66,6 @@ WGUI_LOG_LEVEL=INFO # DEBUG|INFO|WARN|ERROR|OFF
 #### example short .env
 
 ```env
-NETWORK_MODE=overlay
 DOMAIN=wg.home.local
 VERSION=latest
 ```

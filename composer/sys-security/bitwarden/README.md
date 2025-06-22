@@ -29,7 +29,6 @@ $openssl rand -base64 18 > config/secrets/mariadb_user_password.txt
 
 ```env
 NODE_ROLE=manager
-NETWORK_MODE=overlay
 
 VERSION_BITWARDEN=latest
 VERSION_MARIADB=10.7.8

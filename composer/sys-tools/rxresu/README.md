@@ -39,7 +39,7 @@ $echo "CHROME_TOKEN=$(pwgen -s 18 1)" >> .env
 # GENERAL variables (mostly by default, change as needed)
 # ______________________________________________________________________________
 NODE_ROLE=manager
-NETWORK_MODE=overlay # by default "bridge"
+NETWORK_MODE=overlay # overlay | bridge
 
 # GENERAL traefik variables (set by default, change as needed)
 # ______________________________________________________________________________
@@ -99,7 +99,6 @@ SMTP_URL: smtp://user:pass@smtp:587 # Optional # pragma: allowlist secret
 #### example short .env
 
 ```env
-NETWORK_MODE=overlay
 DOMAIN=resume.home.local
 DOMAIN_MINIO=storage.home.local
 

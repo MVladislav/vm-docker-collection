@@ -35,7 +35,7 @@ $echo "CALENDSO_ENCRYPTION_KEY=$(pwgen -s 32 1)" >> .env
 # GENERAL variables (mostly by default, change as needed)
 # ______________________________________________________________________________
 NODE_ROLE=manager
-NETWORK_MODE=overlay # by default "bridge"
+NETWORK_MODE=overlay # overlay | bridge
 
 # GENERAL traefik variables (set by default, change as needed)
 # ______________________________________________________________________________
@@ -73,7 +73,6 @@ EMAIL_SERVER_PASSWORD=email_password
 #### example short .env
 
 ```env
-NETWORK_MODE=overlay
 DOMAIN=calcom.home.local
 ```
 

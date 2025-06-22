@@ -57,7 +57,6 @@ NFS_PATH=<ADD-NFS-PATH>
 #### example short .env
 
 ```env
-NETWORK_MODE=overlay
 DOMAIN=share.home.local
 
 NFS_HOST=<ADD-NFS-HOST>

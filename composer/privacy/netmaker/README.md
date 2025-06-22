@@ -33,7 +33,6 @@ $sudo iptables --policy FORWARD ACCEPT
 
 ```env
 NODE_ROLE=manager
-NETWORK_MODE=overlay
 
 VERSION_NETMAKER=v0.18.0
 VERSION_NETMAKER_UI=v0.18.0

@@ -24,7 +24,7 @@
 # GENERAL variables (mostly by default, change as needed)
 # ______________________________________________________________________________
 NODE_ROLE=manager
-NETWORK_MODE=overlay # by default "bridge"
+NETWORK_MODE=overlay # overlay | bridge
 
 # GENERAL traefik variables (set by default, change as needed)
 # ______________________________________________________________________________
@@ -52,7 +52,6 @@ VERSION_EXCALIDRAW_ROOM=v0.18.0
 #### example short .env
 
 ```env
-NETWORK_MODE=overlay
 DOMAIN=draw.home.local
 DOMAIN_ROOM=draw-room.home.local
 ```

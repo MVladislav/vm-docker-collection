@@ -49,9 +49,7 @@ $cp ./config/web_template.yml ./config/web.yml
 ### create `.env` file following:
 
 ```env
-NODE_ID=
 NODE_ROLE=manager
-NETWORK_MODE=overlay
 
 VERSION=v2.43.0-rc.0
 

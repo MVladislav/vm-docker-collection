@@ -58,7 +58,7 @@ $echo "ACME_EMAIL=info@${TMP_DOMAIN_BASE}" >> .env
 # GENERAL variables (mostly by default, change as needed)
 # ______________________________________________________________________________
 NODE_ROLE=manager
-NETWORK_MODE=overlay # by default "bridge"
+NETWORK_MODE=overlay # overlay | bridge
 
 # GENERAL sources to be used (set by default, change as needed)
 # ______________________________________________________________________________

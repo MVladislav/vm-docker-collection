@@ -25,7 +25,7 @@
 # GENERAL variables (mostly by default, change as needed)
 # ______________________________________________________________________________
 NODE_ROLE=manager
-NETWORK_MODE=overlay # by default "bridge"
+NETWORK_MODE=overlay # overlay | bridge
 
 # GENERAL traefik variables (set by default, change as needed)
 # ______________________________________________________________________________
@@ -56,7 +56,6 @@ VERSION_OPEN_WEBUI=git-90503be
 #### example short .env
 
 ```env
-NETWORK_MODE=overlay
 DOMAIN_WEBUI=ai.home.local
 DOMAIN_OLLAMA=ollama.home.local
 ```

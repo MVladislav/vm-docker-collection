@@ -20,8 +20,6 @@
 ### create `.env` file following:
 
 ```env
-NETWORK_MODE=overlay
-
 VERSION_PORTAINER=2.16.2-alpine
 VERSION_AGENT=2.16.2-alpine
 

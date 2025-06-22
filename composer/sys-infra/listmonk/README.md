@@ -32,7 +32,7 @@ $echo "LISTMONK_POSTGRES_PASSWORD=$(cat config/secrets/postgres_password_file.tx
 # GENERAL variables (mostly by default, change as needed)
 # ______________________________________________________________________________
 NODE_ROLE=manager
-NETWORK_MODE=overlay # by default "bridge"
+NETWORK_MODE=overlay # overlay | bridge
 
 # GENERAL traefik variables (set by default, change as needed)
 # ______________________________________________________________________________
@@ -63,7 +63,6 @@ VERSION_POSTGRESQL=17.4-alpine
 #### example short .env
 
 ```env
-NETWORK_MODE=overlay
 DOMAIN=monk.home.local
 ```
 

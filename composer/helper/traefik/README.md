@@ -99,7 +99,7 @@ and add your Cloudflare api token if you use certificates resolvers.
 # GENERAL variables (mostly by default, change as needed)
 # ______________________________________________________________________________
 NODE_ROLE=manager
-NETWORK_MODE=overlay # by default "bridge"
+NETWORK_MODE=overlay # overlay | bridge
 
 # GENERAL traefik variables (set by default, change as needed)
 # ______________________________________________________________________________
@@ -125,7 +125,6 @@ VERSION=v3.4.1
 #### example short .env
 
 ```env
-NETWORK_MODE=overlay
 DOMAIN=traefik.home.local
 ```
 

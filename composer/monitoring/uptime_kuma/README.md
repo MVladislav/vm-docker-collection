@@ -21,7 +21,6 @@
 
 ```env
 NODE_ROLE=manager
-NETWORK_MODE=overlay
 
 VERSION=1.21.1-alpine
 

@@ -33,7 +33,7 @@ $pwgen -s 32 1 > config/secrets/postgres_password_file.txt
 # GENERAL variables (mostly by default, change as needed)
 # ______________________________________________________________________________
 NODE_ROLE=manager
-NETWORK_MODE=overlay # by default "bridge"
+NETWORK_MODE=overlay # overlay | bridge
 
 # GENERAL traefik variables (set by default, change as needed)
 # ______________________________________________________________________________
@@ -65,7 +65,6 @@ VERSION_POSTGRESQL=17.3-alpine
 #### example short .env
 
 ```env
-NETWORK_MODE=overlay
 DOMAIN_FRONT=dtrack.home.local
 DOMAIN_API=dtrack-api.home.local
 ```

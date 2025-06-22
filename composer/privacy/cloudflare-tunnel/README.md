@@ -19,7 +19,6 @@
 
 ```env
 NODE_ROLE=manager
-NETWORK_MODE=overlay
 
 VERSION=2022.12.1
 TOKEN=<TOKEN>

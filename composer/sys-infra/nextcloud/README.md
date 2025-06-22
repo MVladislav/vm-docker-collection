@@ -41,7 +41,7 @@ $echo "swordfish" > config/secrets/mysql_password.txt
 # ______________________________________________________________________________
 NODE_ID=
 NODE_ROLE=manager
-NETWORK_MODE=overlay # by default "bridge"
+NETWORK_MODE=overlay # overlay | bridge
 
 # GENERAL traefik variables (set by default, change as needed)
 # ______________________________________________________________________________
@@ -78,7 +78,6 @@ MYSQL_USER=nextcloud
 #### example short .env
 
 ```env
-NETWORK_MODE=overlay
 DOMAIN=nextcloud.home.local
 
 VERSION_NEXTCLOUD=27.1.3-apache

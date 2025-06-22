@@ -29,7 +29,6 @@ $openssl rand -base64 18 > config/secrets/db_password_file_secret.txt
 
 ```env
 NODE_ROLE=manager
-NETWORK_MODE=overlay
 
 VERSION=3.9.0-2-ce
 # VERSION=3.9.0-2-ce-non-root

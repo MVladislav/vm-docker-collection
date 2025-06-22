@@ -31,7 +31,7 @@ $pwgen -s 18 1 > config/secrets/postgres_password_file.txt
 # GENERAL variables (mostly by default, change as needed)
 # ______________________________________________________________________________
 NODE_ROLE=manager
-NETWORK_MODE=overlay # by default "bridge"
+NETWORK_MODE=overlay # overlay | bridge
 
 # GENERAL traefik variables (set by default, change as needed)
 # ______________________________________________________________________________
@@ -65,7 +65,6 @@ POSTGRES_PASSWORD_TMP=<PASSWORD - cat config/secrets/postgres_password_file.txt>
 #### example short .env
 
 ```env
-NETWORK_MODE=overlay
 DOMAIN=affine.home.local
 
 AFFINE_ADMIN_EMAIL=<ADMIN_EMAIL>

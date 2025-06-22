@@ -24,8 +24,6 @@
 
 ```env
 NODE_ROLE=manager
-NETWORK_MODE=overlay
-
 VERSION=7.0.0-beta1
 
 S_INTERFACE=eth0

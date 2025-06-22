@@ -34,7 +34,7 @@ $echo "DATABASE_PASSWORD=$(cat config/secrets/postgres_password_file.txt)" >> .e
 # GENERAL variables (mostly by default, change as needed)
 # ______________________________________________________________________________
 NODE_ROLE=manager
-NETWORK_MODE=overlay # by default "bridge"
+NETWORK_MODE=overlay # overlay | bridge
 
 # GENERAL traefik variables (set by default, change as needed)
 # ______________________________________________________________________________
@@ -82,7 +82,6 @@ RAILS_LOG_TO_STDOUT=true
 #### example short .env
 
 ```env
-NETWORK_MODE=overlay
 DOMAIN=dawarich.home.local
 ```
 

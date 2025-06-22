@@ -33,7 +33,7 @@ $echo "mail@example.com" > config/secrets/site_owner_conf.txt
 # GENERAL variables (mostly by default, change as needed)
 # ______________________________________________________________________________
 NODE_ROLE=manager
-NETWORK_MODE=overlay # by default "bridge"
+NETWORK_MODE=overlay # overlay | bridge
 
 # GENERAL traefik variables (set by default, change as needed)
 # ______________________________________________________________________________
@@ -87,7 +87,6 @@ MAIL_ENCRYPTION=tls
 #### example short .env
 
 ```env
-NETWORK_MODE=overlay
 DOMAIN=firefly.home.local
 
 VERSION_FIREFLY=version-6.1.13

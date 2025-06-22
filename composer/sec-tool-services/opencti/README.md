@@ -50,7 +50,7 @@ $echo "CONNECTOR_ANALYSIS_ID=$(uuidgen)" >> .env
 # GENERAL variables (mostly by default, change as needed)
 # ______________________________________________________________________________
 NODE_ROLE=manager
-NETWORK_MODE=overlay # by default "bridge"
+NETWORK_MODE=overlay # overlay | bridge
 
 # GENERAL traefik variables (set by default, change as needed)
 # ______________________________________________________________________________
@@ -97,7 +97,6 @@ OPENCTI_ADMIN_EMAIL=<CHANGEME>
 #### example short .env
 
 ```env
-NETWORK_MODE=overlay
 DOMAIN=opencti.home.local
 
 OPENCTI_ADMIN_EMAIL=groot@home.local

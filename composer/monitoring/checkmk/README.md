@@ -25,9 +25,7 @@ A tool for Infrastructure & Application Monitoring. It is a software developed f
 ### create `.env` file following:
 
 ```env
-NODE_ID=
 NODE_ROLE=manager
-NETWORK_MODE=overlay
 
 VERSION=2.1.0
 TYPE=check-mk-raw

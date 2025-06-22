@@ -36,7 +36,7 @@ $openssl rand -base64 18 > config/secrets/postgres_password_file.txt
 # GENERAL variables (mostly by default, change as needed)
 # ______________________________________________________________________________
 NODE_ROLE=manager
-NETWORK_MODE=overlay # by default "bridge"
+NETWORK_MODE=overlay # overlay | bridge
 
 # GENERAL traefik variables (set by default, change as needed)
 # ______________________________________________________________________________
@@ -73,7 +73,6 @@ VERSION_REDIS=7.2.4-alpine3.19
 #### example short .env
 
 ```env
-NETWORK_MODE=overlay
 DOMAIN=faraday.home.local
 
 # password over secrets seems current not to work

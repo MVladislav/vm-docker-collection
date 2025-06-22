@@ -33,7 +33,7 @@ $pwgen -s 18 1 > config/secrets/admin_password_file_secret.txt
 # GENERAL variables (mostly by default, change as needed)
 # ______________________________________________________________________________
 NODE_ROLE=manager
-NETWORK_MODE=overlay # by default "bridge"
+NETWORK_MODE=overlay # overlay | bridge
 
 # GENERAL traefik variables (set by default, change as needed)
 # ______________________________________________________________________________
@@ -72,7 +72,6 @@ GF_SMTP_FROM_ADDRESS=
 #### example short .env
 
 ```env
-NETWORK_MODE=overlay
 DOMAIN=grafana.home.local
 ```
 

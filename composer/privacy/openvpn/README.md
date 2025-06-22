@@ -24,7 +24,7 @@
 # GENERAL variables (mostly by default, change as needed)
 # ______________________________________________________________________________
 NODE_ROLE=manager
-NETWORK_MODE=overlay # by default "bridge"
+NETWORK_MODE=overlay # overlay | bridge
 
 # GENERAL sources to be used (set by default, change as needed)
 # ______________________________________________________________________________
@@ -41,7 +41,6 @@ VERSION=latest
 #### example short .env
 
 ```env
-NETWORK_MODE=overlay
 VERSION=latest
 ```
 

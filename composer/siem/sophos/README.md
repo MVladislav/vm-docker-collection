@@ -74,9 +74,7 @@ $curl -XGET -H "Authorization: Bearer <JWT>" https://api.central.sophos.com/whoa
 ### create `.env` file following:
 
 ```env
-NODE_ID=
 NODE_ROLE=manager
-NETWORK_MODE=overlay
 
 BUILD_DATE=2022
 PYTHON_VERSION=3.10.8-alpine3.16

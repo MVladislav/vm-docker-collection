@@ -22,8 +22,6 @@
 
 ```env
 NODE_ROLE=manager
-NETWORK_MODE=overlay
-
 VERSION=12
 
 LB_SWARM=true

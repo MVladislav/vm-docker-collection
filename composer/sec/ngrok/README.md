@@ -20,10 +20,7 @@
 ### create `.env` file following:
 
 ```env
-NODE_ID=
 NODE_ROLE=manager
-NETWORK_MODE=overlay
-
 VERSION=latest
 PORT=4040
 

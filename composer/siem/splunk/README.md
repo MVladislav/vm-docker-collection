@@ -29,8 +29,6 @@ $openssl rand -base64 18 > config/secrets/my_file_secret.txt
 
 ```env
 NODE_ROLE=manager
-NETWORK_MODE=overlay
-
 VERSION=8.2
 
 LB_SWARM=true

@@ -24,7 +24,7 @@
 # GENERAL variables (mostly by default, change as needed)
 # ______________________________________________________________________________
 NODE_ROLE=manager
-NETWORK_MODE=overlay # by default "bridge"
+NETWORK_MODE=overlay # overlay | bridge
 
 # GENERAL traefik variables (set by default, change as needed)
 # ______________________________________________________________________________
@@ -50,7 +50,6 @@ VERSION=v2.0.6
 #### example short .env
 
 ```env
-NETWORK_MODE=overlay
 DOMAIN=speed.home.local
 ```
 

@@ -21,10 +21,7 @@
 ### create `.env` file following:
 
 ```env
-NODE_ID=
 NODE_ROLE=manager
-NETWORK_MODE=overlay
-
 VERSION=0.12.1
 
 LB_SWARM=true

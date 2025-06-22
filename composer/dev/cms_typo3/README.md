@@ -39,7 +39,7 @@ $pwgen -s 18 1 > config/secrets/mariadb_user_password.txt
 # GENERAL variables (mostly by default, change as needed)
 # ______________________________________________________________________________
 NODE_ROLE=manager
-NETWORK_MODE=overlay # by default "bridge"
+NETWORK_MODE=overlay # overlay | bridge
 
 # GENERAL traefik variables (set by default, change as needed)
 # ______________________________________________________________________________
@@ -76,7 +76,6 @@ TYPO3_SHA256=e57cbb2e201e0fb00007a75e8abf0f796146ea3771240f48f6e3c0d5d37626e8
 #### example short .env
 
 ```env
-NETWORK_MODE=overlay
 DOMAIN=page.home.local
 ```
 

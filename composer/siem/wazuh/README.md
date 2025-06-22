@@ -68,7 +68,7 @@ $sudo chown $USER:$USER config/wazuh_indexer_ssl_certs/*
 # GENERAL variables (mostly by default, change as needed)
 # ______________________________________________________________________________
 NODE_ROLE=manager
-NETWORK_MODE=overlay # by default "bridge"
+NETWORK_MODE=overlay # overlay | bridge
 
 # GENERAL traefik variables (set by default, change as needed)
 # ______________________________________________________________________________
@@ -106,7 +106,6 @@ VERSION=4.12.0
 #### example short .env
 
 ```env
-NETWORK_MODE=overlay
 DOMAIN=siem.home.local
 ```
 
