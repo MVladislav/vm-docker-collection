@@ -30,6 +30,9 @@
 ### create your `secrets`:
 
 ```sh
+$cp config/wazuh_dashboard/wazuh.yml.tmpl config/wazuh_dashboard/wazuh.yml
+$cp config/wazuh_indexer/internal_users.yml.tmpl config/wazuh_indexer/internal_users.yml
+
 $pwgen -s 24 1 > config/secrets/dashboard_password_file_secret.txt
 $sed "s|REPLACE_KIBANA_SERVER_HASH|$(cat config/secrets/dashboard_password_file_secret.txt | mkpasswd -m bcrypt -s -R 12)|" -i config/wazuh_indexer/internal_users.yml
 

@@ -27,11 +27,13 @@ config/wazuh_cluster/*
 
 !config/wazuh_dashboard/
 config/wazuh_dashboard/*
-!config/wazuh_dashboard/*.yml
+!config/wazuh_dashboard/opensearch_dashboards.yml
+!config/wazuh_dashboard/*.yml.tmpl
 
 !config/wazuh_indexer/
 config/wazuh_indexer/*
-!config/wazuh_indexer/*.yml
+!config/wazuh_indexer/wazuh.indexer.yml
+!config/wazuh_indexer/*.yml.tmpl
 
 !resources/
 resources/*

@@ -1,0 +1,100 @@
+<!--
+  -  Watchguard firebox decoders
+-->
+
+<!-- FILTER LOGS
+
+Jun 17 20:59:55 TXX-PoE firewall: msg_id="3000-0148" Allow 0-SSL-VPN VLAN123 60 tcp 20 63 1.1.1.1 2.2.2.2 33564 8006 offset 10 S 147268851 win 61690 src_user="me@Firebox-DB"  (Allow SSLVPN-TEST-00)
+
+Jun 17 22:05:09 TXX-PoE firewall: msg_id="3000-0151" Allow 0-SSL-VPN VLAN123 tcp 2.2.2.2 1.1.1.1 57940 443 src_user="me@Firebox-DB" flags="SD" duration="141" sent_pkts="33" rcvd_pkts="29" sent_bytes="12795" rcvd_bytes="6852"  (Allow SSLVPN-TEST-00)
+
+Jun 17 22:25:35 TXX-PoE firewall: msg_id="3000-0148" Allow Firebox External 58 udp 20 64 2.2.2.2 1.1.1.1 33759 53  geo_src="DEU"  geo_dst="IRL" record_type="AAAA" question="pool.ntp.org"  (Any From Firebox-XX)
+
+Jun 17 22:25:35 TXX-PoE firewall: msg_id="3000-0151" Allow Firebox External udp 2.2.2.2 1.1.1.1 60452 53  geo_src="DEU"  geo_dst="IRL" flags="Dd" duration="34" sent_pkts="1" rcvd_pkts="1" sent_bytes="73" rcvd_bytes="174"  (Any From Firebox-XX)
+
+Jun 17 22:25:34 TXX-PoE firewall: msg_id="3000-0148" Allow Firebox External 73 udp 20 64 2.2.2.2 1.1.1.1 38335 53  geo_src="DEU"  geo_dst="IRL" record_type="AAAA" question="time-b.timefreq.bldrdoc.gov"  (Any From Firebox-XX)
+
+-->
+
+<decoder name="watchguard-firebox">
+  <program_name>firewall</program_name>
+  <prematch>msg_id</prematch>
+  <type>firewall</type>
+</decoder>
+
+<decoder name="watchguard-firebox-base">
+  <parent>watchguard-firebox</parent>
+  <regex>msg_id="(\S+)"\s+(\w+)\s+(\S+)\s+(\S+)</regex>
+  <order>msg_id,action,policy,iface</order>
+</decoder>
+
+<!-- Variant 1 child decoder: parses the rest -->
+<decoder name="watchguard-firebox-base">
+  <parent>watchguard-firebox</parent>
+  <regex offset="after_regex">\s+(\d+)\s+(\w+)\s+(\d+)\s+(\d+)\s+(\d+.\d+.\d+.\d+)\s+(\d+.\d+.\d+.\d+)\s+(\d+)\s+(\d+)\s+offset\s+(\d+)\s+(\S+)\s+(\d+)\s+win\s+(\d+)</regex>
+  <order>iface_id,protocol,pkt_src_port,pkt_dst_port,src_ip,dst_ip,src_port,dst_port,offset,flags,seq,window</order>
+</decoder>
+
+<!-- Variant 2 child decoder: parses the rest -->
+<decoder name="watchguard-firebox-base">
+  <parent>watchguard-firebox</parent>
+  <regex offset="after_regex">\s+(\w+)\s+(\d+.\d+.\d+.\d+)\s+(\d+.\d+.\d+.\d+)\s+(\d+)\s+(\d+)</regex>
+  <order>protocol,src_ip,dst_ip,src_port,dst_port</order>
+</decoder>
+
+<!-- Fields -->
+<decoder name="watchguard-firebox-base">
+  <parent>watchguard-firebox</parent>
+  <regex offset="after_parent">src_user="(\S+)"</regex>
+  <order>src_user</order>
+</decoder>
+<decoder name="watchguard-firebox-base">
+  <parent>watchguard-firebox</parent>
+  <regex offset="after_parent">flags="(\S+)"</regex>
+  <order>flags</order>
+</decoder>
+<decoder name="watchguard-firebox-base">
+  <parent>watchguard-firebox</parent>
+  <regex offset="after_parent">duration="(\S+)"</regex>
+  <order>duration</order>
+</decoder>
+<decoder name="watchguard-firebox-base">
+  <parent>watchguard-firebox</parent>
+  <regex offset="after_parent">sent_pkts="(\S+)"</regex>
+  <order>sent_pkts</order>
+</decoder>
+<decoder name="watchguard-firebox-base">
+  <parent>watchguard-firebox</parent>
+  <regex offset="after_parent">rcvd_pkts="(\S+)"</regex>
+  <order>rcvd_pkts</order>
+</decoder>
+<decoder name="watchguard-firebox-base">
+  <parent>watchguard-firebox</parent>
+  <regex offset="after_parent">sent_bytes="(\S+)"</regex>
+  <order>sent_bytes</order>
+</decoder>
+<decoder name="watchguard-firebox-base">
+  <parent>watchguard-firebox</parent>
+  <regex offset="after_parent">rcvd_bytes="(\S+)"</regex>
+  <order>rcvd_bytes</order>
+</decoder>
+<decoder name="watchguard-firebox-base">
+  <parent>watchguard-firebox</parent>
+  <regex offset="after_parent">geo_src="(\S+)"</regex>
+  <order>geo_src</order>
+</decoder>
+<decoder name="watchguard-firebox-base">
+  <parent>watchguard-firebox</parent>
+  <regex offset="after_parent">geo_dst="(\S+)"</regex>
+  <order>geo_dst</order>
+</decoder>
+<decoder name="watchguard-firebox-base">
+  <parent>watchguard-firebox</parent>
+  <regex offset="after_parent">record_type="(\S+)"</regex>
+  <order>record_type</order>
+</decoder>
+<decoder name="watchguard-firebox-base">
+  <parent>watchguard-firebox</parent>
+  <regex offset="after_parent">question="(\S+)"</regex>
+  <order>question</order>
+</decoder>
