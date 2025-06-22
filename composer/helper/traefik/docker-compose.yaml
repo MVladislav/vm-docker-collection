@@ -121,7 +121,7 @@ services:
 networks:
   proxy:
     name: proxy
-    driver: ${NETWORK_MODE:-bridge}
+    driver: ${NETWORK_MODE:-overlay}
     attachable: true
     driver_opts:
       encrypted: "true"

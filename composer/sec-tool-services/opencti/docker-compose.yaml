@@ -417,7 +417,7 @@ services:
 networks:
   default:
     name: opencti
-    driver: ${NETWORK_MODE:-bridge}
+    driver: ${NETWORK_MODE:-overlay}
     attachable: true
     driver_opts:
       encrypted: "true"

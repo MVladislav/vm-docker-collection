@@ -298,13 +298,13 @@ services:
 ################################################################################
 networks:
   default:
-    driver: ${NETWORK_MODE:-bridge}
+    driver: ${NETWORK_MODE:-overlay}
     attachable: true
     driver_opts:
       encrypted: "true"
   graylog:
     name: graylog
-    driver: ${NETWORK_MODE:-bridge}
+    driver: ${NETWORK_MODE:-overlay}
     attachable: true
     driver_opts:
       encrypted: "true"

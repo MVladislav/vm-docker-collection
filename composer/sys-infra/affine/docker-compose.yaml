@@ -173,7 +173,7 @@ services:
 networks:
   default:
     name: affine${SERVICE_NAME_POST:-}
-    driver: ${NETWORK_MODE:-bridge}
+    driver: ${NETWORK_MODE:-overlay}
     attachable: true
     driver_opts:
       encrypted: "true"

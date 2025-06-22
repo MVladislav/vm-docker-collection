@@ -126,7 +126,7 @@ services:
 networks:
   default:
     name: metasploit
-    driver: ${NETWORK_MODE:-bridge}
+    driver: ${NETWORK_MODE:-overlay}
     attachable: true
     driver_opts:
       encrypted: "true"

@@ -140,7 +140,7 @@ services:
 networks:
   default:
     name: coder${SERVICE_NAME_POST:-}
-    driver: ${NETWORK_MODE:-bridge}
+    driver: ${NETWORK_MODE:-overlay}
     attachable: true
     driver_opts:
       encrypted: "true"

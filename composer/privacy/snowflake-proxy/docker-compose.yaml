@@ -73,5 +73,5 @@ services:
     ################################################################################
 networks:
   default:
-    driver: ${NETWORK_MODE:-bridge}
+    driver: ${NETWORK_MODE:-overlay}
     attachable: true
