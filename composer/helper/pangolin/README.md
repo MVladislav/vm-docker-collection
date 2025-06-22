@@ -27,17 +27,29 @@ $echo '<YOUR_API_TOKEN>' > config/secrets/ionos_api_key_secret.txt
 
 ### create config files:
 
-> Below domains `traefik.home.local`, `proxy.home.local` and `home.local` are used as example, replace them as you need.
-> As also E-Mail `groot@home.local`
+> Replace `home.local`.
 
 ```sh
-$cp ./config/pangolin/traefik/dynamic_config_template.yml ./config/pangolin/traefik/dynamic_config.yml
-$cp ./config/pangolin/traefik/traefik_config_template.yml ./config/pangolin/traefik/traefik_config.yml
+$TMP_DOMAIN_BASE="home.local"
+$TMP_DOMAIN_DASHBOARD="proxy.${TMP_DOMAIN_BASE}"
+$TMP_DOMAIN_TRAEFIK="traefik.${TMP_DOMAIN_BASE}"
 
-$sed "s|<REPLACE_TRAEFIK_DOMAIN>|traefik.home.local|" -i  ./config/pangolin/traefik/dynamic_config.yml
-$sed "s|<REPLACE_DASHBOARDURL_DOMAIN>|proxy.home.local|" -i  ./config/pangolin/traefik/dynamic_config.yml
+$cp ./config/pangolin/traefik/dynamic_config.yml.tmpl ./config/pangolin/traefik/dynamic_config.yml
+$cp ./config/pangolin/config.yml.tmpl ./config/pangolin/config.yml
 
-$sed "s|<REPLACE_EMAIL_ACME>|groot@home.local|" -i  ./config/pangolin/traefik/traefik_config.yml
+$sed "s|<REPLACE_TRAEFIK_DOMAIN>|${TMP_DOMAIN_TRAEFIK}|" -i  ./config/pangolin/traefik/dynamic_config.yml
+$sed "s|<REPLACE_DASHBOARDURL_DOMAIN>|${TMP_DOMAIN_DASHBOARD}|" -i  ./config/pangolin/traefik/dynamic_config.yml
+
+$sed "s|<REPLACE_DASHBOARDURL_DOMAIN>|${TMP_DOMAIN_DASHBOARD}|" -i  ./config/pangolin/config.yml
+$sed "s|<REPLACE_BASE_DOMAIN>|${TMP_DOMAIN_BASE}|" -i  ./config/pangolin/config.yml
+$sed "s|<REPLACE_SERVER_SECRET>|$(pwgen -s 32 1)|" -i  ./config/pangolin/config.yml
+$sed "s|<REPLACE_USERS_PASSWORD>|$(pwgen -c  -n -y -s 18 1)|" -i  ./config/pangolin/config.yml
+
+$echo "BASEDOMAIN=${TMP_DOMAIN_BASE}" >> .env
+$echo "DASHBOARDURL=${TMP_DOMAIN_DASHBOARD}" >> .env
+$echo "USERS_SERVERADMIN_EMAIL=groot@${TMP_DOMAIN_BASE}" >> .env
+$echo "USERS_SERVERADMIN_PASSWORD=$(pwgen -c  -n -y -s 18 1)"  >> .env
+$echo "ACME_EMAIL=info@${TMP_DOMAIN_BASE}" >> .env
 ```
 
 ### create `.env` file following:
@@ -50,42 +62,42 @@ NETWORK_MODE=overlay # by default "bridge"
 
 # GENERAL sources to be used (set by default, change as needed)
 # ______________________________________________________________________________
-RESOURCES_LIMITS_CPUS=1
-RESOURCES_LIMITS_MEMORY=1g
+RESOURCES_LIMITS_CPUS=4
+RESOURCES_LIMITS_MEMORY=2g
 RESOURCES_RESERVATIONS_CPUS=0.001
 RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_PANGOLIN=latest
-VERSION_GERBIL=latest
-VERSION_TRAEFIK=latest
+VERSION_PANGOLIN=1.5.1
+VERSION_GERBIL=1.0.0
+VERSION_TRAEFIK=v3.4.1
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
-DASHBOARDURL=<UI_DOMAIN>
+DASHBOARDURL=<REPLACE_DASHBOARDURL_DOMAIN>
 BASEDOMAIN=<BASE_DOMAIN>
 
 USERS_SERVERADMIN_EMAIL=<USERMAIL>
 USERS_SERVERADMIN_PASSWORD=<PASSWORD>
+
+ACME_EMAIL=<E-MAIL>
+ACME_CASERVER=https://acme-staging-v02.api.letsencrypt.org/directory # https://acme-v02.api.letsencrypt.org/directory
+ACME_DNSCHALLENGE_PROVIDER=ionos
+ACME_DNSCHALLENGE_RESOLVERS=9.9.9.9,194.242.2.2,1.1.1.1
 ```
 
 #### example short .env
 
 ```env
-NETWORK_MODE=overlay
-
-DASHBOARDURL=proxy.home.local
-BASEDOMAIN=home.local
-
-USERS_SERVERADMIN_EMAIL=groot@home.local
-USERS_SERVERADMIN_PASSWORD=IwasHere!337
+ACME_CASERVER=https://acme-v02.api.letsencrypt.org/directory
 ```
 
 ---
 
 ## References
 
+- <https://github.com/fosrl>
 - <https://docs.fossorial.io/Getting%20Started/Manual%20Install%20Guides/docker-compose>
 - <https://docs.fossorial.io/Newt/install>
 - acme

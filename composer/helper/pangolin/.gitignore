@@ -20,5 +20,10 @@ config/pangolin/*
 
 !config/pangolin/traefik/
 config/pangolin/traefik/*
-!config/pangolin/traefik/dynamic_config_template.yml
-!config/pangolin/traefik/traefik_config_template.yml
+!config/pangolin/traefik/dynamic_config.yml.tmpl
+!config/pangolin/traefik/traefik_config.yml.tmpl
+!config/pangolin/config.yml.tmpl
+
+!config/pangolin/letsencrypt/
+config/pangolin/letsencrypt/*
+!config/pangolin/letsencrypt/.gitempty

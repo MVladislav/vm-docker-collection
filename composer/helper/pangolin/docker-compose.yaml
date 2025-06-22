@@ -13,8 +13,8 @@ x-basic-deploy: &basic-deploy
     condition: any
   resources:
     limits:
-      cpus: ${RESOURCES_LIMITS_CPUS:-1}
-      memory: ${RESOURCES_LIMITS_MEMORY:-1g}
+      cpus: ${RESOURCES_LIMITS_CPUS:-4}
+      memory: ${RESOURCES_LIMITS_MEMORY:-2g}
     reservations:
       cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
       memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
@@ -46,7 +46,7 @@ services:
   ##############################################################################
   pangolin:
     # https://hub.docker.com/r/fosrl/pangolin
-    image: fosrl/pangolin:${VERSION_PANGOLIN:-latest}
+    image: fosrl/pangolin:${VERSION_PANGOLIN:-1.5.1}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -55,11 +55,24 @@ services:
       - /etc/localtime:/etc/localtime:ro
       - ${PATH_VOLUME:-$PWD}/config/pangolin:/app/config
     environment:
-      APP_DASHBOARDURL: https://${DASHBOARDURL?domain variable not set}
-      APP_BASEDOMAIN: ${BASEDOMAIN?base domain variable not set}
+      # APP
+      APP_BASEDOMAIN: https://${DASHBOARDURL?domain variable not set}
+      # DOMAINS
+      DOMAINS_DEFAULT_BASEDOMAIN: ${BASEDOMAIN?base domain variable not set}
+      DOMAINS_DEFAULT_CERTRESOLVER: letsencrypt
+      DOMAINS_DEFAULT_PREFERWILDCARDCERT: "true"
+      # GERBIL
       GERBIL_BASEENDPOINT: ${BASEDOMAIN?base domain variable not set}
+      # USER
       USERS_SERVERADMIN_EMAIL: ${USERS_SERVERADMIN_EMAIL?you need set username}
       USERS_SERVERADMIN_PASSWORD: ${USERS_SERVERADMIN_PASSWORD?you need set user password}
+      GENERATE_TRAEFIK_CONFIG: "false"
+      # FLAGS
+      FLAGS_EMAIL_VERIFICATION_REQUIRED: "false"
+      FLAGS_DISABLE_SIGNUP_WITHOUT_INVITE: "true"
+      FLAGS_DISABLE_USER_CREATE_ORG: "true"
+      FLAGS_ALLOW_RAW_RESOURCES: "true"
+      FLAGS_ALLOW_BASE_DOMAIN_RESOURCES: "true"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3001/api/v1/"]
       start_period: 10s
@@ -74,7 +87,7 @@ services:
   ##############################################################################
   gerbil:
     # https://hub.docker.com/r/fosrl/gerbil
-    image: fosrl/gerbil:${VERSION_GERBIL:-latest}
+    image: fosrl/gerbil:${VERSION_GERBIL:-1.0.0}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -112,7 +125,7 @@ services:
   ##############################################################################
   traefik:
     # https://hub.docker.com/_/traefik
-    image: traefik:${VERSION_TRAEFIK:-latest}
+    image: traefik:${VERSION_TRAEFIK:-v3.4.1}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -126,8 +139,58 @@ services:
       - ${PATH_VOLUME:-$PWD}/config/pangolin/letsencrypt:/letsencrypt
     environment:
       IONOS_API_KEY_FILE: /run/secrets/ionos_api_key_secret
-    command:
-      - --configFile=/etc/traefik/traefik_config.yml
+      # https://doc.traefik.io/traefik/reference/static-configuration/env/
+      # Global configuration
+      TRAEFIK_GLOBAL_CHECKNEWVERSION: "true"
+      TRAEFIK_GLOBAL_SENDANONYMOUSUSAGE: "false"
+      # EntryPoints configuration
+      TRAEFIK_ENTRYPOINTS_WEB: "true"
+      TRAEFIK_ENTRYPOINTS_WEB_ADDRESS: ":80"
+      TRAEFIK_ENTRYPOINTS_WEB_HTTP_REDIRECTIONS_ENTRYPOINT_TO: websecure
+      TRAEFIK_ENTRYPOINTS_WEB_HTTP_REDIRECTIONS_ENTRYPOINT_SCHEME: https
+      TRAEFIK_ENTRYPOINTS_WEB_HTTP_REDIRECTIONS_ENTRYPOINT_PERMANENT: "true"
+      TRAEFIK_ENTRYPOINTS_WEBSECURE: "true"
+      TRAEFIK_ENTRYPOINTS_WEBSECURE_ADDRESS: ":443"
+      TRAEFIK_ENTRYPOINTS_WEBSECURE_TRANSPORT_RESPONDINGTIMEOUTS_READTIMEOUT: 30m
+      TRAEFIK_ENTRYPOINTS_WEBSECURE_HTTP_TLS_CERTRESOLVER: letsencrypt
+      # Traefik logs configuration
+      TRAEFIK_LOG: "true"
+      TRAEFIK_LOG_LEVEL: INFO # TRACE, DEBUG, PANIC, FATAL, ERROR, WARN, INFO
+      TRAEFIK_LOG_FORMAT: common
+      # Access logs configuration
+      TRAEFIK_ACCESSLOG: "true"
+      TRAEFIK_ACCESSLOG_FORMAT: common
+      TRAEFIK_ACCESSLOG_FIELDS_DEFAULTMODE: keep
+      TRAEFIK_ACCESSLOG_FIELDS_NAMES_CLIENTUSERNAME: drop
+      TRAEFIK_ACCESSLOG_FIELDS_HEADERS_DEFAULTMODE: keep
+      TRAEFIK_ACCESSLOG_FIELDS_HEADERS_NAMES_USER-Agent: keep
+      TRAEFIK_ACCESSLOG_FIELDS_HEADERS_NAMES_AUTHORIZATION: drop
+      TRAEFIK_ACCESSLOG_FIELDS_HEADERS_NAMES_CONTENT-Type: keep
+      # API and dashboard configuration
+      TRAEFIK_API: "true"
+      TRAEFIK_API_DASHBOARD: "true"
+      TRAEFIK_API_INSECURE: "false"
+      TRAEFIK_API_DEBUG: "false"
+      # Ping configuration
+      TRAEFIK_PING: "true"
+      # Docker configuration backend
+      TRAEFIK_PROVIDERS_HTTP: "true"
+      TRAEFIK_PROVIDERS_HTTP_ENDPOINT: http://pangolin:3001/api/v1/traefik-config
+      TRAEFIK_PROVIDERS_HTTP_POLLINTERVAL: 5s
+      TRAEFIK_PROVIDERS_FILE_FILENAME: /etc/traefik/dynamic_config.yml
+      # PLUGINS
+      TRAEFIK_EXPERIMENTAL_PLUGINS_BADGER_MODULENAME: github.com/fosrl/badger
+      TRAEFIK_EXPERIMENTAL_PLUGINS_BADGER_VERSION: v1.0.0
+      # TLS
+      TRAEFIK_SERVERSTRANSPORT_INSECURESKIPVERIFY: "true"
+      TRAEFIK_CERTIFICATESRESOLVERS_LETSENCRYPT: "true"
+      TRAEFIK_CERTIFICATESRESOLVERS_LETSENCRYPT_ACME_EMAIL: ${ACME_EMAIL?ACME Mail not set}
+      TRAEFIK_CERTIFICATESRESOLVERS_LETSENCRYPT_ACME_STORAGE: /letsencrypt/acme.json
+      TRAEFIK_CERTIFICATESRESOLVERS_LETSENCRYPT_ACME_KEYTYPE: EC256
+      TRAEFIK_CERTIFICATESRESOLVERS_LETSENCRYPT_ACME_CASERVER: ${ACME_CASERVER:-https://acme-staging-v02.api.letsencrypt.org/directory} # https://acme-v02.api.letsencrypt.org/directory
+      TRAEFIK_CERTIFICATESRESOLVERS_LETSENCRYPT_ACME_DNSCHALLENGE: "true"
+      TRAEFIK_CERTIFICATESRESOLVERS_LETSENCRYPT_ACME_DNSCHALLENGE_PROVIDER: ${ACME_DNSCHALLENGE_PROVIDER:-ionos}
+      TRAEFIK_CERTIFICATESRESOLVERS_LETSENCRYPT_ACME_DNSCHALLENGE_RESOLVERS: ${ACME_DNSCHALLENGE_RESOLVERS:-9.9.9.9,194.242.2.2,1.1.1.1}
     healthcheck:
       test: "traefik healthcheck --ping"
       start_period: 5s
@@ -142,7 +205,7 @@ services:
 networks:
   pangolin:
     name: pangolin
-    driver: ${NETWORK_MODE:-bridge}
+    driver: ${NETWORK_MODE:-overlay}
     attachable: true
     driver_opts:
       encrypted: "true"
