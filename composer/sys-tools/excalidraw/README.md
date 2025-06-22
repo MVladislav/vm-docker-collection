@@ -45,8 +45,8 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_EXCALIDRAW=v0.17.6
-VERSION_EXCALIDRAW_ROOM=v0.17.6
+VERSION_EXCALIDRAW=v0.18.0
+VERSION_EXCALIDRAW_ROOM=v0.18.0
 ```
 
 #### example short .env
