@@ -12,7 +12,7 @@ services:
       resources:
         limits:
           cpus: ${RESOURCES_LIMITS_CPUS_DRAGONFLY:-1}
-          memory: ${RESOURCES_LIMITS_MEMORY_DRAGONFLY:-512M}
+          memory: ${RESOURCES_LIMITS_MEMORY_DRAGONFLY:-512m}
         reservations:
           cpus: ${RESOURCES_RESERVATIONS_CPUS_DRAGONFLY:-0.001}
           memory: ${RESOURCES_RESERVATIONS_MEMORY_DRAGONFLY:-32m}
@@ -42,7 +42,7 @@ services:
       resources:
         limits:
           cpus: ${RESOURCES_LIMITS_CPUS_VALKEY:-1}
-          memory: ${RESOURCES_LIMITS_MEMORY_VALKEY:-128M}
+          memory: ${RESOURCES_LIMITS_MEMORY_VALKEY:-128m}
         reservations:
           cpus: ${RESOURCES_RESERVATIONS_CPUS_VALKEY:-0.001}
           memory: ${RESOURCES_RESERVATIONS_MEMORY_VALKEY:-32m}
@@ -67,14 +67,14 @@ services:
   ##############################################################################
   minio:
     # https://hub.docker.com/r/minio/minio
-    image: minio/minio:${VERSION_MINIO:-RELEASE.2025-04-22T22-12-26Z-cpuv1}
+    image: minio/minio:${VERSION_MINIO:-RELEASE.2025-05-24T17-08-30Z-cpuv1}
     # <<: *basic
     deploy:
       # <<: *basic-deploy
       resources:
         limits:
           cpus: ${RESOURCES_LIMITS_CPUS_MINIO:-1}
-          memory: ${RESOURCES_LIMITS_MEMORY_MINIO:-1G}
+          memory: ${RESOURCES_LIMITS_MEMORY_MINIO:-1g}
         reservations:
           cpus: ${RESOURCES_RESERVATIONS_CPUS_MINIO:-0.001}
           memory: ${RESOURCES_RESERVATIONS_MEMORY_MINIO:-32m}
@@ -106,14 +106,14 @@ services:
   ##############################################################################
   postgresql:
     # https://hub.docker.com/_/postgres
-    image: postgres:${VERSION_POSTGRESQL:-17.4-alpine}
+    image: postgres:${VERSION_POSTGRESQL:-17.5-alpine}
     # <<: *basic
     deploy:
       # <<: *basic-deploy
       resources:
         limits:
           cpus: ${RESOURCES_LIMITS_CPUS_POSTGRESQL:-1}
-          memory: ${RESOURCES_LIMITS_MEMORY_POSTGRESQL:-512M}
+          memory: ${RESOURCES_LIMITS_MEMORY_POSTGRESQL:-512m}
         reservations:
           cpus: ${RESOURCES_RESERVATIONS_CPUS_POSTGRESQL:-0.001}
           memory: ${RESOURCES_RESERVATIONS_MEMORY_POSTGRESQL:-32m}
@@ -154,7 +154,7 @@ services:
       resources:
         limits:
           cpus: ${RESOURCES_LIMITS_CPUS_MARIADB:-1}
-          memory: ${RESOURCES_LIMITS_MEMORY_MARIADB:-512M}
+          memory: ${RESOURCES_LIMITS_MEMORY_MARIADB:-512m}
         reservations:
           cpus: ${RESOURCES_RESERVATIONS_CPUS_MARIADB:-0.001}
           memory: ${RESOURCES_RESERVATIONS_MEMORY_MARIADB:-32m}
@@ -206,7 +206,7 @@ services:
       resources:
         limits:
           cpus: ${RESOURCES_LIMITS_CPUS_ADMINER:-0.25}
-          memory: ${RESOURCES_LIMITS_MEMORY_ADMINER:-256M}
+          memory: ${RESOURCES_LIMITS_MEMORY_ADMINER:-256m}
         reservations:
           cpus: ${RESOURCES_RESERVATIONS_CPUS_ADMINER:-0.001}
           memory: ${RESOURCES_RESERVATIONS_MEMORY_ADMINER:-32m}
@@ -239,7 +239,7 @@ services:
       resources:
         limits:
           cpus: ${RESOURCES_LIMITS_CPUS_PHPMYADMIN:-0.25}
-          memory: ${RESOURCES_LIMITS_MEMORY_PHPMYADMIN:-256M}
+          memory: ${RESOURCES_LIMITS_MEMORY_PHPMYADMIN:-256m}
         reservations:
           cpus: ${RESOURCES_RESERVATIONS_CPUS_PHPMYADMIN:-0.001}
           memory: ${RESOURCES_RESERVATIONS_MEMORY_PHPMYADMIN:-32m}
@@ -271,7 +271,7 @@ services:
       resources:
         limits:
           cpus: ${RESOURCES_LIMITS_CPUS_INFLUXDB:-1}
-          memory: ${RESOURCES_LIMITS_MEMORY_INFLUXDB:-512M}
+          memory: ${RESOURCES_LIMITS_MEMORY_INFLUXDB:-512m}
         reservations:
           cpus: ${RESOURCES_RESERVATIONS_CPUS_INFLUXDB:-0.001}
           memory: ${RESOURCES_RESERVATIONS_MEMORY_INFLUXDB:-32m}
@@ -330,7 +330,7 @@ services:
       resources:
         limits:
           cpus: ${RESOURCES_LIMITS_CPUS_MONGODB:-1}
-          memory: ${RESOURCES_LIMITS_MEMORY_MONGODB:-512M}
+          memory: ${RESOURCES_LIMITS_MEMORY_MONGODB:-512m}
         reservations:
           cpus: ${RESOURCES_RESERVATIONS_CPUS_MONGODB:-0.001}
           memory: ${RESOURCES_RESERVATIONS_MEMORY_MONGODB:-32m}
@@ -369,7 +369,7 @@ services:
       resources:
         limits:
           cpus: ${RESOURCES_LIMITS_CPUS_EXPRESS:-0.25}
-          memory: ${RESOURCES_LIMITS_MEMORY_EXPRESS:-256M}
+          memory: ${RESOURCES_LIMITS_MEMORY_EXPRESS:-256m}
         reservations:
           cpus: ${RESOURCES_RESERVATIONS_CPUS_EXPRESS:-0.001}
           memory: ${RESOURCES_RESERVATIONS_MEMORY_EXPRESS:-32m}

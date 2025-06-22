@@ -105,6 +105,8 @@ x-basic: &basic
     default: {}
     proxy: {}
   # network_mode: host
+  # extra_hosts:
+  #   - host.docker.internal:host-gateway
   healthcheck:
     disable: true
   tmpfs:
