@@ -1,0 +1,261 @@
+---
+x-basic-deploy-labels: &basic-deploy-labels
+  labels:
+    - traefik.enable=true
+    - traefik.swarm.lbswarm=${LB_SWARM:-true}
+    - traefik.swarm.network=proxy
+    - traefik.http.routers.reactive-resume.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.reactive-resume.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.reactive-resume.tls=true
+    - traefik.http.routers.reactive-resume.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.reactive-resume.service=reactive-resume
+    - traefik.http.services.reactive-resume.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.reactive-resume.loadbalancer.server.port=${PORT:-3000}
+
+x-basic-deploy-labels-minio: &basic-deploy-labels-minio
+  labels:
+    - traefik.enable=true
+    - traefik.swarm.lbswarm=${LB_SWARM:-true}
+    - traefik.swarm.network=proxy
+    - traefik.http.routers.reactive-resume-minio.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.reactive-resume-minio.rule=Host(`${DOMAIN_MINIO?domain variable not set}`)
+    - traefik.http.routers.reactive-resume-minio.tls=true
+    - traefik.http.routers.reactive-resume-minio.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.reactive-resume-minio.service=reactive-resume-minio
+    - traefik.http.services.reactive-resume-minio.loadbalancer.server.scheme=${PROTOCOL_MINIO:-http}
+    - traefik.http.services.reactive-resume-minio.loadbalancer.server.port=${PORT_MINIO:-9000}
+
+x-basic-deploy: &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  update_config:
+    order: stop-first
+  restart_policy:
+    condition: any
+  resources:
+    limits:
+      cpus: ${RESOURCES_LIMITS_CPUS:-1}
+      memory: ${RESOURCES_LIMITS_MEMORY:-512m}
+    reservations:
+      cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
+      memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
+
+x-basic: &basic
+  env_file: ${ENV_FILE:-.env}
+  # cap_add:
+  #   - CHOWN # (chown, chmod)
+  #   - DAC_OVERRIDE
+  #   - DAC_READ_SEARCH
+  #   - SETGID # (setgid, setgroups)
+  #   - SETUID # (setuid)
+  #   - FOWNER # (chmod, chown, or chgrp)
+  #   - FSETID
+  cap_drop: ["ALL"]
+  security_opt:
+    - no-new-privileges=true
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 655360
+      hard: 655360
+    fsize: -1
+    as: -1
+  healthcheck:
+    disable: true
+  tmpfs:
+    - /tmp
+    - /run
+    - /run/lock
+  restart: always
+
+################################################################################
+################################################################################
+################################################################################
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  reactive-resume:
+    # https://hub.docker.com/r/amruthpillai/reactive-resume
+    image: amruthpillai/reactive-resume:${VERSION:-v4.4.5}
+    <<: [*basic, *basic-deploy-labels]
+    deploy:
+      <<: [*basic-deploy, *basic-deploy-labels]
+    environment:
+      # -- Environment Variables --
+      PORT: ${PORT:-3000}
+      NODE_ENV: production
+
+      # -- URLs --
+      # PUBLIC_URL: https://${DOMAIN?domain variable not set}
+      PUBLIC_URL: http://reactive-resume:${PORT:-3000}
+      STORAGE_URL: https://${DOMAIN_MINIO?domain variable not set}/default
+
+      # -- Printer (Chrome) --
+      CHROME_TOKEN: ${CHROME_TOKEN?chrome token not set}
+      CHROME_URL: ws://chrome:3000
+
+      # -- Database (Postgres) --
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgresql}:${POSTGRES_PW?postgresql password not set}@postgresql:5432/${POSTGRES_DB:-postgresql}
+
+      # -- Auth --
+      ACCESS_TOKEN_SECRET: ${ACCESS_TOKEN_SECRET?Access token secret is not set}
+      REFRESH_TOKEN_SECRET: ${REFRESH_TOKEN_SECRET?Refresh token secret is not set}
+
+      # -- Emails --
+      MAIL_FROM: ${MAIL_FROM?Mail from not set}
+
+      # -- Storage (Minio) --
+      STORAGE_ENDPOINT: minio
+      STORAGE_PORT: 9000
+      STORAGE_REGION: us-east-1 # Optional
+      STORAGE_BUCKET: default
+      STORAGE_ACCESS_KEY: ${MINIO_ROOT_USER:-minio}
+      STORAGE_SECRET_KEY: ${MINIO_ROOT_SECRET?Minio secret is not set}
+      STORAGE_USE_SSL: "false"
+      STORAGE_SKIP_BUCKET_CHECK: "false"
+
+      # -- Feature Flags (Optional) --
+      # DISABLE_SIGNUPS: ${DISABLE_SIGNUPS:-false}
+      # DISABLE_EMAIL_AUTH: ${DISABLE_EMAIL_AUTH:-true}
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    networks:
+      default: {}
+      proxy: {}
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  chrome:
+    # https://github.com/browserless/browserless/pkgs/container/chromium
+    image: ghcr.io/browserless/chromium:${VERSION_CHROMIUM:-v2.31.1}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_CHROMIUM:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_CHROMIUM:-512m}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_CHROMIUM:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_CHROMIUM:-32m}
+    environment:
+      TOKEN: ${CHROME_TOKEN?chrome token not set}
+      PROXY_HOST: "chrome"
+      PROXY_PORT: 3000
+      PROXY_SSL: "false"
+
+      HEALTH: "true"
+      TIMEOUT: 10000
+      CONCURRENT: 10
+      EXIT_ON_HEALTH_FAILURE: "true"
+      PRE_REQUEST_HEALTH_CHECK: "true"
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  postgresql:
+    # https://hub.docker.com/_/postgres
+    image: postgres:${VERSION_POSTGRESQL:-17.5-alpine}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_POSTGRESQL:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_POSTGRESQL:-512m}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_POSTGRESQL:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_POSTGRESQL:-32m}
+    cap_add:
+      - SETUID
+      - SETGID
+      - FOWNER
+      - DAC_OVERRIDE
+    secrets:
+      - postgres_password_file
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-postgresql}
+      POSTGRES_USER: ${POSTGRES_USER:-postgresql}
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password_file
+      PGDATA: /var/lib/postgresql/data
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - postgresql:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
+      start_period: 2s
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  minio:
+    # https://hub.docker.com/r/minio/minio
+    image: minio/minio:${VERSION_MINIO:-RELEASE.2025-05-24T17-08-30Z-cpuv1}
+    <<: [*basic, *basic-deploy-labels-minio]
+    deploy:
+      <<: [*basic-deploy, *basic-deploy-labels-minio]
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_MINIO:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_MINIO:-512m}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_MINIO:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_MINIO:-32m}
+    secrets:
+      - minio_root_password_file
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minio}
+      MINIO_ROOT_PASSWORD_FILE: /run/secrets/minio_root_password_file
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - minio:/data
+    command: server /data --console-address ":9001"
+    networks:
+      default: {}
+      proxy: {}
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      start_period: 2s
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  default:
+    driver: ${NETWORK_MODE:-bridge}
+    attachable: true
+    driver_opts:
+      encrypted: "true"
+  proxy:
+    external: true
+
+volumes:
+  postgresql:
+  minio:
+
+secrets:
+  postgres_password_file:
+    file: config/secrets/postgres_password_file.txt
+  minio_root_password_file:
+    file: config/secrets/minio_root_password_file.txt
