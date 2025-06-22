@@ -52,7 +52,7 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 # APPLICATION version for easy update
 # ______________________________________________________________________________
 VERSION_INVOICE_SHELF=latest
-VERSION_MARIADB=11.7
+VERSION_MARIADB=11.8
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________

@@ -125,7 +125,7 @@ services:
   ##############################################################################
   mariadb:
     # https://hub.docker.com/_/mariadb
-    image: mariadb:${VERSION_MARIADB:-11.7}
+    image: mariadb:${VERSION_MARIADB:-11.8}
     <<: *basic
     deploy:
       <<: *basic-deploy
