@@ -62,7 +62,7 @@ services:
   ##############################################################################
   filebrowser:
     # https://hub.docker.com/r/filebrowser/filebrowser
-    image: filebrowser/filebrowser:${VERSION:-v2.32.0}
+    image: filebrowser/filebrowser:${VERSION:-v2.33.2}
     <<: [*basic, *basic-deploy-labels]
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels]
@@ -73,8 +73,11 @@ services:
       - data:/config
     command:
       [
+        "filebrowser",
         "-d",
         "/config/database.db",
+        "-c",
+        "/config/settings.json",
         "-a",
         "0.0.0.0",
         "-p",
