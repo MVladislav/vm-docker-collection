@@ -112,7 +112,7 @@ add **pub-cert** file into folder `./config/secrets/tls`
 create **input** by open `system > inputs` and choose **Syslog UDP** as _Lauch new input_
 
 - set a **title**
-- change **port** to `1514`
+- change **port** to `5140`
 - activate **Store full message?**
 
 on the new create **input** click on **Manage extractors** \
