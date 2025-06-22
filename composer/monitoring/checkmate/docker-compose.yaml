@@ -1,0 +1,185 @@
+---
+x-basic-deploy-labels: &basic-deploy-labels
+  labels:
+    - traefik.enable=true
+    - traefik.swarm.lbswarm=${LB_SWARM:-true}
+    - traefik.swarm.network=proxy
+    - traefik.http.routers.uptime-client.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.uptime-client.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.uptime-client.tls=true
+    - traefik.http.routers.uptime-client.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.uptime-client.service=uptime-client
+    - traefik.http.services.uptime-client.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.uptime-client.loadbalancer.server.port=${PORT:-80}
+
+x-basic-deploy: &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  update_config:
+    order: stop-first
+  restart_policy:
+    condition: any
+  resources:
+    limits:
+      cpus: ${RESOURCES_LIMITS_CPUS:-1}
+      memory: ${RESOURCES_LIMITS_MEMORY:-1g}
+    reservations:
+      cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
+      memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
+
+x-basic: &basic
+  env_file: ${ENV_FILE:-.env}
+  # cap_add:
+  #   - CHOWN # (chown, chmod)
+  #   - DAC_OVERRIDE
+  #   - DAC_READ_SEARCH
+  #   - SETGID # (setgid, setgroups)
+  #   - SETUID # (setuid)
+  #   - FOWNER # (chmod, chown, or chgrp)
+  #   - FSETID
+  cap_drop: ["ALL"]
+  security_opt:
+    - no-new-privileges=true
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 655360
+      hard: 655360
+    fsize: -1
+    as: -1
+  networks:
+    default: {}
+  healthcheck:
+    disable: true
+  restart: always
+
+################################################################################
+################################################################################
+################################################################################
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  frontend:
+    # https://github.com/bluewave-labs/Checkmate/pkgs/container/checkmate
+    image: ghcr.io/bluewave-labs/checkmate:frontend-${VERSION_CHECKMATE:-dist}
+    <<: [*basic, *basic-deploy-labels]
+    deploy:
+      <<: [*basic-deploy, *basic-deploy-labels]
+    cap_add:
+      - SETUID
+      - SETGID
+      - CHOWN
+    ports:
+      - 8443:443
+      - 8080:80
+    environment:
+      # UPTIME_APP_API_BASE_URL: "http://uptime-server:5000/api/v1"
+      UPTIME_APP_API_BASE_URL: "https://${DOMAIN?domain variable not set}/api/v1"
+      # UPTIME_STATUS_PAGE_SUBDOMAIN_PREFIX: "https://${DOMAIN?domain variable not set}/"
+      UPTIME_APP_CLIENT_HOST: "https://${DOMAIN?domain variable not set}"
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    networks:
+      default: {}
+      proxy: {}
+
+  server:
+    # https://github.com/bluewave-labs/Checkmate/pkgs/container/checkmate
+    image: ghcr.io/bluewave-labs/checkmate:backend-${VERSION_CHECKMATE:-dist}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+    environment:
+      CLIENT_HOST: https://${DOMAIN?domain variable not set}
+      DB_CONNECTION_STRING: mongodb://mongodb:27017/uptime_db
+      REDIS_HOST: valkey
+      REDIS_PORT: 6379
+      REDIS_URL: redis://valkey:6379
+      # JWT_SECRET: 09asz0cbasbv9as
+      # PAGESPEED_API_KEY: <https://developers.google.com/speed/docs/insights/v5/get-started>
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  valkey:
+    # https://hub.docker.com/r/valkey/valkey
+    image: valkey/valkey:${VERSION_VALKEY:-8.1.0-alpine}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_VALKEY:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_VALKEY:-512M}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_VALKEY:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_VALKEY:-32m}
+    cap_add:
+      - SETUID
+      - SETGID
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - valkey:/data
+    command: --save 300 1 --loglevel warning
+    healthcheck:
+      test: ["CMD-SHELL", "valkey-cli ping | grep PONG"]
+      start_period: 2s
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  mongodb:
+    # https://hub.docker.com/_/mongo
+    image: mongo:${VERSION_MONGODB:-8.0.8}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_MONGODB:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_MONGODB:-512M}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_MONGODB:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_MONGODB:-32m}
+    cap_add:
+      - SETUID
+      - SETGID
+      - CHOWN
+      - DAC_OVERRIDE
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - mongodb:/data/db
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  default:
+    driver: ${NETWORK_MODE:-bridge}
+    attachable: true
+    driver_opts:
+      encrypted: "true"
+  proxy:
+    external: true
+
+volumes:
+  valkey: {}
+  mongodb: {}
