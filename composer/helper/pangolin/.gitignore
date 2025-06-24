@@ -27,3 +27,9 @@ config/pangolin/traefik/*
 !config/pangolin/letsencrypt/
 config/pangolin/letsencrypt/*
 !config/pangolin/letsencrypt/.gitempty
+!config/pangolin/db/
+config/pangolin/db/*
+!config/pangolin/db/.gitempty
+!config/pangolin/logs/
+config/pangolin/logs/*
+!config/pangolin/logs/.gitempty

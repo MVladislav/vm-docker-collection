@@ -50,6 +50,10 @@ $echo "DASHBOARDURL=${TMP_DOMAIN_DASHBOARD}" >> .env
 $echo "USERS_SERVERADMIN_EMAIL=groot@${TMP_DOMAIN_BASE}" >> .env
 $echo "USERS_SERVERADMIN_PASSWORD=$(pwgen -c  -n -y -s 18 1)"  >> .env
 $echo "ACME_EMAIL=info@${TMP_DOMAIN_BASE}" >> .env
+
+$sudo chown -R root ./config/pangolin
+$sudo find ./config/pangolin -type d -exec chmod 770 {} \;
+$sudo find ./config/pangolin -type f -exec chmod 600 {} \;
 ```
 
 ### create `.env` file following:
@@ -72,6 +76,7 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 VERSION_PANGOLIN=1.5.1
 VERSION_GERBIL=1.0.0
 VERSION_TRAEFIK=v3.4.1
+VERSION_BADGER=v1.2.0
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
@@ -83,7 +88,7 @@ USERS_SERVERADMIN_PASSWORD=<PASSWORD>
 
 ACME_EMAIL=<E-MAIL>
 ACME_CASERVER=https://acme-staging-v02.api.letsencrypt.org/directory # https://acme-v02.api.letsencrypt.org/directory
-ACME_DNSCHALLENGE_PROVIDER=ionos
+ACME_DNSCHALLENGE_PROVIDER=ionos # https://doc.traefik.io/traefik/https/acme/#providers
 ACME_DNSCHALLENGE_RESOLVERS=9.9.9.9,194.242.2.2,1.1.1.1
 ```
 

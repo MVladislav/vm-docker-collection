@@ -2,6 +2,11 @@
 http:
   middlewares:
     # --------------------------------------------------------------------------
+    redirect-to-https:
+      redirectScheme:
+        scheme: https
+
+    # --------------------------------------------------------------------------
     traefik-basic-auth:
       basicAuth:
         usersFile: "/run/secrets/traefik_basicauth_secret"
@@ -24,30 +29,19 @@ http:
           X-Forwarded-Proto: https
 
     # --------------------------------------------------------------------------
-    default-whitelist:
+    public-whitelist:
       IPAllowList:
         sourceRange:
+          - 0.0.0.0/0
           - 127.0.0.0/8
           - 10.0.0.0/8
           - 192.168.0.0/16
           - 172.16.0.0/12
 
-    public-whitelist:
-      IPAllowList:
-        sourceRange:
-          - 0.0.0.0/0
-
     # --------------------------------------------------------------------------
-    default-secured:
-      chain:
-        middlewares:
-          - default-whitelist
-          - default-headers
-
     public-secured:
       chain:
         middlewares:
-          - default-whitelist
           - public-whitelist
           - default-headers
 
@@ -64,6 +58,16 @@ http:
         - traefik-basic-auth@file
       tls:
         certResolver: letsencrypt
+
+    # # HTTP to HTTPS redirect router
+    # main-app-router-redirect:
+    #   rule: "Host(`<REPLACE_DASHBOARDURL_DOMAIN>`)" # REPLACE THIS WITH YOUR DOMAIN
+    #   service: next-service
+    #   entryPoints:
+    #     - web
+    #   middlewares:
+    #     - public-secured
+    #     - redirect-to-https
 
     # Next.js router (handles everything except API and WebSocket paths)
     next-router:
