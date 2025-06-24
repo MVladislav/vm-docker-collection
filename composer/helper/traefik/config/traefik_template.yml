@@ -2,7 +2,7 @@
 ################################################################
 #
 # Configuration sample for Traefik v3.
-# Schema: https://json.schemastore.org/traefik-v2.json
+# Schema: https://json.schemastore.org/traefik-v3.json
 #
 # For Traefik v3: https://github.com/traefik/traefik/blob/v3.0/traefik.sample.yml
 #
