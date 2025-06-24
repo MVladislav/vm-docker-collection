@@ -62,9 +62,13 @@ services:
   beszel:
     # https://github.com/henrygd/beszel/pkgs/container/beszel%2Fbeszel
     image: ghcr.io/henrygd/beszel/beszel:${VERSION:-0.11.1}
-    <<: [*basic, *basic-deploy-labels]
+    <<:
+      - *basic
+      - *basic-deploy-labels
     deploy:
-      <<: [*basic-deploy, *basic-deploy-labels]
+      <<:
+        - *basic-deploy
+        - *basic-deploy-labels
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
