@@ -2,6 +2,31 @@
 http:
   middlewares:
     # --------------------------------------------------------------------------
+    crowdsec:
+      plugin:
+        crowdsec:
+          enabled: true
+          logLevel: INFO
+          updateIntervalSeconds: 60
+          defaultDecisionSeconds: 60
+          httpTimeoutSeconds: 10
+          crowdsecMode: live
+          crowdsecAppsecEnabled: false
+          crowdsecAppsecHost: crowdsec:7422
+          crowdsecAppsecFailureBlock: true
+          crowdsecAppsecUnreachableBlock: true
+          crowdsecLapiKey: PANGOLINLAPI1234
+          crowdsecLapiHost: crowdsec:8080
+          crowdsecLapiScheme: http
+          banHTMLFilePath: /etc/traefik/ban.html
+          # forwardedHeadersTrustedIPs:
+          #   - 127.0.0.0/8
+          #   - 10.0.0.0/8
+          # clientTrustedIPs:
+          #   - 127.0.0.0/8
+          #   - 10.0.0.0/8
+
+    # --------------------------------------------------------------------------
     redirect-to-https:
       redirectScheme:
         scheme: https

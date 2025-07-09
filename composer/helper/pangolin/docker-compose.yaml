@@ -22,7 +22,7 @@ x-basic-deploy: &basic-deploy
 x-basic: &basic
   env_file: ${ENV_FILE:-.env}
   # cap_add: ["ALL"]
-  # cap_drop: ["ALL"]
+  cap_drop: ["ALL"]
   security_opt:
     - no-new-privileges=true
   ulimits:
@@ -47,14 +47,20 @@ services:
   ##############################################################################
   pangolin:
     # https://hub.docker.com/r/fosrl/pangolin
-    image: fosrl/pangolin:${VERSION_PANGOLIN:-1.5.1}
+    image: fosrl/pangolin:${VERSION_PANGOLIN:-1.6.2}
     <<: *basic
     deploy:
       <<: *basic-deploy
+    configs:
+      - source: pangolin_config
+        target: /app/config/config.yml
+        mode: 0440
+        uid: "0"
+        gid: "0"
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-      - ${PATH_VOLUME:-$PWD}/config/pangolin:/app/config
+      - pangolin_data:/app/config
     environment:
       # APP
       APP_BASEDOMAIN: https://${DASHBOARDURL?domain variable not set}
@@ -64,9 +70,7 @@ services:
       DOMAINS_DEFAULT_PREFERWILDCARDCERT: "true"
       # GERBIL
       GERBIL_BASEENDPOINT: ${BASEDOMAIN?base domain variable not set}
-      # USER
-      USERS_SERVERADMIN_EMAIL: ${USERS_SERVERADMIN_EMAIL?you need set username}
-      USERS_SERVERADMIN_PASSWORD: ${USERS_SERVERADMIN_PASSWORD?you need set user password}
+      # TRAEFIK
       GENERATE_TRAEFIK_CONFIG: "false"
       # FLAGS
       FLAGS_EMAIL_VERIFICATION_REQUIRED: "false"
@@ -105,7 +109,7 @@ services:
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-      - ${PATH_VOLUME:-$PWD}/config/pangolin:/var/config
+      - pangolin_data:/var/config
     command:
       - --reachableAt=http://gerbil:3003
       - --generateAndSaveKeyTo=/var/config/key
@@ -129,23 +133,34 @@ services:
   ##############################################################################
   traefik:
     # https://hub.docker.com/_/traefik
-    image: traefik:${VERSION_TRAEFIK:-v3.4.1}
+    image: traefik:${VERSION_TRAEFIK:-v3.4.3}
     depends_on:
       pangolin:
         condition: service_healthy
     <<: *basic
     deploy:
       <<: *basic-deploy
+    configs:
+      - source: dynamic_config
+        target: /etc/traefik/dynamic_config.yml
+        mode: 0440
+        uid: "0"
+        gid: "0"
+      - source: ban_page
+        target: /etc/traefik/ban.html
+        mode: 0440
+        uid: "0"
+        gid: "0"
     secrets:
       - traefik_basicauth_secret
-      - ionos_api_key_secret
+      - dnschallenge_api_key_secret
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-      - ${PATH_VOLUME:-$PWD}/config/pangolin/traefik:/etc/traefik:ro
-      - ${PATH_VOLUME:-$PWD}/config/pangolin/letsencrypt:/letsencrypt
+      - letsencrypt:/letsencrypt
+      - traefik_logs:/var/log/traefik
     environment:
-      IONOS_API_KEY_FILE: /run/secrets/ionos_api_key_secret
+      IONOS_API_KEY_FILE: /run/secrets/dnschallenge_api_key_secret
       # https://doc.traefik.io/traefik/reference/static-configuration/env/
       # Global configuration
       TRAEFIK_GLOBAL_CHECKNEWVERSION: ${TRAEFIK_GLOBAL_CHECKNEWVERSION:-true}
@@ -162,17 +177,19 @@ services:
       TRAEFIK_ENTRYPOINTS_WEBSECURE_HTTP_TLS_CERTRESOLVER: letsencrypt
       # Traefik logs configuration
       TRAEFIK_LOG: ${TRAEFIK_LOG:-true}
+      # TRAEFIK_LOG_FILEPATH: /var/log/traefik/traefik.log
       TRAEFIK_LOG_LEVEL: INFO # TRACE, DEBUG, PANIC, FATAL, ERROR, WARN, INFO
       TRAEFIK_LOG_FORMAT: common
       # Access logs configuration
       TRAEFIK_ACCESSLOG: ${TRAEFIK_ACCESSLOG:-true}
+      TRAEFIK_ACCESSLOG_FILEPATH: /var/log/traefik/access.log
       TRAEFIK_ACCESSLOG_FORMAT: common
       TRAEFIK_ACCESSLOG_FIELDS_DEFAULTMODE: keep
-      TRAEFIK_ACCESSLOG_FIELDS_NAMES_CLIENTUSERNAME: drop
+      TRAEFIK_ACCESSLOG_FIELDS_NAMES_ClientUsername: drop
       TRAEFIK_ACCESSLOG_FIELDS_HEADERS_DEFAULTMODE: keep
-      TRAEFIK_ACCESSLOG_FIELDS_HEADERS_NAMES_USER-Agent: keep
-      TRAEFIK_ACCESSLOG_FIELDS_HEADERS_NAMES_AUTHORIZATION: drop
-      TRAEFIK_ACCESSLOG_FIELDS_HEADERS_NAMES_CONTENT-Type: keep
+      TRAEFIK_ACCESSLOG_FIELDS_HEADERS_NAMES_User-Agent: keep
+      TRAEFIK_ACCESSLOG_FIELDS_HEADERS_NAMES_Authorization: drop
+      TRAEFIK_ACCESSLOG_FIELDS_HEADERS_NAMES_Content-Type: keep
       # API and dashboard configuration
       TRAEFIK_API: ${TRAEFIK_API:-true}
       TRAEFIK_API_DASHBOARD: ${TRAEFIK_API_DASHBOARD:-true}
@@ -197,7 +214,9 @@ services:
       TRAEFIK_CERTIFICATESRESOLVERS_LETSENCRYPT_ACME_DNSCHALLENGE_RESOLVERS: ${ACME_DNSCHALLENGE_RESOLVERS:-9.9.9.9,194.242.2.2,1.1.1.1}
       # PLUGINS
       TRAEFIK_EXPERIMENTAL_PLUGINS_BADGER_MODULENAME: github.com/fosrl/badger
-      TRAEFIK_EXPERIMENTAL_PLUGINS_BADGER_VERSION: ${VERSION_BADGER:-v1.2.0}
+      TRAEFIK_EXPERIMENTAL_PLUGINS_BADGER_VERSION: ${VERSION_BADGER:-v1.2.0} # https://github.com/fosrl/badger
+      TRAEFIK_EXPERIMENTAL_PLUGINS_CROWDSEC_MODULENAME: github.com/maxlerebourg/crowdsec-bouncer-traefik-plugin
+      TRAEFIK_EXPERIMENTAL_PLUGINS_CROWDSEC_VERSION: ${VERSION_CROWDSEC:-v1.4.4} # ...
     healthcheck:
       test: "traefik healthcheck --ping"
       start_period: 5s
@@ -205,6 +224,54 @@ services:
       retries: 5
       timeout: 3s
     network_mode: service:gerbil # Ports appear on the gerbil service
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  crowdsec:
+    # https://hub.docker.com/r/crowdsecurity/crowdsec
+    image: crowdsecurity/crowdsec:${VERSION_CROWDSEC:-v1.6.9}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+    configs:
+      - source: appsec_config
+        target: /config/crowdsec/acquis.d/appsec.yaml
+        mode: 0440
+        uid: "0"
+        gid: "0"
+      - source: traefik_config
+        target: /config/crowdsec/acquis.d/traefik.yaml
+        mode: 0440
+        uid: "0"
+        gid: "0"
+      - source: syslog_config
+        target: /config/crowdsec/acquis.d/syslog.yaml
+        mode: 0440
+        uid: "0"
+        gid: "0"
+      - source: journalctl_config
+        target: /config/crowdsec/acquis.d/journalctl.yaml
+        mode: 0440
+        uid: "0"
+        gid: "0"
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - crowdsec_data:/etc/crowdsec
+      - crowdsec_db:/var/lib/crowdsec/data
+      # Syslog
+      - /var/log/auth.log:/var/log/auth.log:ro
+      - /var/log/syslog:/var/log/syslog:ro
+      # Journalctl
+      - traefik_logs:/var/log/traefik:ro
+      - /var/log/journal:/var/log/host:ro
+    environment:
+      CUSTOM_HOSTNAME: crowdsec
+      BOUNCER_KEY_traefik: PANGOLINLAPI1234
+      COLLECTIONS: crowdsecurity/traefik crowdsecurity/appsec-virtual-patching crowdsecurity/appsec-generic-rules crowdsecurity/linux crowdsecurity/iptables
+    networks:
+      pangolin: {}
 
 ################################################################################
 ################################################################################
@@ -217,8 +284,31 @@ networks:
     driver_opts:
       encrypted: "true"
 
+volumes:
+  pangolin_data: {}
+  letsencrypt: {}
+  traefik_logs: {}
+  crowdsec_data: {}
+  crowdsec_db: {}
+
+configs:
+  pangolin_config:
+    file: $PWD/config/pangolin/config.yml
+  dynamic_config:
+    file: $PWD/config/traefik/dynamic_config.yml
+  ban_page:
+    file: $PWD/config/traefik/ban.html
+  appsec_config:
+    file: $PWD/config/crowdsec/appsec.yaml
+  traefik_config:
+    file: $PWD/config/crowdsec/traefik.yaml
+  syslog_config:
+    file: $PWD/config/crowdsec/syslog.yaml
+  journalctl_config:
+    file: $PWD/config/crowdsec/journalctl.yaml
+
 secrets:
   traefik_basicauth_secret:
     file: config/secrets/traefik_basicauth_secret.txt
-  ionos_api_key_secret:
-    file: config/secrets/ionos_api_key_secret.txt
+  dnschallenge_api_key_secret:
+    file: config/secrets/dnschallenge_api_key_secret.txt
