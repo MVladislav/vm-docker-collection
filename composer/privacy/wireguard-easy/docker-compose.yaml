@@ -2,15 +2,15 @@
 x-basic-deploy-labels: &basic-deploy-labels
   labels:
     - traefik.enable=true
-    - traefik.docker.lbswarm=${LB_SWARM:-true}
-    - traefik.docker.network=proxy
-    - traefik.http.routers.wg-easy.entrypoints=https
+    - traefik.swarm.lbswarm=${LB_SWARM:-true}
+    - traefik.swarm.network=proxy
+    - traefik.http.routers.wg-easy.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
     - traefik.http.routers.wg-easy.rule=Host(`${DOMAIN?domain variable not set}`)
     - traefik.http.routers.wg-easy.tls=true
+    - traefik.http.routers.wg-easy.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
     - traefik.http.routers.wg-easy.service=wg-easy
     - traefik.http.services.wg-easy.loadbalancer.server.scheme=${PROTOCOL:-http}
     - traefik.http.services.wg-easy.loadbalancer.server.port=${PORT:-51821}
-    - traefik.http.routers.wg-easy.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
 
 x-basic-deploy: &basic-deploy
   mode: replicated
@@ -20,109 +20,122 @@ x-basic-deploy: &basic-deploy
     constraints:
       - "node.role==${NODE_ROLE:-manager}"
       - node.platform.os == linux
+  update_config:
+    order: stop-first
   restart_policy:
-    condition: on-failure
+    condition: any
   resources:
     limits:
-      memory: 1g
+      cpus: ${RESOURCES_LIMITS_CPUS:-1}
+      memory: ${RESOURCES_LIMITS_MEMORY:-1g}
+    reservations:
+      cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
+      memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
 
 x-basic: &basic
   env_file: ${ENV_FILE:-.env}
   cap_drop: ["ALL"]
-  cap_add:
-    - NET_ADMIN
-    - NET_RAW
-    - SYS_MODULE
+  security_opt:
+    - no-new-privileges=true
   ulimits:
     memlock:
       soft: -1
       hard: -1
     nofile:
-      soft: 65535
-      hard: 65535
+      soft: 655360
+      hard: 655360
     fsize: -1
     as: -1
   networks:
     default: {}
     proxy: {}
+  healthcheck:
+    disable: true
   tmpfs:
     - /tmp
+    - /run
+    - /run/lock
   sysctls:
     - net.ipv4.ip_forward=1
     - net.ipv4.conf.all.src_valid_mark=1
     - net.ipv4.conf.all.rp_filter=0
     - net.ipv4.conf.default.rp_filter=0
-    - net.ipv4.conf.eth0.rp_filter=0
     - net.ipv4.conf.lo.rp_filter=0
-    # - net.ipv6.conf.all.forwarding=1
-    # - net.ipv6.conf.all.disable_ipv6=0
-  restart: always # always | on-failure
+    - net.ipv6.conf.all.forwarding=1
+    - net.ipv6.conf.all.disable_ipv6=0
+  restart: always
 
 ################################################################################
 ################################################################################
 ################################################################################
-
 services:
   ##############################################################################
   ##############################################################################
   ##############################################################################
   wg-easy:
-    # https://hub.docker.com/r/weejewel/wg-easy
-    image: weejewel/wg-easy:${VERSION:-7-nightly}
-    <<: [*basic, *basic-deploy-labels]
+    # https://github.com/wg-easy/wg-easy/pkgs/container/wg-easy
+    image: ghcr.io/wg-easy/wg-easy:${VERSION:-15}
+    <<:
+      - *basic
+      - *basic-deploy-labels
     deploy:
-      <<: [*basic-deploy, *basic-deploy-labels]
+      <<:
+        - *basic-deploy
+        - *basic-deploy-labels
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+      - NET_RAW # ⚠️ Uncomment if using Podman
     ports:
-      - target: ${WG_PORT:-51820}
-        published: ${WG_PORT_PUBLISH:-51820}
+      # - target: ${PORT:-51821} # TCP port for Web UI
+      #   published: ${PORT_PUBLISH:-51821}
+      #   protocol: tcp
+      #   mode: host
+      - target: ${INIT_PORT:-51820}
+        published: ${WINIT_PORT_PUBLISH:-51820}
         protocol: udp
         mode: host
-      - target: ${PORT:-51821}
-        published: ${PORT_PUBLISH:-51821}
-        protocol: tcp
-        mode: host
     environment:
-      # ⚠️ Required:
-      # Change this to your host's public address
-      WG_HOST: ${DOMAIN?domain variable not set} # can be WAN-IP or DNS
-      # Optional:
-      PASSWORD: ${PASSWORD}
-      #
-      # WG_PORT: ${WG_PORT:-51820}
-      # WG_DEFAULT_ADDRESS: ${WG_DEFAULT_ADDRESS:-10.6.6.x}
-      # WG_DEFAULT_DNS: ${WG_DEFAULT_DNS:-1.1.1.1}
-      # WG_MTU: ${WG_MTU:-null}
-      # WG_ALLOWED_IPS: ${WG_ALLOWED_IPS:-0.0.0.0/0,::/0}
-      # WG_PERSISTENT_KEEPALIVE: ${WG_PERSISTENT_KEEPALIVE:-0}
-      #
-      # WG_PRE_UP: ${WG_PRE_UP:-echo "Pre Up" > /etc/wireguard/pre-up.txt}
-      # WG_POST_UP: ${WG_POST_UP:-echo "Post Up" > /etc/wireguard/post-up.txt}
-      # WG_PRE_DOWN: ${WG_PRE_DOWN:-echo "Pre Down" > /etc/wireguard/pre-down.txt}
-      # WG_POST_DOWN: ${WG_POST_DOWN:-echo "Post Down" > /etc/wireguard/post-down.txt}
+      PORT: ${PORT:-51821}
+      HOST: ${HOST:-0.0.0.0}
+      INSECURE: ${INSECURE:-false}
+      DISABLE_IPV6: ${DISABLE_IPV6:-false}
+
+      INIT_ENABLED: ${INIT_ENABLED:-false} # Enables the below env vars
+      INIT_USERNAME: ${INIT_USERNAME:-admin} # Sets admin username
+      # INIT_PASSWORD: ${INIT_PASSWORD} # Sets admin password
+      INIT_HOST: ${DOMAIN?domain variable not set} # Host clients will connect to
+      INIT_PORT: ${INIT_PORT:-51820} # Port clients will connect to and wireguard will listen on
+      # INIT_DNS: 1.1.1.1,8.8.8.8 # Sets global dns setting
+      # INIT_IPV4_CIDR: 10.8.0.0/24 # Sets IPv4 cidr
+      # INIT_IPV6_CIDR: 2001:0DB8::/32 # Sets IPv6 cidr
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-      - data:/etc/wireguard
-      # healthcheck:
-      #   test:
-      #     [
-      #       "CMD",
-      #       "curl",
-      #       "-f",
-      #       "${PROTOCOL:-http}://localhost:${PORT:-51821}"
-      #     ]
-      #   interval: 30s
-      #   timeout: 10s
-      #   retries: 5
-      ################################################################################
-      ################################################################################
-      ################################################################################
+      - /lib/modules:/lib/modules:ro
+      - etc_wireguard:/etc/wireguard
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget --no-verbose --tries=1 --spider --no-check-certificate ${PROTOCOL:-http}://127.0.0.1:${PORT:-51821} || exit 1",
+        ]
+      start_period: 10s
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+################################################################################
+################################################################################
+################################################################################
 networks:
   default:
-    driver: bridge
+    driver: ${NETWORK_MODE:-overlay}
     attachable: true
+    driver_opts:
+      encrypted: "true"
   proxy:
-    driver: bridge
+    external: true
 
 volumes:
-  data: {}
+  etc_wireguard: {}
