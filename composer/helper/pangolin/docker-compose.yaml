@@ -105,8 +105,8 @@ services:
       - SYS_MODULE
     ports:
       - 51820:51820/udp
-      # - 443:443 # Port for traefik because of the network_mode
-      # - 80:80 # Port for traefik because of the network_mode
+      - 443:443 # Port for traefik because of the network_mode
+      - 80:80 # Port for traefik because of the network_mode
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
@@ -116,16 +116,6 @@ services:
       - --generateAndSaveKeyTo=/var/config/key
       - --remoteConfig=http://pangolin:3001/api/v1/gerbil/get-config
       - --reportBandwidthTo=http://pangolin:3001/api/v1/gerbil/receive-bandwidth
-    # healthcheck:
-    #   test:
-    #     [
-    #       "CMD-SHELL",
-    #       "curl -kIf http://127.0.0.1:3003 > /dev/null 2>&1 || exit 1",
-    #     ]
-    #   start_period: 10s
-    #   interval: 10s
-    #   timeout: 3s
-    #   retries: 10
     networks:
       pangolin: {}
 
@@ -143,9 +133,6 @@ services:
     <<: *basic
     deploy:
       <<: *basic-deploy
-    ports:
-      - 443:443
-      - 80:80
     configs:
       - source: dynamic_config
         target: /etc/traefik/dynamic_config.yml
@@ -229,9 +216,7 @@ services:
       interval: 10s
       retries: 5
       timeout: 3s
-    # network_mode: service:gerbil # Ports appear on the gerbil service
-    networks:
-      pangolin: {}
+    network_mode: service:gerbil # Ports appear on the gerbil service
 
   ##############################################################################
   ##############################################################################

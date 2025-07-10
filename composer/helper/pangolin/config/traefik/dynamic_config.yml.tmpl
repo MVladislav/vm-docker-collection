@@ -67,6 +67,7 @@ http:
     public-secured:
       chain:
         middlewares:
+          - crowdsec
           - public-whitelist
           - default-headers
 
