@@ -67,7 +67,6 @@ http:
     public-secured:
       chain:
         middlewares:
-          - crowdsec
           - public-whitelist
           - default-headers
 
@@ -80,7 +79,6 @@ http:
       entryPoints:
         - websecure
       middlewares:
-        - public-secured
         - traefik-basic-auth@file
       tls:
         certResolver: letsencrypt
@@ -92,7 +90,6 @@ http:
     #   entryPoints:
     #     - web
     #   middlewares:
-    #     - public-secured
     #     - redirect-to-https
 
     # Next.js router (handles everything except API and WebSocket paths)
@@ -101,8 +98,6 @@ http:
       service: next-service
       entryPoints:
         - websecure
-      middlewares:
-        - public-secured
       tls:
         certResolver: letsencrypt
 
@@ -112,8 +107,6 @@ http:
       service: api-service
       entryPoints:
         - websecure
-      middlewares:
-        - public-secured
       tls:
         certResolver: letsencrypt
 
@@ -123,8 +116,6 @@ http:
       service: api-service
       entryPoints:
         - websecure
-      middlewares:
-        - public-secured
       tls:
         certResolver: letsencrypt
 

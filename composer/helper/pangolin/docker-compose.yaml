@@ -168,6 +168,7 @@ services:
       TRAEFIK_ENTRYPOINTS_WEBSECURE_ADDRESS: ":443"
       TRAEFIK_ENTRYPOINTS_WEBSECURE_TRANSPORT_RESPONDINGTIMEOUTS_READTIMEOUT: 30m
       TRAEFIK_ENTRYPOINTS_WEBSECURE_HTTP_TLS_CERTRESOLVER: letsencrypt
+      TRAEFIK_ENTRYPOINTS_WEBSECURE_HTTP_MIDDLEWARES: crowdsec@file,public-whitelist@file,default-headers@file
       # Traefik logs configuration
       TRAEFIK_LOG: ${TRAEFIK_LOG:-true}
       # TRAEFIK_LOG_FILEPATH: /var/log/traefik/traefik.log
