@@ -22,7 +22,7 @@ x-basic-deploy: &basic-deploy
 x-basic: &basic
   env_file: ${ENV_FILE:-.env}
   # cap_add: ["ALL"]
-  cap_drop: ["ALL"]
+  # cap_drop: ["ALL"]
   security_opt:
     - no-new-privileges=true
   ulimits:
@@ -94,9 +94,9 @@ services:
   gerbil:
     # https://hub.docker.com/r/fosrl/gerbil
     image: fosrl/gerbil:${VERSION_GERBIL:-1.0.0}
-    # depends_on:
-    #   pangolin:
-    #     condition: service_healthy
+    depends_on:
+      pangolin:
+        condition: service_healthy
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -125,11 +125,11 @@ services:
   traefik:
     # https://hub.docker.com/_/traefik
     image: traefik:${VERSION_TRAEFIK:-v3.4.3}
-    # depends_on:
-    #   pangolin:
-    #     condition: service_healthy
-    #   crowdsec:
-    #     condition: service_healthy
+    depends_on:
+      pangolin:
+        condition: service_healthy
+      crowdsec:
+        condition: service_healthy
     <<: *basic
     deploy:
       <<: *basic-deploy
