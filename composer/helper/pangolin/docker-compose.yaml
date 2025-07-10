@@ -63,7 +63,8 @@ services:
       - pangolin_data:/app/config
     environment:
       # APP
-      APP_BASEDOMAIN: https://${DASHBOARDURL?domain variable not set}
+      APP_DASHBOARDURL: https://${DASHBOARDURL?domain variable not set}
+      APP_BASEDOMAIN: ${BASEDOMAIN?domain variable not set}
       # DOMAINS
       DOMAINS_DEFAULT_BASEDOMAIN: ${BASEDOMAIN?base domain variable not set}
       DOMAINS_DEFAULT_CERTRESOLVER: letsencrypt
@@ -93,9 +94,9 @@ services:
   gerbil:
     # https://hub.docker.com/r/fosrl/gerbil
     image: fosrl/gerbil:${VERSION_GERBIL:-1.0.0}
-    depends_on:
-      pangolin:
-        condition: service_healthy
+    # depends_on:
+    #   pangolin:
+    #     condition: service_healthy
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -104,8 +105,8 @@ services:
       - SYS_MODULE
     ports:
       - 51820:51820/udp
-      - 443:443 # Port for traefik because of the network_mode
-      - 80:80 # Port for traefik because of the network_mode
+      # - 443:443 # Port for traefik because of the network_mode
+      # - 80:80 # Port for traefik because of the network_mode
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
@@ -115,16 +116,16 @@ services:
       - --generateAndSaveKeyTo=/var/config/key
       - --remoteConfig=http://pangolin:3001/api/v1/gerbil/get-config
       - --reportBandwidthTo=http://pangolin:3001/api/v1/gerbil/receive-bandwidth
-    healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "curl -kIf http://127.0.0.1:3003 > /dev/null 2>&1 || exit 1",
-        ]
-      start_period: 10s
-      interval: 10s
-      timeout: 3s
-      retries: 10
+    # healthcheck:
+    #   test:
+    #     [
+    #       "CMD-SHELL",
+    #       "curl -kIf http://127.0.0.1:3003 > /dev/null 2>&1 || exit 1",
+    #     ]
+    #   start_period: 10s
+    #   interval: 10s
+    #   timeout: 3s
+    #   retries: 10
     networks:
       pangolin: {}
 
@@ -134,12 +135,17 @@ services:
   traefik:
     # https://hub.docker.com/_/traefik
     image: traefik:${VERSION_TRAEFIK:-v3.4.3}
-    depends_on:
-      pangolin:
-        condition: service_healthy
+    # depends_on:
+    #   pangolin:
+    #     condition: service_healthy
+    #   crowdsec:
+    #     condition: service_healthy
     <<: *basic
     deploy:
       <<: *basic-deploy
+    ports:
+      - 443:443
+      - 80:80
     configs:
       - source: dynamic_config
         target: /etc/traefik/dynamic_config.yml
@@ -223,7 +229,9 @@ services:
       interval: 10s
       retries: 5
       timeout: 3s
-    network_mode: service:gerbil # Ports appear on the gerbil service
+    # network_mode: service:gerbil # Ports appear on the gerbil service
+    networks:
+      pangolin: {}
 
   ##############################################################################
   ##############################################################################
@@ -270,6 +278,20 @@ services:
       CUSTOM_HOSTNAME: crowdsec
       BOUNCER_KEY_traefik: PANGOLINLAPI1234
       COLLECTIONS: crowdsecurity/traefik crowdsecurity/appsec-virtual-patching crowdsecurity/appsec-generic-rules crowdsecurity/linux crowdsecurity/iptables
+      ENROLL_INSTANCE_NAME: pangolin-crowdsec
+      ENROLL_TAGS: docker
+      # GID: "1000"
+      PARSERS: crowdsecurity/whitelists
+    healthcheck:
+      test:
+        - CMD
+        - cscli
+        - capi
+        - status
+      start_period: 5s
+      interval: 10s
+      retries: 5
+      timeout: 3s
     networks:
       pangolin: {}
 

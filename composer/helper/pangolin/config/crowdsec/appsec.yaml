@@ -1,6 +1,7 @@
 ---
-appsec_config: crowdsecurity/virtual-patching
+listen_addr: 0.0.0.0:7422
+appsec_config: crowdsecurity/appsec-default
+name: myAppSecComponent
+source: appsec
 labels:
   type: appsec
-listen_addr: 0.0.0.0:7422
-source: appsec
