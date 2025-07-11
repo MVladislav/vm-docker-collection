@@ -210,7 +210,7 @@ services:
       TRAEFIK_EXPERIMENTAL_PLUGINS_BADGER_MODULENAME: github.com/fosrl/badger
       TRAEFIK_EXPERIMENTAL_PLUGINS_BADGER_VERSION: ${VERSION_BADGER:-v1.2.0} # https://github.com/fosrl/badger
       TRAEFIK_EXPERIMENTAL_PLUGINS_CROWDSEC_MODULENAME: github.com/maxlerebourg/crowdsec-bouncer-traefik-plugin
-      TRAEFIK_EXPERIMENTAL_PLUGINS_CROWDSEC_VERSION: ${VERSION_CROWDSEC:-v1.4.4} # ...
+      TRAEFIK_EXPERIMENTAL_PLUGINS_CROWDSEC_VERSION: ${VERSION_CROWDSEC_PLUGIN:-v1.4.4} # ...
     healthcheck:
       test: "traefik healthcheck --ping"
       start_period: 5s
@@ -224,7 +224,7 @@ services:
   ##############################################################################
   crowdsec:
     # https://hub.docker.com/r/crowdsecurity/crowdsec
-    image: crowdsecurity/crowdsec:${VERSION_CROWDSEC:-v1.6.9}
+    image: crowdsecurity/crowdsec:${VERSION_CROWDSEC:-v1.6.10}
     <<: *basic
     deploy:
       <<: *basic-deploy

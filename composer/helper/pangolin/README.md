@@ -70,6 +70,8 @@ VERSION_PANGOLIN=1.6.2
 VERSION_GERBIL=1.0.0
 VERSION_TRAEFIK=v3.4.3
 VERSION_BADGER=v1.2.0
+VERSION_CROWDSEC_PLUGIN=v1.4.4
+VERSION_CROWDSEC=v1.6.10
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
