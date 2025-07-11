@@ -2,15 +2,15 @@
 x-basic-deploy-labels: &basic-deploy-labels
   labels:
     - traefik.enable=true
-    - traefik.docker.lbswarm=${LB_SWARM:-true}
-    - traefik.docker.network=proxy
-    - traefik.http.routers.owncloud.entrypoints=https
+    - traefik.swarm.lbswarm=${LB_SWARM:-true}
+    - traefik.swarm.network=proxy
+    - traefik.http.routers.owncloud.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
     - traefik.http.routers.owncloud.rule=Host(`${DOMAIN?domain variable not set}`)
     - traefik.http.routers.owncloud.tls=true
+    - traefik.http.routers.owncloud.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
     - traefik.http.routers.owncloud.service=owncloud
     - traefik.http.services.owncloud.loadbalancer.server.scheme=${PROTOCOL:-http}
     - traefik.http.services.owncloud.loadbalancer.server.port=${PORT:-8080}
-    - traefik.http.routers.owncloud.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
 
 x-basic-deploy: &basic-deploy
   mode: replicated
@@ -20,15 +20,17 @@ x-basic-deploy: &basic-deploy
     constraints:
       - "node.role==${NODE_ROLE:-manager}"
       - node.platform.os == linux
+  update_config:
+    order: stop-first
   restart_policy:
-    condition: on-failure
+    condition: any
   resources:
     limits:
-      # cpus: "1"
-      memory: 1g
+      cpus: ${RESOURCES_LIMITS_CPUS:-1}
+      memory: ${RESOURCES_LIMITS_MEMORY:-1g}
     reservations:
-      cpus: "0.001"
-      memory: 32M
+      cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
+      memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
 
 x-basic: &basic
   env_file: ${ENV_FILE:-.env}
@@ -39,93 +41,147 @@ x-basic: &basic
     - DAC_OVERRIDE
   cap_drop: ["ALL"]
   security_opt:
-    - no-new-privileges:true
+    - no-new-privileges=true
   ulimits:
     memlock:
       soft: -1
       hard: -1
     nofile:
-      soft: 65535
-      hard: 65535
+      soft: 655360
+      hard: 655360
     fsize: -1
     as: -1
   networks:
     default: {}
-    mysql: {}
     proxy: {}
-  restart: on-failure
+  healthcheck:
+    disable: true
+  tmpfs:
+    - /tmp
+    - /run
+    - /run/lock
+  restart: always
 
 ################################################################################
 ################################################################################
 ################################################################################
-
 services:
   ##############################################################################
   ##############################################################################
   ##############################################################################
   owncloud:
     # https://hub.docker.com/r/owncloud/server
-    image: owncloud/server:${VERSION_OWNCLOUD:-10}
-    <<: *basic
+    image: owncloud/server:${VERSION_OWNCLOUD:-10.15}
+    <<:
+      - *basic
+      - *basic-deploy-labels
     deploy:
-      <<: [*basic-deploy, *basic-deploy-labels]
-    # ports:
-    #   - target: ${PORT:-8080}
-    #     published: ${PORT_PUBLISH:-8080}
-    #     protocol: tcp
-    #     mode: host
+      <<:
+        - *basic-deploy
+        - *basic-deploy-labels
     environment:
       HTTP_PORT: ${PORT:-8080}
-      OWNCLOUD_TRUSTED_DOMAINS: ${OWNCLOUD_TRUSTED_DOMAINS:-localhost}
-      OWNCLOUD_DOMAIN: ${OWNCLOUD_DOMAIN:-localhost:8080}
-      OWNCLOUD_ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
-      OWNCLOUD_ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin}
+      OWNCLOUD_DOMAIN: ${DOMAIN?domain variable not set}
+      OWNCLOUD_TRUSTED_DOMAINS: ${OWNCLOUD_TRUSTED_DOMAINS:-localhost,${DOMAIN?domain variable not set}}
+
+      OWNCLOUD_ADMIN_USERNAME: ${OWNCLOUD_ADMIN_USERNAME:-root}
 
       OWNCLOUD_DB_TYPE: ${OWNCLOUD_DB_TYPE:-mysql}
       OWNCLOUD_MYSQL_UTF8MB4: ${OWNCLOUD_MYSQL_UTF8MB4:-true}
-      OWNCLOUD_DB_HOST: ${OWNCLOUD_DB_HOST:-mysql}
-      OWNCLOUD_DB_PORT: ${OWNCLOUD_DB_PORT:-3306}
-      OWNCLOUD_DB_NAME: ${OWNCLOUD_DB_NAME:-owncloud}
-      OWNCLOUD_DB_USERNAME: ${OWNCLOUD_DB_USERNAME:-owncloud}
-      OWNCLOUD_DB_PASSWORD: ${OWNCLOUD_DB_PASSWORD:-owncloud}
+      OWNCLOUD_DB_HOST: mariadb
+      OWNCLOUD_DB_PORT: 3306
+      OWNCLOUD_DB_NAME: ${MARIADB_DATABASE:-owncloud}
+      OWNCLOUD_DB_USERNAME: ${MARIADB_USER:-owncloud}
+      OWNCLOUD_DB_PASSWORD: ${OWNCLOUD_DB_PASSWORD?Database password not set}
 
       OWNCLOUD_REDIS_ENABLED: ${OWNCLOUD_REDIS_ENABLED:-true}
-      OWNCLOUD_REDIS_HOST: ${OWNCLOUD_REDIS_HOST:-redis}
+      OWNCLOUD_REDIS_HOST: ${OWNCLOUD_REDIS_HOST:-valkey}
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - data:/mnt/data
     healthcheck:
       test: ["CMD", "/usr/bin/healthcheck"]
-      interval: 30s
-      timeout: 10s
+      start_period: 10s
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  mariadb:
+    # https://hub.docker.com/_/mariadb
+    image: mariadb:${VERSION_MARIADB:-11.7.2}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_MARIADB:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_MARIADB:-512m}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_MARIADB:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_MARIADB:-32m}
+    cap_add:
+      - SETUID
+      - SETGID
+      - DAC_OVERRIDE
+    secrets:
+      - mariadb_user_password
+    environment:
+      TZ: ${TZ:-Europe/Berlin}
+      MARIADB_DATABASE: ${MARIADB_DATABASE:-owncloud}
+      MARIADB_USER: ${MARIADB_USER:-owncloud}
+      MARIADB_PASSWORD_FILE: /run/secrets/mariadb_user_password
+      MARIADB_RANDOM_ROOT_PASSWORD: ${MARIADB_RANDOM_ROOT_PASSWORD:-true}
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - mariadb:/var/lib/mysql
+    command:
+      - --log-bin=mysql-bin
+      - --expire-logs-days=90
+      - --max-allowed-packet=128M
+      - --innodb-log-file-size=64M
+    networks:
+      default: {}
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      start_period: 2s
+      interval: 5s
+      timeout: 3s
       retries: 5
 
   ##############################################################################
   ##############################################################################
   ##############################################################################
-  redis:
-    # https://hub.docker.com/_/redis
-    image: redis:${VERSION_REDIS:-7.0.7}
+  valkey:
+    # https://hub.docker.com/r/valkey/valkey
+    image: valkey/valkey:${VERSION_VALKEY:-8.1.0-alpine}
     <<: *basic
-    user: "999:999"
+    deploy:
+      <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_VALKEY:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_VALKEY:-128m}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_VALKEY:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_VALKEY:-32m}
     cap_add:
       - SETUID
       - SETGID
-    deploy:
-      <<: *basic-deploy
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-      - redis:/data
-    # command: [ "--databases", "1" ]
-    command: ["redis-server", "--save", "60", "1", "--loglevel", "warning"]
-    networks:
-      default: {}
+      - valkey:/data
+    command: --save 300 1 --loglevel warning
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
+      test: ["CMD-SHELL", "valkey-cli ping | grep PONG"]
+      start_period: 2s
+      interval: 5s
+      timeout: 3s
       retries: 5
 
 ################################################################################
@@ -137,11 +193,14 @@ networks:
     attachable: true
     driver_opts:
       encrypted: "true"
-  mysql:
-    external: true
   proxy:
     external: true
 
 volumes:
   data: {}
-  redis: {}
+  mariadb: {}
+  valkey: {}
+
+secrets:
+  mariadb_user_password:
+    file: config/secrets/mariadb_user_password.txt
