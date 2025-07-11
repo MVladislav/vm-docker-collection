@@ -150,6 +150,7 @@ services:
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
       - letsencrypt:/letsencrypt
       - traefik_logs:/var/log/traefik
     environment:
@@ -188,14 +189,19 @@ services:
       TRAEFIK_API: ${TRAEFIK_API:-true}
       TRAEFIK_API_DASHBOARD: ${TRAEFIK_API_DASHBOARD:-true}
       TRAEFIK_API_INSECURE: "false"
-      TRAEFIK_API_DEBUG: "false"
+      TRAEFIK_API_DEBUG: ${TRAEFIK_API_DEBUG:-false}
       # Ping configuration
       TRAEFIK_PING: "true"
       # Docker configuration backend
       TRAEFIK_PROVIDERS_HTTP: "true"
       TRAEFIK_PROVIDERS_HTTP_ENDPOINT: http://pangolin:3001/api/v1/traefik-config
       TRAEFIK_PROVIDERS_HTTP_POLLINTERVAL: 5s
+      TRAEFIK_PROVIDERS_DOCKER: ${TRAEFIK_PROVIDERS_DOCKER:-false}
+      TRAEFIK_PROVIDERS_DOCKER_ENDPOINT: unix:///var/run/docker.sock
+      TRAEFIK_PROVIDERS_DOCKER_EXPOSEDBYDEFAULT: "false"
+      TRAEFIK_PROVIDERS_DOCKER_WATCH: "true"
       TRAEFIK_PROVIDERS_FILE_FILENAME: /etc/traefik/dynamic_config.yml
+      TRAEFIK_PROVIDERS_FILE_WATCH: "true"
       # TLS
       TRAEFIK_SERVERSTRANSPORT_INSECURESKIPVERIFY: "true"
       TRAEFIK_CERTIFICATESRESOLVERS_LETSENCRYPT: "true"
