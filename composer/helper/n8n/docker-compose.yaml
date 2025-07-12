@@ -1,0 +1,121 @@
+---
+x-basic-deploy-labels: &basic-deploy-labels
+  labels:
+    - traefik.enable=true
+    - traefik.swarm.lbswarm=${LB_SWARM:-true}
+    - traefik.swarm.network=proxy
+    - traefik.http.routers.n8n.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.n8n.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.n8n.tls=true
+    - traefik.http.routers.n8n.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.n8n.service=n8n
+    - traefik.http.services.n8n.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.n8n.loadbalancer.server.port=${PORT:-5678}
+
+x-basic-deploy: &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  update_config:
+    order: stop-first
+  restart_policy:
+    condition: any
+  resources:
+    limits:
+      cpus: ${RESOURCES_LIMITS_CPUS:-2}
+      memory: ${RESOURCES_LIMITS_MEMORY:-2g}
+    reservations:
+      cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
+      memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
+
+x-basic: &basic
+  env_file: ${ENV_FILE:-.env}
+  # cap_add:
+  #   # https://dockerlabs.collabnix.com/advanced/security/capabilities/
+  #   - CHOWN # (chown, chmod)
+  #   - DAC_OVERRIDE
+  #   - DAC_READ_SEARCH
+  #   - SETGID # (setgid, setgroups)
+  #   - SETUID # (setuid)
+  #   - FOWNER # (chmod, chown, or chgrp)
+  #   - FSETID
+  # cap_drop: ["ALL"]
+  security_opt:
+    - no-new-privileges=true
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 655360
+      hard: 655360
+    fsize: -1
+    as: -1
+  networks:
+    proxy: {}
+  healthcheck:
+    disable: true
+  tmpfs:
+    - /tmp
+    - /run
+    - /run/lock
+  restart: always
+
+################################################################################
+################################################################################
+################################################################################
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  n8n:
+    # https://hub.docker.com/r/n8nio/n8n
+    image: n8nio/n8n:${VERSION:-1.102.1}
+    <<:
+      - *basic
+      - *basic-deploy-labels
+    deploy:
+      <<:
+        - *basic-deploy
+        - *basic-deploy-labels
+    environment:
+      N8N_HOST: ${DOMAIN?domain variable not set}
+      N8N_PORT: ${PORT:-5678}
+      N8N_PROTOCOL: https
+      NODE_ENV: production
+      WEBHOOK_URL: https://${DOMAIN?domain variable not set}/
+      GENERIC_TIMEZONE: ${GENERIC_TIMEZONE:-Europe/Berlin}
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - data:/home/node/.n8n
+      # - ./local-files:/files
+    healthcheck:
+      # test:
+      #   [
+      #     "CMD-SHELL",
+      #     "curl -kIf ${PROTOCOL:-https}://127.0.0.1:${PORT:-443} > /dev/null 2>&1 || exit 1",
+      #   ]
+      #   # [
+      #   #   "CMD-SHELL",
+      #   #   "wget --no-verbose --tries=1 --spider --no-check-certificate ${PROTOCOL:-https}://127.0.0.1:${PORT:-443} || exit 1",
+      #   # ]
+      # start_period: 10s
+      # interval: 10s
+      # timeout: 3s
+      # retries: 10
+      disable: true
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  proxy:
+    external: true
+
+volumes:
+  data:
