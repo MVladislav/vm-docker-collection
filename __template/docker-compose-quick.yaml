@@ -1,0 +1,161 @@
+---
+x-basic-deploy-labels: &basic-deploy-labels
+  labels:
+    - traefik.enable=true
+    - traefik.swarm.lbswarm=${LB_SWARM:-true}
+    - traefik.swarm.network=proxy
+    - traefik.http.routers.<router_name>.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.<router_name>.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.<router_name>.tls=true
+    - traefik.http.routers.<router_name>.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.<router_name>.service=<router_name>
+    - traefik.http.services.<router_name>.loadbalancer.server.scheme=${PROTOCOL:-https}
+    - traefik.http.services.<router_name>.loadbalancer.server.port=${PORT:-443}
+
+x-basic-deploy: &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  update_config:
+    order: stop-first
+  restart_policy:
+    condition: any
+  resources:
+    limits:
+      cpus: ${RESOURCES_LIMITS_CPUS:-1}
+      memory: ${RESOURCES_LIMITS_MEMORY:-1g}
+    reservations:
+      cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
+      memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
+
+x-basic: &basic
+  env_file: ${ENV_FILE:-.env}
+  # cap_add:
+  #   # https://dockerlabs.collabnix.com/advanced/security/capabilities/
+  #   - CHOWN # (chown, chmod)
+  #   - DAC_OVERRIDE
+  #   - DAC_READ_SEARCH
+  #   - SETGID # (setgid, setgroups)
+  #   - SETUID # (setuid)
+  #   - FOWNER # (chmod, chown, or chgrp)
+  #   - FSETID
+  # cap_drop: ["ALL"]
+  security_opt:
+    - no-new-privileges=true
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 655360
+      hard: 655360
+    fsize: -1
+    as: -1
+  networks:
+    default: {}
+    proxy: {}
+  healthcheck:
+    disable: true
+  tmpfs:
+    - /tmp
+    - /run
+    - /run/lock
+  restart: always
+
+################################################################################
+################################################################################
+################################################################################
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  app:
+    # https://hub.docker.com/r/...
+    image: localhost:5000/...:${VERSION:-latest}
+    <<:
+      - *basic
+      - *basic-deploy-labels
+    deploy:
+      <<:
+        - *basic-deploy
+        - *basic-deploy-labels
+    secrets:
+      - my_file_secret
+    environment:
+      MY_FILE_SECRET_FILE: /run/secrets/my_file_secret
+    # configs:
+    #   - source: xx_config
+    #     target: ...
+    #     mode: 0440
+    #     uid: "1000"
+    #     gid: "1000"
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - data:/root
+    # extends:
+    #   file: docker-hwaccel.yaml
+    #   service: hwaccel-amd
+    # extends:
+    #   file: docker-hwaccel.yaml
+    #   service: hwaccel-nvidia
+    # command: >
+    #   ...
+    healthcheck:
+      # test:
+      #   [
+      #     "CMD-SHELL",
+      #     "curl -kIf ${PROTOCOL:-https}://127.0.0.1:${PORT:-443} > /dev/null 2>&1 || exit 1",
+      #   ]
+      #   # [
+      #   #   "CMD-SHELL",
+      #   #   "wget --no-verbose --tries=1 --spider --no-check-certificate ${PROTOCOL:-https}://127.0.0.1:${PORT:-443} || exit 1",
+      #   # ]
+      # start_period: 10s
+      # interval: 10s
+      # timeout: 3s
+      # retries: 10
+      disable: true
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  default:
+    driver: ${NETWORK_MODE:-overlay}
+    attachable: true
+    driver_opts:
+      encrypted: "true"
+  proxy:
+    external: true
+#
+# volumes:
+#   data:
+#     name: data${SERVICE_NAME_POST:-}
+#   ## sudo apt install nfs-common
+#   # data-nfs:
+#   #   # name: data-nfs${SERVICE_NAME_POST:-}
+#   #   driver: local
+#   #   driver_opts:
+#   #     type: nfs
+#   #     o: nfsvers=4.2,addr=${NFS_HOST?nfs host is not defined},rsize=2097152,wsize=2097152,tcp,nconnect=${NFS_NCON:-8}
+#   #     device: ":${NFS_PATH?nfs path is not defined}${SERVICE_NAME_POST:-}"
+#   # data-smb:
+#   #   # name: data-smb${SERVICE_NAME_POST:-}
+#   #   driver: local
+#   #   driver_opts:
+#   #     type: cifs
+#   #     device: "//${NAS_HOST}${NAS_PATH:-/}"
+#   #     o: "username=${NAS_USERNAME},password=${NAS_PASSWORD},vers=3.0,uid=${NAS_PUID:-1000},gid=${NAS_PGID:-1000}"
+#
+# configs:
+#   xx_config:
+#     file: $PWD/config/...
+#
+# secrets:
+#   my_file_secret:
+#     file: config/secrets/my_file_secret.txt

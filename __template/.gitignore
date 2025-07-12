@@ -6,6 +6,7 @@
 !Dockerfile
 !Dockerfile_*
 !docker-compose.yaml
+!docker-compose-quick.yaml
 !docker-hwaccl.yaml
 !docker-compose-example-services.yaml
 
@@ -15,6 +16,8 @@
 
 !config/
 config/*
+
+!config/*.tmpl
 
 !config/secrets/
 config/secrets/*

@@ -129,6 +129,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-postgresql}
       POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password_file
       PGDATA: /var/lib/postgresql/data
+      # POSTGRES_HOST_AUTH_METHOD: trust
     volumes:
       # - /etc/timezone:/etc/timezone:ro
       # - /etc/localtime:/etc/localtime:ro
@@ -394,6 +395,31 @@ services:
     #   - /etc/localtime:/etc/localtime:ro
     networks:
       default: {}
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  rabbitmq:
+    # https://hub.docker.com/_/rabbitmq
+    image: rabbitmq:${VERSION_RABBITMQ:-3}
+    # <<: *basic
+    deploy:
+      # <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_RABBITMQ:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_RABBITMQ:-512m}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_RABBITMQ:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_RABBITMQ:-32m}
+    networks:
+      default: {}
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "status"]
+      start_period: 10s
+      interval: 10s
+      timeout: 10s
+      retries: 3
 
 ################################################################################
 ################################################################################
