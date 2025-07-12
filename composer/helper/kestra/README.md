@@ -8,6 +8,7 @@
 
 - [SETUP](#setup)
   - [basic](#basic)
+    - [create your `secrets`:](#create-your-secrets)
     - [create `.env` file following:](#create-env-file-following)
       - [example short .env (swarm)](#example-short-env-swarm)
       - [example short .env (bridge)](#example-short-env-bridge)
@@ -18,6 +19,12 @@
 ## basic
 
 > defined to work with traefik
+
+### create your `secrets`:
+
+```sh
+$cp config/secrets.yaml.tmpl config/secrets.yaml
+```
 
 ### create `.env` file following:
 

@@ -113,6 +113,9 @@ services:
       - /etc/localtime:/etc/localtime:ro
       - /var/run/docker.sock:/var/run/docker.sock
       - data:/app/storage
+    extends:
+      file: config/secrets.yaml
+      service: kestra-secrets
     command: server standalone --worker-thread=128
     healthcheck:
       test: ["CMD", "curl", "-f", "http://127.0.0.1:8081/health"]
