@@ -1,0 +1,358 @@
+---
+x-basic-deploy-labels: &basic-deploy-labels
+  labels:
+    - traefik.enable=true
+    - traefik.swarm.lbswarm=${LB_SWARM:-true}
+    - traefik.swarm.network=proxy
+    - traefik.http.routers.erpnext.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.erpnext.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.erpnext.tls=true
+    - traefik.http.routers.erpnext.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.erpnext.service=erpnext
+    - traefik.http.services.erpnext.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.erpnext.loadbalancer.server.port=${PORT:-8080}
+
+x-basic-deploy: &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  update_config:
+    order: stop-first
+  restart_policy:
+    condition: any
+  resources:
+    limits:
+      cpus: ${RESOURCES_LIMITS_CPUS:-1}
+      memory: ${RESOURCES_LIMITS_MEMORY:-1g}
+    reservations:
+      cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
+      memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
+
+x-basic: &basic
+  env_file: ${ENV_FILE:-.env}
+  # cap_add:
+  #   # https://dockerlabs.collabnix.com/advanced/security/capabilities/
+  #   - CHOWN # (chown, chmod)
+  #   - DAC_OVERRIDE
+  #   - DAC_READ_SEARCH
+  #   - SETGID # (setgid, setgroups)
+  #   - SETUID # (setuid)
+  #   - FOWNER # (chmod, chown, or chgrp)
+  #   - FSETID
+  # cap_drop: ["ALL"]
+  security_opt:
+    - no-new-privileges=true
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 655360
+      hard: 655360
+    fsize: -1
+    as: -1
+  networks:
+    default: {}
+  healthcheck:
+    disable: true
+  tmpfs:
+    - /tmp
+  restart: always
+
+x-volume-default: &volume-default
+  volumes:
+    - /etc/timezone:/etc/timezone:ro
+    - /etc/localtime:/etc/localtime:ro
+    - sites:/home/frappe/frappe-bench/sites
+    - logs:/home/frappe/frappe-bench/logs
+
+################################################################################
+################################################################################
+################################################################################
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  frontend:
+    # https://hub.docker.com/r/frappe/erpnext
+    image: frappe/erpnext:${VERSION_ERPNEXT:-v15.70.0}
+    <<:
+      - *basic
+      - *basic-deploy-labels
+      - *volume-default
+    deploy:
+      <<:
+        - *basic-deploy
+        - *basic-deploy-labels
+    environment:
+      BACKEND: backend:8000
+      FRAPPE_SITE_NAME_HEADER: frontend
+      SOCKETIO: websocket:9000
+      UPSTREAM_REAL_IP_ADDRESS: 127.0.0.1
+      UPSTREAM_REAL_IP_HEADER: X-Forwarded-For
+      UPSTREAM_REAL_IP_RECURSIVE: "off"
+      PROXY_READ_TIMEOUT: 120
+      CLIENT_MAX_BODY_SIZE: 50m
+    command:
+      - nginx-entrypoint.sh
+    networks:
+      default: {}
+      proxy: {}
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  backend:
+    # https://hub.docker.com/r/frappe/erpnext
+    image: frappe/erpnext:${VERSION_ERPNEXT:-v15.70.0}
+    <<:
+      - *basic
+      - *volume-default
+    deploy:
+      <<: *basic-deploy
+    environment:
+      DB_HOST: mariadb
+      DB_PORT: 3306
+      MYSQL_ROOT_PASSWORD: ${MARIADB_PASSWORD:-erpnext}
+      MARIADB_ROOT_PASSWORD: ${MARIADB_PASSWORD:-erpnext}
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  queue-long:
+    # https://hub.docker.com/r/frappe/erpnext
+    image: frappe/erpnext:${VERSION_ERPNEXT:-v15.70.0}
+    <<:
+      - *basic
+      - *volume-default
+    deploy:
+      <<: *basic-deploy
+    command:
+      - bench
+      - worker
+      - --queue
+      - long,default,short
+  queue-short:
+    # https://hub.docker.com/r/frappe/erpnext
+    image: frappe/erpnext:${VERSION_ERPNEXT:-v15.70.0}
+    <<:
+      - *basic
+      - *volume-default
+    deploy:
+      <<: *basic-deploy
+    command:
+      - bench
+      - worker
+      - --queue
+      - short,default
+  scheduler:
+    # https://hub.docker.com/r/frappe/erpnext
+    image: frappe/erpnext:${VERSION_ERPNEXT:-v15.70.0}
+    <<:
+      - *basic
+      - *volume-default
+    deploy:
+      <<: *basic-deploy
+    command:
+      - bench
+      - schedule
+  websocket:
+    # https://hub.docker.com/r/frappe/erpnext
+    image: frappe/erpnext:${VERSION_ERPNEXT:-v15.70.0}
+    <<:
+      - *basic
+      - *volume-default
+    deploy:
+      <<: *basic-deploy
+    command:
+      - node
+      - /home/frappe/frappe-bench/apps/frappe/socketio.js
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  create-site:
+    # https://hub.docker.com/r/frappe/erpnext
+    image: frappe/erpnext:${VERSION_ERPNEXT:-v15.70.0}
+    <<:
+      - *basic
+      - *volume-default
+    deploy:
+      <<: *basic-deploy
+      restart_policy:
+        condition: none
+    entrypoint:
+      - bash
+      - -c
+    command:
+      - >
+        wait-for-it -t 120 mariadb:3306;
+        wait-for-it -t 120 redis-cache:6379;
+        wait-for-it -t 120 redis-queue:6379;
+        export start=`date +%s`;
+        until [[ -n `grep -hs ^ sites/common_site_config.json | jq -r ".db_host // empty"` ]] && \
+          [[ -n `grep -hs ^ sites/common_site_config.json | jq -r ".redis_cache // empty"` ]] && \
+          [[ -n `grep -hs ^ sites/common_site_config.json | jq -r ".redis_queue // empty"` ]];
+        do
+          echo "Waiting for sites/common_site_config.json to be created";
+          sleep 5;
+          if (( `date +%s`-start > 120 )); then
+            echo "could not find sites/common_site_config.json with required keys";
+            exit 1
+          fi
+        done;
+        echo "sites/common_site_config.json found";
+        bench new-site --mariadb-user-host-login-scope='%' --admin-password=${ERPNEXT_PASSWORD?Initial admin password not set} --db-root-username=${MARIADB_USER:-root} --db-root-password=${MARIADB_PASSWORD:-erpnext} --install-app erpnext --set-default frontend;
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  configurator:
+    # https://hub.docker.com/r/frappe/erpnext
+    image: frappe/erpnext:${VERSION_ERPNEXT:-v15.70.0}
+    <<:
+      - *basic
+      - *volume-default
+    deploy:
+      <<: *basic-deploy
+      restart_policy:
+        condition: none
+    environment:
+      DB_HOST: mariadb
+      DB_PORT: 3306
+      REDIS_CACHE: redis-cache:6379
+      REDIS_QUEUE: redis-queue:6379
+      SOCKETIO_PORT: 9000
+    entrypoint:
+      - bash
+      - -c
+    command:
+      - >
+        ls -1 apps > sites/apps.txt;
+        bench set-config -g db_host $$DB_HOST;
+        bench set-config -gp db_port $$DB_PORT;
+        bench set-config -g redis_cache "redis://$$REDIS_CACHE";
+        bench set-config -g redis_queue "redis://$$REDIS_QUEUE";
+        bench set-config -g redis_socketio "redis://$$REDIS_QUEUE";
+        bench set-config -gp socketio_port $$SOCKETIO_PORT;
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  mariadb:
+    # https://hub.docker.com/_/mariadb
+    image: mariadb:${VERSION_MARIADB:-11.7.2}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_MARIADB:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_MARIADB:-512m}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_MARIADB:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_MARIADB:-32m}
+    cap_add:
+      - SETUID
+      - SETGID
+      - DAC_OVERRIDE
+    environment:
+      TZ: ${TZ:-Europe/Berlin}
+      MARIADB_DATABASE: ${MARIADB_DATABASE:-erpnext}
+      MARIADB_ROOT_USER: ${MARIADB_USER:-root}
+      MARIADB_ROOT_PASSWORD: ${MARIADB_PASSWORD:-erpnext}
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - mariadb:/var/lib/mysql
+    command:
+      - --log-bin=mysql-bin
+      - --expire-logs-days=90
+    networks:
+      default: {}
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      start_period: 2s
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  redis-queue:
+    # https://hub.docker.com/r/valkey/valkey
+    image: valkey/valkey:${VERSION_VALKEY:-8.1.0-alpine}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_VALKEY:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_VALKEY:-128m}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_VALKEY:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_VALKEY:-32m}
+    cap_add:
+      - SETUID
+      - SETGID
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - valkey:/data
+    command: --save 300 1 --loglevel warning
+    healthcheck:
+      test: ["CMD-SHELL", "valkey-cli ping | grep PONG"]
+      start_period: 2s
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  redis-cache:
+    # https://hub.docker.com/r/valkey/valkey
+    image: valkey/valkey:${VERSION_VALKEY:-8.1.0-alpine}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_VALKEY:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_VALKEY:-128m}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_VALKEY:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_VALKEY:-32m}
+    cap_add:
+      - SETUID
+      - SETGID
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    command: --save 300 1 --loglevel warning
+    healthcheck:
+      test: ["CMD-SHELL", "valkey-cli ping | grep PONG"]
+      start_period: 2s
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  default:
+    driver: ${NETWORK_MODE:-overlay}
+    attachable: true
+    driver_opts:
+      encrypted: "true"
+  proxy:
+    external: true
+
+volumes:
+  sites: {}
+  logs: {}
+  mariadb: {}
+  valkey: {}
