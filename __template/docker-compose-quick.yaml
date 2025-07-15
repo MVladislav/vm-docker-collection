@@ -62,8 +62,6 @@ x-basic: &basic
     disable: true
   tmpfs:
     - /tmp
-    - /run
-    - /run/lock
   restart: always
 
 ################################################################################
