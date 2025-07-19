@@ -1,17 +1,4 @@
 ---
-x-basic-deploy-labels: &basic-deploy-labels
-  labels:
-    - traefik.enable=true
-    - traefik.swarm.lbswarm=${LB_SWARM:-true}
-    - traefik.swarm.network=proxy
-    - traefik.http.routers.beszel.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
-    - traefik.http.routers.beszel.rule=Host(`${DOMAIN?domain variable not set}`)
-    - traefik.http.routers.beszel.tls=true
-    - traefik.http.routers.beszel.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
-    - traefik.http.routers.beszel.service=beszel
-    - traefik.http.services.beszel.loadbalancer.server.scheme=${PROTOCOL:-http}
-    - traefik.http.services.beszel.loadbalancer.server.port=${PORT:-8090}
-
 x-basic-deploy: &basic-deploy
   mode: replicated
   replicas: 1
@@ -26,8 +13,8 @@ x-basic-deploy: &basic-deploy
     condition: any
   resources:
     limits:
-      cpus: ${RESOURCES_LIMITS_CPUS:-1}
-      memory: ${RESOURCES_LIMITS_MEMORY:-1g}
+      cpus: ${RESOURCES_LIMITS_CPUS:-0.5}
+      memory: ${RESOURCES_LIMITS_MEMORY:-512m}
     reservations:
       cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
       memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
@@ -59,56 +46,23 @@ services:
   ##############################################################################
   ##############################################################################
   ##############################################################################
-  beszel:
-    # https://github.com/henrygd/beszel/pkgs/container/beszel%2Fbeszel
-    image: ghcr.io/henrygd/beszel/beszel:${VERSION:-0.11.1}
-    <<:
-      - *basic
-      - *basic-deploy-labels
-    deploy:
-      <<:
-        - *basic-deploy
-        - *basic-deploy-labels
-    environment:
-      APP_URL: https://${DOMAIN?domain variable not set}
-    volumes:
-      - /etc/timezone:/etc/timezone:ro
-      - /etc/localtime:/etc/localtime:ro
-      - data:/beszel_data
-      - socket:/beszel_socket
-    networks:
-      default: {}
-      proxy: {}
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "/beszel",
-          "health",
-          "--url",
-          "${PROTOCOL:-http}://0.0.0.0:${PORT:-8090}",
-        ]
-      start_period: 10s
-      interval: 10s
-      timeout: 3s
-      retries: 10
-
-  ##############################################################################
-  ##############################################################################
-  ##############################################################################
   beszel-agent:
     # https://github.com/henrygd/beszel/pkgs/container/beszel%2Fbeszel-agent
     image: ghcr.io/henrygd/beszel/beszel-agent:${VERSION:-0.11.1}
     <<: *basic
     deploy:
       <<: *basic-deploy
+    ports:
+      - target: ${PORT_AGENT:-45876}
+        published: ${PORT_AGENT:-45876}
+        protocol: tcp
+        mode: host
     environment:
-      LISTEN: /beszel_socket/beszel.sock
+      LISTEN: ${PORT_AGENT:-45876}
       KEY: ${KEY?key for agent is not set}
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-      - socket:/beszel_socket
       - /var/run/docker.sock:/var/run/docker.sock:ro
 
 ################################################################################
@@ -116,13 +70,7 @@ services:
 ################################################################################
 networks:
   default:
-    driver: ${NETWORK_MODE:-overlay}
+    driver: ${NETWORK_MODE:-bridge}
     attachable: true
     driver_opts:
       encrypted: "true"
-  proxy:
-    external: true
-
-volumes:
-  data: {}
-  socket: {}
