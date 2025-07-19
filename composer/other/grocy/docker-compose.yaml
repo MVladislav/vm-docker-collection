@@ -1,0 +1,108 @@
+---
+x-basic-deploy-labels: &basic-deploy-labels
+  labels:
+    - traefik.enable=true
+    - traefik.swarm.lbswarm=${LB_SWARM:-true}
+    - traefik.swarm.network=proxy
+    - traefik.http.routers.grocy.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.grocy.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.grocy.tls=true
+    - traefik.http.routers.grocy.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.grocy.service=grocy
+    - traefik.http.services.grocy.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.grocy.loadbalancer.server.port=${PORT:-80}
+
+x-basic-deploy: &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  update_config:
+    order: stop-first
+  restart_policy:
+    condition: any
+  resources:
+    limits:
+      cpus: ${RESOURCES_LIMITS_CPUS:-1}
+      memory: ${RESOURCES_LIMITS_MEMORY:-250m}
+    reservations:
+      cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
+      memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
+
+x-basic: &basic
+  env_file: ${ENV_FILE:-.env}
+  cap_add:
+    - CHOWN
+    - DAC_OVERRIDE
+    - DAC_READ_SEARCH
+    - SETGID
+    - SETUID
+    - FOWNER
+  cap_drop: ["ALL"]
+  security_opt:
+    - no-new-privileges=true
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 655360
+      hard: 655360
+    fsize: -1
+    as: -1
+  networks:
+    proxy: {}
+  healthcheck:
+    disable: true
+  tmpfs:
+    - /tmp
+  restart: always
+
+################################################################################
+################################################################################
+################################################################################
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  grocy:
+    # https://hub.docker.com/r/linuxserver/grocy
+    image: linuxserver/grocy:${VERSION:-4.5.0}
+    <<:
+      - *basic
+      - *basic-deploy-labels
+    deploy:
+      <<:
+        - *basic-deploy
+        - *basic-deploy-labels
+    environment:
+      PUID: ${PUID:-1000}
+      PGID: ${PGID:-1000}
+      TZ: Europe/Berlin
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - config:/config
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -kIf ${PROTOCOL:-http}://127.0.0.1:${PORT:-80} > /dev/null 2>&1 || exit 1",
+        ]
+      start_period: 10s
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  proxy:
+    external: true
+
+volumes:
+  config: {}
