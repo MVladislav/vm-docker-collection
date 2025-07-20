@@ -3,5 +3,6 @@
 !.gitempty
 
 !docker-compose.yaml
+!docker-hwaccel.yaml
 
 !README.md
