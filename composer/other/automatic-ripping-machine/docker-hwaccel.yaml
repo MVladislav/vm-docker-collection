@@ -1,0 +1,42 @@
+---
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  hwaccel-amd:
+    cpuset: 2-15 # lscpu -ae
+    devices:
+      - /dev/kfd
+      - /dev/dri
+      - /dev/sr0:/dev/sr0
+      # - /dev/dri/renderD128:/dev/dri/renderD128
+      # - /dev/dri/card1:/dev/dri/card1
+    group_add:
+      - video
+      # - render
+    environment:
+      ROCM_VISIBLE_DEVICES: ${ROCM_VISIBLE_DEVICES:-all}
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  hwaccel-nvidia:
+    cpuset: 2-15 # lscpu -ae
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: ${RESOURCES_RESERVATIONS_DEVICE0_COUNT:-1}
+              capabilities:
+                - gpu
+                - compute
+                - video
+    devices:
+      - /dev/sr0:/dev/sr0
+    group_add:
+      - video
+      # - render
+    environment:
+      NVIDIA_VISIBLE_DEVICES: ${NVIDIA_VISIBLE_DEVICES:-all}
+      NVIDIA_DRIVER_CAPABILITIES: ${NVIDIA_DRIVER_CAPABILITIES:-compute,utility,video}

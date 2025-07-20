@@ -1,0 +1,167 @@
+---
+x-basic-deploy-labels-ripping: &basic-deploy-labels-ripping
+  labels:
+    - traefik.enable=true
+    - traefik.swarm.lbswarm=${LB_SWARM:-true}
+    - traefik.swarm.network=proxy
+    - traefik.http.routers.ripping.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.ripping.rule=Host(`${DOMAIN_RIPPING?domain variable not set}`)
+    - traefik.http.routers.ripping.tls=true
+    - traefik.http.routers.ripping.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.ripping.service=ripping
+    - traefik.http.services.ripping.loadbalancer.server.scheme=${PROTOCOL_RIPPING:-http}
+    - traefik.http.services.ripping.loadbalancer.server.port=${PORT_RIPPING:-8080}
+
+x-basic-deploy-labels-tdarr: &basic-deploy-labels-tdarr
+  labels:
+    - traefik.enable=true
+    - traefik.swarm.lbswarm=${LB_SWARM:-true}
+    - traefik.swarm.network=proxy
+    - traefik.http.routers.tdarr.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.tdarr.rule=Host(`${DOMAIN_TDARR?domain variable not set}`)
+    - traefik.http.routers.tdarr.tls=true
+    - traefik.http.routers.tdarr.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.tdarr.service=tdarr
+    - traefik.http.services.tdarr.loadbalancer.server.scheme=${PROTOCOL_TDARR:-http}
+    - traefik.http.services.tdarr.loadbalancer.server.port=${PORT_TDARR:-8265}
+
+x-basic-deploy: &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  update_config:
+    order: stop-first
+  restart_policy:
+    condition: any
+  resources:
+    limits:
+      cpus: ${RESOURCES_LIMITS_CPUS:-8}
+      memory: ${RESOURCES_LIMITS_MEMORY:-8g}
+    reservations:
+      cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
+      memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
+
+x-basic: &basic
+  env_file: ${ENV_FILE:-.env}
+  stdin_open: true # docker run -i
+  tty: true # docker run -t
+  cap_add:
+    - DAC_OVERRIDE
+    - CHOWN
+    - SETGID
+    - SETUID
+    - FOWNER
+  cap_drop: ["ALL"]
+  security_opt:
+    - no-new-privileges=true
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 655360
+      hard: 655360
+    fsize: -1
+    as: -1
+  networks:
+    proxy: {}
+  healthcheck:
+    disable: true
+  restart: always
+
+################################################################################
+################################################################################
+################################################################################
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  ripping:
+    # build:
+    #   context: .
+    #   dockerfile: ./Dockerfile
+    # https://hub.docker.com/r/automaticrippingmachine/automatic-ripping-machine
+    image: automaticrippingmachine/automatic-ripping-machine:${VERSION_RIPPING:-latest}
+    <<:
+      - *basic
+      - *basic-deploy-labels-ripping
+    deploy:
+      <<:
+        - *basic-deploy
+        - *basic-deploy-labels-ripping
+    environment:
+      TZ: Europe/Berlin
+      ARM_UID: ${HOST_PUID:-1000}
+      ARM_GID: ${HOST_PGID:-1000}
+    volumes:
+      # - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - ripping_configs:/etc/arm/config
+      - ${MEDIA_PATH:-$PWD/media}:/home/arm
+    extends:
+      file: docker-hwaccel.yaml
+      service: hwaccel-amd
+    entrypoint:
+      [
+        "/bin/sh",
+        "-c",
+        'chown -R $${ARM_UID:-1000}:$${ARM_GID:-1000} /etc/arm/config && exec "$@"',
+        "--",
+      ]
+    command: "/sbin/my_init"
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  tdarr:
+    # https://github.com/haveagitgat/Tdarr/pkgs/container/tdarr
+    image: ghcr.io/haveagitgat/tdarr:${VERSION_TDARR:-latest}
+    <<:
+      - *basic
+      - *basic-deploy-labels-tdarr
+    deploy:
+      <<:
+        - *basic-deploy
+        - *basic-deploy-labels-tdarr
+    environment:
+      TZ: Europe/Berlin
+      PUID: ${HOST_PUID:-1000}
+      PGID: ${HOST_PGID:-1000}
+      UMASK_SET: 002
+      serverIP: 0.0.0.0
+      serverPort: 8266
+      webUIPort: 8265
+      internalNode: ${INTERNAL_NODE:-true}
+      inContainer: ${inContainer:-true}
+      # ffmpegVersion=7
+      nodeID: MyInternalNode
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - tdarr_server:/app/server
+      - tdarr_configs:/app/configs
+      - tdarr_logs:/app/logs
+      - tdarr_cache:/temp
+      - ${MEDIA_PATH:-$PWD/media}:/media
+    extends:
+      file: docker-hwaccel.yaml
+      service: hwaccel-amd
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  proxy:
+    external: true
+
+volumes:
+  media: {}
+  ripping_configs: {}
+  tdarr_server: {}
+  tdarr_configs: {}
+  tdarr_logs: {}
+  tdarr_cache: {}

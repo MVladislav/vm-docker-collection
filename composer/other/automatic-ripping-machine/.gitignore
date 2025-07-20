@@ -1,0 +1,14 @@
+*
+!.gitignore
+!.gitempty
+
+!.dockerignore
+!Dockerfile
+!docker-compose.yaml
+!docker-hwaccel.yaml
+
+!README.md
+
+!media/
+media/*
+!media/.gitempty
