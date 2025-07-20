@@ -22,7 +22,7 @@ x-basic-deploy: &basic-deploy
 x-basic: &basic
   cap_drop: ["ALL"]
   security_opt:
-    - no-new-privileges=true
+    - no-new-privileges:true
   ulimits:
     memlock:
       soft: -1

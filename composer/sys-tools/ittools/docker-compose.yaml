@@ -40,7 +40,7 @@ x-basic: &basic
     - SETUID
   cap_drop: ["ALL"]
   security_opt:
-    - no-new-privileges=true
+    - no-new-privileges:true
   ulimits:
     memlock:
       soft: -1

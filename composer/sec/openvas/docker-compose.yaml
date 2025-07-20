@@ -61,7 +61,7 @@ x-basic: &basic
   cap_add: ["ALL"]
   cap_drop: ["ALL"]
   security_opt:
-    - no-new-privileges=true
+    - no-new-privileges:true
   ulimits:
     memlock:
       soft: -1
@@ -193,7 +193,7 @@ services:
       - NET_ADMIN # for capturing packages in promiscuous mode
       - NET_RAW # for raw sockets e.g. used for the boreas alive detection
     security_opt:
-      - no-new-privileges=false
+      - no-new-privileges:false
       - seccomp=unconfined
       - apparmor=unconfined
     command:

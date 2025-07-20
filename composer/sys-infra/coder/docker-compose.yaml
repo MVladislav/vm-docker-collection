@@ -35,7 +35,7 @@ x-basic: &basic
   cap_add: ["ALL"]
   # cap_drop: ["ALL"]
   # security_opt:
-  #   - no-new-privileges=true
+  #   - no-new-privileges:true
   ulimits:
     memlock:
       soft: -1
