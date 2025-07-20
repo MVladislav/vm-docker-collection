@@ -30,3 +30,23 @@ services:
     environment:
       NVIDIA_VISIBLE_DEVICES: ${NVIDIA_VISIBLE_DEVICES:-all}
       NVIDIA_DRIVER_CAPABILITIES: ${NVIDIA_DRIVER_CAPABILITIES:-compute,utility,video}
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  hwaccel-extend:
+    cpuset: 2-15 # lscpu -ae
+    devices:
+      - /dev/kfd
+      - /dev/dri
+      - /dev/sr0:/dev/sr0
+      - /dev/dri/renderD128:/dev/dri/renderD128
+      - /dev/dri/card1:/dev/dri/card1
+    group_add:
+      - video
+      - render
+    environment:
+      ROCM_VISIBLE_DEVICES: ${ROCM_VISIBLE_DEVICES:-all}
