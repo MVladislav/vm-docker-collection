@@ -24,7 +24,7 @@
 ### create your `secrets`:
 
 ```sh
-$pwgen -s 32 1 > config/secrets/mongo_initdb_root_password.txt
+$echo "JWT_SECRET=$(openssl rand -base64 64 | tr -d '\n')" >> .env
 ```
 
 ### create `.env` file following:
@@ -41,6 +41,8 @@ LB_SWARM=true
 DOMAIN=check.home.local # not set in docker-compose, needs to be copied to .env
 PROTOCOL=http
 PORT=80
+PROTOCOL_SERVER=http
+PORT_SERVER=52345
 # default-secured@file | public-secured@file | authentik@file
 MIDDLEWARE_SECURED=default-secured@file
 
@@ -51,15 +53,26 @@ RESOURCES_LIMITS_MEMORY=1g
 RESOURCES_RESERVATIONS_CPUS=0.001
 RESOURCES_RESERVATIONS_MEMORY=32m
 
+RESOURCES_LIMITS_CPUS_VALKEY=1
+RESOURCES_LIMITS_MEMORY_VALKEY=512M
+RESOURCES_RESERVATIONS_CPUS_VALKEY=0.001
+RESOURCES_RESERVATIONS_MEMORY_VALKEY=32m
+
+RESOURCES_LIMITS_CPUS_MONGODB=1
+RESOURCES_LIMITS_MEMORY_MONGODB=512M
+RESOURCES_RESERVATIONS_CPUS_MONGODB=0.001
+RESOURCES_RESERVATIONS_MEMORY_MONGODB=32m
+
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_CHECKMATE=dist
+VERSION_CHECKMATE=v2.3.1
 VERSION_VALKEY=8.1.0-alpine
 VERSION_MONGODB=8.0.8
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
-# NOTE: extend additional info here ...
+JWT_SECRET=<SECRET>
+PAGESPEED_API_KEY=<https://developers.google.com/speed/docs/insights/v5/get-started>
 ```
 
 #### example short .env

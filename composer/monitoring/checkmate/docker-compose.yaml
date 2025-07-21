@@ -4,13 +4,26 @@ x-basic-deploy-labels: &basic-deploy-labels
     - traefik.enable=true
     - traefik.swarm.lbswarm=${LB_SWARM:-true}
     - traefik.swarm.network=proxy
-    - traefik.http.routers.uptime-client.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
-    - traefik.http.routers.uptime-client.rule=Host(`${DOMAIN?domain variable not set}`)
-    - traefik.http.routers.uptime-client.tls=true
-    - traefik.http.routers.uptime-client.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
-    - traefik.http.routers.uptime-client.service=uptime-client
-    - traefik.http.services.uptime-client.loadbalancer.server.scheme=${PROTOCOL:-http}
-    - traefik.http.services.uptime-client.loadbalancer.server.port=${PORT:-80}
+    - traefik.http.routers.checkmate-client.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.checkmate-client.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.checkmate-client.tls=true
+    - traefik.http.routers.checkmate-client.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.checkmate-client.service=checkmate-client
+    - traefik.http.services.checkmate-client.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.checkmate-client.loadbalancer.server.port=${PORT:-80}
+
+x-basic-deploy-server-labels: &basic-deploy-server-labels
+  labels:
+    - traefik.enable=true
+    - traefik.swarm.lbswarm=${LB_SWARM:-true}
+    - traefik.swarm.network=proxy
+    - traefik.http.routers.checkmate-server.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.checkmate-server.rule=Host(`${DOMAIN?domain variable not set}`) && PathPrefix(`/api/v1`)
+    - traefik.http.routers.checkmate-server.tls=true
+    - traefik.http.routers.checkmate-server.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.checkmate-server.service=checkmate-server
+    - traefik.http.services.checkmate-server.loadbalancer.server.scheme=${PROTOCOL_SERVER:-http}
+    - traefik.http.services.checkmate-server.loadbalancer.server.port=${PORT_SERVER:-52345}
 
 x-basic-deploy: &basic-deploy
   mode: replicated
@@ -26,22 +39,14 @@ x-basic-deploy: &basic-deploy
     condition: any
   resources:
     limits:
-      cpus: ${RESOURCES_LIMITS_CPUS:-1}
-      memory: ${RESOURCES_LIMITS_MEMORY:-1g}
+      cpus: ${RESOURCES_LIMITS_CPUS:-2}
+      memory: ${RESOURCES_LIMITS_MEMORY:-2g}
     reservations:
       cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
       memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
 
 x-basic: &basic
   env_file: ${ENV_FILE:-.env}
-  # cap_add:
-  #   - CHOWN # (chown, chmod)
-  #   - DAC_OVERRIDE
-  #   - DAC_READ_SEARCH
-  #   - SETGID # (setgid, setgroups)
-  #   - SETUID # (setuid)
-  #   - FOWNER # (chmod, chown, or chgrp)
-  #   - FSETID
   cap_drop: ["ALL"]
   security_opt:
     - no-new-privileges:true
@@ -67,49 +72,55 @@ services:
   ##############################################################################
   ##############################################################################
   ##############################################################################
-  frontend:
-    # https://github.com/bluewave-labs/Checkmate/pkgs/container/checkmate
-    image: ghcr.io/bluewave-labs/checkmate:frontend-${VERSION_CHECKMATE:-dist}
-    <<: [*basic, *basic-deploy-labels]
+  client:
+    # https://github.com/bluewave-labs/Checkmate/pkgs/container/checkmate-client
+    image: ghcr.io/bluewave-labs/checkmate-client:${VERSION_CHECKMATE:-v2.3.1}
+    <<:
+      - *basic
+      - *basic-deploy-labels
     deploy:
-      <<: [*basic-deploy, *basic-deploy-labels]
+      <<:
+        - *basic-deploy
+        - *basic-deploy-labels
     cap_add:
       - SETUID
       - SETGID
       - CHOWN
-    ports:
-      - 8443:443
-      - 8080:80
     environment:
-      # UPTIME_APP_API_BASE_URL: "http://uptime-server:5000/api/v1"
-      UPTIME_APP_API_BASE_URL: "https://${DOMAIN?domain variable not set}/api/v1"
-      # UPTIME_STATUS_PAGE_SUBDOMAIN_PREFIX: "https://${DOMAIN?domain variable not set}/"
-      UPTIME_APP_CLIENT_HOST: "https://${DOMAIN?domain variable not set}"
+      UPTIME_APP_CLIENT_HOST: https://${DOMAIN?domain variable not set}
+      UPTIME_APP_API_BASE_URL: https://${DOMAIN?domain variable not set}/api/v1
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
     networks:
-      default: {}
       proxy: {}
 
   server:
-    # https://github.com/bluewave-labs/Checkmate/pkgs/container/checkmate
-    image: ghcr.io/bluewave-labs/checkmate:backend-${VERSION_CHECKMATE:-dist}
-    <<: *basic
+    # https://github.com/bluewave-labs/Checkmate/pkgs/container/checkmate-backend
+    image: ghcr.io/bluewave-labs/checkmate-backend:${VERSION_CHECKMATE:-v2.3.1}
+    <<:
+      - *basic
+      - *basic-deploy-server-labels
     deploy:
-      <<: *basic-deploy
+      <<:
+        - *basic-deploy
+        - *basic-deploy-server-labels
+    ports:
+      - 52345:52345
     environment:
       CLIENT_HOST: https://${DOMAIN?domain variable not set}
-      DB_CONNECTION_STRING: mongodb://mongodb:27017/uptime_db
+      DB_CONNECTION_STRING: mongodb://mongodb:27017/uptime_db?replicaSet=rs0
       REDIS_HOST: valkey
       REDIS_PORT: 6379
       REDIS_URL: redis://valkey:6379
-      # JWT_SECRET: 09asz0cbasbv9as
-      # PAGESPEED_API_KEY: <https://developers.google.com/speed/docs/insights/v5/get-started>
+      ORIGIN: ${DOMAIN?domain variable not set}
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      default: {}
+      proxy: {}
 
   ##############################################################################
   ##############################################################################
@@ -154,19 +165,29 @@ services:
       resources:
         limits:
           cpus: ${RESOURCES_LIMITS_CPUS_MONGODB:-1}
-          memory: ${RESOURCES_LIMITS_MEMORY_MONGODB:-512M}
+          memory: ${RESOURCES_LIMITS_MEMORY_MONGODB:-2G}
         reservations:
           cpus: ${RESOURCES_RESERVATIONS_CPUS_MONGODB:-0.001}
           memory: ${RESOURCES_RESERVATIONS_MEMORY_MONGODB:-32m}
     cap_add:
+      - CHOWN
+      - FOWNER
+      - DAC_READ_SEARCH
+      - DAC_OVERRIDE
       - SETUID
       - SETGID
-      - CHOWN
-      - DAC_OVERRIDE
+    command: ["mongod", "--quiet", "--replSet", "rs0", "--bind_ip_all"]
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - mongodb:/data/db
+    healthcheck:
+      test: echo "try { rs.status() } catch (err) { rs.initiate({_id:'rs0',members:[{_id:0,host:'mongodb:27017'}]}) }" | mongosh --port 27017 --quiet
+      interval: 5s
+      timeout: 30s
+      start_period: 0s
+      start_interval: 1s
+      retries: 30
 
 ################################################################################
 ################################################################################
