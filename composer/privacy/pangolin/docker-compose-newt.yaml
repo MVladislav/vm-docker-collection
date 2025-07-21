@@ -1,0 +1,78 @@
+---
+x-basic-deploy: &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  update_config:
+    order: stop-first
+  restart_policy:
+    condition: any
+  resources:
+    limits:
+      cpus: ${RESOURCES_LIMITS_CPUS:-1}
+      memory: ${RESOURCES_LIMITS_MEMORY:-1g}
+    reservations:
+      cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
+      memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
+
+x-basic: &basic
+  env_file:
+    - ${ENV_FILE_NEWT:-.env}
+  cap_drop: ["ALL"]
+  security_opt:
+    - no-new-privileges:true
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 655360
+      hard: 655360
+    fsize: -1
+    as: -1
+  healthcheck:
+    disable: true
+  restart: always
+
+################################################################################
+################################################################################
+################################################################################
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  newt:
+    # https://hub.docker.com/r/fosrl/newt
+    image: fosrl/newt:${VERSION_NEWT:-latest}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+    # cap_add:
+    #   - NET_ADMIN
+    #   - SYS_MODULE
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      PANGOLIN_ENDPOINT: ${PANGOLIN_ENDPOINT?endpoint not set}
+      NEWT_ID: ${NEWT_ID?id not set}
+      NEWT_SECRET: ${NEWT_SECRET?secret not set}
+      DOCKER_SOCKET: /var/run/docker.sock
+    networks:
+      default: {}
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  default:
+    name: pangolin_newt
+    driver: ${NETWORK_MODE:-overlay}
+    attachable: true
+    driver_opts:
+      encrypted: "true"

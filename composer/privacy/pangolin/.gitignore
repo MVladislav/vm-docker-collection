@@ -3,6 +3,8 @@
 !.gitempty
 
 !docker-compose.yaml
+!docker-compose-newt.yaml
+!docker-compose-newt.override.yaml.tmpl
 
 !README.md
 
