@@ -1,0 +1,11 @@
+*
+!.gitignore
+!.gitempty
+
+!docker-compose.yaml
+
+!README.md
+
+!acme/
+acme/*
+!acme/.gitempty
