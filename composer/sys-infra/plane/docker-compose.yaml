@@ -1,0 +1,514 @@
+---
+x-basic-deploy-labels-space: &basic-deploy-labels-space
+  labels:
+    - traefik.enable=true
+    - traefik.swarm.lbswarm=${LB_SWARM:-true}
+    - traefik.swarm.network=proxy
+    - traefik.http.routers.plane-space.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.plane-space.rule=Host(`${DOMAIN?domain variable not set}`) && PathPrefix(`/spaces/`)
+    - traefik.http.routers.plane-space.tls=true
+    - traefik.http.routers.plane-space.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.plane-space.service=plane-space
+    - traefik.http.services.plane-space.loadbalancer.server.scheme=http
+    - traefik.http.services.plane-space.loadbalancer.server.port=3000
+
+x-basic-deploy-labels-admin: &basic-deploy-labels-admin
+  labels:
+    - traefik.enable=true
+    - traefik.swarm.lbswarm=${LB_SWARM:-true}
+    - traefik.swarm.network=proxy
+    - traefik.http.routers.plane-admin.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.plane-admin.rule=Host(`${DOMAIN?domain variable not set}`) && PathPrefix(`/god-mode/`)
+    - traefik.http.routers.plane-admin.tls=true
+    - traefik.http.routers.plane-admin.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.plane-admin.service=plane-admin
+    - traefik.http.services.plane-admin.loadbalancer.server.scheme=http
+    - traefik.http.services.plane-admin.loadbalancer.server.port=3000
+
+x-basic-deploy-labels-api: &basic-deploy-labels-api
+  labels:
+    - traefik.enable=true
+    - traefik.swarm.lbswarm=${LB_SWARM:-true}
+    - traefik.swarm.network=proxy
+    # API
+    - traefik.http.routers.plane-api.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.plane-api.rule=Host(`${DOMAIN?domain variable not set}`) && PathPrefix(`/api/`)
+    - traefik.http.routers.plane-api.tls=true
+    - traefik.http.routers.plane-api.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.plane-api.service=plane-api
+    - traefik.http.services.plane-api.loadbalancer.server.scheme=http
+    - traefik.http.services.plane-api.loadbalancer.server.port=8000
+    # AUTH
+    - traefik.http.routers.plane-api-auth.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.plane-api-auth.rule=Host(`${DOMAIN?domain variable not set}`) && PathPrefix(`/auth/`)
+    - traefik.http.routers.plane-api-auth.tls=true
+    - traefik.http.routers.plane-api-auth.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.plane-api-auth.service=plane-api-auth
+    - traefik.http.services.plane-api-auth.loadbalancer.server.scheme=http
+    - traefik.http.services.plane-api-auth.loadbalancer.server.port=8000
+
+x-basic-deploy-labels-minio: &basic-deploy-labels-minio
+  labels:
+    - traefik.enable=true
+    - traefik.swarm.lbswarm=${LB_SWARM:-true}
+    - traefik.swarm.network=proxy
+    - traefik.http.routers.plane-minio.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.plane-minio.rule=Host(`${DOMAIN?domain variable not set}`) && PathPrefix(`/${AWS_S3_BUCKET_NAME:-uploads}`)
+    - traefik.http.routers.plane-minio.tls=true
+    - traefik.http.routers.plane-minio.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.plane-minio.service=plane-minio
+    - traefik.http.services.plane-minio.loadbalancer.server.scheme=http
+    - traefik.http.services.plane-minio.loadbalancer.server.port=9000
+
+x-basic-deploy-labels-web: &basic-deploy-labels-web
+  labels:
+    - traefik.enable=true
+    - traefik.swarm.lbswarm=${LB_SWARM:-true}
+    - traefik.swarm.network=proxy
+    - traefik.http.routers.plane-web.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.plane-web.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.plane-web.tls=true
+    - traefik.http.routers.plane-web.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.plane-web.service=plane-web
+    - traefik.http.services.plane-web.loadbalancer.server.scheme=http
+    - traefik.http.services.plane-web.loadbalancer.server.port=3000
+
+x-basic-deploy: &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  update_config:
+    order: stop-first
+  restart_policy:
+    condition: any
+  resources:
+    limits:
+      cpus: ${RESOURCES_LIMITS_CPUS:-1}
+      memory: ${RESOURCES_LIMITS_MEMORY:-1g}
+    reservations:
+      cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
+      memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
+
+x-basic: &basic
+  env_file: ${ENV_FILE:-.env}
+  cap_drop: ["ALL"]
+  security_opt:
+    - no-new-privileges:true
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 655360
+      hard: 655360
+    fsize: -1
+    as: -1
+  networks:
+    default: {}
+  healthcheck:
+    disable: true
+  restart: always
+
+################################################################################
+################################################################################
+################################################################################
+x-base-env: &base-env
+  TZ: "Europe/Berlin"
+
+x-pg-env: &pg-env
+  POSTGRES_DB: ${POSTGRES_DB:-plane}
+  POSTGRES_USER: ${POSTGRES_USER:-plane}
+  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD?Postgres password not set}
+  POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+  PGDATA: /var/lib/postgresql/data
+  PGHOST: plane-db
+  PGDATABASE: ${POSTGRES_DB:-plane}
+
+x-mq-env: &mq-env
+  RABBITMQ_HOST: plane-mq
+  RABBITMQ_PORT: 5672
+  RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-plane}
+  RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS?RabbitMQ default password not set}
+  RABBITMQ_DEFAULT_VHOST: ${RABBITMQ_VHOST:-plane}
+  RABBITMQ_VHOST: ${RABBITMQ_VHOST:-plane}
+
+x-redis-env: &redis-env
+  REDIS_HOST: plane-redis
+  REDIS_PORT: 6379
+  REDIS_URL: redis://plane-redis:6379/
+
+x-minio-env: &minio-env
+  MINIO_ROOT_USER: ${AWS_ACCESS_KEY_ID:-access-key}
+  MINIO_ROOT_PASSWORD: ${AWS_SECRET_ACCESS_KEY?Minio root password not set}
+
+x-aws-s3-env: &aws-s3-env
+  AWS_REGION: ${AWS_REGION:-}
+  AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-access-key}
+  AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY?Minio root password not set}
+  AWS_S3_ENDPOINT_URL: http://plane-minio:9000
+  AWS_S3_BUCKET_NAME: ${AWS_S3_BUCKET_NAME:-uploads}
+
+x-live-env: &live-env
+  API_BASE_URL: http://api:8000
+
+x-web-env: &web-env
+  HOSTNAME: 0.0.0.0
+  WEB_URL: ${DOMAIN_PROTO:-https}://${DOMAIN?domain variable not set}
+  CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-${DOMAIN_PROTO:-https}://${DOMAIN?domain variable not set}}
+
+x-app-env: &app-env
+  DEBUG: ${DEBUG:-0}
+  GUNICORN_WORKERS: ${GUNICORN_WORKERS:-1}
+
+  USE_MINIO: ${USE_MINIO:-1}
+  DATABASE_URL: postgresql://${POSTGRES_USER:-plane}:${POSTGRES_PASSWORD?Postgres password not set}@plane-db/${POSTGRES_DB:-plane}
+  SECRET_KEY: ${SECRET_KEY?Secret key not set}
+  AMQP_URL: amqp://${RABBITMQ_USER:-plane}:${RABBITMQ_DEFAULT_PASS?RabbitMQ default password not set}@plane-mq:5672/plane
+  API_KEY_RATE_LIMIT: ${API_KEY_RATE_LIMIT:-60/minute}
+  MINIO_ENDPOINT_SSL: ${MINIO_ENDPOINT_SSL:-0}
+
+  FILE_SIZE_LIMIT: ${FILE_SIZE_LIMIT:-5242880}
+  BUCKET_NAME: ${AWS_S3_BUCKET_NAME:-uploads}
+
+################################################################################
+################################################################################
+################################################################################
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  web:
+    image: makeplane/plane-frontend:${VERSION_PLANE:-v0.27.1}
+    <<:
+      - *basic
+      - *basic-deploy-labels-web
+    deploy:
+      <<:
+        - *basic-deploy
+        - *basic-deploy-labels-web
+      replicas: ${WEB_REPLICAS:-1}
+    environment:
+      <<: *web-env
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    command: node web/server.js web
+    networks:
+      default: {}
+      proxy: {}
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget --no-verbose --tries=1 --spider --no-check-certificate http://127.0.0.1:3000 || exit 1",
+        ]
+      start_period: 10s
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  api:
+    image: makeplane/plane-backend:${VERSION_PLANE:-v0.27.1}
+    <<:
+      - *basic
+      - *basic-deploy-labels-api
+    deploy:
+      <<:
+        - *basic-deploy
+        - *basic-deploy-labels-api
+      replicas: ${API_REPLICAS:-1}
+    environment:
+      <<: [*web-env, *app-env, *pg-env, *redis-env, *minio-env, *aws-s3-env]
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - api_logs:/code/plane/logs
+    command: ./bin/docker-entrypoint-api.sh
+    networks:
+      default: {}
+      proxy: {}
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget --no-verbose --tries=1 --spider --no-check-certificate http://127.0.0.1:8000 || exit 1",
+        ]
+      start_period: 10s
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  admin:
+    image: makeplane/plane-admin:${VERSION_PLANE:-v0.27.1}
+    <<:
+      - *basic
+      - *basic-deploy-labels-admin
+    deploy:
+      <<:
+        - *basic-deploy
+        - *basic-deploy-labels-admin
+      replicas: ${ADMIN_REPLICAS:-1}
+    environment:
+      <<: *web-env
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    command: node admin/server.js admin
+    networks:
+      default: {}
+      proxy: {}
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget --no-verbose --tries=1 --spider --no-check-certificate http://127.0.0.1:3000/god-mode/ || exit 1",
+        ]
+      start_period: 10s
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  space:
+    image: makeplane/plane-space:${VERSION_PLANE:-v0.27.1}
+    <<:
+      - *basic
+      - *basic-deploy-labels-space
+    deploy:
+      <<:
+        - *basic-deploy
+        - *basic-deploy-labels-space
+      replicas: ${SPACE_REPLICAS:-1}
+    environment:
+      <<: *web-env
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    command: node space/server.js space
+    networks:
+      default: {}
+      proxy: {}
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget --no-verbose --tries=1 --spider --no-check-certificate http://127.0.0.1:3000/spaces/ || exit 1",
+        ]
+      start_period: 10s
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  live:
+    image: makeplane/plane-live:${VERSION_PLANE:-v0.27.1}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+      replicas: ${LIVE_REPLICAS:-1}
+    environment:
+      <<: [*live-env, *redis-env]
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    command: node live/dist/server.js live
+
+  worker:
+    image: makeplane/plane-backend:${VERSION_PLANE:-v0.27.1}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_WORKER:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_WORKER:-2g}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_WORKER:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_WORKER:-32m}
+      replicas: ${WORKER_REPLICAS:-1}
+    environment:
+      <<: [*app-env, *pg-env, *redis-env, *minio-env, *aws-s3-env]
+      GUNICORN_WORKERS: ${GUNICORN_WORKERS_WORKER:-1}
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - worker_logs:/code/plane/logs
+    command: ./bin/docker-entrypoint-worker.sh
+
+  beat-worker:
+    image: makeplane/plane-backend:${VERSION_PLANE:-v0.27.1}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+      replicas: ${BEAT_WORKER_REPLICAS:-1}
+    environment:
+      <<: [*app-env, *pg-env, *redis-env, *minio-env, *aws-s3-env]
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - beat_worker_logs:/code/plane/logs
+    command: ./bin/docker-entrypoint-beat.sh
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  migrator:
+    image: makeplane/plane-backend:${VERSION_PLANE:-v0.27.1}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+      restart_policy:
+        condition: on-failure
+    environment:
+      <<: [*app-env, *pg-env, *redis-env, *minio-env, *aws-s3-env]
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - migrator_logs:/code/plane/logs
+    command: ./bin/docker-entrypoint-migrator.sh
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  plane-db:
+    # https://hub.docker.com/_/postgres
+    image: postgres:${VERSION_POSTGRESQL:-17.5-alpine}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_POSTGRESQL:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_POSTGRESQL:-2g}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_POSTGRESQL:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_POSTGRESQL:-32m}
+    cap_add:
+      - CHOWN
+      - FOWNER
+      - DAC_READ_SEARCH
+      - SETUID
+      - SETGID
+    environment:
+      <<: [*pg-env, *base-env]
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - pgdata:/var/lib/postgresql/data
+    # healthcheck:
+    #   test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
+    #   start_period: 2s
+    #   interval: 5s
+    #   timeout: 3s
+    #   retries: 5
+
+  plane-mq:
+    # https://hub.docker.com/_/rabbitmq
+    image: rabbitmq:${VERSION_RABBITMQ:-4.1.2-management-alpine}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_RABBITMQ:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_RABBITMQ:-1g}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_RABBITMQ:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_RABBITMQ:-32m}
+    cap_add:
+      - SETGID # Allows setting group ID (`setgid`,`newgrp`,`chgrp`,`setregid()`)
+      - SETUID # Allows setting user ID (`setuid`,`su`,`sudo`,`passwd`)
+    environment:
+      <<: [*mq-env, *base-env]
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - rabbitmq_data:/var/lib/rabbitmq
+
+  plane-redis:
+    # https://hub.docker.com/r/valkey/valkey
+    image: valkey/valkey:${VERSION_VALKEY:-8.1.3-alpine}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_VALKEY:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_VALKEY:-256M}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_VALKEY:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_VALKEY:-32m}
+    cap_add:
+      - SETGID
+      - SETUID
+    environment:
+      <<: [*redis-env, *base-env]
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - valkey:/data
+    command: --save 300 1 --loglevel warning
+    healthcheck:
+      test: ["CMD-SHELL", "valkey-cli ping | grep PONG"]
+      start_period: 2s
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  plane-minio:
+    # https://hub.docker.com/r/minio/minio
+    image: minio/minio:${VERSION_MINIO:-RELEASE.2025-07-18T21-56-31Z-cpuv1}
+    <<:
+      - *basic
+      - *basic-deploy-labels-minio
+    deploy:
+      <<:
+        - *basic-deploy
+        - *basic-deploy-labels-minio
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_MINIO:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_MINIO:-1G}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_MINIO:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_MINIO:-32m}
+    environment:
+      <<: [*minio-env, *base-env]
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - uploads:/export
+    command: server /export --console-address ":9090"
+    networks:
+      default: {}
+      proxy: {}
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      start_period: 2s
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  default:
+    driver: ${NETWORK_MODE:-overlay}
+    attachable: true
+    driver_opts:
+      encrypted: "true"
+  proxy:
+    external: true
+
+volumes:
+  uploads: {}
+  rabbitmq_data: {}
+  valkey: {}
+  pgdata: {}
+  migrator_logs: {}
+  beat_worker_logs: {}
+  worker_logs: {}
+  api_logs: {}
