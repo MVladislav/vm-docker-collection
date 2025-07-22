@@ -43,13 +43,13 @@ x-basic: &basic
   # tty: true # docker run -t
   # cap_add:
   #   # https://dockerlabs.collabnix.com/advanced/security/capabilities/
-  #   - CHOWN # (chown, chmod)
-  #   - DAC_OVERRIDE
-  #   - DAC_READ_SEARCH
-  #   - SETGID # (setgid, setgroups)
-  #   - SETUID # (setuid)
-  #   - FOWNER # (chmod, chown, or chgrp)
-  #   - FSETID
+  #   - CHOWN # Allows changing file ownership (`chown`,`chgrp`)
+  #   - FOWNER # Overrides file ownership checks (`chmod`,`kill`)
+  #   - DAC_READ_SEARCH # Bypasses file read and directory execute permissions (`ls`,`cat`,`find`)
+  #   - DAC_OVERRIDE # Bypasses file read/write/execute permission checks (`cat`,`touch`,`rm`)
+  #   - SETGID # Allows setting group ID (`setgid`,`newgrp`,`chgrp`,`setregid()`)
+  #   - SETUID # Allows setting user ID (`setuid`,`su`,`sudo`,`passwd`)
+  #   - FSETID # Allows setting file SUID/SGID bits (`chmod u+s`,`chmod g+s`)
   #   # --------------------------
   #   - NET_ADMIN
   #   - NET_RAW
@@ -85,7 +85,7 @@ x-basic: &basic
   #   - BLOCK_SUSPEND
   # cap_drop: ["ALL"]
   # security_opt:
-  #   - no-new-privileges=true
+  #   - no-new-privileges:true
   #   # - seccomp=unconfined
   #   # - apparmor=unconfined
   #   # - label=disable

@@ -118,10 +118,11 @@ services:
           cpus: ${RESOURCES_RESERVATIONS_CPUS_POSTGRESQL:-0.001}
           memory: ${RESOURCES_RESERVATIONS_MEMORY_POSTGRESQL:-32m}
     cap_add:
+      - CHOWN
+      - FOWNER
+      - DAC_READ_SEARCH
       - SETUID
       - SETGID
-      - FOWNER
-      - DAC_OVERRIDE
     secrets:
       - postgres_password_file
     environment:
@@ -331,14 +332,17 @@ services:
       resources:
         limits:
           cpus: ${RESOURCES_LIMITS_CPUS_MONGODB:-1}
-          memory: ${RESOURCES_LIMITS_MEMORY_MONGODB:-512m}
+          memory: ${RESOURCES_LIMITS_MEMORY_MONGODB:-1g}
         reservations:
           cpus: ${RESOURCES_RESERVATIONS_CPUS_MONGODB:-0.001}
           memory: ${RESOURCES_RESERVATIONS_MEMORY_MONGODB:-32m}
     cap_add:
+      - CHOWN
+      - FOWNER
+      - DAC_READ_SEARCH
+      - DAC_OVERRIDE
       - SETUID
       - SETGID
-      - CHOWN
     # ports:
     #   - target: ${PORT_MONGODB:-27017}
     #     published: ${PORT_MONGODB_PUBLISH:-27017}
