@@ -119,7 +119,7 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION=v3.4.1
+VERSION=v3.4.4
 ```
 
 #### example short .env
