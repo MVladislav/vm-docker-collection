@@ -79,3 +79,10 @@ DOMAIN=plane.home.local
 - <https://developers.plane.so/self-hosting/methods/docker-swarm>
 - <https://github.com/orgs/makeplane/discussions/3432>
 - <https://github.com/makeplane/plane/issues/7310>
+- files
+  - <https://prime.plane.so/releases/v1.8.3/swarm-compose.yml>
+  - <https://prime.plane.so/releases/v1.8.3/variables.env>
+  - <https://github.com/makeplane/plane/releases/latest/download/setup.sh>
+  - <https://github.com/makeplane/plane/releases/download/v0.27.1/docker-compose.yml>
+  - <https://github.com/makeplane/plane/releases/download/v0.27.1/swarm.sh>
+  - <https://github.com/makeplane/plane/releases/download/v0.27.1/variables.env>

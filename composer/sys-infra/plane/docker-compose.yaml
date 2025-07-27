@@ -1,29 +1,16 @@
 ---
-x-basic-deploy-labels-space: &basic-deploy-labels-space
+x-basic-deploy-labels-web: &basic-deploy-labels-web
   labels:
     - traefik.enable=true
     - traefik.swarm.lbswarm=${LB_SWARM:-true}
     - traefik.swarm.network=proxy
-    - traefik.http.routers.plane-space.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
-    - traefik.http.routers.plane-space.rule=Host(`${DOMAIN?domain variable not set}`) && PathPrefix(`/spaces/`)
-    - traefik.http.routers.plane-space.tls=true
-    - traefik.http.routers.plane-space.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
-    - traefik.http.routers.plane-space.service=plane-space
-    - traefik.http.services.plane-space.loadbalancer.server.scheme=http
-    - traefik.http.services.plane-space.loadbalancer.server.port=3000
-
-x-basic-deploy-labels-admin: &basic-deploy-labels-admin
-  labels:
-    - traefik.enable=true
-    - traefik.swarm.lbswarm=${LB_SWARM:-true}
-    - traefik.swarm.network=proxy
-    - traefik.http.routers.plane-admin.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
-    - traefik.http.routers.plane-admin.rule=Host(`${DOMAIN?domain variable not set}`) && PathPrefix(`/god-mode/`)
-    - traefik.http.routers.plane-admin.tls=true
-    - traefik.http.routers.plane-admin.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
-    - traefik.http.routers.plane-admin.service=plane-admin
-    - traefik.http.services.plane-admin.loadbalancer.server.scheme=http
-    - traefik.http.services.plane-admin.loadbalancer.server.port=3000
+    - traefik.http.routers.plane-web.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.plane-web.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.plane-web.tls=true
+    - traefik.http.routers.plane-web.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.plane-web.service=plane-web
+    - traefik.http.services.plane-web.loadbalancer.server.scheme=http
+    - traefik.http.services.plane-web.loadbalancer.server.port=3000
 
 x-basic-deploy-labels-api: &basic-deploy-labels-api
   labels:
@@ -47,6 +34,45 @@ x-basic-deploy-labels-api: &basic-deploy-labels-api
     - traefik.http.services.plane-api-auth.loadbalancer.server.scheme=http
     - traefik.http.services.plane-api-auth.loadbalancer.server.port=8000
 
+x-basic-deploy-labels-admin: &basic-deploy-labels-admin
+  labels:
+    - traefik.enable=true
+    - traefik.swarm.lbswarm=${LB_SWARM:-true}
+    - traefik.swarm.network=proxy
+    - traefik.http.routers.plane-admin.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.plane-admin.rule=Host(`${DOMAIN?domain variable not set}`) && PathPrefix(`/god-mode/`)
+    - traefik.http.routers.plane-admin.tls=true
+    - traefik.http.routers.plane-admin.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.plane-admin.service=plane-admin
+    - traefik.http.services.plane-admin.loadbalancer.server.scheme=http
+    - traefik.http.services.plane-admin.loadbalancer.server.port=3000
+
+x-basic-deploy-labels-space: &basic-deploy-labels-space
+  labels:
+    - traefik.enable=true
+    - traefik.swarm.lbswarm=${LB_SWARM:-true}
+    - traefik.swarm.network=proxy
+    - traefik.http.routers.plane-space.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.plane-space.rule=Host(`${DOMAIN?domain variable not set}`) && PathPrefix(`/spaces/`)
+    - traefik.http.routers.plane-space.tls=true
+    - traefik.http.routers.plane-space.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.plane-space.service=plane-space
+    - traefik.http.services.plane-space.loadbalancer.server.scheme=http
+    - traefik.http.services.plane-space.loadbalancer.server.port=3000
+
+x-basic-deploy-labels-live: &basic-deploy-labels-live
+  labels:
+    - traefik.enable=true
+    - traefik.swarm.lbswarm=${LB_SWARM:-true}
+    - traefik.swarm.network=proxy
+    - traefik.http.routers.plane-live.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.plane-live.rule=Host(`${DOMAIN?domain variable not set}`) && PathPrefix(`/live/`)
+    - traefik.http.routers.plane-live.tls=true
+    - traefik.http.routers.plane-live.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.plane-live.service=plane-live
+    - traefik.http.services.plane-live.loadbalancer.server.scheme=http
+    - traefik.http.services.plane-live.loadbalancer.server.port=3000
+
 x-basic-deploy-labels-minio: &basic-deploy-labels-minio
   labels:
     - traefik.enable=true
@@ -59,19 +85,6 @@ x-basic-deploy-labels-minio: &basic-deploy-labels-minio
     - traefik.http.routers.plane-minio.service=plane-minio
     - traefik.http.services.plane-minio.loadbalancer.server.scheme=http
     - traefik.http.services.plane-minio.loadbalancer.server.port=9000
-
-x-basic-deploy-labels-web: &basic-deploy-labels-web
-  labels:
-    - traefik.enable=true
-    - traefik.swarm.lbswarm=${LB_SWARM:-true}
-    - traefik.swarm.network=proxy
-    - traefik.http.routers.plane-web.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
-    - traefik.http.routers.plane-web.rule=Host(`${DOMAIN?domain variable not set}`)
-    - traefik.http.routers.plane-web.tls=true
-    - traefik.http.routers.plane-web.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
-    - traefik.http.routers.plane-web.service=plane-web
-    - traefik.http.services.plane-web.loadbalancer.server.scheme=http
-    - traefik.http.services.plane-web.loadbalancer.server.port=3000
 
 x-basic-deploy: &basic-deploy
   mode: replicated
@@ -154,6 +167,7 @@ x-aws-s3-env: &aws-s3-env
 
 x-live-env: &live-env
   API_BASE_URL: http://api:8000
+  LIVE_BASE_PATH: /live
 
 x-web-env: &web-env
   HOSTNAME: 0.0.0.0
@@ -182,6 +196,7 @@ services:
   ##############################################################################
   ##############################################################################
   web:
+    # https://hub.docker.com/r/makeplane/plane-frontend
     image: makeplane/plane-frontend:${VERSION_PLANE:-v0.27.1}
     <<:
       - *basic
@@ -212,6 +227,7 @@ services:
       retries: 10
 
   api:
+    # https://hub.docker.com/r/makeplane/plane-backend
     image: makeplane/plane-backend:${VERSION_PLANE:-v0.27.1}
     <<:
       - *basic
@@ -243,6 +259,7 @@ services:
       retries: 10
 
   admin:
+    # https://hub.docker.com/r/makeplane/plane-admin
     image: makeplane/plane-admin:${VERSION_PLANE:-v0.27.1}
     <<:
       - *basic
@@ -273,6 +290,7 @@ services:
       retries: 10
 
   space:
+    # https://hub.docker.com/r/makeplane/plane-space
     image: makeplane/plane-space:${VERSION_PLANE:-v0.27.1}
     <<:
       - *basic
@@ -303,19 +321,38 @@ services:
       retries: 10
 
   live:
+    # https://hub.docker.com/r/makeplane/plane-live
     image: makeplane/plane-live:${VERSION_PLANE:-v0.27.1}
-    <<: *basic
+    <<:
+      - *basic
+      - *basic-deploy-labels-live
     deploy:
-      <<: *basic-deploy
+      <<:
+        - *basic-deploy
+        - *basic-deploy-labels-live
       replicas: ${LIVE_REPLICAS:-1}
     environment:
-      <<: [*live-env, *redis-env]
+      <<: [*web-env, *live-env, *redis-env]
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
     command: node live/dist/server.js live
+    networks:
+      default: {}
+      proxy: {}
+    # healthcheck:
+    #   test:
+    #     [
+    #       "CMD-SHELL",
+    #       "wget --no-verbose --tries=1 --spider --no-check-certificate http://127.0.0.1:3000/live/ || exit 1",
+    #     ]
+    #   start_period: 10s
+    #   interval: 10s
+    #   timeout: 3s
+    #   retries: 10
 
   worker:
+    # https://hub.docker.com/r/makeplane/plane-backend
     image: makeplane/plane-backend:${VERSION_PLANE:-v0.27.1}
     <<: *basic
     deploy:
@@ -338,6 +375,7 @@ services:
     command: ./bin/docker-entrypoint-worker.sh
 
   beat-worker:
+    # https://hub.docker.com/r/makeplane/plane-backend
     image: makeplane/plane-backend:${VERSION_PLANE:-v0.27.1}
     <<: *basic
     deploy:
@@ -355,6 +393,7 @@ services:
   ##############################################################################
   ##############################################################################
   migrator:
+    # https://hub.docker.com/r/makeplane/plane-backend
     image: makeplane/plane-backend:${VERSION_PLANE:-v0.27.1}
     <<: *basic
     deploy:
