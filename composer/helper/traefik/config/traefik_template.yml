@@ -39,6 +39,7 @@ entryPoints:
           permanent: true
   https:
     address: :443
+    http3: {}
     # http:
     #   middlewares:
     #     - default-secured@file
@@ -246,7 +247,9 @@ serversTransport:
 #
 #       # dnsChallenge: # dns-challange
 #       #   provider: "cloudflare"
-#       #   delayBeforeCheck: 0
+#       #   propagation:
+#       #     delayBeforeChecks: 0
+#       #     # disableChecks: true
 #       #   resolvers:
 #       #     - "1.1.1.1:53"
 #       #     - "1.0.0.1:53"

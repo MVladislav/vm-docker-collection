@@ -112,8 +112,8 @@ MIDDLEWARE_SECURED=default-secured@file
 
 # GENERAL sources to be used (set by default, change as needed)
 # ______________________________________________________________________________
-RESOURCES_LIMITS_CPUS=0.5
-RESOURCES_LIMITS_MEMORY=100M
+RESOURCES_LIMITS_CPUS=1
+RESOURCES_LIMITS_MEMORY=256m
 RESOURCES_RESERVATIONS_CPUS=0.001
 RESOURCES_RESERVATIONS_MEMORY=32m
 

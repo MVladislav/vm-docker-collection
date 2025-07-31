@@ -40,7 +40,6 @@ http:
         customFrameOptionsValue: SAMEORIGIN
         customRequestHeaders:
           X-Forwarded-Proto: https
-          # X-Real-IP: "{{ .RemoteAddr }}"
 
     # # https://github.com/goauthentik/authentik/issues/2366
     # authentik:
