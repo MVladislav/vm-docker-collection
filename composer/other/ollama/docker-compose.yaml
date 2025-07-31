@@ -2,8 +2,8 @@
 x-basic-deploy-labels: &basic-deploy-labels
   labels:
     - traefik.enable=true
-    - traefik.docker.lbswarm=${LB_SWARM:-true}
-    - traefik.docker.network=proxy
+    - traefik.swarm.lbswarm=${LB_SWARM:-true}
+    - traefik.swarm.network=proxy
     - traefik.http.routers.webui.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
     - traefik.http.routers.webui.rule=Host(`${DOMAIN_WEBUI?domain variable not set}`)
     - traefik.http.routers.webui.tls=true
@@ -15,8 +15,8 @@ x-basic-deploy-labels: &basic-deploy-labels
 x-basic-deploy-labels-ollama: &basic-deploy-labels-ollama
   labels:
     - traefik.enable=true
-    - traefik.docker.lbswarm=${LB_SWARM:-true}
-    - traefik.docker.network=proxy
+    - traefik.swarm.lbswarm=${LB_SWARM:-true}
+    - traefik.swarm.network=proxy
     - traefik.http.routers.ollama.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
     - traefik.http.routers.ollama.rule=Host(`${DOMAIN_OLLAMA?domain variable not set}`)
     - traefik.http.routers.ollama.tls=true

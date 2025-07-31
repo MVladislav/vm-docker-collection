@@ -2,8 +2,8 @@
 x-basic-deploy-labels: &basic-deploy-labels
   labels:
     - traefik.enable=true
-    - traefik.docker.lbswarm=${LB_SWARM:-true}
-    - traefik.docker.network=proxy
+    - traefik.swarm.lbswarm=${LB_SWARM:-true}
+    - traefik.swarm.network=proxy
     - traefik.http.routers.netmaker-ui.entrypoints=https
     - traefik.http.routers.netmaker-ui.rule=Host(`dashboard.${DOMAIN?domain variable not set}`)
 
@@ -22,8 +22,8 @@ x-basic-deploy-labels: &basic-deploy-labels
 x-basic-deploy-labels-api: &basic-deploy-labels-api
   labels:
     - traefik.enable=true
-    - traefik.docker.lbswarm=${LB_SWARM:-true}
-    - traefik.docker.network=proxy
+    - traefik.swarm.lbswarm=${LB_SWARM:-true}
+    - traefik.swarm.network=proxy
     - traefik.http.routers.netmaker-api.entrypoints=https
     - traefik.http.routers.netmaker-api.rule=Host(`api.${DOMAIN?domain variable not set}`)
     - traefik.http.routers.netmaker-api.service=netmaker-api
@@ -33,8 +33,8 @@ x-basic-deploy-labels-api: &basic-deploy-labels-api
 x-basic-deploy-labels-mq: &basic-deploy-labels-mq
   labels:
     - traefik.enable=true
-    - traefik.docker.lbswarm=${LB_SWARM:-true}
-    - traefik.docker.network=proxy
+    - traefik.swarm.lbswarm=${LB_SWARM:-true}
+    - traefik.swarm.network=proxy
     - traefik.tcp.routers.mqtt.entrypoints=https
     - traefik.tcp.routers.mqtt.rule=HostSNI(`broker.${DOMAIN?domain variable not set}`)
     - traefik.tcp.services.mqtt.loadbalancer.server.scheme=${PROTOCOL_MQTT:-http}

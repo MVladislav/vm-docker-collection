@@ -31,8 +31,8 @@ services:
         condition: on-failure
       labels:
         - traefik.enable=true
-        - traefik.docker.lbswarm=true
-        - traefik.docker.network=proxy
+        - traefik.swarm.lbswarm=true
+        - traefik.swarm.network=proxy
         - traefik.http.routers.thehive4.entrypoints=https
         - traefik.http.routers.thehive4.rule=Host(`${DOMAIN?domain variable not set}`)
         - traefik.http.routers.thehive4.tls=true

@@ -136,8 +136,8 @@ DOMAIN=traefik.home.local
 ```yml
 labels:
   - traefik.enable=true
-  - traefik.docker.lbswarm=true
-  - traefik.docker.network=proxy
+  - traefik.swarm.lbswarm=true
+  - traefik.swarm.network=proxy
   - traefik.http.routers.<router_name>.entrypoints=https
   - traefik.http.routers.<router_name>.rule=Host(`${DOMAIN?domain variable not set}`)
   - traefik.http.routers.<router_name>.tls=true

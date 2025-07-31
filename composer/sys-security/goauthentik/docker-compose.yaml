@@ -2,8 +2,8 @@
 x-basic-deploy-labels: &basic-deploy-labels
   labels:
     - traefik.enable=true
-    - traefik.docker.lbswarm=${LB_SWARM:-true}
-    - traefik.docker.network=proxy
+    - traefik.swarm.lbswarm=${LB_SWARM:-true}
+    - traefik.swarm.network=proxy
     - traefik.http.routers.authentik.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
     - traefik.http.routers.authentik.rule=Host(`${DOMAIN?domain variable not set}`)
     - traefik.http.routers.authentik.tls=true
@@ -17,8 +17,8 @@ x-basic-deploy-labels: &basic-deploy-labels
 # x-ldap-deploy-labels: &ldap-deploy-labels
 #   labels:
 #     - traefik.enable=true
-#     - traefik.docker.lbswarm=${LB_SWARM:-true}
-#     - traefik.docker.network=proxy
+#     - traefik.swarm.lbswarm=${LB_SWARM:-true}
+#     - traefik.swarm.network=proxy
 #     - traefik.tcp.routers.authentik-ldap.entrypoints=${TRAEFIK_ENTRYPOINT_LDAP:-ldap}
 #     - traefik.tcp.routers.authentik-ldap.rule=HostSNI(`${DOMAIN?domain variable not set}`)
 #     - traefik.tcp.routers.authentik-ldap.tls=true

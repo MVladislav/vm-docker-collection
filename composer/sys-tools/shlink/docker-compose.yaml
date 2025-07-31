@@ -28,8 +28,8 @@ services:
         condition: on-failure
       labels:
         - traefik.enable=true
-        - traefik.docker.lbswarm=${LB_SWARM:-true}
-        - traefik.docker.network=proxy
+        - traefik.swarm.lbswarm=${LB_SWARM:-true}
+        - traefik.swarm.network=proxy
         - traefik.http.routers.shlink-short.entrypoints=https
         - traefik.http.routers.shlink-short.rule=Host(`${DOMAIN_SHORT?domain variable not set}`)
         - traefik.http.routers.shlink-short.tls=true
@@ -89,8 +89,8 @@ services:
         condition: on-failure
       labels:
         - traefik.enable=true
-        - traefik.docker.lbswarm=${LB_SWARM:-true}
-        - traefik.docker.network=proxy
+        - traefik.swarm.lbswarm=${LB_SWARM:-true}
+        - traefik.swarm.network=proxy
         - traefik.http.routers.shlink-web.entrypoints=https
         - traefik.http.routers.shlink-web.rule=Host(`${DOMAIN?domain variable not set}`)
         - traefik.http.routers.shlink-web.tls=true

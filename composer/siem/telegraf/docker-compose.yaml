@@ -27,8 +27,8 @@ services:
         condition: on-failure
       labels:
         - traefik.enable=true
-        - traefik.docker.lbswarm=${LB_SWARM:-true}
-        - traefik.docker.network=proxy
+        - traefik.swarm.lbswarm=${LB_SWARM:-true}
+        - traefik.swarm.network=proxy
         - traefik.http.routers.telegraf.entrypoints=https
         - traefik.http.routers.telegraf.rule=Host(`${DOMAIN?domain variable not set}`)
         - traefik.http.routers.telegraf.tls=true

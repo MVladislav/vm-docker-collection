@@ -2,8 +2,8 @@
 x-basic-deploy-labels: &basic-deploy-labels
   labels:
     - traefik.enable=true
-    - traefik.docker.lbswarm=${LB_SWARM:-false}
-    - traefik.docker.network=proxy
+    - traefik.swarm.lbswarm=${LB_SWARM:-false}
+    - traefik.swarm.network=proxy
     - traefik.http.routers.openvas.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
     - traefik.http.routers.openvas.rule=Host(`${DOMAIN?domain variable not set}`)
     - traefik.http.routers.openvas.tls=true
