@@ -2,8 +2,6 @@
 x-basic-deploy-labels: &basic-deploy-labels
   labels:
     - traefik.enable=true
-    # - traefik.docker.lbswarm=${LB_SWARM:-true}
-    # - traefik.docker.network=proxy
     - traefik.swarm.lbswarm=${LB_SWARM:-true}
     - traefik.swarm.network=proxy
     - traefik.http.routers.traefik.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
@@ -63,7 +61,7 @@ services:
   ##############################################################################
   traefik:
     # https://hub.docker.com/_/traefik
-    image: traefik:${VERSION:-v3.4.4}
+    image: traefik:${VERSION:-v3.5.0}
     <<: [*basic, *basic-deploy-labels]
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels]
