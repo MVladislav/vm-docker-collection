@@ -171,22 +171,26 @@ x-live-env: &live-env
 
 x-web-env: &web-env
   HOSTNAME: 0.0.0.0
+  # DOMAIN_NAME: localhost
   WEB_URL: ${DOMAIN_PROTO:-https}://${DOMAIN?domain variable not set}
+  # APP_BASE_URL: ${DOMAIN_PROTO:-https}://${DOMAIN?domain variable not set}
+  # APP_PROTOCOL: http
   CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-${DOMAIN_PROTO:-https}://${DOMAIN?domain variable not set}}
+  # TRUSTED_PROXIES: 0.0.0.0/0
 
 x-app-env: &app-env
   DEBUG: ${DEBUG:-0}
   GUNICORN_WORKERS: ${GUNICORN_WORKERS:-1}
 
-  USE_MINIO: ${USE_MINIO:-1}
   DATABASE_URL: postgresql://${POSTGRES_USER:-plane}:${POSTGRES_PASSWORD?Postgres password not set}@plane-db/${POSTGRES_DB:-plane}
+  USE_MINIO: ${USE_MINIO:-1}
+  MINIO_ENDPOINT_SSL: ${MINIO_ENDPOINT_SSL:-0}
+  BUCKET_NAME: ${AWS_S3_BUCKET_NAME:-uploads}
+  FILE_SIZE_LIMIT: ${FILE_SIZE_LIMIT:-5242880} # size in bytes
+
   SECRET_KEY: ${SECRET_KEY?Secret key not set}
   AMQP_URL: amqp://${RABBITMQ_USER:-plane}:${RABBITMQ_DEFAULT_PASS?RabbitMQ default password not set}@plane-mq:5672/plane
   API_KEY_RATE_LIMIT: ${API_KEY_RATE_LIMIT:-60/minute}
-  MINIO_ENDPOINT_SSL: ${MINIO_ENDPOINT_SSL:-0}
-
-  FILE_SIZE_LIMIT: ${FILE_SIZE_LIMIT:-5242880}
-  BUCKET_NAME: ${AWS_S3_BUCKET_NAME:-uploads}
 
 ################################################################################
 ################################################################################
@@ -206,6 +210,13 @@ services:
         - *basic-deploy
         - *basic-deploy-labels-web
       replicas: ${WEB_REPLICAS:-1}
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_PLANE_WEB:-2}
+          memory: ${RESOURCES_LIMITS_MEMORY_PLANE_WEB:-500m}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_PLANE_WEB:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_PLANE_WEB:-32m}
     environment:
       <<: *web-env
     volumes:
@@ -237,6 +248,13 @@ services:
         - *basic-deploy
         - *basic-deploy-labels-api
       replicas: ${API_REPLICAS:-1}
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_PLANE_API:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_PLANE_API:-500m}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_PLANE_API:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_PLANE_API:-32m}
     environment:
       <<: [*web-env, *app-env, *pg-env, *redis-env, *minio-env, *aws-s3-env]
     volumes:
@@ -269,6 +287,13 @@ services:
         - *basic-deploy
         - *basic-deploy-labels-admin
       replicas: ${ADMIN_REPLICAS:-1}
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_PLANE_ADMIN:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_PLANE_ADMIN:-256m}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_PLANE_ADMIN:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_PLANE_ADMIN:-32m}
     environment:
       <<: *web-env
     volumes:
@@ -300,6 +325,13 @@ services:
         - *basic-deploy
         - *basic-deploy-labels-space
       replicas: ${SPACE_REPLICAS:-1}
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_PLANE_SPACE:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_PLANE_SPACE:-256m}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_PLANE_SPACE:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_PLANE_SPACE:-32m}
     environment:
       <<: *web-env
     volumes:
@@ -331,6 +363,13 @@ services:
         - *basic-deploy
         - *basic-deploy-labels-live
       replicas: ${LIVE_REPLICAS:-1}
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_PLANE_LIVE:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_PLANE_LIVE:-256m}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_PLANE_LIVE:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_PLANE_LIVE:-32m}
     environment:
       <<: [*web-env, *live-env, *redis-env]
     volumes:
@@ -359,11 +398,11 @@ services:
       <<: *basic-deploy
       resources:
         limits:
-          cpus: ${RESOURCES_LIMITS_CPUS_WORKER:-1}
-          memory: ${RESOURCES_LIMITS_MEMORY_WORKER:-2g}
+          cpus: ${RESOURCES_LIMITS_CPUS_PLANE_WORKER:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_PLANE_WORKER:-2g}
         reservations:
-          cpus: ${RESOURCES_RESERVATIONS_CPUS_WORKER:-0.001}
-          memory: ${RESOURCES_RESERVATIONS_MEMORY_WORKER:-32m}
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_PLANE_WORKER:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_PLANE_WORKER:-32m}
       replicas: ${WORKER_REPLICAS:-1}
     environment:
       <<: [*app-env, *pg-env, *redis-env, *minio-env, *aws-s3-env]
@@ -381,6 +420,13 @@ services:
     deploy:
       <<: *basic-deploy
       replicas: ${BEAT_WORKER_REPLICAS:-1}
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_PLANE_BEAT:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_PLANE_BEAT:-500m}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_PLANE_BEAT:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_PLANE_BEAT:-32m}
     environment:
       <<: [*app-env, *pg-env, *redis-env, *minio-env, *aws-s3-env]
     volumes:
@@ -420,7 +466,7 @@ services:
       resources:
         limits:
           cpus: ${RESOURCES_LIMITS_CPUS_POSTGRESQL:-1}
-          memory: ${RESOURCES_LIMITS_MEMORY_POSTGRESQL:-2g}
+          memory: ${RESOURCES_LIMITS_MEMORY_POSTGRESQL:-1g}
         reservations:
           cpus: ${RESOURCES_RESERVATIONS_CPUS_POSTGRESQL:-0.001}
           memory: ${RESOURCES_RESERVATIONS_MEMORY_POSTGRESQL:-32m}
@@ -452,7 +498,7 @@ services:
       resources:
         limits:
           cpus: ${RESOURCES_LIMITS_CPUS_RABBITMQ:-1}
-          memory: ${RESOURCES_LIMITS_MEMORY_RABBITMQ:-1g}
+          memory: ${RESOURCES_LIMITS_MEMORY_RABBITMQ:-500m}
         reservations:
           cpus: ${RESOURCES_RESERVATIONS_CPUS_RABBITMQ:-0.001}
           memory: ${RESOURCES_RESERVATIONS_MEMORY_RABBITMQ:-32m}
@@ -475,7 +521,7 @@ services:
       resources:
         limits:
           cpus: ${RESOURCES_LIMITS_CPUS_VALKEY:-1}
-          memory: ${RESOURCES_LIMITS_MEMORY_VALKEY:-256M}
+          memory: ${RESOURCES_LIMITS_MEMORY_VALKEY:-256m}
         reservations:
           cpus: ${RESOURCES_RESERVATIONS_CPUS_VALKEY:-0.001}
           memory: ${RESOURCES_RESERVATIONS_MEMORY_VALKEY:-32m}
