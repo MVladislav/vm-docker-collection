@@ -47,7 +47,7 @@ services:
   ##############################################################################
   pangolin:
     # https://hub.docker.com/r/fosrl/pangolin
-    image: fosrl/pangolin:${VERSION_PANGOLIN:-1.6.2}
+    image: fosrl/pangolin:${VERSION_PANGOLIN:-1.8.0}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -74,11 +74,17 @@ services:
       # TRAEFIK
       GENERATE_TRAEFIK_CONFIG: "false"
       # FLAGS
-      FLAGS_EMAIL_VERIFICATION_REQUIRED: "false"
-      FLAGS_DISABLE_SIGNUP_WITHOUT_INVITE: "true"
-      FLAGS_DISABLE_USER_CREATE_ORG: "true"
-      FLAGS_ALLOW_RAW_RESOURCES: "true"
-      FLAGS_ALLOW_BASE_DOMAIN_RESOURCES: "true"
+      FLAGS_EMAIL_VERIFICATION_REQUIRED: ${FLAGS_EMAIL_VERIFICATION_REQUIRED:-false}
+      FLAGS_REQUIRE_EMAIL_VERIFICATION: ${FLAGS_REQUIRE_EMAIL_VERIFICATION:-false}
+      FLAGS_ALLOW_RAW_RESOURCES: ${FLAGS_ALLOW_RAW_RESOURCES:-true}
+      FLAGS_DISABLE_LOCAL_SITES: ${FLAGS_DISABLE_LOCAL_SITES:-false}
+      FLAGS_DISABLE_BASIC_WIREGUARD_SITES: ${FLAGS_DISABLE_BASIC_WIREGUARD_SITES:-false}
+      FLAGS_ENABLE_CLIENTS: ${FLAGS_ENABLE_CLIEFLAGS_ALLOW_RAW_RESOURCESNTS:-false}
+
+      FLAGS_DISABLE_SIGNUP_WITHOUT_INVITE: ${FLAGS_DISABLE_SIGNUP_WITHOUT_INVITE:-false}
+      DISABLE_SIGNUP_WITHOUT_INVITE: ${DISABLE_SIGNUP_WITHOUT_INVITE:-false}
+      FLAGS_DISABLE_USER_CREATE_ORG: ${FLAGS_DISABLE_USER_CREATE_ORG:-true}
+      DISABLE_USER_CREATE_ORG: ${DISABLE_USER_CREATE_ORG:-true}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3001/api/v1/"]
       start_period: 10s
@@ -93,7 +99,7 @@ services:
   ##############################################################################
   gerbil:
     # https://hub.docker.com/r/fosrl/gerbil
-    image: fosrl/gerbil:${VERSION_GERBIL:-1.0.0}
+    image: fosrl/gerbil:${VERSION_GERBIL:-1.1.0}
     depends_on:
       pangolin:
         condition: service_healthy
@@ -104,9 +110,22 @@ services:
       - NET_ADMIN
       - SYS_MODULE
     ports:
-      - 51820:51820/udp
-      - 443:443 # Port for traefik because of the network_mode
-      - 80:80 # Port for traefik because of the network_mode
+      - target: 51820 # UDP port for WireGuard, used by Newt and WireGuard clients
+        published: 51820
+        protocol: udp
+        mode: host
+      - target: 21820 # clients
+        published: 21820
+        protocol: udp
+        mode: host
+      - target: 443 # Port for traefik because of the network_mode
+        published: 443
+        protocol: tcp
+        mode: host
+      - target: 80 # Port for traefik because of the network_mode
+        published: 80
+        protocol: tcp
+        mode: host
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
@@ -124,7 +143,7 @@ services:
   ##############################################################################
   traefik:
     # https://hub.docker.com/_/traefik
-    image: traefik:${VERSION_TRAEFIK:-v3.4.3}
+    image: traefik:${VERSION_TRAEFIK:-v3.5.0}
     depends_on:
       pangolin:
         condition: service_healthy
@@ -170,6 +189,7 @@ services:
       TRAEFIK_ENTRYPOINTS_WEBSECURE_TRANSPORT_RESPONDINGTIMEOUTS_READTIMEOUT: 30m
       TRAEFIK_ENTRYPOINTS_WEBSECURE_HTTP_TLS_CERTRESOLVER: letsencrypt
       TRAEFIK_ENTRYPOINTS_WEBSECURE_HTTP_MIDDLEWARES: crowdsec@file,public-whitelist@file,default-headers@file
+      TRAEFIK_ENTRYPOINTS_WEBSECURE_HTTP3: ${TRAEFIK_ENTRYPOINTS_WEBSECURE_HTTP3:-true}
       # Traefik logs configuration
       TRAEFIK_LOG: ${TRAEFIK_LOG:-true}
       # TRAEFIK_LOG_FILEPATH: /var/log/traefik/traefik.log
@@ -231,7 +251,7 @@ services:
   ##############################################################################
   crowdsec:
     # https://hub.docker.com/r/crowdsecurity/crowdsec
-    image: crowdsecurity/crowdsec:${VERSION_CROWDSEC:-v1.6.10}
+    image: crowdsecurity/crowdsec:${VERSION_CROWDSEC:-v1.6.11}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -295,6 +315,7 @@ networks:
   pangolin:
     name: pangolin
     driver: ${NETWORK_MODE:-overlay}
+    enable_ipv6: true
     attachable: true
     driver_opts:
       encrypted: "true"
@@ -308,22 +329,22 @@ volumes:
 
 configs:
   pangolin_config:
-    file: $PWD/config/pangolin/config.yml
+    file: ${FILE_PATH:-$PWD}/config/pangolin/config.yml
   dynamic_config:
-    file: $PWD/config/traefik/dynamic_config.yml
+    file: ${FILE_PATH:-$PWD}/config/traefik/dynamic_config.yml
   ban_page:
-    file: $PWD/config/traefik/ban.html
+    file: ${FILE_PATH:-$PWD}/config/traefik/ban.html
   appsec_config:
-    file: $PWD/config/crowdsec/appsec.yaml
+    file: ${FILE_PATH:-$PWD}/config/crowdsec/appsec.yaml
   traefik_config:
-    file: $PWD/config/crowdsec/traefik.yaml
+    file: ${FILE_PATH:-$PWD}/config/crowdsec/traefik.yaml
   syslog_config:
-    file: $PWD/config/crowdsec/syslog.yaml
+    file: ${FILE_PATH:-$PWD}/config/crowdsec/syslog.yaml
   journalctl_config:
-    file: $PWD/config/crowdsec/journalctl.yaml
+    file: ${FILE_PATH:-$PWD}/config/crowdsec/journalctl.yaml
 
 secrets:
   traefik_basicauth_secret:
-    file: config/secrets/traefik_basicauth_secret.txt
+    file: ${FILE_PATH:-$PWD}/config/secrets/traefik_basicauth_secret.txt
   dnschallenge_api_key_secret:
-    file: config/secrets/dnschallenge_api_key_secret.txt
+    file: ${FILE_PATH:-$PWD}/config/secrets/dnschallenge_api_key_secret.txt

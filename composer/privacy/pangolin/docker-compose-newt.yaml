@@ -47,7 +47,7 @@ services:
   ##############################################################################
   newt:
     # https://hub.docker.com/r/fosrl/newt
-    image: fosrl/newt:${VERSION_NEWT:-latest}
+    image: fosrl/newt:${VERSION_NEWT:-1.4.0}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -63,6 +63,7 @@ services:
       NEWT_ID: ${NEWT_ID?id not set}
       NEWT_SECRET: ${NEWT_SECRET?secret not set}
       DOCKER_SOCKET: /var/run/docker.sock
+      ACCEPT_CLIENTS: ${ACCEPT_CLIENTS:-false}
     networks:
       default: {}
 
