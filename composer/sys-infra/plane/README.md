@@ -11,6 +11,8 @@
     - [create your `secrets`:](#create-your-secrets)
     - [create `.env` file following:](#create-env-file-following)
       - [example short .env](#example-short-env)
+  - [FAQ](#faq)
+    - [Create additional `god-mode` admins](#create-additional-god-mode-admins)
   - [References](#references)
 
 ---
@@ -54,7 +56,7 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_PLANE=v0.27.1
+VERSION_PLANE=v0.28.0
 VERSION_POSTGRESQL=17.5-alpine
 VERSION_RABBITMQ=4.1.2-management-alpine
 VERSION_VALKEY=8.1.3-alpine
@@ -69,6 +71,16 @@ VERSION_MINIO=RELEASE.2025-07-18T21-56-31Z-cpuv1
 
 ```env
 DOMAIN=plane.home.local
+```
+
+## FAQ
+
+### Create additional `god-mode` admins
+
+> Replace `<E-MAIL>`
+
+```sh
+$docker exec -it "$(docker ps -q -f name=plane_worker)" /bin/bash -c "python manage.py create_instance_admin <E-MAIL>"
 ```
 
 ---
