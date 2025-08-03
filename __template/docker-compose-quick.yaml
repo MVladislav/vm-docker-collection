@@ -55,6 +55,7 @@ x-basic: &basic
       hard: 655360
     fsize: -1
     as: -1
+  mem_limit: ${RESOURCES_LIMITS_MEMORY:-1g}
   networks:
     default: {}
     proxy: {}
