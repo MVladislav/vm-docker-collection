@@ -48,7 +48,7 @@ services:
   ##############################################################################
   beszel-agent:
     # https://github.com/henrygd/beszel/pkgs/container/beszel%2Fbeszel-agent
-    image: ghcr.io/henrygd/beszel/beszel-agent:${VERSION:-0.12.1}
+    image: ghcr.io/henrygd/beszel/beszel-agent:${VERSION:-0.12.2}
     <<: *basic
     deploy:
       <<: *basic-deploy
