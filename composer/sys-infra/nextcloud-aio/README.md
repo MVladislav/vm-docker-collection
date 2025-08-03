@@ -25,6 +25,8 @@
 
 ## basic
 
+> defined to work with traefik
+
 ### create nfs storage
 
 on your NAS system, or what you prefer, create an NFS storage path.
@@ -93,29 +95,17 @@ RESOURCES_LIMITS_MEMORY=4096M
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_NEXTCLOUD=20241216_102930-latest
-VERSION_CADDY=2.9-alpine
-
-# APPLICATION general variable to adjust the apps
-# ______________________________________________________________________________
-APACHE_PORT=11000
-APACHE_IP_BINDING=127.0.0.1
-SKIP_DOMAIN_VALIDATION=true
+VERSION_NEXTCLOUD=20250325_084656
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
 NEXTCLOUD_NFS_IP=<NFS_SYSTEM_IP_ADDRESS>
 NEXTCLOUD_NFS_PATH_MASTER=<NFS_PATH>
-
-NEXTCLOUD_TRUSTED_DOMAINS=<DOMAIN_NAME>
 ```
 
 #### example short .env
 
 ```env
-VERSION_NEXTCLOUD=20241216_102930-latest
-VERSION_CADDY=2.9-alpine
-
 NEXTCLOUD_NFS_IP=<NFS_SYSTEM_IP_ADDRESS>
 NEXTCLOUD_NFS_PATH_MASTER=<NFS_PATH>
 ```

@@ -1,27 +1,70 @@
 ---
+x-basic-deploy-labels: &basic-deploy-labels
+  labels:
+    - traefik.enable=true
+    - traefik.swarm.lbswarm=${LB_SWARM:-true}
+    - traefik.swarm.network=proxy
+    - traefik.http.routers.nextcloud-aio.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.nextcloud-aio.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.nextcloud-aio.tls=true
+    - traefik.http.routers.nextcloud-aio.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.nextcloud-aio.service=nextcloud-aio
+    - traefik.http.services.nextcloud-aio.loadbalancer.server.url=http://nextcloud-aio-apache:11000
+
+    - traefik.http.routers.nextcloud-aio-admin.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.nextcloud-aio-admin.rule=Host(`${DOMAIN_AIO?domain variable not set}`)
+    - traefik.http.routers.nextcloud-aio-admin.tls=true
+    - traefik.http.routers.nextcloud-aio-admin.middlewares=${MIDDLEWARE_SECURED_AIO:-default-secured@file}
+    - traefik.http.routers.nextcloud-aio-admin.service=nextcloud-aio-admin
+    - traefik.http.services.nextcloud-aio-admin.loadbalancer.server.scheme=${PROTOCOL_AIO:-https}
+    - traefik.http.services.nextcloud-aio-admin.loadbalancer.server.port=${PORT_AIO:-8080}
+
+x-basic-deploy: &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  update_config:
+    order: stop-first
+  restart_policy:
+    condition: any
+  resources:
+    limits:
+      cpus: ${RESOURCES_LIMITS_CPUS:-4}
+      memory: ${RESOURCES_LIMITS_MEMORY:-4096M}
+    reservations:
+      cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
+      memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
+
 x-basic: &basic
   # cap_add:
-  #   - CAP_NET_BIND_SERVICE
-  #   - CHOWN
-  #   - DAC_OVERRIDE
-  #   - SETGID
-  #   - SETUID
+  #   - CHOWN # Allows changing file ownership (`chown`,`chgrp`)
+  #   - FOWNER # Overrides file ownership checks (`chmod`,`kill`)
+  #   - DAC_READ_SEARCH # Bypasses file read and directory execute permissions (`ls`,`cat`,`find`)
+  #   - DAC_OVERRIDE # Bypasses file read/write/execute permission checks (`cat`,`touch`,`rm`)
+  #   - SETGID # Allows setting group ID (`setgid`,`newgrp`,`chgrp`,`setregid()`)
+  #   - SETUID # Allows setting user ID (`setuid`,`su`,`sudo`,`passwd`)
+  #   - FSETID # Allows setting file SUID/SGID bits (`chmod u+s`,`chmod g+s`)
   # cap_drop: ["ALL"]
-  # security_opt:
-  #   - no-new-privileges:true
-  #   - label:disable
+  security_opt:
+    - no-new-privileges:true
   ulimits:
     memlock:
       soft: -1
       hard: -1
     nofile:
-      soft: 65535
-      hard: 65535
+      soft: 655360
+      hard: 655360
     fsize: -1
     as: -1
   mem_limit: ${RESOURCES_LIMITS_MEMORY:-4096M}
   healthcheck:
     disable: true
+  tmpfs:
+    - /tmp
   restart: always
 
 ################################################################################
@@ -32,10 +75,16 @@ services:
   ##############################################################################
   ##############################################################################
   ##############################################################################
-  nextcloud:
+  nextcloud-aio-mastercontainer:
     # https://hub.docker.com/r/nextcloud/all-in-one
-    image: nextcloud/all-in-one:${VERSION_NEXTCLOUD:-20241216_102930-latest}
-    <<: *basic
+    image: nextcloud/all-in-one:${VERSION_NEXTCLOUD:-20250325_084656}
+    <<:
+      - *basic
+      - *basic-deploy-labels
+    deploy:
+      <<:
+        - *basic-deploy
+        - *basic-deploy-labels
     init: true
     container_name: nextcloud-aio-mastercontainer
     ports:
@@ -44,12 +93,11 @@ services:
         protocol: tcp
         mode: host
     environment:
-      APACHE_PORT: ${APACHE_PORT:-11000}
+      APACHE_PORT: ${PORT:-11000}
       APACHE_IP_BINDING: ${APACHE_IP_BINDING:-127.0.0.1}
+      APACHE_ADDITIONAL_NETWORK: proxy
       SKIP_DOMAIN_VALIDATION: ${SKIP_DOMAIN_VALIDATION:-true}
       TALK_PORT: ${TALK_PORT:-3478}
-
-      NEXTCLOUD_TRUSTED_DOMAINS: ${NEXTCLOUD_TRUSTED_DOMAINS:-}
 
       NEXTCLOUD_DATADIR: "nextcloud_aio_nextcloud_datadir"
 
@@ -72,22 +120,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
       nextcloud-aio: {}
-
-  ##############################################################################
-  ##############################################################################
-  ##############################################################################
-  caddy:
-    # https://hub.docker.com/_/caddy
-    image: caddy:${VERSION_CADDY:-2.9-alpine}
-    container_name: caddy
-    <<: *basic
-    volumes:
-      - $PWD/config/Caddyfile:/etc/caddy/Caddyfile
-      - $PWD/config/certs:/certs
-      - caddy_sites:/srv
-      - caddy_data:/data
-      - caddy_config:/config
-    network_mode: "host"
+      proxy: {}
 
 ################################################################################
 ################################################################################
@@ -99,14 +132,10 @@ networks:
     attachable: false
     driver_opts:
       encrypted: "true"
+  proxy:
+    external: true
 
 volumes:
-  caddy_sites:
-    name: caddy_sites
-  caddy_data:
-    name: caddy_data
-  caddy_config:
-    name: caddy_config
   nextcloud_aio_mastercontainer:
     name: nextcloud_aio_mastercontainer
     driver: local
@@ -114,3 +143,10 @@ volumes:
       type: nfs
       o: nfsvers=4.2,addr=${NEXTCLOUD_NFS_IP},rsize=2097152,wsize=2097152,tcp,nconnect=${NEXTCLOUD_NFS_NCON:-8}
       device: ":${NEXTCLOUD_NFS_PATH_MASTER}/master"
+  # nextcloud_aio_nextcloud_datadir:
+  #   name: nextcloud_aio_nextcloud_datadir
+  #   driver: local
+  #   driver_opts:
+  #     type: nfs
+  #     o: nfsvers=4.2,addr=${NEXTCLOUD_NFS_IP},rsize=2097152,wsize=2097152,tcp,nconnect=${NEXTCLOUD_NFS_NCON:-8}
+  #     device: ":${NEXTCLOUD_NFS_PATH_DATA}/data"
