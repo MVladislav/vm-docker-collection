@@ -67,7 +67,7 @@ services:
       APP_BASEDOMAIN: ${BASEDOMAIN?domain variable not set}
       # DOMAINS
       DOMAINS_DEFAULT_BASEDOMAIN: ${BASEDOMAIN?base domain variable not set}
-      DOMAINS_DEFAULT_CERTRESOLVER: letsencrypt
+      DOMAINS_DEFAULT_CERTRESOLVER: certificates
       DOMAINS_DEFAULT_PREFERWILDCARDCERT: "true"
       # GERBIL
       GERBIL_BASEENDPOINT: ${BASEDOMAIN?base domain variable not set}
@@ -92,7 +92,7 @@ services:
       timeout: 3s
       retries: 10
     networks:
-      pangolin: {}
+      proxy: {}
 
   ##############################################################################
   ##############################################################################
@@ -136,7 +136,7 @@ services:
       - --remoteConfig=http://pangolin:3001/api/v1/gerbil/get-config
       - --reportBandwidthTo=http://pangolin:3001/api/v1/gerbil/receive-bandwidth
     networks:
-      pangolin: {}
+      proxy: {}
 
   ##############################################################################
   ##############################################################################
@@ -170,7 +170,7 @@ services:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - letsencrypt:/letsencrypt
+      - certificates:/certificates
       - traefik_logs:/var/log/traefik
     environment:
       IONOS_API_KEY_FILE: /run/secrets/dnschallenge_api_key_secret
@@ -187,7 +187,7 @@ services:
       TRAEFIK_ENTRYPOINTS_WEBSECURE: "true"
       TRAEFIK_ENTRYPOINTS_WEBSECURE_ADDRESS: ":443"
       TRAEFIK_ENTRYPOINTS_WEBSECURE_TRANSPORT_RESPONDINGTIMEOUTS_READTIMEOUT: 30m
-      TRAEFIK_ENTRYPOINTS_WEBSECURE_HTTP_TLS_CERTRESOLVER: letsencrypt
+      TRAEFIK_ENTRYPOINTS_WEBSECURE_HTTP_TLS_CERTRESOLVER: certificates
       TRAEFIK_ENTRYPOINTS_WEBSECURE_HTTP_MIDDLEWARES: crowdsec@file,public-whitelist@file,default-headers@file
       TRAEFIK_ENTRYPOINTS_WEBSECURE_HTTP3: ${TRAEFIK_ENTRYPOINTS_WEBSECURE_HTTP3:-true}
       # Traefik logs configuration
@@ -224,15 +224,17 @@ services:
       TRAEFIK_PROVIDERS_FILE_WATCH: "true"
       # TLS
       TRAEFIK_SERVERSTRANSPORT_INSECURESKIPVERIFY: "true"
-      TRAEFIK_CERTIFICATESRESOLVERS_LETSENCRYPT: "true"
-      TRAEFIK_CERTIFICATESRESOLVERS_LETSENCRYPT_ACME_EMAIL: ${ACME_EMAIL?ACME Mail not set}
-      TRAEFIK_CERTIFICATESRESOLVERS_LETSENCRYPT_ACME_STORAGE: /letsencrypt/acme.json
-      TRAEFIK_CERTIFICATESRESOLVERS_LETSENCRYPT_ACME_KEYTYPE: EC256
-      TRAEFIK_CERTIFICATESRESOLVERS_LETSENCRYPT_ACME_CERTIFICATESDURATION: ${ACME_CERTIFICATES_DURATION:-2160} # https://doc.traefik.io/traefik/https/acme/#certificatesduration
-      TRAEFIK_CERTIFICATESRESOLVERS_LETSENCRYPT_ACME_CASERVER: ${ACME_CASERVER:-https://acme-staging-v02.api.letsencrypt.org/directory} # https://acme-v02.api.letsencrypt.org/directory
-      TRAEFIK_CERTIFICATESRESOLVERS_LETSENCRYPT_ACME_DNSCHALLENGE: "true"
-      TRAEFIK_CERTIFICATESRESOLVERS_LETSENCRYPT_ACME_DNSCHALLENGE_PROVIDER: ${ACME_DNSCHALLENGE_PROVIDER:-ionos}
-      TRAEFIK_CERTIFICATESRESOLVERS_LETSENCRYPT_ACME_DNSCHALLENGE_RESOLVERS: ${ACME_DNSCHALLENGE_RESOLVERS:-9.9.9.9,194.242.2.2,1.1.1.1}
+      TRAEFIK_CERTIFICATESRESOLVERS_CERTIFICATES: "true"
+      TRAEFIK_CERTIFICATESRESOLVERS_CERTIFICATES_ACME_EMAIL: ${CERTIFICATES_ACME_EMAIL?ACME Mail not set}
+      TRAEFIK_CERTIFICATESRESOLVERS_CERTIFICATES_ACME_STORAGE: /certificates/acme.json
+      TRAEFIK_CERTIFICATESRESOLVERS_CERTIFICATES_ACME_KEYTYPE: EC256
+      TRAEFIK_CERTIFICATESRESOLVERS_CERTIFICATES_ACME_CERTIFICATESDURATION: ${CERTIFICATES_ACME_CERTIFICATES_DURATION:-2160} # https://doc.traefik.io/traefik/https/acme/#certificatesduration
+      TRAEFIK_CERTIFICATESRESOLVERS_CERTIFICATES_ACME_CASERVER: ${CERTIFICATES_ACME_CASERVER:-https://acme-staging-v02.api.letsencrypt.org/directory} # https://acme-v02.api.letsencrypt.org/directory
+      TRAEFIK_CERTIFICATESRESOLVERS_CERTIFICATES_ACME_DNSCHALLENGE: "true"
+      TRAEFIK_CERTIFICATESRESOLVERS_CERTIFICATES_ACME_DNSCHALLENGE_PROVIDER: ${CERTIFICATES_ACME_DNSCHALLENGE_PROVIDER:-ionos}
+      TRAEFIK_CERTIFICATESRESOLVERS_CERTIFICATES_ACME_DNSCHALLENGE_RESOLVERS: ${CERTIFICATES_ACME_DNSCHALLENGE_RESOLVERS:-9.9.9.9,194.242.2.2,1.1.1.1}
+      # TRAEFIK_CERTIFICATESRESOLVERS_CERTIFICATES_ACME_EAB_KID: ${CERTIFICATES_ACME_EAB_KID}
+      # TRAEFIK_CERTIFICATESRESOLVERS_CERTIFICATES_ACME_EAB_HMACENCODED: ${CERTIFICATES_ACME_EAB_HMACENCODED}
       # PLUGINS
       TRAEFIK_EXPERIMENTAL_PLUGINS_BADGER_MODULENAME: github.com/fosrl/badger
       TRAEFIK_EXPERIMENTAL_PLUGINS_BADGER_VERSION: ${VERSION_BADGER:-v1.2.0} # https://github.com/fosrl/badger
@@ -306,14 +308,14 @@ services:
       retries: 5
       timeout: 3s
     networks:
-      pangolin: {}
+      proxy: {}
 
 ################################################################################
 ################################################################################
 ################################################################################
 networks:
-  pangolin:
-    name: pangolin
+  proxy:
+    name: proxy
     driver: ${NETWORK_MODE:-overlay}
     enable_ipv6: true
     attachable: true
@@ -322,7 +324,7 @@ networks:
 
 volumes:
   pangolin_data: {}
-  letsencrypt: {}
+  certificates: {}
   traefik_logs: {}
   crowdsec_data: {}
   crowdsec_db: {}

@@ -9,7 +9,7 @@ app:
 domains:
   domain1:
     base_domain: "<REPLACE_BASE_DOMAIN>"
-    cert_resolver: "letsencrypt"
+    cert_resolver: "certificates"
 
 server:
   external_port: 3000
@@ -30,7 +30,7 @@ server:
     credentials: false
 
 traefik:
-  cert_resolver: "letsencrypt"
+  cert_resolver: "certificates"
   http_entrypoint: "web"
   https_entrypoint: "websecure"
 

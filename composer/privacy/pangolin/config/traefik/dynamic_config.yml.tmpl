@@ -81,7 +81,7 @@ http:
       middlewares:
         - traefik-basic-auth@file
       tls:
-        certResolver: letsencrypt
+        certResolver: certificates
 
     # # HTTP to HTTPS redirect router
     # main-app-router-redirect:
@@ -99,7 +99,7 @@ http:
       entryPoints:
         - websecure
       tls:
-        certResolver: letsencrypt
+        certResolver: certificates
 
     # API router (handles /api/v1 paths)
     api-router:
@@ -108,7 +108,7 @@ http:
       entryPoints:
         - websecure
       tls:
-        certResolver: letsencrypt
+        certResolver: certificates
 
     # WebSocket router
     ws-router:
@@ -117,7 +117,7 @@ http:
       entryPoints:
         - websecure
       tls:
-        certResolver: letsencrypt
+        certResolver: certificates
 
   # ############################################################################
   services:

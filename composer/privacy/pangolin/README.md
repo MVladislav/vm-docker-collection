@@ -46,7 +46,7 @@ $sed "s|<REPLACE_SERVER_SECRET>|$(pwgen -s 32 1)|" -i  ./config/pangolin/config.
 
 $echo "BASEDOMAIN=${TMP_DOMAIN_BASE}" >> .env
 $echo "DASHBOARDURL=${TMP_DOMAIN_DASHBOARD}" >> .env
-$echo "ACME_EMAIL=info@${TMP_DOMAIN_BASE}" >> .env
+$echo "CERTIFICATES_ACME_EMAIL=info@${TMP_DOMAIN_BASE}" >> .env
 ```
 
 ### create `.env` file following:
@@ -78,17 +78,20 @@ VERSION_CROWDSEC=v1.6.11
 DASHBOARDURL=<REPLACE_DASHBOARDURL_DOMAIN>
 BASEDOMAIN=<BASE_DOMAIN>
 
-ACME_EMAIL=<E-MAIL>
-ACME_CERTIFICATES_DURATION=2160 # 2160 (90*24=2160) | 8760 (365*24=8760)
-ACME_CASERVER=https://acme-staging-v02.api.letsencrypt.org/directory # https://acme-v02.api.letsencrypt.org/directory
-ACME_DNSCHALLENGE_PROVIDER=ionos # https://doc.traefik.io/traefik/https/acme/#providers
-ACME_DNSCHALLENGE_RESOLVERS=9.9.9.9,194.242.2.2,1.1.1.1
+CERTIFICATES_ACME_CASERVER=https://api.test4.buypass.no/acme/directory # https://api.buypass.com/acme/directory
+CERTIFICATES_ACME_CASERVER=https://acme-staging-v02.api.letsencrypt.org/directory # https://acme-v02.api.letsencrypt.org/directory
+CERTIFICATES_ACME_CASERVER=https://acme.zerossl.com/v2/DV90 # needs EAB information (KID & HMACENCODED)
+
+CERTIFICATES_ACME_EMAIL=<E-MAIL>
+CERTIFICATES_ACME_CERTIFICATES_DURATION=2160 # 2160 (90*24=2160) | 8760 (365*24=8760)
+CERTIFICATES_ACME_DNSCHALLENGE_PROVIDER=ionos # https://doc.traefik.io/traefik/https/acme/#providers
+CERTIFICATES_ACME_DNSCHALLENGE_RESOLVERS=9.9.9.9,194.242.2.2,1.1.1.1
 ```
 
 #### example short .env
 
 ```env
-ACME_CASERVER=https://acme-v02.api.letsencrypt.org/directory
+CERTIFICATES_ACME_CASERVER=https://api.buypass.com/acme/directory
 ```
 
 ---
