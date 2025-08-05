@@ -9,6 +9,7 @@
 - [SETUP](#setup)
   - [basic](#basic)
     - [create `.env` file following:](#create-env-file-following)
+      - [CA Server](#ca-server)
       - [example run \[IONOS\]](#example-run-ionos)
       - [example run \[HETZNER\]](#example-run-hetzner)
   - [Helper](#helper)
@@ -36,6 +37,20 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 # APPLICATION version for easy update
 # ______________________________________________________________________________
 VERSION=latest
+```
+
+#### CA Server
+
+```sh
+... --server https://api.test4.buypass.no/acme/directory
+... --server https://api.buypass.com/acme/directory
+
+# needs EAB information (KID & HMACENCODED)
+... --server https://acme.zerossl.com/v2/DV90
+... --server zerossl
+
+... --server https://acme-staging-v02.api.letsencrypt.org/directory
+... --server https://acme-v02.api.letsencrypt.org/directory
 ```
 
 #### example run [IONOS]
