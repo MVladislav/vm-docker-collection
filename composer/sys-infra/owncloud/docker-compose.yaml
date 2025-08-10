@@ -34,11 +34,6 @@ x-basic-deploy: &basic-deploy
 
 x-basic: &basic
   env_file: ${ENV_FILE:-.env}
-  cap_add:
-    - CHOWN
-    - SETGID
-    - SETUID
-    - DAC_OVERRIDE
   cap_drop: ["ALL"]
   security_opt:
     - no-new-privileges:true
@@ -79,6 +74,11 @@ services:
       <<:
         - *basic-deploy
         - *basic-deploy-labels
+    cap_add:
+      - CHOWN
+      - SETGID
+      - SETUID
+      - DAC_OVERRIDE
     environment:
       HTTP_PORT: ${PORT:-8080}
       OWNCLOUD_DOMAIN: ${DOMAIN?domain variable not set}
@@ -112,7 +112,7 @@ services:
   ##############################################################################
   mariadb:
     # https://hub.docker.com/_/mariadb
-    image: mariadb:${VERSION_MARIADB:-11.7.2}
+    image: mariadb:${VERSION_MARIADB:-11.8.2}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -158,7 +158,7 @@ services:
   ##############################################################################
   valkey:
     # https://hub.docker.com/r/valkey/valkey
-    image: valkey/valkey:${VERSION_VALKEY:-8.1.0-alpine}
+    image: valkey/valkey:${VERSION_VALKEY:-8.1.3-alpine}
     <<: *basic
     deploy:
       <<: *basic-deploy

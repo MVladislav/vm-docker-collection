@@ -24,7 +24,7 @@
 
 ```sh
 $pwgen -s 32 1 > config/secrets/mariadb_user_password.txt
-echo "OWNCLOUD_DB_PASSWORD=$(cat config/secrets/mariadb_user_password.txt)" >> .env
+$echo "OWNCLOUD_DB_PASSWORD=$(cat config/secrets/mariadb_user_password.txt)" >> .env
 ```
 
 ### create `.env` file following:
@@ -77,7 +77,6 @@ OWNCLOUD_ADMIN_PASSWORD=<PASSWORD>
 
 ```env
 DOMAIN=owncloud.home.local
-
 OWNCLOUD_ADMIN_PASSWORD=<PASSWORD>
 ```
 
@@ -88,7 +87,6 @@ NETWORK_MODE=bridge
 LB_SWARM=false
 
 DOMAIN=owncloud.home.local
-
 OWNCLOUD_ADMIN_PASSWORD=<PASSWORD>
 ```
 
