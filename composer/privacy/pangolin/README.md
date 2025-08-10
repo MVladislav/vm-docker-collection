@@ -12,6 +12,9 @@
     - [create config files:](#create-config-files)
     - [create `.env` file following:](#create-env-file-following)
       - [example short .env](#example-short-env)
+  - [NEWT setup](#newt-setup)
+    - [create `.env` file following:](#create-env-file-following-1)
+    - [copy/update `docker-compose-newt.override.yaml.tmpl`](#copyupdate-docker-compose-newtoverrideyamltmpl)
   - [References](#references)
 
 ---
@@ -93,6 +96,24 @@ CERTIFICATES_ACME_DNSCHALLENGE_RESOLVERS=9.9.9.9,194.242.2.2,1.1.1.1
 ```env
 CERTIFICATES_ACME_CASERVER=https://api.buypass.com/acme/directory
 ```
+
+## NEWT setup
+
+### create `.env` file following:
+
+```env
+PANGOLIN_ENDPOINT=<Newt Endpoint>
+NEWT_ID=<Newt ID>
+NEWT_SECRET=<Newt Secret Key>
+```
+
+### copy/update `docker-compose-newt.override.yaml.tmpl`
+
+```
+$cp docker-compose-newt.override.yaml.tmpl docker-compose-newt.override.yaml
+```
+
+extend `networks` sections with your network names where `newt` should have access for and will tunnel over `pangolin`.
 
 ---
 

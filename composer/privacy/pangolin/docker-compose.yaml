@@ -316,7 +316,7 @@ services:
 networks:
   proxy:
     name: proxy
-    driver: ${NETWORK_MODE:-overlay}
+    driver: ${NETWORK_MODE:-bridge}
     enable_ipv6: true
     attachable: true
     driver_opts:
