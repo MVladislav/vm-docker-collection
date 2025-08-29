@@ -101,6 +101,7 @@ x-basic: &basic
     fsize: -1
     as: -1
   # mem_limit: 1g
+  # shm_size: 128mb
   networks:
     default: {}
     proxy: {}
