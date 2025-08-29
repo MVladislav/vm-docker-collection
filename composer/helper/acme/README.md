@@ -42,9 +42,6 @@ VERSION=latest
 #### CA Server
 
 ```sh
-... --server https://api.test4.buypass.no/acme/directory
-... --server https://api.buypass.com/acme/directory
-
 # needs EAB information (KID & HMACENCODED)
 ... --server https://acme.zerossl.com/v2/DV90
 ... --server zerossl
