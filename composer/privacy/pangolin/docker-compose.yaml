@@ -47,7 +47,7 @@ services:
   ##############################################################################
   pangolin:
     # https://hub.docker.com/r/fosrl/pangolin
-    image: fosrl/pangolin:${VERSION_PANGOLIN:-1.8.0}
+    image: fosrl/pangolin:${VERSION_PANGOLIN:-1.9.2}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -99,7 +99,7 @@ services:
   ##############################################################################
   gerbil:
     # https://hub.docker.com/r/fosrl/gerbil
-    image: fosrl/gerbil:${VERSION_GERBIL:-1.1.0}
+    image: fosrl/gerbil:${VERSION_GERBIL:-1.2.1}
     depends_on:
       pangolin:
         condition: service_healthy
@@ -143,7 +143,7 @@ services:
   ##############################################################################
   traefik:
     # https://hub.docker.com/_/traefik
-    image: traefik:${VERSION_TRAEFIK:-v3.5.0}
+    image: traefik:${VERSION_TRAEFIK:-v3.5.1}
     depends_on:
       pangolin:
         condition: service_healthy
@@ -239,7 +239,7 @@ services:
       TRAEFIK_EXPERIMENTAL_PLUGINS_BADGER_MODULENAME: github.com/fosrl/badger
       TRAEFIK_EXPERIMENTAL_PLUGINS_BADGER_VERSION: ${VERSION_BADGER:-v1.2.0} # https://github.com/fosrl/badger
       TRAEFIK_EXPERIMENTAL_PLUGINS_CROWDSEC_MODULENAME: github.com/maxlerebourg/crowdsec-bouncer-traefik-plugin
-      TRAEFIK_EXPERIMENTAL_PLUGINS_CROWDSEC_VERSION: ${VERSION_CROWDSEC_PLUGIN:-v1.4.4} # ...
+      TRAEFIK_EXPERIMENTAL_PLUGINS_CROWDSEC_VERSION: ${VERSION_CROWDSEC_PLUGIN:-v1.4.4} # https://plugins.traefik.io/plugins/6335346ca4caa9ddeffda116/crowdsec-bouncer-traefik-plugin
     healthcheck:
       test: "traefik healthcheck --ping"
       start_period: 5s

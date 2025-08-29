@@ -69,9 +69,9 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_PANGOLIN=1.8.0
-VERSION_GERBIL=1.1.0
-VERSION_TRAEFIK=v3.5.0
+VERSION_PANGOLIN=1.9.2
+VERSION_GERBIL=1.2.1
+VERSION_TRAEFIK=v3.5.1
 VERSION_BADGER=v1.2.0
 VERSION_CROWDSEC_PLUGIN=v1.4.4
 VERSION_CROWDSEC=v1.6.11
@@ -81,9 +81,8 @@ VERSION_CROWDSEC=v1.6.11
 DASHBOARDURL=<REPLACE_DASHBOARDURL_DOMAIN>
 BASEDOMAIN=<BASE_DOMAIN>
 
-CERTIFICATES_ACME_CASERVER=https://api.test4.buypass.no/acme/directory # https://api.buypass.com/acme/directory
 CERTIFICATES_ACME_CASERVER=https://acme-staging-v02.api.letsencrypt.org/directory # https://acme-v02.api.letsencrypt.org/directory
-CERTIFICATES_ACME_CASERVER=https://acme.zerossl.com/v2/DV90 # needs EAB information (KID & HMACENCODED)
+CERTIFICATES_ACME_CASERVER=https://acme.zerossl.com/v2/DV90 # needs EAB Credentials (EAB KID & EAB HMAC Key)
 
 CERTIFICATES_ACME_EMAIL=<E-MAIL>
 CERTIFICATES_ACME_CERTIFICATES_DURATION=2160 # 2160 (90*24=2160) | 8760 (365*24=8760)
@@ -94,7 +93,7 @@ CERTIFICATES_ACME_DNSCHALLENGE_RESOLVERS=9.9.9.9,194.242.2.2,1.1.1.1
 #### example short .env
 
 ```env
-CERTIFICATES_ACME_CASERVER=https://api.buypass.com/acme/directory
+CERTIFICATES_ACME_CASERVER=https://acme-v02.api.letsencrypt.org/directory
 ```
 
 ## NEWT setup
