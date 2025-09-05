@@ -7,7 +7,7 @@
 !Dockerfile_*
 !docker-compose.yaml
 !docker-compose-quick.yaml
-!docker-hwaccel.yaml
+!docker-compose.override.yaml
 !docker-compose-example-services.yaml
 
 !CHANGELOG.md
