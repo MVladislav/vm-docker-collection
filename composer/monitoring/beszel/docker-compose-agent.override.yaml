@@ -1,0 +1,33 @@
+---
+services:
+  none: {}
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  hwaccel-amd:
+    devices:
+      - /dev/kfd # main compute interface
+      - /dev/dri # Direct Rendering Interface
+    # group_add:
+    #   - video
+    environment:
+      ROCM_VISIBLE_DEVICES: ${ROCM_VISIBLE_DEVICES:-all}
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  hwaccel-nvidia:
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: ${RESOURCES_RESERVATIONS_DEVICE0_COUNT:-1}
+              capabilities:
+                - gpu
+                - compute
+                - video
+    environment:
+      NVIDIA_VISIBLE_DEVICES: ${NVIDIA_VISIBLE_DEVICES:-all}
+      NVIDIA_DRIVER_CAPABILITIES: ${NVIDIA_DRIVER_CAPABILITIES:-compute,utility,video}

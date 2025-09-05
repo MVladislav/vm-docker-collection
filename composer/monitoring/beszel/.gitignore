@@ -4,6 +4,7 @@
 
 !docker-compose.yaml
 !docker-compose-agent.yaml
+!docker-compose-agent.override.yaml
 composer/monitoring/beszel/docker-compose-agent.yaml
 
 !README.md

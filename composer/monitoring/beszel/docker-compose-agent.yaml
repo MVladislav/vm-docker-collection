@@ -48,7 +48,7 @@ services:
   ##############################################################################
   beszel-agent:
     # https://github.com/henrygd/beszel/pkgs/container/beszel%2Fbeszel-agent
-    image: ghcr.io/henrygd/beszel/beszel-agent:${VERSION:-0.12.5}
+    image: ghcr.io/henrygd/beszel/beszel-agent:${VERSION:-0.12.7}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -60,6 +60,9 @@ services:
     environment:
       LISTEN: ${PORT_AGENT:-45876}
       KEY: ${KEY?key for agent is not set}
+    extends:
+      file: docker-compose-agent.override.yaml
+      service: ${HWACCEL:-none} # hwaccel-amd | hwaccel-nvidia
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
