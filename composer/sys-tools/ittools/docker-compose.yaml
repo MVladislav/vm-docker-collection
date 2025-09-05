@@ -10,7 +10,7 @@ x-basic-deploy-labels: &basic-deploy-labels
     - traefik.http.routers.it-tools.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
     - traefik.http.routers.it-tools.service=it-tools
     - traefik.http.services.it-tools.loadbalancer.server.scheme=${PROTOCOL:-http}
-    - traefik.http.services.it-tools.loadbalancer.server.port=${PORT:-80}
+    - traefik.http.services.it-tools.loadbalancer.server.port=${PORT:-8080}
 
 x-basic-deploy: &basic-deploy
   mode: replicated
@@ -64,8 +64,8 @@ services:
   ##############################################################################
   ##############################################################################
   it-tools:
-    # https://github.com/corentinth/it-tools/pkgs/container/it-tools
-    image: ghcr.io/corentinth/it-tools:${VERSION:-2024.10.22-7ca5933}
+    # https://hub.docker.com/r/sharevb/it-tools
+    image: sharevb/it-tools:${VERSION:-2025.8.31-13b8f041}
     <<: [*basic, *basic-deploy-labels]
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels]
@@ -74,7 +74,10 @@ services:
       - /etc/localtime:/etc/localtime:ro
     healthcheck:
       test:
-        ["CMD-SHELL", "curl -I http://127.0.0.1:80 > /dev/null 2>&1 || exit 1"]
+        [
+          "CMD-SHELL",
+          "curl -I ${PROTOCOL:-http}://127.0.0.1:${PORT:-8080} > /dev/null 2>&1 || exit 1",
+        ]
       start_period: 10s
       interval: 10s
       timeout: 3s
