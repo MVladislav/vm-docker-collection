@@ -4,13 +4,13 @@ x-basic-deploy-labels: &basic-deploy-labels
     - traefik.enable=true
     - traefik.swarm.lbswarm=${LB_SWARM:-true}
     - traefik.swarm.network=proxy
-    - traefik.http.routers.uptime-kuma.entrypoints=https
+    - traefik.http.routers.uptime-kuma.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
     - traefik.http.routers.uptime-kuma.rule=Host(`${DOMAIN?domain variable not set}`)
     - traefik.http.routers.uptime-kuma.tls=true
+    - traefik.http.routers.uptime-kuma.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
     - traefik.http.routers.uptime-kuma.service=uptime-kuma
     - traefik.http.services.uptime-kuma.loadbalancer.server.scheme=${PROTOCOL:-http}
     - traefik.http.services.uptime-kuma.loadbalancer.server.port=${PORT:-3001}
-    - traefik.http.routers.uptime-kuma.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
 
 x-basic-deploy: &basic-deploy
   mode: replicated
@@ -20,20 +20,22 @@ x-basic-deploy: &basic-deploy
     constraints:
       - "node.role==${NODE_ROLE:-manager}"
       - node.platform.os == linux
+  update_config:
+    order: stop-first
   restart_policy:
-    condition: on-failure
+    condition: any
   resources:
     limits:
-      # cpus: "1.5"
-      memory: 500M
+      cpus: ${RESOURCES_LIMITS_CPUS:-1}
+      memory: ${RESOURCES_LIMITS_MEMORY:-500m}
     reservations:
-      cpus: "0.001"
-      memory: 32M
+      cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
+      memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
 
 x-basic: &basic
   env_file: ${ENV_FILE:-.env}
   cap_add:
-    - SETGID
+    - DAC_OVERRIDE # Bypasses file read/write/execute permission checks (`cat`,`touch`,`rm`)
   cap_drop: ["ALL"]
   security_opt:
     - no-new-privileges:true
@@ -42,12 +44,14 @@ x-basic: &basic
       soft: -1
       hard: -1
     nofile:
-      soft: 65535
-      hard: 65535
+      soft: 655360
+      hard: 655360
     fsize: -1
     as: -1
   networks:
     proxy: {}
+  healthcheck:
+    disable: true
   tmpfs:
     - /tmp
   restart: always
@@ -55,33 +59,31 @@ x-basic: &basic
 ################################################################################
 ################################################################################
 ################################################################################
-
 services:
   ##############################################################################
   ##############################################################################
   ##############################################################################
   uptime-kuma:
     # https://hub.docker.com/r/louislam/uptime-kuma
-    image: louislam/uptime-kuma:${VERSION:-1.21.1-alpine}
-    <<: *basic
+    image: louislam/uptime-kuma:${VERSION:-1.23.16-alpine}
+    <<:
+      - *basic
+      - *basic-deploy-labels
     deploy:
-      <<: [*basic-deploy, *basic-deploy-labels]
-    # ports:
-    #   - target: ${PORT:-3001}
-    #     published: ${PORT_PUBLISH:-3001}
-    #     protocol: tcp
-    #     mode: host
+      <<:
+        - *basic-deploy
+        - *basic-deploy-labels
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - data:/app/data
     healthcheck:
-      # disable: true
-      test: ["CMD-SHELL", "node extra/healthcheck"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
+      test: ["CMD-SHELL", "extra/healthcheck"]
+      start_period: 10s
+      interval: 10s
+      timeout: 3s
+      retries: 10
 
 ################################################################################
 ################################################################################
