@@ -56,7 +56,7 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_PLANE=v0.28.0
+VERSION_PLANE=v1.0.0
 VERSION_POSTGRESQL=17.5-alpine
 VERSION_RABBITMQ=4.1.2-management-alpine
 VERSION_VALKEY=8.1.3-alpine

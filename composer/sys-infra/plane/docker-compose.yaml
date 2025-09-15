@@ -201,7 +201,7 @@ services:
   ##############################################################################
   web:
     # https://hub.docker.com/r/makeplane/plane-frontend
-    image: makeplane/plane-frontend:${VERSION_PLANE:-v0.28.0}
+    image: makeplane/plane-frontend:${VERSION_PLANE:-v1.0.0}
     <<:
       - *basic
       - *basic-deploy-labels-web
@@ -238,7 +238,7 @@ services:
 
   api:
     # https://hub.docker.com/r/makeplane/plane-backend
-    image: makeplane/plane-backend:${VERSION_PLANE:-v0.28.0}
+    image: makeplane/plane-backend:${VERSION_PLANE:-v1.0.0}
     <<:
       - *basic
       - *basic-deploy-labels-api
@@ -277,7 +277,7 @@ services:
 
   admin:
     # https://hub.docker.com/r/makeplane/plane-admin
-    image: makeplane/plane-admin:${VERSION_PLANE:-v0.28.0}
+    image: makeplane/plane-admin:${VERSION_PLANE:-v1.0.0}
     <<:
       - *basic
       - *basic-deploy-labels-admin
@@ -314,7 +314,7 @@ services:
 
   space:
     # https://hub.docker.com/r/makeplane/plane-space
-    image: makeplane/plane-space:${VERSION_PLANE:-v0.28.0}
+    image: makeplane/plane-space:${VERSION_PLANE:-v1.0.0}
     <<:
       - *basic
       - *basic-deploy-labels-space
@@ -351,7 +351,7 @@ services:
 
   live:
     # https://hub.docker.com/r/makeplane/plane-live
-    image: makeplane/plane-live:${VERSION_PLANE:-v0.28.0}
+    image: makeplane/plane-live:${VERSION_PLANE:-v1.0.0}
     <<:
       - *basic
       - *basic-deploy-labels-live
@@ -388,7 +388,7 @@ services:
 
   worker:
     # https://hub.docker.com/r/makeplane/plane-backend
-    image: makeplane/plane-backend:${VERSION_PLANE:-v0.28.0}
+    image: makeplane/plane-backend:${VERSION_PLANE:-v1.0.0}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -411,7 +411,7 @@ services:
 
   beat-worker:
     # https://hub.docker.com/r/makeplane/plane-backend
-    image: makeplane/plane-backend:${VERSION_PLANE:-v0.28.0}
+    image: makeplane/plane-backend:${VERSION_PLANE:-v1.0.0}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -436,7 +436,7 @@ services:
   ##############################################################################
   migrator:
     # https://hub.docker.com/r/makeplane/plane-backend
-    image: makeplane/plane-backend:${VERSION_PLANE:-v0.28.0}
+    image: makeplane/plane-backend:${VERSION_PLANE:-v1.0.0}
     <<: *basic
     deploy:
       <<: *basic-deploy
