@@ -52,6 +52,8 @@ services:
     <<: *basic
     deploy:
       <<: *basic-deploy
+    # cap_add:
+    #   - NET_RAW
     ports:
       - target: ${PORT_AGENT:-45876}
         published: ${PORT_AGENT:-45876}
@@ -59,7 +61,8 @@ services:
         mode: host
     environment:
       LISTEN: ${PORT_AGENT:-45876}
-      KEY: ${KEY?key for agent is not set}
+      # KEY: ${KEY?Key for agent is not set}
+      # HUB_URL: ${HUB_URL?Hub url for agent is not set}
     extends:
       file: docker-compose-agent.override.yaml
       service: ${HWACCEL:-none} # hwaccel-amd | hwaccel-nvidia
@@ -67,6 +70,14 @@ services:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
+      # - /sys/class/net:/sys/class/net:ro
+      # - data:/var/lib/beszel-agent
+    healthcheck:
+      test: ["CMD", "/agent", "health"]
+      start_period: 10s
+      interval: 10s
+      timeout: 3s
+      retries: 10
 
 ################################################################################
 ################################################################################
