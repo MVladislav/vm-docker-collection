@@ -51,14 +51,14 @@ x-basic: &basic
   #   - SETUID # Allows setting user ID (`setuid`,`su`,`sudo`,`passwd`)
   #   - FSETID # Allows setting file SUID/SGID bits (`chmod u+s`,`chmod g+s`)
   #   # --------------------------
-  #   - NET_ADMIN
-  #   - NET_RAW
-  #   - NET_BIND_SERVICE
-  #   - NET_BROADCAST
-  #   - SYS_MODULE
-  #   - SYS_NICE
-  #   - AUDIT_CONTROL
-  #   - AUDIT_READ
+  #   - NET_ADMIN # Wide network config (interfaces, routes, firewall, tunneling, bridge, VLAN)
+  #   - NET_RAW # Raw packet sockets (e.g. `ping`, packet sniffing/injection)
+  #   - NET_BIND_SERVICE # Bind to ports <1024 (privileged ports like 80, 443, 25)
+  #   - NET_BROADCAST # Broadcast and multicast packet sending (rarely needed)
+  #   - SYS_MODULE # Load/unload kernel modules (`modprobe`, device drivers)
+  #   - SYS_NICE # Set process priorities (`renice`, realtime scheduling)
+  #   - AUDIT_CONTROL # Configure Linux audit subsystem (add/remove audit rules)
+  #   - AUDIT_READ # Read audit logs via multicast netlink socket
   #   # --------------------------
   #   - KILL
   #   - SETPCAP
