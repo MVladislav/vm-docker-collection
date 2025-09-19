@@ -1,0 +1,95 @@
+---
+x-basic-deploy-labels: &basic-deploy-labels
+  labels:
+    - traefik.enable=true
+    - traefik.swarm.lbswarm=${LB_SWARM:-true}
+    - traefik.swarm.network=proxy
+    - traefik.http.routers.evcc.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.evcc.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.evcc.tls=true
+    - traefik.http.routers.evcc.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.evcc.service=evcc
+    - traefik.http.services.evcc.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.evcc.loadbalancer.server.port=${PORT:-7070}
+
+x-basic-deploy: &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  update_config:
+    order: stop-first
+  restart_policy:
+    condition: any
+  resources:
+    limits:
+      cpus: ${RESOURCES_LIMITS_CPUS:-1}
+      memory: ${RESOURCES_LIMITS_MEMORY:-1g}
+    reservations:
+      cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
+      memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
+
+x-basic: &basic
+  env_file: ${ENV_FILE:-.env}
+  cap_drop: ["ALL"]
+  security_opt:
+    - no-new-privileges:true
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 655360
+      hard: 655360
+    fsize: -1
+    as: -1
+  networks:
+    proxy: {}
+  healthcheck:
+    disable: true
+  tmpfs:
+    - /tmp
+  restart: always
+
+################################################################################
+################################################################################
+################################################################################
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  evcc:
+    # https://hub.docker.com/r/evcc/evcc
+    image: evcc/evcc:${VERSION:-0.207.6}
+    <<:
+      - *basic
+      - *basic-deploy-labels
+    deploy:
+      <<:
+        - *basic-deploy
+        - *basic-deploy-labels
+    # ports:
+    #   - 8887:8887/tcp
+    #   - 9522:9522/udp
+    #   - 4712:4712/tcp
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      # - /etc/machine-id:/etc/machine-id:ro
+      # - /var/lib/dbus/machine-id:/var/lib/dbus/machine-id:ro
+      - data:/root
+    command: sh -c "touch ~/evcc.yaml && evcc --config ~/evcc.yaml --database ~/.evcc/evcc.db"
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  proxy:
+    external: true
+
+volumes:
+  data: {}
+  etc: {}
