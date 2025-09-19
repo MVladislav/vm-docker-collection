@@ -22,7 +22,7 @@
 ### create your `secrets`:
 
 ```sh
-$pwgen -s 32 1 > config/secrets/mariadb_user_password.txt
+$pwgen -s 32 1 > config/secrets/postgres_password_file.txt
 ```
 
 ### create `.env` file following:
@@ -38,7 +38,7 @@ NETWORK_MODE=overlay # overlay | bridge
 LB_SWARM=true
 DOMAIN=invoice.home.local # not set in docker-compose, needs to be copied to .env
 PROTOCOL=http
-PORT=80
+PORT=8080
 # default-secured@file | public-whitelist@file | authentik@file
 MIDDLEWARE_SECURED=default-secured@file
 
@@ -51,8 +51,8 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_INVOICE_SHELF=latest
-VERSION_MARIADB=11.8
+VERSION_INVOICE_SHELF=2.2.0-alpha1
+VERSION_POSTGRESQL=17.6-alpine
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________

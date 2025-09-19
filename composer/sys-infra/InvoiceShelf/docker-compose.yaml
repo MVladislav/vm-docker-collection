@@ -10,7 +10,7 @@ x-basic-deploy-labels: &basic-deploy-labels
     - traefik.http.routers.invoiceshelf.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
     - traefik.http.routers.invoiceshelf.service=invoiceshelf
     - traefik.http.services.invoiceshelf.loadbalancer.server.scheme=${PROTOCOL:-http}
-    - traefik.http.services.invoiceshelf.loadbalancer.server.port=${PORT:-80}
+    - traefik.http.services.invoiceshelf.loadbalancer.server.port=${PORT:-8080}
 
 x-basic-deploy: &basic-deploy
   mode: replicated
@@ -61,51 +61,42 @@ services:
   ##############################################################################
   invoiceshelf:
     # https://hub.docker.com/r/invoiceshelf/invoiceshelf
-    image: invoiceshelf/invoiceshelf:${VERSION_INVOICE_SHELF:-latest}
+    image: invoiceshelf/invoiceshelf:${VERSION_INVOICE_SHELF:-2.2.0-alpha1}
     <<: [*basic, *basic-deploy-labels]
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels]
     cap_add:
       - ALL
     secrets:
-      - mariadb_user_password
+      - postgres_password_file
     environment:
+      APP_URL: https://${DOMAIN?domain variable not set}
+      SESSION_DOMAIN: ${DOMAIN?domain variable not set}
+      SANCTUM_STATEFUL_DOMAINS: ${DOMAIN?domain variable not set}
+      TRUSTED_PROXIES: "*"
+
       PHP_TZ: ${PHP_TZ:-Europe/Berlin} # UTC
+      APP_TIMEZONE: ${APP_TIMEZONE:-Europe/Berlin} # UTC
       TIMEZONE: ${TIMEZONE:-Europe/Berlin} # UTC
       APP_NAME: ${APP_NAME:-InvoiceShelf}
       APP_ENV: ${APP_ENV:-production}
       APP_DEBUG: ${APP_DEBUG:-false}
 
-      DB_CONNECTION: mariadb
-      DB_HOST: ${DB_HOST:-mariadb}
-      DB_PORT: 3306
-      DB_DATABASE: ${MARIADB_DATABASE:-invoiceshelf}
-      DB_USERNAME: ${MARIADB_USER:-invoiceshelf}
-      DB_PASSWORD_FILE: /run/secrets/mariadb_user_password
+      DB_CONNECTION: pgsql
+      DB_HOST: postgresql
+      DB_PORT: 5432
+      DB_DATABASE: ${POSTGRES_DB:-invoiceshelf}
+      DB_USERNAME: ${POSTGRES_USER:-invoiceshelf}
+      DB_PASSWORD_FILE: /run/secrets/postgres_password_file
       CACHE_STORE: file
-      # STARTUP_DELAY: ${STARTUP_DELAY:-0}
       SESSION_DRIVER: file
       SESSION_LIFETIME: 120
       SESSION_ENCRYPT: false
       SESSION_PATH: /
-
-      SESSION_DOMAIN: ${DOMAIN?domain variable not set}
-      SANCTUM_STATEFUL_DOMAINS: ${DOMAIN?domain variable not set}
-      APP_URL: https://${DOMAIN?domain variable not set}
-      TRUSTED_PROXIES: "*"
-
-      # - MAIL_DRIVER=smtp
-      # - MAIL_HOST=smtp.mailtrap.io
-      # - MAIL_PORT=2525
-      # - MAIL_USERNAME=null
-      # - MAIL_PASSWORD=null
-      # - MAIL_PASSWORD_FILE=<filename>
-      # - MAIL_ENCRYPTION=null
     volumes:
       # - /etc/timezone:/etc/timezone:ro
       # - /etc/localtime:/etc/localtime:ro
-      - data:/data
-      - conf:/conf
+      - data:/var/www/html/storage
     networks:
       default: {}
       proxy: {}
@@ -113,7 +104,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "curl -kIf ${PROTOCOL:-http}://127.0.0.1:${PORT:-80} > /dev/null 2>&1 || exit 1",
+          "curl -kIf ${PROTOCOL:-http}://127.0.0.1:${PORT:-8080} > /dev/null 2>&1 || exit 1",
         ]
       start_period: 10s
       interval: 10s
@@ -123,40 +114,38 @@ services:
   ##############################################################################
   ##############################################################################
   ##############################################################################
-  mariadb:
-    # https://hub.docker.com/_/mariadb
-    image: mariadb:${VERSION_MARIADB:-11.8}
+  postgresql:
+    # https://hub.docker.com/_/postgres
+    image: postgres:${VERSION_POSTGRESQL:-17.6-alpine}
     <<: *basic
     deploy:
       <<: *basic-deploy
       resources:
         limits:
-          cpus: ${RESOURCES_LIMITS_CPUS_MARIADB:-1}
-          memory: ${RESOURCES_LIMITS_MEMORY_MARIADB:-512M}
+          cpus: ${RESOURCES_LIMITS_CPUS_POSTGRESQL:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_POSTGRESQL:-512m}
         reservations:
-          cpus: ${RESOURCES_RESERVATIONS_CPUS_MARIADB:-0.001}
-          memory: ${RESOURCES_RESERVATIONS_MEMORY_MARIADB:-32m}
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_POSTGRESQL:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_POSTGRESQL:-32m}
     cap_add:
-      - SETGID
+      - CHOWN
+      - FOWNER
+      - DAC_READ_SEARCH
       - SETUID
-      - DAC_OVERRIDE
+      - SETGID
     secrets:
-      - mariadb_user_password
+      - postgres_password_file
     environment:
-      TZ: ${TZ:-Europe/Berlin}
-      MARIADB_DATABASE: ${MARIADB_DATABASE:-invoiceshelf}
-      MARIADB_USER: ${MARIADB_USER:-invoiceshelf}
-      MARIADB_PASSWORD_FILE: /run/secrets/mariadb_user_password
-      MARIADB_RANDOM_ROOT_PASSWORD: ${MARIADB_RANDOM_ROOT_PASSWORD:-true}
+      POSTGRES_DB: ${POSTGRES_DB:-invoiceshelf}
+      POSTGRES_USER: ${POSTGRES_USER:-invoiceshelf}
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password_file
+      PGDATA: /var/lib/postgresql/data
     volumes:
-      # - /etc/timezone:/etc/timezone:ro
-      # - /etc/localtime:/etc/localtime:ro
-      - mariadb:/var/lib/mysql
-    command:
-      - --log-bin=mysql-bin
-      - --expire-logs-days=90
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - postgresql:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
       start_period: 2s
       interval: 5s
       timeout: 3s
@@ -176,9 +165,8 @@ networks:
 
 volumes:
   data: {}
-  conf: {}
-  mariadb: {}
+  postgresql: {}
 
 secrets:
-  mariadb_user_password:
-    file: config/secrets/mariadb_user_password.txt
+  postgres_password_file:
+    file: config/secrets/postgres_password_file.txt
