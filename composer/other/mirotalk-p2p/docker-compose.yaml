@@ -1,0 +1,140 @@
+---
+x-basic-deploy-labels: &basic-deploy-labels
+  labels:
+    - traefik.enable=true
+    - traefik.swarm.lbswarm=${LB_SWARM:-true}
+    - traefik.swarm.network=proxy
+    - traefik.http.routers.mirotalk-p2p.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.mirotalk-p2p.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.mirotalk-p2p.tls=true
+    - traefik.http.routers.mirotalk-p2p.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.mirotalk-p2p.service=mirotalk-p2p
+    - traefik.http.services.mirotalk-p2p.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.mirotalk-p2p.loadbalancer.server.port=${PORT:-3000}
+
+x-basic-deploy: &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  update_config:
+    order: stop-first
+  restart_policy:
+    condition: any
+  resources:
+    limits:
+      cpus: ${RESOURCES_LIMITS_CPUS:-2}
+      memory: ${RESOURCES_LIMITS_MEMORY:-2g}
+    reservations:
+      cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
+      memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
+
+x-basic: &basic
+  env_file: ${ENV_FILE:-.env}
+  cap_drop: ["ALL"]
+  security_opt:
+    - no-new-privileges:true
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 655360
+      hard: 655360
+    fsize: -1
+    as: -1
+  networks:
+    deebot_default: {}
+    # proxy: {}
+  healthcheck:
+    disable: true
+  tmpfs:
+    - /tmp
+  restart: always
+
+################################################################################
+################################################################################
+################################################################################
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  mirotalk:
+    # https://hub.docker.com/r/mirotalk/p2p
+    image: mirotalk/p2p:${VERSION:-latest}
+    <<:
+      - *basic
+      - *basic-deploy-labels
+    deploy:
+      <<:
+        - *basic-deploy
+        - *basic-deploy-labels
+    environment:
+      NODE_ENV: production
+      TZ: ${TZ:-Europe/Berlin}
+
+      LOGS_DEBUG: ${LOGS_DEBUG:-false}
+      LOGS_COLORS: ${LOGS_COLORS:-false}
+      LOGS_JSON: ${LOGS_JSON:-false}
+      LOGS_JSON_PRETTY: ${LOGS_JSON_PRETTY:-false}
+
+      HOST: http://localhost:${PORT:-3000}
+      PORT: ${PORT:-3000}
+      TRUST_PROXY: ${TRUST_PROXY:-true}
+
+      CORS_ORIGIN: '["http://localhost:${PORT:-3000}","https://${DOMAIN?domain variable not set}"]'
+      CORS_METHODS: '["GET", "POST"]'
+
+      IP_WHITELIST_ENABLED: ${IP_WHITELIST_ENABLED:-false}
+      IP_WHITELIST_ALLOWED: ${IP_WHITELIST_ALLOWED:-["127.0.0.1", "::1"]}
+
+      ROOM_MAX_PARTICIPANTS: ${ROOM_MAX_PARTICIPANTS:-2}
+      PRESENTERS: ${PRESENTERS:-[]}
+      IP_LOOKUP_ENABLED: ${IP_LOOKUP_ENABLED:-false}
+      NGROK_ENABLED: ${NGROK_ENABLED:-false}
+      SENTRY_ENABLED: ${SENTRY_ENABLED:-false}
+      SLACK_ENABLED: ${SLACK_ENABLED:-false}
+      MATTERMOST_ENABLED: ${MATTERMOST_ENABLED:-false}
+      CHATGPT_ENABLED: ${CHATGPT_ENABLED:-false}
+      EMAIL_ALERT: ${EMAIL_ALERT:-false}
+      STATS_ENABLED: ${STATS_ENABLED:-false}
+
+      SURVEY_ENABLED: ${SURVEY_ENABLED:-false}
+      SURVEY_URL: ${SURVEY_URL:-https://${DOMAIN?domain variable not set}}
+
+      REDIRECT_ENABLED: ${REDIRECT_ENABLED:-false}
+      REDIRECT_URL: ${REDIRECT_URL:-https://${DOMAIN?domain variable not set}}
+
+      API_KEY_SECRET: ${API_KEY_SECRET?API key is not set}
+      API_DISABLED: '["token", "meetings"]'
+
+      JWT_KEY: ${JWT_KEY?JWT key is not set}
+      JWT_EXP: ${JWT_EXP:-1h}
+    configs:
+      - source: env_config
+        target: /src/.env
+      - source: js_config
+        target: /src/app/src/config.js
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - data:/root
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  proxy:
+    external: true
+
+volumes:
+  data: {}
+
+configs:
+  env_config:
+    file: $PWD/.env
+  js_config:
+    file: $PWD/config/config.js
