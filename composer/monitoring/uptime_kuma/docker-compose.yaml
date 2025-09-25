@@ -36,6 +36,7 @@ x-basic: &basic
   env_file: ${ENV_FILE:-.env}
   cap_add:
     - DAC_OVERRIDE # Bypasses file read/write/execute permission checks (`cat`,`touch`,`rm`)
+    - NET_RAW # Raw packet sockets (e.g. `ping`, packet sniffing/injection)
   cap_drop: ["ALL"]
   security_opt:
     - no-new-privileges:true
@@ -65,7 +66,7 @@ services:
   ##############################################################################
   uptime-kuma:
     # https://hub.docker.com/r/louislam/uptime-kuma
-    image: louislam/uptime-kuma:${VERSION:-1.23.16-alpine}
+    image: louislam/uptime-kuma:${VERSION:-2.0.0-beta.4}
     <<:
       - *basic
       - *basic-deploy-labels
