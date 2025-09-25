@@ -44,11 +44,13 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION=0.12.7
+VERSION=0.12.11
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
-# NOTE: extend additional info here ...
+
+# Agent
+AGENT_TYPE= # -nvidia | -intel
 ```
 
 #### example short .env
