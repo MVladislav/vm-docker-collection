@@ -1,0 +1,254 @@
+---
+x-basic-deploy-labels: &basic-deploy-labels
+  labels:
+    - traefik.enable=true
+    - traefik.swarm.lbswarm=${LB_SWARM:-true}
+    - traefik.swarm.network=proxy
+    - traefik.http.routers.open-archiver.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.open-archiver.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.open-archiver.tls=true
+    - traefik.http.routers.open-archiver.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.open-archiver.service=open-archiver
+    - traefik.http.services.open-archiver.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.open-archiver.loadbalancer.server.port=${PORT:-3000}
+
+x-basic-deploy: &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  update_config:
+    order: stop-first
+  restart_policy:
+    condition: any
+  resources:
+    limits:
+      cpus: ${RESOURCES_LIMITS_CPUS:-1}
+      memory: ${RESOURCES_LIMITS_MEMORY:-1g}
+    reservations:
+      cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
+      memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
+
+x-basic: &basic
+  env_file: ${ENV_FILE:-.env}
+  # cap_add:
+  #   # https://dockerlabs.collabnix.com/advanced/security/capabilities/
+  #   - CHOWN # Allows changing file ownership (`chown`,`chgrp`)
+  #   - FOWNER # Overrides file ownership checks (`chmod`,`kill`)
+  #   - DAC_READ_SEARCH # Bypasses file read and directory execute permissions (`ls`,`cat`,`find`)
+  #   - DAC_OVERRIDE # Bypasses file read/write/execute permission checks (`cat`,`touch`,`rm`)
+  #   - SETGID # Allows setting group ID (`setgid`,`newgrp`,`chgrp`,`setregid()`)
+  #   - SETUID # Allows setting user ID (`setuid`,`su`,`sudo`,`passwd`)
+  #   - FSETID # Allows setting file SUID/SGID bits (`chmod u+s`,`chmod g+s`)
+  cap_drop: ["ALL"]
+  security_opt:
+    - no-new-privileges:true
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 655360
+      hard: 655360
+    fsize: -1
+    as: -1
+  networks:
+    default: {}
+  healthcheck:
+    disable: true
+  tmpfs:
+    - /tmp
+  restart: always
+
+################################################################################
+################################################################################
+################################################################################
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  open-archiver:
+    # https://hub.docker.com/r/logiclabshq/open-archiver
+    image: logiclabshq/open-archiver:${VERSION_OPEN_ARCHIVER:-latest}
+    <<:
+      - *basic
+      - *basic-deploy-labels
+    deploy:
+      <<:
+        - *basic-deploy
+        - *basic-deploy-labels
+    ports:
+      - 3000:3000
+    environment:
+      NODE_ENV: production
+      PORT_BACKEND: 4000
+      PORT_FRONTEND: ${PORT:-3000}
+      STORAGE_TYPE: ${STORAGE_TYPE:-local}
+      BODY_SIZE_LIMIT: ${BODY_SIZE_LIMIT:-100M}
+      SYNC_FREQUENCY: ${SYNC_FREQUENCY:-* * * * *}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+
+      RATE_LIMIT_WINDOW_MS: ${RATE_LIMIT_WINDOW_MS:-60000}
+      RATE_LIMIT_MAX_REQUESTS: ${RATE_LIMIT_MAX_REQUESTS:-100}
+
+      STORAGE_LOCAL_ROOT_PATH: /var/data/open-archiver
+
+      POSTGRES_DB: ${POSTGRES_DB:-open_archive}
+      POSTGRES_USER: ${POSTGRES_USER:-open-archive}
+      DATABASE_URL: "postgresql://${POSTGRES_USER:-open-archive}:${DB_PASSWORD}@postgresql:5432/${POSTGRES_DB:-open_archive}"
+
+      REDIS_HOST: valkey
+      REDIS_PORT: 6379
+      REDIS_TLS_ENABLED: false
+
+      MEILI_HOST: http://meilisearch:7700
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - archiver:/var/data/open-archiver
+    networks:
+      default: {}
+      proxy: {}
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget --no-verbose --tries=1 --spider --no-check-certificate ${PROTOCOL:-http}://127.0.0.1:${PORT:-3000} || exit 1",
+        ]
+      start_period: 10s
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  meilisearch:
+    # https://hub.docker.com/r/getmeili/meilisearch
+    image: getmeili/meilisearch:${VERSION_MEILISEARCH:-latest}
+    <<:
+      - *basic
+    deploy:
+      <<:
+        - *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_MEILISEARCH:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_MEILISEARCH:-512m}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_MEILISEARCH:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_MEILISEARCH:-32m}
+    environment:
+      MEILI_ENV: production
+      MEILI_HTTP_ADDR: 0.0.0.0:7700
+      MEILI_NO_ANALYTICS: ${MEILI_NO_ANALYTICS:-true}
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - meili:/meili_data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -kf ${PROTOCOL:-http}://127.0.0.1:${PORT:-7700}/health > /dev/null 2>&1 || exit 1",
+        ]
+      start_period: 10s
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  postgresql:
+    # https://hub.docker.com/_/postgres
+    image: postgres:${VERSION_POSTGRESQL:-17.5-alpine}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_POSTGRESQL:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_POSTGRESQL:-512m}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_POSTGRESQL:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_POSTGRESQL:-32m}
+    cap_add:
+      - CHOWN
+      - FOWNER
+      - DAC_READ_SEARCH
+      - SETUID
+      - SETGID
+    secrets:
+      - postgres_password_file
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-open_archive}
+      POSTGRES_USER: ${POSTGRES_USER:-open-archive}
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password_file
+      PGDATA: /var/lib/postgresql/data
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - postgresql:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
+      start_period: 2s
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  valkey:
+    # https://hub.docker.com/r/valkey/valkey
+    image: valkey/valkey:${VERSION_VALKEY:-8.1.0-alpine}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_VALKEY:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_VALKEY:-128m}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_VALKEY:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_VALKEY:-32m}
+    cap_add:
+      - SETUID
+      - SETGID
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - valkey:/data
+    command: --save 300 1 --loglevel warning
+    healthcheck:
+      test: ["CMD-SHELL", "valkey-cli ping | grep PONG"]
+      start_period: 2s
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  default:
+    driver: ${NETWORK_MODE:-overlay}
+    attachable: true
+    driver_opts:
+      encrypted: "true"
+  proxy:
+    external: true
+
+volumes:
+  archiver: {}
+  postgresql: {}
+  valkey: {}
+  meili: {}
+
+secrets:
+  postgres_password_file:
+    file: config/secrets/postgres_password_file.txt
