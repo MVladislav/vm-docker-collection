@@ -218,6 +218,7 @@ services:
       #   [
       #     "CMD-SHELL",
       #     "curl -kIf ${PROTOCOL:-https}://127.0.0.1:${PORT:-443} > /dev/null 2>&1 || exit 1",
+      #     # "curl -kf ${PROTOCOL:-https}://127.0.0.1:${PORT:-443} > /dev/null 2>&1 || exit 1",
       #   ]
       #   # [
       #   #   "CMD-SHELL",
