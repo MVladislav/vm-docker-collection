@@ -80,8 +80,6 @@ services:
       <<:
         - *basic-deploy
         - *basic-deploy-labels
-    ports:
-      - 3000:3000
     environment:
       NODE_ENV: production
       PORT_BACKEND: 4000
@@ -244,7 +242,13 @@ networks:
     external: true
 
 volumes:
-  archiver: {}
+  # archiver: {}
+  archiver:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: nfsvers=4.2,addr=${NFS_HOST?nfs host is not defined},rsize=2097152,wsize=2097152,tcp,nconnect=${NFS_NCON:-8}
+      device: ":${NFS_PATH?nfs path is not defined}${SERVICE_NAME_POST:-}"
   postgresql: {}
   valkey: {}
   meili: {}
