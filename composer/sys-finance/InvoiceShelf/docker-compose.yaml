@@ -97,6 +97,7 @@ services:
       # - /etc/timezone:/etc/timezone:ro
       # - /etc/localtime:/etc/localtime:ro
       - data:/var/www/html/storage
+      - invoiceshelf_modules:/var/www/html/Modules/
     networks:
       default: {}
       proxy: {}
