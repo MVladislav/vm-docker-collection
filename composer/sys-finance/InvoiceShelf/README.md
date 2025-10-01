@@ -51,7 +51,7 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_INVOICE_SHELF=2.2.0-alpha1
+VERSION_INVOICE_SHELF=2.2.0-alpha2
 VERSION_POSTGRESQL=17.6-alpine
 
 # APPLICATION general variable to adjust the apps

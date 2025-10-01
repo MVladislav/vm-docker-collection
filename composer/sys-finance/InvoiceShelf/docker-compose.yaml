@@ -61,7 +61,7 @@ services:
   ##############################################################################
   invoiceshelf:
     # https://hub.docker.com/r/invoiceshelf/invoiceshelf
-    image: invoiceshelf/invoiceshelf:${VERSION_INVOICE_SHELF:-2.2.0-alpha1}
+    image: invoiceshelf/invoiceshelf:${VERSION_INVOICE_SHELF:-2.2.0-alpha2}
     <<: [*basic, *basic-deploy-labels]
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels]
@@ -97,7 +97,7 @@ services:
       # - /etc/timezone:/etc/timezone:ro
       # - /etc/localtime:/etc/localtime:ro
       - data:/var/www/html/storage
-      - invoiceshelf_modules:/var/www/html/Modules/
+      - modules:/var/www/html/Modules/
     networks:
       default: {}
       proxy: {}
@@ -166,6 +166,7 @@ networks:
 
 volumes:
   data: {}
+  modules: {}
   postgresql: {}
 
 secrets:
