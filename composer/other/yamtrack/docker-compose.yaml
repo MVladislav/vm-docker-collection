@@ -74,7 +74,6 @@ services:
         - *basic-deploy-labels
     cap_add:
       - CHOWN # Allows changing file ownership (`chown`,`chgrp`)
-      - FOWNER # Overrides file ownership checks (`chmod`,`kill`)
       - SETGID # Allows setting group ID (`setgid`,`newgrp`,`chgrp`,`setregid()`)
       - SETUID # Allows setting user ID (`setuid`,`su`,`sudo`,`passwd`)
       - DAC_OVERRIDE # Bypasses file read/write/execute permission checks (`cat`,`touch`,`rm`)
