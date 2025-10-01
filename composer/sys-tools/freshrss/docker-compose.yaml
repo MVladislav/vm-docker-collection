@@ -40,6 +40,7 @@ x-basic: &basic
     - FSETID
     - SETGID
     - SETUID
+    # - DAC_OVERRIDE # Bypasses file read/write/execute permission checks (`cat`,`touch`,`rm`)
   cap_drop: ["ALL"]
   security_opt:
     - no-new-privileges:true
@@ -68,7 +69,7 @@ services:
   ##############################################################################
   freshrss:
     # https://hub.docker.com/r/freshrss/freshrss
-    image: freshrss/freshrss:${VERSION:-1.26.0}
+    image: freshrss/freshrss:${VERSION:-1.27.1}
     <<: *basic
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels]
