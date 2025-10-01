@@ -80,10 +80,10 @@ RESOURCES_RESERVATIONS_MEMORY_MINIO=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION=v4.4.5
-VERSION_CHROMIUM=v2.31.1
-VERSION_POSTGRESQL=17.5-alpine
-VERSION_MINIO=RELEASE.2025-05-24T17-08-30Z-cpuv1
+VERSION=v4.5.0
+VERSION_CHROMIUM=v2.37.0
+VERSION_POSTGRESQL=17.6-alpine
+VERSION_MINIO=RELEASE.2025-09-07T16-13-09Z-cpuv1
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
