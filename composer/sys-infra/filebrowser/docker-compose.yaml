@@ -35,6 +35,8 @@ x-basic-deploy: &basic-deploy
 x-basic: &basic
   env_file: ${ENV_FILE:-.env}
   user: "${GID:-0}:${UID:-0}"
+  cap_add:
+    - DAC_OVERRIDE # Bypasses file read/write/execute permission checks (`cat`,`touch`,`rm`)
   cap_drop: ["ALL"]
   security_opt:
     - no-new-privileges:true
@@ -62,7 +64,7 @@ services:
   ##############################################################################
   filebrowser:
     # https://hub.docker.com/r/filebrowser/filebrowser
-    image: filebrowser/filebrowser:${VERSION:-v2.33.2}
+    image: filebrowser/filebrowser:${VERSION:-v2.44.0}
     <<: [*basic, *basic-deploy-labels]
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels]
@@ -73,7 +75,6 @@ services:
       - data:/config
     command:
       [
-        "filebrowser",
         "-d",
         "/config/database.db",
         "-c",
