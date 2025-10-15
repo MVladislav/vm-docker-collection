@@ -1,4 +1,4 @@
-ARG VERSION_UBUNTU=23.10
+ARG VERSION_UBUNTU=24.04
 FROM ubuntu:${VERSION_UBUNTU}
 
 # ------------------------------------------------------------------------------
