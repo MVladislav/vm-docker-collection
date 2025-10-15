@@ -1,5 +1,5 @@
 ARG VERSION_PHP=7.4
-ARG VERSION_UBUNTU=22.10
+ARG VERSION_UBUNTU=24.04
 
 FROM ubuntu:${VERSION_UBUNTU}
 # FROM ghcr.io/linuxserver/baseimage-ubuntu:bionic
