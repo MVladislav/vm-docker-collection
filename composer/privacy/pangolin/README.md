@@ -26,6 +26,10 @@
 ```sh
 $echo $(htpasswd -nB traefik) > config/secrets/traefik_basicauth_secret.txt
 $echo '<YOUR_API_TOKEN>' > config/secrets/dnschallenge_api_key_secret.txt
+
+# Create maxmind secrets and put your secrets in
+$touch config/secrets/geoipupdate_account_id.txt
+$touch config/secrets/geoipupdate_license_key.txt
 ```
 
 ### create config files:
@@ -75,6 +79,7 @@ VERSION_TRAEFIK=v3.5.3
 VERSION_BADGER=v1.2.0
 VERSION_CROWDSEC_PLUGIN=v1.4.5
 VERSION_CROWDSEC=v1.7.0
+VERSION_MAXMIND=v7.1.1
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
@@ -124,3 +129,4 @@ extend `networks` sections with your network names where `newt` should have acce
 - acme
   - <https://go-acme.github.io/lego/dns/ionos/>
 - <https://docs.fossorial.io/Community%20Guides/crowdsec>
+- <https://github.com/maxmind/geoipupdate/blob/main/doc/docker.md>

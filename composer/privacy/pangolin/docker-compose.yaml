@@ -61,6 +61,7 @@ services:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - pangolin_data:/app/config
+      - maxmind:${GEOIPUPDATE_DB_DIR:-/app/geo}
     environment:
       # APP
       APP_DASHBOARDURL: https://${DASHBOARDURL?domain variable not set}
@@ -310,6 +311,31 @@ services:
     networks:
       proxy: {}
 
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  geoipupdate:
+    # https://github.com/maxmind/geoipupdate/pkgs/container/geoipupdate
+    image: ghcr.io/maxmind/geoipupdate:${VERSION_MAXMIND:-v7.1.1}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - maxmind:${GEOIPUPDATE_DB_DIR:-/app/geo}
+    secrets:
+      - geoipupdate_account_id
+      - geoipupdate_license_key
+    environment:
+      GEOIPUPDATE_ACCOUNT_ID_FILE: /run/secrets/geoipupdate_account_id
+      GEOIPUPDATE_LICENSE_KEY_FILE: /run/secrets/geoipupdate_license_key
+      GEOIPUPDATE_EDITION_IDS: ${GEOIPUPDATE_EDITION_IDS:-GeoLite2-Country} # GeoLite2-ASN GeoLite2-City GeoLite2-Country
+      GEOIPUPDATE_FREQUENCY: ${GEOIPUPDATE_FREQUENCY:-72}
+      GEOIPUPDATE_DB_DIR: ${GEOIPUPDATE_DB_DIR:-/app/geo}
+    networks:
+      proxy: {}
+
 ################################################################################
 ################################################################################
 ################################################################################
@@ -328,6 +354,7 @@ volumes:
   traefik_logs: {}
   crowdsec_data: {}
   crowdsec_db: {}
+  maxmind: {}
 
 configs:
   pangolin_config:
@@ -350,3 +377,7 @@ secrets:
     file: ${FILE_PATH:-$PWD}/config/secrets/traefik_basicauth_secret.txt
   dnschallenge_api_key_secret:
     file: ${FILE_PATH:-$PWD}/config/secrets/dnschallenge_api_key_secret.txt
+  geoipupdate_account_id:
+    file: ${FILE_PATH:-$PWD}/config/secrets/geoipupdate_account_id.txt
+  geoipupdate_license_key:
+    file: ${FILE_PATH:-$PWD}/config/secrets/geoipupdate_license_key.txt
