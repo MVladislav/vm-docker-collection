@@ -69,12 +69,12 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_PANGOLIN=1.9.2
-VERSION_GERBIL=1.2.1
-VERSION_TRAEFIK=v3.5.1
+VERSION_PANGOLIN=1.11.0
+VERSION_GERBIL=1.2.2
+VERSION_TRAEFIK=v3.5.3
 VERSION_BADGER=v1.2.0
-VERSION_CROWDSEC_PLUGIN=v1.4.4
-VERSION_CROWDSEC=v1.6.11
+VERSION_CROWDSEC_PLUGIN=v1.4.5
+VERSION_CROWDSEC=v1.7.0
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
