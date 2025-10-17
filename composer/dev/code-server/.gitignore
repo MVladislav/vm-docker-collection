@@ -10,6 +10,7 @@
 !config/
 config/*
 
+!config/entrypoint.sh
 !config/install-ext.sh
 !config/keybindings.json
 !config/settings.json

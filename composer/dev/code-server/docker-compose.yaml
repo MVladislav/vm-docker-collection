@@ -4,13 +4,13 @@ x-basic-deploy-labels: &basic-deploy-labels
     - traefik.enable=true
     - traefik.swarm.lbswarm=${LB_SWARM:-true}
     - traefik.swarm.network=proxy
-    - traefik.http.routers.code-server.entrypoints=https
+    - traefik.http.routers.code-server.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
     - traefik.http.routers.code-server.rule=Host(`${DOMAIN?domain variable not set}`)
     - traefik.http.routers.code-server.tls=true
+    - traefik.http.routers.code-server.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
     - traefik.http.routers.code-server.service=code-server
     - traefik.http.services.code-server.loadbalancer.server.scheme=${PROTOCOL:-http}
     - traefik.http.services.code-server.loadbalancer.server.port=${PORT:-8080}
-    - traefik.http.routers.code-server.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
 
 x-basic-deploy: &basic-deploy
   mode: replicated
@@ -20,68 +20,73 @@ x-basic-deploy: &basic-deploy
     constraints:
       - "node.role==${NODE_ROLE:-manager}"
       - node.platform.os == linux
+  update_config:
+    order: stop-first
   restart_policy:
-    condition: on-failure
+    condition: any
   resources:
     limits:
       cpus: ${RESOURCES_LIMITS_CPUS:-2}
-      memory: ${RESOURCES_LIMITS_MEMORY:-1g}
+      memory: ${RESOURCES_LIMITS_MEMORY:-2g}
     reservations:
       cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
       memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
 
 x-basic: &basic
   env_file: ${ENV_FILE:-.env}
-  user: "${GID:-1000}:${UID:-1000}"
   cap_add:
-    - CHOWN
-    - SETGID
-    - SETUID
+    - CHOWN # Allows changing file ownership (`chown`,`chgrp`)
+    - SETGID # Allows setting group ID (`setgid`,`newgrp`,`chgrp`,`setregid()`)
+    - SETUID # Allows setting user ID (`setuid`,`su`,`sudo`,`passwd`)
+    - FOWNER # Overrides file ownership checks (`chmod`,`kill`)
     - AUDIT_WRITE
   cap_drop: ["ALL"]
   security_opt:
-    - no-new-privileges:false
+    - no-new-privileges:true
   ulimits:
     memlock:
       soft: -1
       hard: -1
     nofile:
-      soft: 65535
-      hard: 65535
+      soft: 655360
+      hard: 655360
     fsize: -1
     as: -1
   networks:
     proxy: {}
   healthcheck:
     disable: true
+  tmpfs:
+    - /tmp
   restart: always
 
-x-logging: &logging
-  logging:
-    driver: json-file
-    options:
-      max-size: "10m"
-      max-file: 3
-      compress: "true"
-
 ################################################################################
 ################################################################################
 ################################################################################
-
 services:
   ##############################################################################
   ##############################################################################
   ##############################################################################
   code-server:
     # https://hub.docker.com/r/codercom/code-server
-    image: codercom/code-server:${VERSION:-4.17.1-ubuntu}
-    <<: [*basic, *logging]
+    image: codercom/code-server:${VERSION:-4.105.0-ubuntu}
+    <<:
+      - *basic
+      - *basic-deploy-labels
     deploy:
-      <<: [*basic-deploy, *basic-deploy-labels]
+      <<:
+        - *basic-deploy
+        - *basic-deploy-labels
+    user: "${GID:-1000}:${UID:-1000}"
+    environment:
+      DOCKER_USER: ${DOCKER_USER:-coder}
     configs:
-      - source: installer_ext
-        target: /entrypoint.d/install-ext.sh
+      - source: entrypoint
+        target: /usr/bin/entrypoint.sh
         mode: 0777
+      # - source: installer_ext
+      #   target: /entrypoint.d/install-ext.sh
+      #   mode: 0777
       - source: settings_config
         target: /home/coder/.local/share/code-server/User/settings.json
         mode: 0644
@@ -92,14 +97,11 @@ services:
         mode: 0644
         uid: "${UID:-1000}"
         gid: "${GID:-1000}"
-    environment:
-      DOCKER_USER: ${DOCKER_USER}
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-      - ${CONFIG:-$PWD/config/config}:/home/coder/.config/code-server
-      - ${LOCAL:-$PWD/config/local}:/home/coder/.local/share/code-server
-      - ${PROJECT:-$PWD/config/project}:/home/coder/project
+      - coder:/home/coder
+    entrypoint: ["/usr/bin/entrypoint.sh", "--bind-addr", "0.0.0.0:8080", "."]
 
 ################################################################################
 ################################################################################
@@ -108,7 +110,12 @@ networks:
   proxy:
     external: true
 
+volumes:
+  coder: {}
+
 configs:
+  entrypoint:
+    file: $PWD/config/entrypoint.sh
   installer_ext:
     file: $PWD/config/install-ext.sh
   settings_config:

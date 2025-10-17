@@ -10,7 +10,10 @@
   - [basic](#basic)
     - [additional changes](#additional-changes)
     - [create `.env` file following:](#create-env-file-following)
-      - [example short .env](#example-short-env)
+      - [example short .env (swarm)](#example-short-env-swarm)
+      - [example short .env (bridge)](#example-short-env-bridge)
+  - [Helper](#helper)
+    - [Print password](#print-password)
   - [References](#references)
 
 ---
@@ -38,39 +41,54 @@ LB_SWARM=true
 DOMAIN=code.home.local # not set in docker-compose, needs to be copied to .env
 PROTOCOL=http
 PORT=8080
-# default-secured@file | public-whitelist@file | authentik@file
+# default-secured@file | public-secured@file | authentik@file
 MIDDLEWARE_SECURED=default-secured@file
 
 # GENERAL sources to be used (set by default, change as needed)
 # ______________________________________________________________________________
 RESOURCES_LIMITS_CPUS=2
-RESOURCES_LIMITS_MEMORY=1g
+RESOURCES_LIMITS_MEMORY=2g
 RESOURCES_RESERVATIONS_CPUS=0.001
 RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION=4.17.1-ubuntu
+VERSION=4.105.0-ubuntu
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
 GID=1000
 UID=1000
-DOCKER_USER=$USER
-CONFIG=$PWD/config/config
-LOCAL=$PWD/config/local
-PROJECT=$PWD/config/project
+DOCKER_USER=<$USER>
+CONFIG=config # $PWD/config/config
+LOCAL=local # $PWD/config/local
 ```
 
-#### example short .env
+#### example short .env (swarm)
 
 ```env
 DOMAIN=code.home.local
+DOCKER_USER=<$USER>
+```
 
-DOCKER_USER=$USER
-CONFIG=$PWD/config/config
-LOCAL=$PWD/config/local
-PROJECT=$PWD/config/project
+#### example short .env (bridge)
+
+```env
+NETWORK_MODE=bridge
+LB_SWARM=false
+
+DOMAIN=code.home.local
+DOCKER_USER=<$USER>
+```
+
+---
+
+## Helper
+
+### Print password
+
+```sh
+$docker exec -it "$(docker ps -q -f name=code-server)" cat /home/coder/.config/code-server/config.yaml
 ```
 
 ---
