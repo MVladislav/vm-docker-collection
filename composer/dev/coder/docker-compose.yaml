@@ -4,13 +4,13 @@ x-basic-deploy-labels: &basic-deploy-labels
     - traefik.enable=true
     - traefik.swarm.lbswarm=${LB_SWARM:-true}
     - traefik.swarm.network=proxy
-    - traefik.http.routers.coder${SERVICE_NAME_POST:-}.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
-    - traefik.http.routers.coder${SERVICE_NAME_POST:-}.rule=Host(`${DOMAIN?domain variable not set}`)
-    - traefik.http.routers.coder${SERVICE_NAME_POST:-}.tls=true
-    - traefik.http.routers.coder${SERVICE_NAME_POST:-}.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
-    - traefik.http.routers.coder${SERVICE_NAME_POST:-}.service=coder${SERVICE_NAME_POST:-}
-    - traefik.http.services.coder${SERVICE_NAME_POST:-}.loadbalancer.server.scheme=${PROTOCOL:-http}
-    - traefik.http.services.coder${SERVICE_NAME_POST:-}.loadbalancer.server.port=${PORT:-7080}
+    - traefik.http.routers.coder.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.coder.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.coder.tls=true
+    - traefik.http.routers.coder.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.coder.service=coder
+    - traefik.http.services.coder.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.coder.loadbalancer.server.port=${PORT:-7080}
 
 x-basic-deploy: &basic-deploy
   mode: replicated
@@ -20,22 +20,23 @@ x-basic-deploy: &basic-deploy
     constraints:
       - "node.role==${NODE_ROLE:-manager}"
       - node.platform.os == linux
+  update_config:
+    order: stop-first
   restart_policy:
-    condition: on-failure
+    condition: any
   resources:
     limits:
       cpus: ${RESOURCES_LIMITS_CPUS:-2}
-      memory: ${RESOURCES_LIMITS_MEMORY:-1g}
+      memory: ${RESOURCES_LIMITS_MEMORY:-4g}
     reservations:
       cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
       memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
 
 x-basic: &basic
   env_file: ${ENV_FILE:-.env}
-  cap_add: ["ALL"]
-  # cap_drop: ["ALL"]
-  # security_opt:
-  #   - no-new-privileges:true
+  cap_drop: ["ALL"]
+  security_opt:
+    - no-new-privileges:true
   ulimits:
     memlock:
       soft: -1
@@ -47,36 +48,41 @@ x-basic: &basic
     as: -1
   networks:
     default: {}
-  extra_hosts:
-    - "host.docker.internal:host-gateway"
   healthcheck:
     disable: true
+  tmpfs:
+    - /tmp
   restart: always
 
 ################################################################################
 ################################################################################
 ################################################################################
-
 services:
   ##############################################################################
   ##############################################################################
   ##############################################################################
   coder:
     # https://github.com/coder/coder/pkgs/container/coder
-    image: ghcr.io/coder/coder:${VERSION_CODER:-v2.12.1}
-    <<: [*basic, *basic-deploy-labels]
+    image: ghcr.io/coder/coder:${VERSION_CODER:-v2.26.2}
+    <<:
+      - *basic
+      - *basic-deploy-labels
     deploy:
-      <<: [*basic-deploy, *basic-deploy-labels]
-    user: "1000:${GID:-982}"
+      <<:
+        - *basic-deploy
+        - *basic-deploy-labels
+    # user: "1000:${GID:-982}"
     environment:
       CODER_PG_CONNECTION_URL: "postgresql://${POSTGRES_USER:-coder}:${POSTGRES_PASSWORD_TMP}@postgresql/${POSTGRES_DB:-coder}?sslmode=disable"
       CODER_HTTP_ADDRESS: "0.0.0.0:7080"
-      CODER_ACCESS_URL: https://${DOMAIN?domain variable not set}
+      # CODER_ACCESS_URL: https://${DOMAIN?domain variable not set}
+      CODER_ACCESS_URL: "http://coder:7080"
       CODER_WILDCARD_ACCESS_URL: "*.${DOMAIN?domain variable not set}"
 
-      CODER_TELEMETRY_ENABLE: "false"
-      CODER_BLOCK_DIRECT: "false"
-      CODER_DERP_SERVER_STUN_ADDRESSES: "disable"
+      CODER_TELEMETRY_ENABLE: ${CODER_TELEMETRY_ENABLE:-false}
+      CODER_BLOCK_DIRECT: ${CODER_BLOCK_DIRECT:-true}
+      CODER_DERP_SERVER_STUN_ADDRESSES: ${CODER_DERP_SERVER_STUN_ADDRESSES:-disable}
+      CODER_UPDATE_CHECK: ${CODER_UPDATE_CHECK:-false}
 
       CODER_TLS_CERT_FILE: /var/coder/ca.pem
       CODER_TLS_CLIENT_AUTH: "none"
@@ -97,38 +103,36 @@ services:
   ##############################################################################
   postgresql:
     # https://hub.docker.com/_/postgres
-    image: postgres:${VERSION_POSTGRESQL:-16.3-alpine3.20}
+    image: postgres:${VERSION_POSTGRESQL:-17.5-alpine}
     <<: *basic
     deploy:
       <<: *basic-deploy
       resources:
         limits:
-          cpus: ${RESOURCES_LIMITS_CPUS_POSTGRESQL:-2}
-          memory: ${RESOURCES_LIMITS_MEMORY_POSTGRESQL:-1G}
+          cpus: ${RESOURCES_LIMITS_CPUS_POSTGRESQL:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_POSTGRESQL:-512m}
         reservations:
           cpus: ${RESOURCES_RESERVATIONS_CPUS_POSTGRESQL:-0.001}
           memory: ${RESOURCES_RESERVATIONS_MEMORY_POSTGRESQL:-32m}
     cap_add:
+      - CHOWN
       - FOWNER
-      - SETGID
+      - DAC_READ_SEARCH
       - SETUID
-      - DAC_OVERRIDE
+      - SETGID
     secrets:
       - postgres_password_file
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-coder}
       POSTGRES_USER: ${POSTGRES_USER:-coder}
       POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password_file
+      PGDATA: /var/lib/postgresql/data
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - postgresql:/var/lib/postgresql/data
     healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "pg_isready -d $${POSTGRES_DB:-coder} -U $${POSTGRES_USER:-coder}",
-        ]
+      test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
       start_period: 2s
       interval: 5s
       timeout: 3s
@@ -139,7 +143,6 @@ services:
 ################################################################################
 networks:
   default:
-    name: coder${SERVICE_NAME_POST:-}
     driver: ${NETWORK_MODE:-overlay}
     attachable: true
     driver_opts:
@@ -148,8 +151,7 @@ networks:
     external: true
 
 volumes:
-  postgresql:
-    name: coder_postgresql${SERVICE_NAME_POST:-}
+  postgresql: {}
 
 configs:
   ca_cert_file:
