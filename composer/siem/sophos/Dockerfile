@@ -1,4 +1,4 @@
-ARG PYTHON_VERSION=3.10.8-alpine3.16
+ARG PYTHON_VERSION=3.11.3-alpine3.16
 FROM python:${PYTHON_VERSION}
 
 # ------------------------------------------------------------------------------

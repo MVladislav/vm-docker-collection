@@ -1,6 +1,6 @@
 # Declare and use ARG variables properly
 ARG VERSION_NODE=23.2.0
-ARG VERSION_NGINX=1.27.2
+ARG VERSION_NGINX=1.29.2
 
 # ------------------------------------------------------------------------------
 FROM node:${VERSION_NODE} AS builder

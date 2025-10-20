@@ -1,6 +1,6 @@
 # Base image for PHP with Apache
 # https://hub.docker.com/_/php/tags
-ARG VERSION_PHP=8.3-apache
+ARG VERSION_PHP=8.4-apache
 FROM php:${VERSION_PHP}
 
 # Build-time metadata
