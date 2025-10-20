@@ -55,7 +55,7 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION=2.0.0-beta.4
+VERSION=2.0.1-slim
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________

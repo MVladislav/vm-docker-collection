@@ -65,8 +65,8 @@ services:
   ##############################################################################
   ##############################################################################
   uptime-kuma:
-    # https://hub.docker.com/r/louislam/uptime-kuma
-    image: louislam/uptime-kuma:${VERSION:-2.0.0-beta.4}
+    # https://github.com/louislam/uptime-kuma/pkgs/container/uptime-kuma
+    image: ghcr.io/louislam/uptime-kuma:${VERSION:-2.0.1-slim}
     <<:
       - *basic
       - *basic-deploy-labels
