@@ -1,5 +1,5 @@
 # https://hub.docker.com/_/python
-ARG VERSION_PYTHON=3.11-slim
+ARG VERSION_PYTHON=3.14-slim
 FROM python:${VERSION_PYTHON}
 
 # ------------------------------------------------------------------------------

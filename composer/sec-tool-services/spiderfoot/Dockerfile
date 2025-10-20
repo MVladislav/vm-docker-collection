@@ -6,7 +6,7 @@
 # Written by: TheTechromancer
 #
 
-FROM python:3.11.0
+FROM python:3.14.0
 
 # Install tools/dependencies from apt
 RUN apt-get -y update && apt-get -y install nbtscan onesixtyone nmap
