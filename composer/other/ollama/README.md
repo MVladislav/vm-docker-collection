@@ -65,18 +65,22 @@ DOMAIN_OLLAMA=ollama.home.local
 ```sh
 $docker exec -it "$(docker ps -q -f name=ollama-ollama)" ollama pull qwen2.5-coder:32b
 # => https://ollama.com/library
-# llama3
-# llama3:70b
+# gpt-oss:20b #tools #thinking
+# qwen2.5-coder:32b #tools
+# gemma3:12b #vision
+# gemma3:27b #vision
+#
+# llama3:8b
 # codellama
 # mistral
 # dolphin-mistral
 #   openhermes
 #   openchat
 # deepseek-coder
-# deepseek-r1:7b
-# deepseek-r1:8b
-# deepseek-r1:14b
-# deepseek-r1:32b
+# deepseek-r1:7b #tools #thinking
+# deepseek-r1:8b #tools #thinking
+# deepseek-r1:14b #tools #thinking
+# deepseek-r1:32b #tools #thinking
 # starling-lm - summarisation and text analysis
 # zephyr - summarization
 ```
