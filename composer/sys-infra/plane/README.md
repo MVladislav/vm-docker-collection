@@ -25,6 +25,7 @@
 
 ```sh
 $echo "SECRET_KEY=$(pwgen -s 32 1)" >> .env
+$echo "LIVE_SERVER_SECRET_KEY=$(pwgen -s 32 1)" >> .env
 $echo "AWS_SECRET_ACCESS_KEY=$(pwgen -s 32 1)" >> .env
 $echo "RABBITMQ_DEFAULT_PASS=$(pwgen -s 12 1)" >> .env
 $echo "POSTGRES_PASSWORD=$(pwgen -s 12 1)" >> .env
@@ -56,11 +57,11 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_PLANE=v1.0.0
-VERSION_POSTGRESQL=17.5-alpine
-VERSION_RABBITMQ=4.1.2-management-alpine
-VERSION_VALKEY=8.1.3-alpine
-VERSION_MINIO=RELEASE.2025-07-18T21-56-31Z-cpuv1
+VERSION_PLANE=v1.1.0
+VERSION_POSTGRESQL=17.6-alpine
+VERSION_RABBITMQ=4.2.0-management-alpine
+VERSION_VALKEY=9.0.0-alpine
+VERSION_MINIO=RELEASE.2025-09-07T16-13-09Z-cpuv1
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________

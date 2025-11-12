@@ -168,6 +168,7 @@ x-aws-s3-env: &aws-s3-env
 x-live-env: &live-env
   API_BASE_URL: http://api:8000
   LIVE_BASE_PATH: /live
+  LIVE_SERVER_SECRET_KEY: ${LIVE_SERVER_SECRET_KEY?Live secret key not set}
 
 x-web-env: &web-env
   HOSTNAME: 0.0.0.0
@@ -191,6 +192,7 @@ x-app-env: &app-env
   SECRET_KEY: ${SECRET_KEY?Secret key not set}
   AMQP_URL: amqp://${RABBITMQ_USER:-plane}:${RABBITMQ_DEFAULT_PASS?RabbitMQ default password not set}@plane-mq:5672/plane
   API_KEY_RATE_LIMIT: ${API_KEY_RATE_LIMIT:-60/minute}
+  LIVE_SERVER_SECRET_KEY: ${LIVE_SERVER_SECRET_KEY?Live secret key not set}
 
 ################################################################################
 ################################################################################
@@ -201,10 +203,10 @@ services:
   ##############################################################################
   web:
     # https://hub.docker.com/r/makeplane/plane-frontend
-    image: makeplane/plane-frontend:${VERSION_PLANE:-v1.0.0}
+    image: makeplane/plane-frontend:${VERSION_PLANE:-v1.1.0}
     <<:
       - *basic
-      - *basic-deploy-labels-web
+      # - *basic-deploy-labels-web
     deploy:
       <<:
         - *basic-deploy
@@ -238,10 +240,10 @@ services:
 
   api:
     # https://hub.docker.com/r/makeplane/plane-backend
-    image: makeplane/plane-backend:${VERSION_PLANE:-v1.0.0}
+    image: makeplane/plane-backend:${VERSION_PLANE:-v1.1.0}
     <<:
       - *basic
-      - *basic-deploy-labels-api
+      # - *basic-deploy-labels-api
     deploy:
       <<:
         - *basic-deploy
@@ -277,10 +279,10 @@ services:
 
   admin:
     # https://hub.docker.com/r/makeplane/plane-admin
-    image: makeplane/plane-admin:${VERSION_PLANE:-v1.0.0}
+    image: makeplane/plane-admin:${VERSION_PLANE:-v1.1.0}
     <<:
       - *basic
-      - *basic-deploy-labels-admin
+      # - *basic-deploy-labels-admin
     deploy:
       <<:
         - *basic-deploy
@@ -314,10 +316,10 @@ services:
 
   space:
     # https://hub.docker.com/r/makeplane/plane-space
-    image: makeplane/plane-space:${VERSION_PLANE:-v1.0.0}
+    image: makeplane/plane-space:${VERSION_PLANE:-v1.1.0}
     <<:
       - *basic
-      - *basic-deploy-labels-space
+      # - *basic-deploy-labels-space
     deploy:
       <<:
         - *basic-deploy
@@ -351,10 +353,10 @@ services:
 
   live:
     # https://hub.docker.com/r/makeplane/plane-live
-    image: makeplane/plane-live:${VERSION_PLANE:-v1.0.0}
+    image: makeplane/plane-live:${VERSION_PLANE:-v1.1.0}
     <<:
       - *basic
-      - *basic-deploy-labels-live
+      # - *basic-deploy-labels-live
     deploy:
       <<:
         - *basic-deploy
@@ -388,7 +390,7 @@ services:
 
   worker:
     # https://hub.docker.com/r/makeplane/plane-backend
-    image: makeplane/plane-backend:${VERSION_PLANE:-v1.0.0}
+    image: makeplane/plane-backend:${VERSION_PLANE:-v1.1.0}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -411,7 +413,7 @@ services:
 
   beat-worker:
     # https://hub.docker.com/r/makeplane/plane-backend
-    image: makeplane/plane-backend:${VERSION_PLANE:-v1.0.0}
+    image: makeplane/plane-backend:${VERSION_PLANE:-v1.1.0}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -436,7 +438,7 @@ services:
   ##############################################################################
   migrator:
     # https://hub.docker.com/r/makeplane/plane-backend
-    image: makeplane/plane-backend:${VERSION_PLANE:-v1.0.0}
+    image: makeplane/plane-backend:${VERSION_PLANE:-v1.1.0}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -455,7 +457,7 @@ services:
   ##############################################################################
   plane-db:
     # https://hub.docker.com/_/postgres
-    image: postgres:${VERSION_POSTGRESQL:-17.5-alpine}
+    image: postgres:${VERSION_POSTGRESQL:-17.6-alpine}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -470,6 +472,7 @@ services:
       - CHOWN
       - FOWNER
       - DAC_READ_SEARCH
+      # - DAC_OVERRIDE
       - SETUID
       - SETGID
     environment:
@@ -487,7 +490,7 @@ services:
 
   plane-mq:
     # https://hub.docker.com/_/rabbitmq
-    image: rabbitmq:${VERSION_RABBITMQ:-4.1.2-management-alpine}
+    image: rabbitmq:${VERSION_RABBITMQ:-4.2.0-management-alpine}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -510,7 +513,7 @@ services:
 
   plane-redis:
     # https://hub.docker.com/r/valkey/valkey
-    image: valkey/valkey:${VERSION_VALKEY:-8.1.3-alpine}
+    image: valkey/valkey:${VERSION_VALKEY:-9.0.0-alpine}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -540,10 +543,10 @@ services:
 
   plane-minio:
     # https://hub.docker.com/r/minio/minio
-    image: minio/minio:${VERSION_MINIO:-RELEASE.2025-07-18T21-56-31Z-cpuv1}
+    image: minio/minio:${VERSION_MINIO:-RELEASE.2025-09-07T16-13-09Z-cpuv1}
     <<:
       - *basic
-      - *basic-deploy-labels-minio
+      # - *basic-deploy-labels-minio
     deploy:
       <<:
         - *basic-deploy
