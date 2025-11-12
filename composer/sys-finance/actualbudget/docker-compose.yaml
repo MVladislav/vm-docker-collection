@@ -65,10 +65,10 @@ services:
   ##############################################################################
   actualbudget:
     # https://hub.docker.com/r/actualbudget/actual-server
-    image: actualbudget/actual-server:${VERSION:-sha-6365a8f-alpine}
+    image: actualbudget/actual-server:${VERSION:-sha-42c184a-alpine}
     <<:
       - *basic
-      - *basic-deploy-labels
+      # - *basic-deploy-labels
     deploy:
       <<:
         - *basic-deploy

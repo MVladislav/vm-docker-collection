@@ -45,7 +45,7 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION=latest
+VERSION=sha-42c184a-alpine
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
