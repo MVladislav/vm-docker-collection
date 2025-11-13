@@ -5,7 +5,7 @@ services:
   ##############################################################################
   dragonfly:
     # https://github.com/dragonflydb/dragonfly/releases
-    image: docker.dragonflydb.io/dragonflydb/dragonfly:${VERSION_DRAGONFLY:-v1.29.0}
+    image: docker.dragonflydb.io/dragonflydb/dragonfly:${VERSION_DRAGONFLY:-v1.34.2}
     # <<: *basic
     deploy:
       # <<: *basic-deploy
@@ -35,7 +35,7 @@ services:
   ##############################################################################
   valkey:
     # https://hub.docker.com/r/valkey/valkey
-    image: valkey/valkey:${VERSION_VALKEY:-8.1.0-alpine}
+    image: valkey/valkey:${VERSION_VALKEY:-9.0.0-alpine}
     # <<: *basic
     deploy:
       # <<: *basic-deploy
@@ -67,7 +67,7 @@ services:
   ##############################################################################
   minio:
     # https://hub.docker.com/r/minio/minio
-    image: minio/minio:${VERSION_MINIO:-RELEASE.2025-05-24T17-08-30Z-cpuv1}
+    image: minio/minio:${VERSION_MINIO:-RELEASE.2025-09-07T16-13-09Z-cpuv1}
     # <<: *basic
     deploy:
       # <<: *basic-deploy
@@ -106,7 +106,7 @@ services:
   ##############################################################################
   postgresql:
     # https://hub.docker.com/_/postgres
-    image: postgres:${VERSION_POSTGRESQL:-17.5-alpine}
+    image: postgres:${VERSION_POSTGRESQL:-18.0-alpine}
     # <<: *basic
     deploy:
       # <<: *basic-deploy
@@ -121,6 +121,7 @@ services:
       - CHOWN
       - FOWNER
       - DAC_READ_SEARCH
+      - DAC_OVERRIDE
       - SETUID
       - SETGID
     secrets:
@@ -134,6 +135,10 @@ services:
     volumes:
       # - /etc/timezone:/etc/timezone:ro
       # - /etc/localtime:/etc/localtime:ro
+      # - type: tmpfs
+      #   target: /dev/shm
+      #   tmpfs:
+      #     size: 134217728 # 128*2^20 bytes = 128Mb
       - postgresql:/var/lib/postgresql/data
     networks:
       default: {}
@@ -149,7 +154,7 @@ services:
   ##############################################################################
   mariadb:
     # https://hub.docker.com/_/mariadb
-    image: mariadb:${VERSION_MARIADB:-11.7.2}
+    image: mariadb:${VERSION_MARIADB:-12.0.2}
     # <<: *basic
     deploy:
       # <<: *basic-deploy
@@ -325,7 +330,7 @@ services:
   ##############################################################################
   mongodb:
     # https://hub.docker.com/_/mongo
-    image: mongo:${VERSION_MONGODB:-8.0.8}
+    image: mongo:${VERSION_MONGODB:-8.2.1}
     # <<: *basic
     deploy:
       # <<: *basic-deploy
@@ -405,7 +410,7 @@ services:
   ##############################################################################
   rabbitmq:
     # https://hub.docker.com/_/rabbitmq
-    image: rabbitmq:${VERSION_RABBITMQ:-3}
+    image: rabbitmq:${VERSION_RABBITMQ:-4}
     # <<: *basic
     deploy:
       # <<: *basic-deploy
