@@ -52,8 +52,10 @@ services:
     <<: *basic
     deploy:
       <<: *basic-deploy
-    # cap_add:
-    #   - NET_RAW
+    cap_add:
+      - NET_RAW
+      - SYS_ADMIN
+      - SYS_RAWIO
     ports:
       - target: ${PORT_AGENT:-45876}
         published: ${PORT_AGENT:-45876}
@@ -71,7 +73,7 @@ services:
       - /etc/localtime:/etc/localtime:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
       # - /sys/class/net:/sys/class/net:ro
-      # - data:/var/lib/beszel-agent
+      - /var/run/dbus:/var/run/dbus:ro
     healthcheck:
       test: ["CMD", "/agent", "health"]
       start_period: 10s
