@@ -61,10 +61,14 @@ services:
   ##############################################################################
   traefik:
     # https://hub.docker.com/_/traefik
-    image: traefik:${VERSION:-v3.6.0}
-    <<: [*basic, *basic-deploy-labels]
+    image: traefik:${VERSION:-v3.6.1}
+    <<:
+      - *basic
+      - *basic-deploy-labels
     deploy:
-      <<: [*basic-deploy, *basic-deploy-labels]
+      <<:
+        - *basic-deploy
+        - *basic-deploy-labels
     ports:
       - target: 80 # http
         published: 80
