@@ -1,0 +1,219 @@
+---
+x-basic-deploy-labels: &basic-deploy-labels
+  labels:
+    - traefik.enable=true
+    - traefik.swarm.lbswarm=${LB_SWARM:-true}
+    - traefik.swarm.network=proxy
+    - traefik.http.routers.patchmon.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.patchmon.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.patchmon.tls=true
+    - traefik.http.routers.patchmon.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.patchmon.service=patchmon
+    - traefik.http.services.patchmon.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.patchmon.loadbalancer.server.port=${PORT:-3000}
+
+x-basic-deploy: &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  update_config:
+    order: stop-first
+  restart_policy:
+    condition: any
+  resources:
+    limits:
+      cpus: ${RESOURCES_LIMITS_CPUS:-1}
+      memory: ${RESOURCES_LIMITS_MEMORY:-1g}
+    reservations:
+      cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
+      memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
+
+x-basic: &basic
+  env_file: ${ENV_FILE:-.env}
+  cap_drop: ["ALL"]
+  security_opt:
+    - no-new-privileges:true
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 655360
+      hard: 655360
+    fsize: -1
+    as: -1
+  networks:
+    default: {}
+  healthcheck:
+    disable: true
+  tmpfs:
+    - /tmp
+  restart: always
+
+################################################################################
+################################################################################
+################################################################################
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  patchmon-frontend:
+    # https://github.com/patchmon/PatchMon/pkgs/container/patchmon-frontend
+    image: ghcr.io/patchmon/patchmon-frontend:${VERSION_PATCHMON:-pr-84}
+    <<:
+      - *basic
+      # - *basic-deploy-labels
+    deploy:
+      <<:
+        - *basic-deploy
+        - *basic-deploy-labels
+    environment:
+      BACKEND_HOST: patchmon-backend
+      BACKEND_PORT: 3001
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    networks:
+      default: {}
+      proxy: {}
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  patchmon-backend:
+    # https://github.com/patchmon/PatchMon/pkgs/container/patchmon-backend
+    image: ghcr.io/patchmon/patchmon-backend:${VERSION_PATCHMON:-pr-84}
+    <<:
+      - *basic
+    deploy:
+      <<:
+        - *basic-deploy
+    secrets:
+      - postgres_password_file
+    environment:
+      LOG_LEVEL: info
+      DATABASE_URL: postgresql://${POSTGRES_USER:-patchmon}:${PATCHMON_DB_PW?PatchMon DB password not set}@postgresql:5432/${POSTGRES_DB:-patchmon}
+      JWT_SECRET: ${JWT_SECRET?JWT secret not created}
+      PORT: 3001
+      SERVER_PROTOCOL: ${SERVER_PROTOCOL:-https}
+      SERVER_HOST: ${DOMAIN?domain variable not set}
+      SERVER_PORT: ${SERVER_PROTOCOL:-443}
+      CORS_ORIGIN: ${SERVER_PROTOCOL:-https}://${DOMAIN?domain variable not set}
+      # Database Connection Pool Configuration (Prisma)
+      DB_CONNECTION_LIMIT: 30
+      DB_POOL_TIMEOUT: 20
+      DB_CONNECT_TIMEOUT: 10
+      DB_IDLE_TIMEOUT: 300
+      DB_MAX_LIFETIME: 1800
+      # Rate Limiting (times in milliseconds)
+      RATE_LIMIT_WINDOW_MS: 900000
+      RATE_LIMIT_MAX: 5000
+      AUTH_RATE_LIMIT_WINDOW_MS: 600000
+      AUTH_RATE_LIMIT_MAX: 500
+      AGENT_RATE_LIMIT_WINDOW_MS: 60000
+      AGENT_RATE_LIMIT_MAX: 1000
+      # Redis Configuration
+      REDIS_HOST: valkey
+      REDIS_PORT: 6379
+      REDIS_DB: 0
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - agent_files:/app/agents
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  valkey:
+    # https://hub.docker.com/r/valkey/valkey
+    image: valkey/valkey:${VERSION_VALKEY:-9.0.0-alpine}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_VALKEY:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_VALKEY:-128m}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_VALKEY:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_VALKEY:-32m}
+    cap_add:
+      - SETUID
+      - SETGID
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - valkey:/data
+    command: --save 300 1 --loglevel warning
+    healthcheck:
+      test: ["CMD-SHELL", "valkey-cli ping | grep PONG"]
+      start_period: 2s
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  postgresql:
+    # https://hub.docker.com/_/postgres
+    image: postgres:${VERSION_POSTGRESQL:-17.0-alpine}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_POSTGRESQL:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_POSTGRESQL:-512m}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_POSTGRESQL:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_POSTGRESQL:-32m}
+    cap_add:
+      - CHOWN
+      - FOWNER
+      - DAC_READ_SEARCH
+      - DAC_OVERRIDE
+      - SETUID
+      - SETGID
+    secrets:
+      - postgres_password_file
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-patchmon}
+      POSTGRES_USER: ${POSTGRES_USER:-patchmon}
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password_file
+      PGDATA: /var/lib/postgresql/data
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - postgresql:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
+      start_period: 2s
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  default:
+    driver: ${NETWORK_MODE:-overlay}
+    attachable: true
+    driver_opts:
+      encrypted: "true"
+  proxy:
+    external: true
+
+volumes:
+  agent_files: {}
+  valkey: {}
+  postgresql: {}
+
+secrets:
+  postgres_password_file:
+    file: config/secrets/postgres_password_file.txt
