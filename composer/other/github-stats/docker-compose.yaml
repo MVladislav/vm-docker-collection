@@ -1,0 +1,108 @@
+---
+x-basic-deploy-labels: &basic-deploy-labels
+  labels:
+    - traefik.enable=true
+    - traefik.swarm.lbswarm=${LB_SWARM:-true}
+    - traefik.swarm.network=proxy
+    - traefik.http.routers.github-stats.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.github-stats.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.github-stats.tls=true
+    - traefik.http.routers.github-stats.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.github-stats.service=github-stats
+    - traefik.http.services.github-stats.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.github-stats.loadbalancer.server.port=${PORT:-80}
+
+x-basic-deploy: &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  update_config:
+    order: stop-first
+  restart_policy:
+    condition: any
+  resources:
+    limits:
+      cpus: ${RESOURCES_LIMITS_CPUS:-1}
+      memory: ${RESOURCES_LIMITS_MEMORY:-1g}
+    reservations:
+      cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
+      memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
+
+x-basic: &basic
+  env_file: ${ENV_FILE:-.env}
+  cap_add:
+    - SETGID # Allows setting group ID (`setgid`,`newgrp`,`chgrp`,`setregid()`)
+    - SETUID # Allows setting user ID (`setuid`,`su`,`sudo`,`passwd`)
+  cap_drop: ["ALL"]
+  security_opt:
+    - no-new-privileges:true
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 655360
+      hard: 655360
+    fsize: -1
+    as: -1
+  # mem_limit: ${RESOURCES_LIMITS_MEMORY:-1g}
+  networks:
+    default: {}
+    # proxy: {}
+  healthcheck:
+    disable: true
+  tmpfs:
+    - /tmp
+  restart: always
+
+################################################################################
+################################################################################
+################################################################################
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  github-stats:
+    # https://hub.docker.com/r/github-stats
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    image: github-stats:${VERSION:-latest}
+    <<:
+      - *basic
+      - *basic-deploy-labels
+    deploy:
+      <<:
+        - *basic-deploy
+        - *basic-deploy-labels
+    ports:
+      - 8080:80
+    secrets:
+      - token_secret
+    environment:
+      PORT_STATS: 3001
+      PORT_TROPHY: 3002
+      GITHUB_TOKEN_FILE: /run/secrets/token_secret
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  default:
+    driver: ${NETWORK_MODE:-overlay}
+    attachable: true
+    driver_opts:
+      encrypted: "true"
+  # proxy:
+  #   external: true
+
+secrets:
+  token_secret:
+    file: config/secrets/token_secret.txt
