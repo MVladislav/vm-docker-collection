@@ -63,7 +63,7 @@ services:
   ##############################################################################
   patchmon-frontend:
     # https://github.com/patchmon/PatchMon/pkgs/container/patchmon-frontend
-    image: ghcr.io/patchmon/patchmon-frontend:${VERSION_PATCHMON:-pr-84}
+    image: ghcr.io/patchmon/patchmon-frontend:${VERSION_PATCHMON:-pr-85}
     <<:
       - *basic
       # - *basic-deploy-labels
@@ -86,7 +86,7 @@ services:
   ##############################################################################
   patchmon-backend:
     # https://github.com/patchmon/PatchMon/pkgs/container/patchmon-backend
-    image: ghcr.io/patchmon/patchmon-backend:${VERSION_PATCHMON:-pr-84}
+    image: ghcr.io/patchmon/patchmon-backend:${VERSION_PATCHMON:-pr-85}
     <<:
       - *basic
     deploy:
@@ -161,7 +161,7 @@ services:
   ##############################################################################
   postgresql:
     # https://hub.docker.com/_/postgres
-    image: postgres:${VERSION_POSTGRESQL:-17.0-alpine}
+    image: postgres:${VERSION_POSTGRESQL:-18-alpine}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -185,11 +185,11 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-patchmon}
       POSTGRES_USER: ${POSTGRES_USER:-patchmon}
       POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password_file
-      PGDATA: /var/lib/postgresql/data
+      PGDATA: /var/lib/postgresql/18/data
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-      - postgresql:/var/lib/postgresql/data
+      - postgresql:/var/lib/postgresql/18/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
       start_period: 2s
