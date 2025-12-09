@@ -275,6 +275,7 @@ $curl -k -u "admin:$(cat /run/secrets/indexer_password_file_secret)" \
 - YT
   - <https://www.youtube.com/watch?v=RjvKn0Q3rgg>
   - <https://www.youtube.com/@taylorwalton_socfortress/videos>
+  - <https://www.youtube.com/watch?v=YWCpXdqj1wU>
 - plugins
   - llm
     - <https://wazuh.com/blog/leveraging-claude-haiku-in-the-wazuh-dashboard-for-llm-powered-insights/>
