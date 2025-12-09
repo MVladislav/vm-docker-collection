@@ -69,7 +69,7 @@ services:
     image: owncloud/server:${VERSION_OWNCLOUD:-10.15}
     <<:
       - *basic
-      - *basic-deploy-labels
+      # - *basic-deploy-labels
     deploy:
       <<:
         - *basic-deploy
