@@ -62,9 +62,13 @@ services:
   odoo:
     # https://hub.docker.com/_/odoo/
     image: odoo:${VERSION_ODOO:-18.0}
-    <<: [*basic, *basic-deploy-labels]
+    <<:
+      - *basic
+      # - *basic-deploy-labels
     deploy:
-      <<: [*basic-deploy, *basic-deploy-labels]
+      <<:
+        - *basic-deploy
+        - *basic-deploy-labels
     secrets:
       - postgres_password_file
     environment:
@@ -113,8 +117,6 @@ services:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - postgresql:/var/lib/postgresql/data
-    networks:
-      default: {}
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
       start_period: 2s
