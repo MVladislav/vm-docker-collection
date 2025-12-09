@@ -106,7 +106,7 @@ services:
   ##############################################################################
   postgresql:
     # https://hub.docker.com/_/postgres
-    image: postgres:${VERSION_POSTGRESQL:-18.0-alpine}
+    image: postgres:${VERSION_POSTGRESQL:-18.1-alpine}
     # <<: *basic
     deploy:
       # <<: *basic-deploy
@@ -130,7 +130,7 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-postgresql}
       POSTGRES_USER: ${POSTGRES_USER:-postgresql}
       POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password_file
-      PGDATA: /var/lib/postgresql/data
+      PGDATA: /var/lib/postgresql/18/data
       # POSTGRES_HOST_AUTH_METHOD: trust
     volumes:
       # - /etc/timezone:/etc/timezone:ro
@@ -139,7 +139,7 @@ services:
       #   target: /dev/shm
       #   tmpfs:
       #     size: 134217728 # 128*2^20 bytes = 128Mb
-      - postgresql:/var/lib/postgresql/data
+      - postgresql:/var/lib/postgresql/18/data
     networks:
       default: {}
     healthcheck:
