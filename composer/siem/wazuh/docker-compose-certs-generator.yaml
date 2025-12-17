@@ -2,7 +2,7 @@
 services:
   generator:
     # https://hub.docker.com/r/wazuh/wazuh-certs-generator
-    image: wazuh/wazuh-certs-generator:0.0.3
+    image: wazuh/wazuh-certs-generator:0.0.4
     hostname: wazuh-certs-generator
     volumes:
       - ./config/wazuh_indexer_ssl_certs/:/certificates/
