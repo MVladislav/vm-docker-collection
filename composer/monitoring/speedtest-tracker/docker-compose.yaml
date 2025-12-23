@@ -20,12 +20,14 @@ x-basic-deploy: &basic-deploy
     constraints:
       - "node.role==${NODE_ROLE:-manager}"
       - node.platform.os == linux
+  update_config:
+    order: stop-first
   restart_policy:
-    condition: on-failure
+    condition: any
   resources:
     limits:
-      cpus: ${RESOURCES_LIMITS_CPUS:-1}
-      memory: ${RESOURCES_LIMITS_MEMORY:-300m}
+      cpus: ${RESOURCES_LIMITS_CPUS:-2}
+      memory: ${RESOURCES_LIMITS_MEMORY:-512m}
     reservations:
       cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
       memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
@@ -33,11 +35,11 @@ x-basic-deploy: &basic-deploy
 x-basic: &basic
   env_file: ${ENV_FILE:-.env}
   cap_add:
-    - CHOWN
-    - FOWNER
-    - SETGID
-    - SETUID
-    - DAC_OVERRIDE
+    - CHOWN # Allows changing file ownership (`chown`,`chgrp`)
+    - FOWNER # Overrides file ownership checks (`chmod`,`kill`)
+    - DAC_OVERRIDE # Bypasses file read/write/execute permission checks (`cat`,`touch`,`rm`)
+    - SETGID # Allows setting group ID (`setgid`,`newgrp`,`chgrp`,`setregid()`)
+    - SETUID # Allows setting user ID (`setuid`,`su`,`sudo`,`passwd`)
   cap_drop: ["ALL"]
   security_opt:
     - no-new-privileges:true
@@ -46,111 +48,79 @@ x-basic: &basic
       soft: -1
       hard: -1
     nofile:
-      soft: 65535
-      hard: 65535
+      soft: 655360
+      hard: 655360
     fsize: -1
     as: -1
-  networks:
-    default: {}
   healthcheck:
     disable: true
+  tmpfs:
+    - /tmp
   restart: always # always | on-failure
 
 ################################################################################
 ################################################################################
 ################################################################################
-
-x-base-env: &base-env
-  TZ: ${TIMEZONE:-Europe/Berlin}
-
 services:
   ##############################################################################
   ##############################################################################
   ##############################################################################
   speedtest-tracker:
-    # https://github.com/alexjustesen/speedtest-tracker/pkgs/container/speedtest-tracker
-    image: ghcr.io/alexjustesen/speedtest-tracker:${VERSION:-v0.15.2}
-    <<: [*basic, *basic-deploy-labels]
+    # https://github.com/linuxserver/docker-speedtest-tracker/pkgs/container/speedtest-tracker
+    image: ghcr.io/linuxserver/speedtest-tracker:${VERSION:-1.13.3}
+    <<:
+      - *basic
+      # - *basic-deploy-labels
     deploy:
-      <<: [*basic-deploy, *basic-deploy-labels]
-    # ports:
-    #   - target: ${PORT:-80}
-    #     published: ${PORT_PUBLISH:-80}
-    #     protocol: tcp
-    #     mode: host
-    secrets:
-      - mariadb_user_password
+      <<:
+        - *basic-deploy
+        - *basic-deploy-labels
     environment:
-      <<: *base-env
-      SSL_MODE: "off"
-      PUID: 1000
-      PGID: 1000
+      ADMIN_NAME: ${ADMIN_NAME:-groot}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-groot@home.local}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-swordfish}
 
-      DB_CONNECTION: mysql
-      DB_HOST: mariadb
-      DB_PORT: 3306
-      DB_DATABASE: ${MARIADB_DATABASE:-speedtest_tracker}
-      DB_USERNAME: ${MARIADB_USER:-speedy}
-      DB_PASSWORD: ${MARIADB_PASSWORD}
+      APP_URL: https://${DOMAIN?domain variable not set}
+      APP_PORT: ${PORT:-80}
+      ASSET_URL: https://${DOMAIN?domain variable not set}
+      SSL_MODE: "off"
+
+      APP_LOCALE: ${APP_LOCALE:-en}
+      APP_TIMEZONE: ${TIMEZONE:-Europe/Berlin}
+      DISPLAY_TIMEZONE: ${TIMEZONE:-Europe/Berlin}
+
+      PUID: ${PUID:-1000}
+      PGID: ${PGID:-1000}
+
+      DB_CONNECTION: sqlite
+
+      APP_DEBUG: ${APP_DEBUG:-false}
+      # PUBLIC_DASHBOARD: ${PUBLIC_DASHBOARD:-false}
+      # DATETIME_FORMAT: j M Y - G:i:s
+      # PRUNE_RESULTS_OLDER_THAN: 90
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - speedtest-app:/config
     networks:
-      default: {}
       proxy: {}
-
-  ##############################################################################
-  ##############################################################################
-  ##############################################################################
-  mariadb:
-    # https://hub.docker.com/_/mariadb
-    image: mariadb:${VERSION_MARIADB:-11.2.2}
-    <<: *basic
-    deploy:
-      <<: *basic-deploy
-    cap_add:
-      - SETGID
-      - SETUID
-      - DAC_OVERRIDE
-    secrets:
-      - mariadb_user_password
-    environment:
-      <<: *base-env
-      MARIADB_DATABASE: ${MARIADB_DATABASE:-speedtest_tracker}
-      MARIADB_USER: ${MARIADB_USER:-speedy}
-      MARIADB_PASSWORD_FILE: /run/secrets/mariadb_user_password
-      MARIADB_RANDOM_ROOT_PASSWORD: "true" # pragma: allowlist secret
-    volumes:
-      - /etc/timezone:/etc/timezone:ro
-      - /etc/localtime:/etc/localtime:ro
-      - mariadb:/var/lib/mysql
-    command:
-      - --log-bin=mysql-bin
-      - --expire-logs-days=90
     healthcheck:
-      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
-      start_period: 5s
+      test:
+        [
+          "CMD-SHELL",
+          "curl -kIf ${PROTOCOL:-http}://127.0.0.1:${PORT:-80}/api/healthcheck > /dev/null 2>&1 || exit 1",
+        ]
+      start_period: 10s
       interval: 10s
-      retries: 5
       timeout: 3s
+      retries: 10
 
 ################################################################################
 ################################################################################
 ################################################################################
 networks:
-  default:
-    driver: ${NETWORK_MODE:-overlay}
-    attachable: true
-    driver_opts:
-      encrypted: "true"
   proxy:
     external: true
 
 volumes:
   speedtest-app: {}
-  mariadb: {}
-
-secrets:
-  mariadb_user_password:
-    file: config/secrets/mariadb_user_password.txt
