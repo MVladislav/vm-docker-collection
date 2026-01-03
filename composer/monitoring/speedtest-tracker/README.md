@@ -59,6 +59,8 @@ VERSION=1.13.4
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
+CERT_RESOLVER=certificates
+
 ADMIN_NAME=groot
 ADMIN_EMAIL=groot@home.local
 ADMIN_PASSWORD=swordfish
