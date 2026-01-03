@@ -7,6 +7,7 @@ x-basic-deploy-labels: &basic-deploy-labels
     - traefik.http.routers.filebrowser.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
     - traefik.http.routers.filebrowser.rule=Host(`${DOMAIN?domain variable not set}`)
     - traefik.http.routers.filebrowser.tls=true
+    - traefik.http.routers.filebrowser.tls.certresolver=${CERT_RESOLVER:-}
     - traefik.http.routers.filebrowser.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
     - traefik.http.routers.filebrowser.service=filebrowser
     - traefik.http.services.filebrowser.loadbalancer.server.scheme=${PROTOCOL:-http}
@@ -64,7 +65,7 @@ services:
   ##############################################################################
   filebrowser:
     # https://hub.docker.com/r/filebrowser/filebrowser
-    image: filebrowser/filebrowser:${VERSION:-v2.44.0}
+    image: filebrowser/filebrowser:${VERSION:-v2.53.1}
     <<: [*basic, *basic-deploy-labels]
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels]
