@@ -1,0 +1,253 @@
+---
+x-basic-deploy-labels: &basic-deploy-labels
+  labels:
+    - traefik.enable=true
+    - traefik.swarm.lbswarm=${LB_SWARM:-true}
+    - traefik.swarm.network=proxy
+    - traefik.http.routers.penpot.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.penpot.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.penpot.tls=true
+    - traefik.http.routers.penpot.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.penpot.service=penpot
+    - traefik.http.services.penpot.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.penpot.loadbalancer.server.port=${PORT:-8080}
+
+x-basic-deploy: &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  update_config:
+    order: stop-first
+  restart_policy:
+    condition: any
+  resources:
+    limits:
+      cpus: ${RESOURCES_LIMITS_CPUS:-2}
+      memory: ${RESOURCES_LIMITS_MEMORY:-1g}
+    reservations:
+      cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
+      memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
+
+x-basic: &basic
+  env_file: ${ENV_FILE:-.env}
+  # cap_add:
+  #   - CHOWN # Allows changing file ownership (`chown`,`chgrp`)
+  #   - FOWNER # Overrides file ownership checks (`chmod`,`kill`)
+  #   - DAC_READ_SEARCH # Bypasses file read and directory execute permissions (`ls`,`cat`,`find`)
+  #   - DAC_OVERRIDE # Bypasses file read/write/execute permission checks (`cat`,`touch`,`rm`)
+  #   - SETGID # Allows setting group ID (`setgid`,`newgrp`,`chgrp`,`setregid()`)
+  #   - SETUID # Allows setting user ID (`setuid`,`su`,`sudo`,`passwd`)
+  #   - FSETID # Allows setting file SUID/SGID bits (`chmod u+s`,`chmod g+s`)
+  cap_drop: ["ALL"]
+  security_opt:
+    - no-new-privileges:true
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 655360
+      hard: 655360
+    fsize: -1
+    as: -1
+  networks:
+    default: {}
+  healthcheck:
+    disable: true
+  tmpfs:
+    - /tmp
+  restart: always
+
+################################################################################
+################################################################################
+################################################################################
+x-penpot-flags:
+  &penpot-flags # https://help.penpot.app/technical-guide/configuration/#penpot-configuration
+  PENPOT_FLAGS: ${PENPOT_FLAGS:-disable-email-verification disable-smtp enable-prepl-server disable-telemetry}
+x-penpot-http-body-size: &penpot-http-body-size
+  # Max body size (30MiB); Used for plain requests, should never be
+  # greater than multi-part size
+  PENPOT_HTTP_SERVER_MAX_BODY_SIZE: ${PENPOT_HTTP_SERVER_MAX_BODY_SIZE:-31457280}
+  # Max multipart body size (350MiB)
+  PENPOT_HTTP_SERVER_MAX_MULTIPART_BODY_SIZE: ${PENPOT_HTTP_SERVER_MAX_MULTIPART_BODY_SIZE:-367001600}
+x-uri: &penpot-public-uri
+  PENPOT_PUBLIC_URI: https://${DOMAIN?domain variable not set}
+x-secret-key: &penpot-secret-key
+  PENPOT_SECRET_KEY: ${PENPOT_SECRET_KEY?secret key not set} # randomly generated 512 bits base64 encoded string
+
+################################################################################
+################################################################################
+################################################################################
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  penpot-frontend:
+    # https://hub.docker.com/r/penpotapp/frontend
+    image: penpotapp/frontend:${VERSION_PENPOT:-2.12.1}
+    <<:
+      - *basic
+      # - *basic-deploy-labels
+    deploy:
+      <<:
+        - *basic-deploy
+        - *basic-deploy-labels
+    ports:
+      - 9001:8080
+    environment:
+      <<:
+        - *penpot-flags
+        - *penpot-http-body-size
+      PENPOT_BACKEND_URI: "http://penpot-backend:6060"
+      PENPOT_EXPORTER_URI: "http://penpot-exporter:6061"
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - assets:/opt/data/assets
+    networks:
+      default: {}
+      proxy: {}
+
+  penpot-backend:
+    # https://hub.docker.com/r/penpotapp/backend
+    image: penpotapp/backend:${VERSION_PENPOT:-2.12.1}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+    environment:
+      <<:
+        - *penpot-flags
+        - *penpot-http-body-size
+        - *penpot-public-uri
+        - *penpot-secret-key
+      # PENPOT_PREPL_HOST: ${PENPOT_PREPL_HOST:-0.0.0.0}
+
+      PENPOT_DATABASE_URI: postgresql://postgresql/${POSTGRES_DB:-penpot}
+      PENPOT_DATABASE_USERNAME: ${POSTGRES_USER:-penpot}
+      # PENPOT_DATABASE_PASSWORD: ${PENPOT_DATABASE_PASSWORD?Database password not set}
+
+      PENPOT_REDIS_URI: redis://valkey/0
+
+      PENPOT_ASSETS_STORAGE_BACKEND: assets-fs
+      PENPOT_STORAGE_ASSETS_FS_DIRECTORY: /opt/data/assets
+
+      PENPOT_TELEMETRY_ENABLED: ${PENPOT_TELEMETRY_ENABLED:-false}
+      PENPOT_TELEMETRY_REFERER: compose
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - assets:/opt/data/assets
+
+  penpot-exporter:
+    # https://hub.docker.com/r/penpotapp/exporter
+    image: penpotapp/exporter:${VERSION_PENPOT:-2.12.1}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+    environment:
+      <<: *penpot-secret-key
+      PENPOT_PUBLIC_URI: http://penpot-frontend:8080
+      PENPOT_REDIS_URI: redis://valkey/0
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  postgresql:
+    # https://hub.docker.com/_/postgres
+    image: postgres:${VERSION_POSTGRESQL:-18.1-alpine}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_POSTGRESQL:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_POSTGRESQL:-512m}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_POSTGRESQL:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_POSTGRESQL:-32m}
+    cap_add:
+      - CHOWN
+      - FOWNER
+      - DAC_READ_SEARCH
+      - DAC_OVERRIDE
+      - SETUID
+      - SETGID
+    secrets:
+      - postgres_password_file
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-penpot}
+      POSTGRES_USER: ${POSTGRES_USER:-penpot}
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password_file
+      PGDATA: /var/lib/postgresql/18/data
+      POSTGRES_INITDB_ARGS: --data-checksums
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - postgresql_v18:/var/lib/postgresql/18/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
+      start_period: 2s
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  valkey:
+    # https://hub.docker.com/r/valkey/valkey
+    image: valkey/valkey:${VERSION_VALKEY:-9.0.0-alpine}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_VALKEY:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_VALKEY:-128m}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_VALKEY:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_VALKEY:-32m}
+    cap_add:
+      - SETUID
+      - SETGID
+    environment:
+      - VALKEY_EXTRA_FLAGS=--maxmemory 128mb --maxmemory-policy volatile-lfu
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - valkey:/data
+    command: --save 300 1 --loglevel warning
+    healthcheck:
+      test: ["CMD-SHELL", "valkey-cli ping | grep PONG"]
+      start_period: 2s
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  default:
+    driver: ${NETWORK_MODE:-overlay}
+    attachable: true
+    driver_opts:
+      encrypted: "true"
+  proxy:
+    external: true
+
+volumes:
+  assets: {}
+  postgresql_v18: {}
+  valkey: {}
+
+secrets:
+  postgres_password_file:
+    file: config/secrets/postgres_password_file.txt
