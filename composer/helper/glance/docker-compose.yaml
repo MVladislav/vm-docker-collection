@@ -7,6 +7,7 @@ x-basic-deploy-labels: &basic-deploy-labels
     - traefik.http.routers.glance.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
     - traefik.http.routers.glance.rule=Host(`${DOMAIN?domain variable not set}`)
     - traefik.http.routers.glance.tls=true
+    - traefik.http.routers.glance.tls.certresolver=${CERT_RESOLVER:-}
     - traefik.http.routers.glance.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
     - traefik.http.routers.glance.service=glance
     - traefik.http.services.glance.loadbalancer.server.scheme=${PROTOCOL:-http}
@@ -62,9 +63,13 @@ services:
   glance:
     # https://hub.docker.com/r/glanceapp/glance
     image: glanceapp/glance:${VERSION_GLANCE:-v0.8.4}
-    <<: [*basic, *basic-deploy-labels]
+    <<:
+      - *basic
+      # - *basic-deploy-labels
     deploy:
-      <<: [*basic-deploy, *basic-deploy-labels]
+      <<:
+        - *basic-deploy
+        - *basic-deploy-labels
     configs:
       - source: glance_config
         target: /app/config/glance.yml

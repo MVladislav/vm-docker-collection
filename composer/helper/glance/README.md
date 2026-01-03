@@ -49,6 +49,7 @@ VERSION_ALPINE=latest
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
+CERT_RESOLVER=certificates
 
 # if you want to load icons local into assets set to 'false' in '.env'
 SKIP_LOAD_ICONS=true
