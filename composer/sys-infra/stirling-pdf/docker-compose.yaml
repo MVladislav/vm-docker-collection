@@ -4,13 +4,13 @@ x-basic-deploy-labels: &basic-deploy-labels
     - traefik.enable=true
     - traefik.swarm.lbswarm=${LB_SWARM:-true}
     - traefik.swarm.network=proxy
-    - traefik.http.routers.stirling-pdf${SERVICE_NAME_POST:-}.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
-    - traefik.http.routers.stirling-pdf${SERVICE_NAME_POST:-}.rule=Host(`${DOMAIN?domain variable not set}`)
-    - traefik.http.routers.stirling-pdf${SERVICE_NAME_POST:-}.tls=true
-    - traefik.http.routers.stirling-pdf${SERVICE_NAME_POST:-}.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
-    - traefik.http.routers.stirling-pdf${SERVICE_NAME_POST:-}.service=stirling-pdf${SERVICE_NAME_POST:-}
-    - traefik.http.services.stirling-pdf${SERVICE_NAME_POST:-}.loadbalancer.server.scheme=${PROTOCOL:-http}
-    - traefik.http.services.stirling-pdf${SERVICE_NAME_POST:-}.loadbalancer.server.port=${PORT:-8080}
+    - traefik.http.routers.stirling-pdf.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.stirling-pdf.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.stirling-pdf.tls=true
+    - traefik.http.routers.stirling-pdf.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.stirling-pdf.service=stirling-pdf
+    - traefik.http.services.stirling-pdf.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.stirling-pdf.loadbalancer.server.port=${PORT:-8080}
 
 x-basic-deploy: &basic-deploy
   mode: replicated
@@ -20,11 +20,13 @@ x-basic-deploy: &basic-deploy
     constraints:
       - "node.role==${NODE_ROLE:-manager}"
       - node.platform.os == linux
+  update_config:
+    order: stop-first
   restart_policy:
-    condition: on-failure
+    condition: any
   resources:
     limits:
-      cpus: ${RESOURCES_LIMITS_CPUS:-1}
+      cpus: ${RESOURCES_LIMITS_CPUS:-2}
       memory: ${RESOURCES_LIMITS_MEMORY:-1g}
     reservations:
       cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
@@ -33,10 +35,10 @@ x-basic-deploy: &basic-deploy
 x-basic: &basic
   env_file: ${ENV_FILE:-.env}
   cap_add:
-    - CHOWN
-    - SETGID
-    - SETUID
-    - FOWNER
+    - CHOWN # Allows changing file ownership (`chown`,`chgrp`)
+    - FOWNER # Overrides file ownership checks (`chmod`,`kill`)
+    - SETGID # Allows setting group ID (`setgid`,`newgrp`,`chgrp`,`setregid()`)
+    - SETUID # Allows setting user ID (`setuid`,`su`,`sudo`,`passwd`)
   cap_drop: ["ALL"]
   security_opt:
     - no-new-privileges:true
@@ -53,6 +55,8 @@ x-basic: &basic
     proxy: {}
   healthcheck:
     disable: true
+  tmpfs:
+    - /tmp
   restart: always
 
 ################################################################################
@@ -62,17 +66,19 @@ services:
   ##############################################################################
   ##############################################################################
   ##############################################################################
-  stirling-pdf:
-    # https://hub.docker.com/r/frooodle/s-pdf
-    image: frooodle/s-pdf:${VERSION:-0.28.3}
-    <<: [*basic, *basic-deploy-labels]
+  app:
+    # https://github.com/Stirling-Tools/Stirling-PDF/pkgs/container/s-pdf
+    image: ghcr.io/stirling-tools/s-pdf:${VERSION:-2.1.5-fat}
+    <<:
+      - *basic
+      # - *basic-deploy-labels
     deploy:
-      <<: [*basic-deploy, *basic-deploy-labels]
+      <<:
+        - *basic-deploy
+        - *basic-deploy-labels
     environment:
-      DOCKER_ENABLE_SECURITY: ${DOCKER_ENABLE_SECURITY:-false}
-      INSTALL_BOOK_AND_ADVANCED_HTML_OPS: ${INSTALL_BOOK_AND_ADVANCED_HTML_OPS:-false}
+      SECURITY_ENABLELOGIN: ${SECURITY_ENABLELOGIN:-false}
       LANGS: ${LANGS:-en_GB}
-
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro

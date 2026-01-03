@@ -9,7 +9,8 @@
 - [SETUP](#setup)
   - [basic](#basic)
     - [create `.env` file following:](#create-env-file-following)
-      - [example short .env](#example-short-env)
+      - [example short .env (swarm)](#example-short-env-swarm)
+      - [example short .env (bridge)](#example-short-env-bridge)
   - [References](#references)
 
 ---
@@ -32,12 +33,12 @@ LB_SWARM=true
 DOMAIN=pdf.home.local # not set in docker-compose, needs to be copied to .env
 PROTOCOL=http
 PORT=8080
-# default-secured@file | public-whitelist@file | authentik@file
+# default-secured@file | public-secured@file | authentik@file
 MIDDLEWARE_SECURED=default-secured@file
 
 # GENERAL sources to be used (set by default, change as needed)
 # ______________________________________________________________________________
-RESOURCES_LIMITS_CPUS=1
+RESOURCES_LIMITS_CPUS=2
 RESOURCES_LIMITS_MEMORY=1g
 RESOURCES_RESERVATIONS_CPUS=0.001
 RESOURCES_RESERVATIONS_MEMORY=32m
@@ -51,9 +52,18 @@ VERSION=0.28.3
 # NOTE: extend additional info here ...
 ```
 
-#### example short .env
+#### example short .env (swarm)
 
 ```env
+DOMAIN=pdf.home.local
+```
+
+#### example short .env (bridge)
+
+```env
+NETWORK_MODE=bridge
+LB_SWARM=false
+
 DOMAIN=pdf.home.local
 ```
 
@@ -62,4 +72,5 @@ DOMAIN=pdf.home.local
 ## References
 
 - <https://github.com/Stirling-Tools/Stirling-PDF>
-- <https://hub.docker.com/r/frooodle/s-pdf>
+- <https://github.com/Stirling-Tools/Stirling-PDF/pkgs/container/s-pdf>
+- <https://docs.stirlingpdf.com/Installation/Docker%20Install#advanced-deployment-split-frontendbackend>
