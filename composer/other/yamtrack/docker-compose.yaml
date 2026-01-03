@@ -7,6 +7,7 @@ x-basic-deploy-labels: &basic-deploy-labels
     - traefik.http.routers.yamtrack.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
     - traefik.http.routers.yamtrack.rule=Host(`${DOMAIN?domain variable not set}`)
     - traefik.http.routers.yamtrack.tls=true
+    - traefik.http.routers.yamtrack.tls.certresolver=${CERT_RESOLVER:-}
     - traefik.http.routers.yamtrack.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
     - traefik.http.routers.yamtrack.service=yamtrack
     - traefik.http.services.yamtrack.loadbalancer.server.scheme=${PROTOCOL:-http}
@@ -64,10 +65,10 @@ services:
   ##############################################################################
   yamtrack:
     # https://github.com/fuzzygrim/Yamtrack/pkgs/container/yamtrack
-    image: ghcr.io/fuzzygrim/yamtrack:${VERSION_YAMTRACK:-0.24.7}
+    image: ghcr.io/fuzzygrim/yamtrack:${VERSION_YAMTRACK:-0.24.10}
     <<:
       - *basic
-      - *basic-deploy-labels
+      # - *basic-deploy-labels
     deploy:
       <<:
         - *basic-deploy
@@ -100,7 +101,7 @@ services:
   ##############################################################################
   valkey:
     # https://hub.docker.com/r/valkey/valkey
-    image: valkey/valkey:${VERSION_VALKEY:-8.1.0-alpine}
+    image: valkey/valkey:${VERSION_VALKEY:-9.0.1-alpine}
     <<: *basic
     deploy:
       <<: *basic-deploy

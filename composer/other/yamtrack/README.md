@@ -52,10 +52,12 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION=latest
+VERSION_YAMTRACK=0.24.10
+VERSION_VALKEY=9.0.1-alpine
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
+CERT_RESOLVER=certificates
 SECRET=<longstring> # `pwgen -s 32 1`
 ```
 
