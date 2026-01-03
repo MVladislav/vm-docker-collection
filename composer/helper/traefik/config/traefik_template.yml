@@ -1,4 +1,5 @@
 ---
+# yaml-language-server: $schema=https://www.schemastore.org/traefik-v3.json
 ################################################################
 #
 # Configuration sample for Traefik v3.
@@ -39,6 +40,9 @@ entryPoints:
           permanent: true
   https:
     address: :443
+    transport:
+      respondingTimeouts:
+        readTimeout: 30m
     http3: {}
     # http:
     #   middlewares:
@@ -90,7 +94,7 @@ log:
   # Optional
   # Default: "ERROR"
   #
-  level: WARN # TRACE, DEBUG, PANIC, FATAL, ERROR, WARN, INFO
+  level: INFO # TRACE, DEBUG, PANIC, FATAL, ERROR, WARN, INFO
 
   # Sets the filepath for the traefik log. If not specified, stdout will be used.
   # Intermediate directories are created if necessary.
@@ -236,23 +240,25 @@ serversTransport:
 # # Configure your CertificateResolver here...
 # # https://doc.traefik.io/traefik/https/acme
 # certificatesResolvers:
-#   letsencrypt:
+#   certificates:
 #     acme:
 #       email: your-email@example.com
 #       storage: /resolver-certs/acme.json
+#       keyType: EC256
 #       caServer: https://acme-staging-v02.api.letsencrypt.org/directory # staging
 #       # caServer: https://acme-v02.api.letsencrypt.org/directory # production
-#
+
 #       # tlschallenge: {} # tls-challange
-#
+
 #       # dnsChallenge: # dns-challange
-#       #   provider: "cloudflare"
+#       #   provider: "ionos" # https://go-acme.github.io/lego/dns/
 #       #   propagation:
-#       #     delayBeforeChecks: 0
-#       #     # disableChecks: true
+#       #     delayBeforeChecks: 5s
+#       #     disableChecks: true
 #       #   resolvers:
+#       #     - "9.9.9.9:53"
+#       #     - "194.242.2.2:53"
 #       #     - "1.1.1.1:53"
-#       #     - "1.0.0.1:53"
-#
+
 #       # httpChallenge: # http-challange
 #       #   entryPoint: http

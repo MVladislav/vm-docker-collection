@@ -7,6 +7,7 @@ x-basic-deploy-labels: &basic-deploy-labels
     - traefik.http.routers.traefik.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
     - traefik.http.routers.traefik.rule=Host(`${DOMAIN?domain variable not set}`)
     - traefik.http.routers.traefik.tls=true
+    - traefik.http.routers.traefik.tls.certresolver=${CERT_RESOLVER:-}
     - traefik.http.routers.traefik.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
     - traefik.http.routers.traefik.service=api@internal
     - traefik.http.services.traefik.loadbalancer.server.scheme=${PROTOCOL:-http}
@@ -61,7 +62,7 @@ services:
   ##############################################################################
   traefik:
     # https://hub.docker.com/_/traefik
-    image: traefik:${VERSION:-v3.6.4}
+    image: traefik:${VERSION:-v3.6.6}
     <<:
       - *basic
       - *basic-deploy-labels
@@ -80,10 +81,10 @@ services:
         mode: host
     secrets:
       - traefik_basicauth_secret
-      # - cf_api_token_secret
+    #   - ionos_api_key_secret
     # environment:
-    #   TRAEFIK_AUTH_FILE: /run/secrets/traefik_basicauth_secret
-    #   CF_DNS_API_TOKEN_FILE: /run/secrets/cf_api_token_secret
+    #   # TRAEFIK_AUTH_FILE: /run/secrets/traefik_basicauth_secret
+    #   IONOS_API_KEY_FILE: /run/secrets/ionos_api_key_secret
     configs:
       - source: traefik_config
         target: /etc/traefik/traefik.yml
@@ -151,5 +152,5 @@ configs:
 secrets:
   traefik_basicauth_secret:
     file: config/secrets/traefik_basicauth_secret.txt
-#   cf_api_token_secret:
-#     file: config/secrets/cf_api_token_secret.txt
+  # ionos_api_key_secret:
+  #   file: config/secrets/ionos_api_key_secret.txt

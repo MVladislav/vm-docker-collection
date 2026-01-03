@@ -28,6 +28,9 @@
 
 ```sh
 $echo $(htpasswd -nB traefik) > config/secrets/traefik_basicauth_secret.txt
+
+# optional :: ACME-DNS-Challenge :: Ionos example (better not echo instead open file an past)
+$echo 'SECRET' > config/secrets/ionos_api_key_secret.txt
 ```
 
 ### traefik setup
@@ -119,7 +122,11 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION=v3.6.4
+VERSION=v3.6.6
+
+# APPLICATION general variable to adjust the apps
+# ______________________________________________________________________________
+CERT_RESOLVER=certificates
 ```
 
 #### example short .env
