@@ -7,6 +7,7 @@ x-basic-deploy-labels: &basic-deploy-labels
     - traefik.http.routers.invoiceshelf.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
     - traefik.http.routers.invoiceshelf.rule=Host(`${DOMAIN?domain variable not set}`)
     - traefik.http.routers.invoiceshelf.tls=true
+    - traefik.http.routers.invoiceshelf.tls.certresolver=${CERT_RESOLVER:-}
     - traefik.http.routers.invoiceshelf.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
     - traefik.http.routers.invoiceshelf.service=invoiceshelf
     - traefik.http.services.invoiceshelf.loadbalancer.server.scheme=${PROTOCOL:-http}
@@ -62,9 +63,13 @@ services:
   invoiceshelf:
     # https://hub.docker.com/r/invoiceshelf/invoiceshelf
     image: invoiceshelf/invoiceshelf:${VERSION_INVOICE_SHELF:-2.2.0-alpha2}
-    <<: [*basic, *basic-deploy-labels]
+    <<:
+      - *basic
+      # - *basic-deploy-labels
     deploy:
-      <<: [*basic-deploy, *basic-deploy-labels]
+      <<:
+        - *basic-deploy
+        - *basic-deploy-labels
     cap_add:
       - ALL
     secrets:
@@ -117,7 +122,7 @@ services:
   ##############################################################################
   postgresql:
     # https://hub.docker.com/_/postgres
-    image: postgres:${VERSION_POSTGRESQL:-17.6-alpine}
+    image: postgres:${VERSION_POSTGRESQL:-17.7-alpine}
     <<: *basic
     deploy:
       <<: *basic-deploy
