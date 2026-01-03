@@ -7,6 +7,7 @@ x-basic-deploy-labels-web: &basic-deploy-labels-web
     - traefik.http.routers.plane-web.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
     - traefik.http.routers.plane-web.rule=Host(`${DOMAIN?domain variable not set}`)
     - traefik.http.routers.plane-web.tls=true
+    - traefik.http.routers.plane-web.tls.certresolver=${CERT_RESOLVER:-}
     - traefik.http.routers.plane-web.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
     - traefik.http.routers.plane-web.service=plane-web
     - traefik.http.services.plane-web.loadbalancer.server.scheme=http
@@ -21,6 +22,7 @@ x-basic-deploy-labels-api: &basic-deploy-labels-api
     - traefik.http.routers.plane-api.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
     - traefik.http.routers.plane-api.rule=Host(`${DOMAIN?domain variable not set}`) && PathPrefix(`/api/`)
     - traefik.http.routers.plane-api.tls=true
+    - traefik.http.routers.plane-api.tls.certresolver=${CERT_RESOLVER:-}
     - traefik.http.routers.plane-api.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
     - traefik.http.routers.plane-api.service=plane-api
     - traefik.http.services.plane-api.loadbalancer.server.scheme=http
@@ -29,6 +31,7 @@ x-basic-deploy-labels-api: &basic-deploy-labels-api
     - traefik.http.routers.plane-api-auth.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
     - traefik.http.routers.plane-api-auth.rule=Host(`${DOMAIN?domain variable not set}`) && PathPrefix(`/auth/`)
     - traefik.http.routers.plane-api-auth.tls=true
+    - traefik.http.routers.plane-api-auth.tls.certresolver=${CERT_RESOLVER:-}
     - traefik.http.routers.plane-api-auth.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
     - traefik.http.routers.plane-api-auth.service=plane-api-auth
     - traefik.http.services.plane-api-auth.loadbalancer.server.scheme=http
@@ -42,6 +45,7 @@ x-basic-deploy-labels-admin: &basic-deploy-labels-admin
     - traefik.http.routers.plane-admin.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
     - traefik.http.routers.plane-admin.rule=Host(`${DOMAIN?domain variable not set}`) && PathPrefix(`/god-mode/`)
     - traefik.http.routers.plane-admin.tls=true
+    - traefik.http.routers.plane-admin.tls.certresolver=${CERT_RESOLVER:-}
     - traefik.http.routers.plane-admin.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
     - traefik.http.routers.plane-admin.service=plane-admin
     - traefik.http.services.plane-admin.loadbalancer.server.scheme=http
@@ -55,6 +59,7 @@ x-basic-deploy-labels-space: &basic-deploy-labels-space
     - traefik.http.routers.plane-space.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
     - traefik.http.routers.plane-space.rule=Host(`${DOMAIN?domain variable not set}`) && PathPrefix(`/spaces/`)
     - traefik.http.routers.plane-space.tls=true
+    - traefik.http.routers.plane-space.tls.certresolver=${CERT_RESOLVER:-}
     - traefik.http.routers.plane-space.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
     - traefik.http.routers.plane-space.service=plane-space
     - traefik.http.services.plane-space.loadbalancer.server.scheme=http
@@ -68,6 +73,7 @@ x-basic-deploy-labels-live: &basic-deploy-labels-live
     - traefik.http.routers.plane-live.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
     - traefik.http.routers.plane-live.rule=Host(`${DOMAIN?domain variable not set}`) && PathPrefix(`/live/`)
     - traefik.http.routers.plane-live.tls=true
+    - traefik.http.routers.plane-live.tls.certresolver=${CERT_RESOLVER:-}
     - traefik.http.routers.plane-live.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
     - traefik.http.routers.plane-live.service=plane-live
     - traefik.http.services.plane-live.loadbalancer.server.scheme=http
@@ -81,6 +87,7 @@ x-basic-deploy-labels-minio: &basic-deploy-labels-minio
     - traefik.http.routers.plane-minio.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
     - traefik.http.routers.plane-minio.rule=Host(`${DOMAIN?domain variable not set}`) && PathPrefix(`/${AWS_S3_BUCKET_NAME:-uploads}`)
     - traefik.http.routers.plane-minio.tls=true
+    - traefik.http.routers.plane-minio.tls.certresolver=${CERT_RESOLVER:-}
     - traefik.http.routers.plane-minio.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
     - traefik.http.routers.plane-minio.service=plane-minio
     - traefik.http.services.plane-minio.loadbalancer.server.scheme=http
@@ -203,7 +210,7 @@ services:
   ##############################################################################
   web:
     # https://hub.docker.com/r/makeplane/plane-frontend
-    image: makeplane/plane-frontend:${VERSION_PLANE:-v1.1.0}
+    image: makeplane/plane-frontend:${VERSION_PLANE:-v1.2.1}
     <<:
       - *basic
       # - *basic-deploy-labels-web
@@ -219,6 +226,10 @@ services:
         reservations:
           cpus: ${RESOURCES_RESERVATIONS_CPUS_PLANE_WEB:-0.001}
           memory: ${RESOURCES_RESERVATIONS_MEMORY_PLANE_WEB:-32m}
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
     environment:
       <<: *web-env
     volumes:
@@ -240,7 +251,7 @@ services:
 
   api:
     # https://hub.docker.com/r/makeplane/plane-backend
-    image: makeplane/plane-backend:${VERSION_PLANE:-v1.1.0}
+    image: makeplane/plane-backend:${VERSION_PLANE:-v1.2.1}
     <<:
       - *basic
       # - *basic-deploy-labels-api
@@ -279,7 +290,7 @@ services:
 
   admin:
     # https://hub.docker.com/r/makeplane/plane-admin
-    image: makeplane/plane-admin:${VERSION_PLANE:-v1.1.0}
+    image: makeplane/plane-admin:${VERSION_PLANE:-v1.2.1}
     <<:
       - *basic
       # - *basic-deploy-labels-admin
@@ -295,6 +306,10 @@ services:
         reservations:
           cpus: ${RESOURCES_RESERVATIONS_CPUS_PLANE_ADMIN:-0.001}
           memory: ${RESOURCES_RESERVATIONS_MEMORY_PLANE_ADMIN:-32m}
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
     environment:
       <<: *web-env
     volumes:
@@ -316,7 +331,7 @@ services:
 
   space:
     # https://hub.docker.com/r/makeplane/plane-space
-    image: makeplane/plane-space:${VERSION_PLANE:-v1.1.0}
+    image: makeplane/plane-space:${VERSION_PLANE:-v1.2.1}
     <<:
       - *basic
       # - *basic-deploy-labels-space
@@ -353,7 +368,7 @@ services:
 
   live:
     # https://hub.docker.com/r/makeplane/plane-live
-    image: makeplane/plane-live:${VERSION_PLANE:-v1.1.0}
+    image: makeplane/plane-live:${VERSION_PLANE:-v1.2.1}
     <<:
       - *basic
       # - *basic-deploy-labels-live
@@ -390,7 +405,7 @@ services:
 
   worker:
     # https://hub.docker.com/r/makeplane/plane-backend
-    image: makeplane/plane-backend:${VERSION_PLANE:-v1.1.0}
+    image: makeplane/plane-backend:${VERSION_PLANE:-v1.2.1}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -413,7 +428,7 @@ services:
 
   beat-worker:
     # https://hub.docker.com/r/makeplane/plane-backend
-    image: makeplane/plane-backend:${VERSION_PLANE:-v1.1.0}
+    image: makeplane/plane-backend:${VERSION_PLANE:-v1.2.1}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -438,7 +453,7 @@ services:
   ##############################################################################
   migrator:
     # https://hub.docker.com/r/makeplane/plane-backend
-    image: makeplane/plane-backend:${VERSION_PLANE:-v1.1.0}
+    image: makeplane/plane-backend:${VERSION_PLANE:-v1.2.1}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -457,7 +472,7 @@ services:
   ##############################################################################
   plane-db:
     # https://hub.docker.com/_/postgres
-    image: postgres:${VERSION_POSTGRESQL:-17.6-alpine}
+    image: postgres:${VERSION_POSTGRESQL:-17.7-alpine}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -490,7 +505,7 @@ services:
 
   plane-mq:
     # https://hub.docker.com/_/rabbitmq
-    image: rabbitmq:${VERSION_RABBITMQ:-4.2.0-management-alpine}
+    image: rabbitmq:${VERSION_RABBITMQ:-4.2.2-management-alpine}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -513,7 +528,7 @@ services:
 
   plane-redis:
     # https://hub.docker.com/r/valkey/valkey
-    image: valkey/valkey:${VERSION_VALKEY:-9.0.0-alpine}
+    image: valkey/valkey:${VERSION_VALKEY:-9.0.1-alpine}
     <<: *basic
     deploy:
       <<: *basic-deploy

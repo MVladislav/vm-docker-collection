@@ -57,15 +57,15 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_PLANE=v1.1.0
-VERSION_POSTGRESQL=17.6-alpine
-VERSION_RABBITMQ=4.2.0-management-alpine
-VERSION_VALKEY=9.0.0-alpine
+VERSION_PLANE=v1.2.1
+VERSION_POSTGRESQL=17.7-alpine
+VERSION_RABBITMQ=4.2.2-management-alpine
+VERSION_VALKEY=9.0.1-alpine
 VERSION_MINIO=RELEASE.2025-09-07T16-13-09Z-cpuv1
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
-...
+CERT_RESOLVER=certificates
 ```
 
 #### example short .env
