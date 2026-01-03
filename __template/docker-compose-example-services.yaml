@@ -49,6 +49,8 @@ services:
     cap_add:
       - SETUID
       - SETGID
+    # environment:
+    #   - VALKEY_EXTRA_FLAGS=--maxmemory 128mb --maxmemory-policy volatile-lfu
     volumes:
       # - /etc/timezone:/etc/timezone:ro
       # - /etc/localtime:/etc/localtime:ro
@@ -131,6 +133,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-postgresql}
       POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password_file
       PGDATA: /var/lib/postgresql/18/data
+      # POSTGRES_INITDB_ARGS: --data-checksums
       # POSTGRES_HOST_AUTH_METHOD: trust
     volumes:
       # - /etc/timezone:/etc/timezone:ro
@@ -139,7 +142,7 @@ services:
       #   target: /dev/shm
       #   tmpfs:
       #     size: 134217728 # 128*2^20 bytes = 128Mb
-      - postgresql:/var/lib/postgresql/18/data
+      - postgresql_v18:/var/lib/postgresql/18/data
     networks:
       default: {}
     healthcheck:
@@ -438,7 +441,7 @@ volumes:
   dragonfly: {}
   valkey: {}
   minio: {}
-  postgresql: {}
+  postgresql_v18: {}
   mariadb: {}
   influxdb-storage: {}
   influxdb-config: {}
