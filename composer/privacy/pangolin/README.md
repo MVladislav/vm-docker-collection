@@ -15,6 +15,9 @@
   - [NEWT setup](#newt-setup)
     - [create `.env` file following:](#create-env-file-following-1)
     - [copy/update `docker-compose-newt.override.yaml.tmpl`](#copyupdate-docker-compose-newtoverrideyamltmpl)
+  - [FAQ](#faq)
+    - [Crowdsec](#crowdsec)
+      - [Test block](#test-block)
   - [References](#references)
 
 ---
@@ -118,6 +121,22 @@ $cp docker-compose-newt.override.yaml.tmpl docker-compose-newt.override.yaml
 ```
 
 extend `networks` sections with your network names where `newt` should have access for and will tunnel over `pangolin`.
+
+---
+
+## FAQ
+
+### Crowdsec
+
+#### Test block
+
+```sh
+# List decisions
+docker exec -it "$(docker ps -q -f name=crowdsec)" cscli decisions list
+# Manually creating a decision against a public IP of one of your devices
+docker exec -it "$(docker ps -q -f name=crowdsec)" \
+cscli decisions add --ip <your-public-ip> --duration 1m --reason "CrowdSec remediation test"
+```
 
 ---
 

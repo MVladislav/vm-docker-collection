@@ -254,28 +254,33 @@ services:
   ##############################################################################
   crowdsec:
     # https://hub.docker.com/r/crowdsecurity/crowdsec
-    image: crowdsecurity/crowdsec:${VERSION_CROWDSEC:-v1.7.4}
+    image: crowdsecurity/crowdsec:${VERSION_CROWDSEC:-v1.7.4-debian}
     <<: *basic
     deploy:
       <<: *basic-deploy
     configs:
+      - source: acquis_config
+        target: /etc/crowdsec/acquis.yaml
+        mode: 0440
+        uid: "0"
+        gid: "0"
       - source: appsec_config
-        target: /config/crowdsec/acquis.d/appsec.yaml
+        target: /etc/crowdsec/acquis.d/appsec.yaml
         mode: 0440
         uid: "0"
         gid: "0"
       - source: traefik_config
-        target: /config/crowdsec/acquis.d/traefik.yaml
+        target: /etc/crowdsec/acquis.d/traefik.yaml
         mode: 0440
         uid: "0"
         gid: "0"
       - source: syslog_config
-        target: /config/crowdsec/acquis.d/syslog.yaml
+        target: /etc/crowdsec/acquis.d/syslog.yaml
         mode: 0440
         uid: "0"
         gid: "0"
       - source: journalctl_config
-        target: /config/crowdsec/acquis.d/journalctl.yaml
+        target: /etc/crowdsec/acquis.d/journalctl.yaml
         mode: 0440
         uid: "0"
         gid: "0"
@@ -285,11 +290,8 @@ services:
       - crowdsec_data:/etc/crowdsec
       - crowdsec_db:/var/lib/crowdsec/data
       # Syslog
-      - /var/log/auth.log:/var/log/auth.log:ro
-      - /var/log/syslog:/var/log/syslog:ro
-      # Journalctl
-      - traefik_logs:/var/log/traefik:ro
-      - /var/log/journal:/var/log/host:ro
+      - traefik_logs:/var/log-traefik:ro
+      - /var/log:/var/log:ro
     environment:
       CUSTOM_HOSTNAME: crowdsec
       BOUNCER_KEY_traefik: PANGOLINLAPI1234
@@ -363,6 +365,8 @@ configs:
     file: ${FILE_PATH:-$PWD}/config/traefik/dynamic_config.yml
   ban_page:
     file: ${FILE_PATH:-$PWD}/config/traefik/ban.html
+  acquis_config:
+    file: ${FILE_PATH:-$PWD}/config/crowdsec/acquis.yaml
   appsec_config:
     file: ${FILE_PATH:-$PWD}/config/crowdsec/appsec.yaml
   traefik_config:
