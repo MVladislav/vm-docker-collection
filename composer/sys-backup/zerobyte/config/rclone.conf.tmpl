@@ -1,0 +1,28 @@
+# Hetzner Storage Box
+[storagebox]
+type = sftp
+host = uXXXXX.your-storagebox.de
+user = uXXXXX
+port = 23
+pass = <obscured-password>
+
+# Hetzner Object Storage :: https://docs.hetzner.com/storage/storage-box/access/access-ssh-rsync-borg/#rclone
+[my-hetzner]
+type = s3
+provider = Hetzner
+access_key_id = ACCESS_KEY
+secret_access_key = SECRET_KEY # pragma: allowlist secret
+region = hel1
+endpoint = hel1.your-objectstorage.com
+acl = private
+
+
+# SFTP :: https://rclone.org/sftp/
+[sftp]
+type = sftp
+host = XXXXXX.example.de
+user = XXXXXX
+port = 22
+pass = <obscured-password>
+key_file = /ssh/id_ed25519
+known_hosts_file = /ssh/known_hosts
