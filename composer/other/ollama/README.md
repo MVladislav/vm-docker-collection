@@ -63,8 +63,9 @@ DOMAIN_OLLAMA=ollama.home.local
 #### download model
 
 ```sh
-$docker exec -it "$(docker ps -q -f name=ollama-ollama)" ollama pull qwen2.5-coder:32b
+$docker exec -it "$(docker ps -q -f name=ollama-ollama)" ollama pull ministral-3:14b
 # => https://ollama.com/library
+# ministral-3:14b #tools #vision
 # gpt-oss:20b #tools #thinking
 # qwen2.5-coder:32b #tools
 # gemma3:12b #vision
