@@ -7,6 +7,7 @@ x-basic-deploy-labels: &basic-deploy-labels
     - traefik.http.routers.reactive-resume.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
     - traefik.http.routers.reactive-resume.rule=Host(`${DOMAIN?domain variable not set}`)
     - traefik.http.routers.reactive-resume.tls=true
+    - traefik.http.routers.reactive-resume.tls.certresolver=${CERT_RESOLVER:-}
     - traefik.http.routers.reactive-resume.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
     - traefik.http.routers.reactive-resume.service=reactive-resume
     - traefik.http.services.reactive-resume.loadbalancer.server.scheme=${PROTOCOL:-http}
@@ -20,6 +21,7 @@ x-basic-deploy-labels-minio: &basic-deploy-labels-minio
     - traefik.http.routers.reactive-resume-minio.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
     - traefik.http.routers.reactive-resume-minio.rule=Host(`${DOMAIN_MINIO?domain variable not set}`)
     - traefik.http.routers.reactive-resume-minio.tls=true
+    - traefik.http.routers.reactive-resume-minio.tls.certresolver=${CERT_RESOLVER:-}
     - traefik.http.routers.reactive-resume-minio.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
     - traefik.http.routers.reactive-resume-minio.service=reactive-resume-minio
     - traefik.http.services.reactive-resume-minio.loadbalancer.server.scheme=${PROTOCOL_MINIO:-http}
@@ -47,14 +49,6 @@ x-basic-deploy: &basic-deploy
 
 x-basic: &basic
   env_file: ${ENV_FILE:-.env}
-  # cap_add:
-  #   - CHOWN # (chown, chmod)
-  #   - DAC_OVERRIDE
-  #   - DAC_READ_SEARCH
-  #   - SETGID # (setgid, setgroups)
-  #   - SETUID # (setuid)
-  #   - FOWNER # (chmod, chown, or chgrp)
-  #   - FSETID
   cap_drop: ["ALL"]
   security_opt:
     - no-new-privileges:true
@@ -84,7 +78,7 @@ services:
   ##############################################################################
   reactive-resume:
     # https://hub.docker.com/r/amruthpillai/reactive-resume
-    image: amruthpillai/reactive-resume:${VERSION:-v4.5.0}
+    image: amruthpillai/reactive-resume:${VERSION:-v4.5.5}
     <<: [*basic, *basic-deploy-labels]
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels]
@@ -137,7 +131,7 @@ services:
   ##############################################################################
   chrome:
     # https://github.com/browserless/browserless/pkgs/container/chromium
-    image: ghcr.io/browserless/chromium:${VERSION_CHROMIUM:-v2.37.0}
+    image: ghcr.io/browserless/chromium:${VERSION_CHROMIUM:-v2.38.2}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -168,7 +162,7 @@ services:
   ##############################################################################
   postgresql:
     # https://hub.docker.com/_/postgres
-    image: postgres:${VERSION_POSTGRESQL:-17.6-alpine}
+    image: postgres:${VERSION_POSTGRESQL:-17.7-alpine}
     <<: *basic
     deploy:
       <<: *basic-deploy
