@@ -47,10 +47,11 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION=1.27.1
+VERSION=1.28.0
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
+CERT_RESOLVER=certificates
 TZ=Europe/Berlin
 CRON_MIN=3,33
 ```

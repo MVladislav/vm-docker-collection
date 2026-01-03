@@ -7,6 +7,7 @@ x-basic-deploy-labels: &basic-deploy-labels
     - traefik.http.routers.freshrss.entrypoints=https
     - traefik.http.routers.freshrss.rule=Host(`${DOMAIN?domain variable not set}`)
     - traefik.http.routers.freshrss.tls=true
+    - traefik.http.routers.freshrss.tls.certresolver=${CERT_RESOLVER:-}
     - traefik.http.routers.freshrss.service=freshrss
     - traefik.http.routers.freshrss.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
     - traefik.http.services.freshrss.loadbalancer.server.scheme=${PROTOCOL:-http}
@@ -69,7 +70,7 @@ services:
   ##############################################################################
   freshrss:
     # https://hub.docker.com/r/freshrss/freshrss
-    image: freshrss/freshrss:${VERSION:-1.27.1}
+    image: freshrss/freshrss:${VERSION:-1.28.0}
     <<: *basic
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels]
