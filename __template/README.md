@@ -66,6 +66,7 @@ VERSION=latest
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
 # NOTE: extend additional info here ...
+CERT_RESOLVER=certificates
 ```
 
 #### example short .env (swarm)

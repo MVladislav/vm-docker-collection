@@ -7,6 +7,7 @@ x-basic-deploy-labels: &basic-deploy-labels
     - traefik.http.routers.<router_name>${SERVICE_NAME_POST:-}.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
     - traefik.http.routers.<router_name>${SERVICE_NAME_POST:-}.rule=Host(`${DOMAIN?domain variable not set}`)
     - traefik.http.routers.<router_name>${SERVICE_NAME_POST:-}.tls=true
+    - traefik.http.routers.<router_name>${SERVICE_NAME_POST:-}.tls.certresolver=${CERT_RESOLVER:-}
     - traefik.http.routers.<router_name>${SERVICE_NAME_POST:-}.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
     - traefik.http.routers.<router_name>${SERVICE_NAME_POST:-}.service=<router_name>${SERVICE_NAME_POST:-}
     - traefik.http.services.<router_name>${SERVICE_NAME_POST:-}.loadbalancer.server.scheme=${PROTOCOL:-https}
