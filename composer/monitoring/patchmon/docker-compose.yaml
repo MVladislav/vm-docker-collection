@@ -63,7 +63,7 @@ services:
   ##############################################################################
   patchmon-frontend:
     # https://github.com/patchmon/PatchMon/pkgs/container/patchmon-frontend
-    image: ghcr.io/patchmon/patchmon-frontend:${VERSION_PATCHMON:-pr-85}
+    image: ghcr.io/patchmon/patchmon-frontend:${VERSION_PATCHMON:-1.3.7}
     <<:
       - *basic
       # - *basic-deploy-labels
@@ -86,7 +86,7 @@ services:
   ##############################################################################
   patchmon-backend:
     # https://github.com/patchmon/PatchMon/pkgs/container/patchmon-backend
-    image: ghcr.io/patchmon/patchmon-backend:${VERSION_PATCHMON:-pr-85}
+    image: ghcr.io/patchmon/patchmon-backend:${VERSION_PATCHMON:-1.3.7}
     <<:
       - *basic
     deploy:

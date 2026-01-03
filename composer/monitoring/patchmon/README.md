@@ -54,7 +54,7 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_PATCHMON=pr-85
+VERSION_PATCHMON=1.3.7
 VERSION_VALKEY=9.0.0-alpine
 VERSION_POSTGRESQL=18.0-alpine
 
