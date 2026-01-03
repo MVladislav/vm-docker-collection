@@ -7,6 +7,7 @@ x-basic-deploy-labels: &basic-deploy-labels
     - traefik.http.routers.openspeedtest.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
     - traefik.http.routers.openspeedtest.rule=Host(`${DOMAIN?domain variable not set}`)
     - traefik.http.routers.openspeedtest.tls=true
+    - traefik.http.routers.openspeedtest.tls.certresolver=${CERT_RESOLVER:-}
     - traefik.http.routers.openspeedtest.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
     - traefik.http.routers.openspeedtest.service=openspeedtest
     - traefik.http.services.openspeedtest.loadbalancer.server.scheme=${PROTOCOL:-http}

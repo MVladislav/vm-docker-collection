@@ -45,6 +45,10 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 # APPLICATION version for easy update
 # ______________________________________________________________________________
 VERSION=v2.0.6
+
+# APPLICATION general variable to adjust the apps
+# ______________________________________________________________________________
+CERT_RESOLVER=certificates
 ```
 
 #### example short .env
