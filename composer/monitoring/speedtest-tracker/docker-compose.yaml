@@ -96,9 +96,8 @@ services:
       DB_CONNECTION: sqlite
 
       APP_DEBUG: ${APP_DEBUG:-false}
-      # PUBLIC_DASHBOARD: ${PUBLIC_DASHBOARD:-false}
+      PUBLIC_DASHBOARD: ${PUBLIC_DASHBOARD:-true}
       # DATETIME_FORMAT: j M Y - G:i:s
-      # PRUNE_RESULTS_OLDER_THAN: 90
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
