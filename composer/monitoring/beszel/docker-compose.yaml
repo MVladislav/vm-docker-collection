@@ -7,6 +7,7 @@ x-basic-deploy-labels: &basic-deploy-labels
     - traefik.http.routers.beszel.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
     - traefik.http.routers.beszel.rule=Host(`${DOMAIN?domain variable not set}`)
     - traefik.http.routers.beszel.tls=true
+    - traefik.http.routers.beszel.tls.certresolver=${CERT_RESOLVER:-}
     - traefik.http.routers.beszel.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
     - traefik.http.routers.beszel.service=beszel
     - traefik.http.services.beszel.loadbalancer.server.scheme=${PROTOCOL:-http}

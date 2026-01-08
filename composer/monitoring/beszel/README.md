@@ -48,6 +48,7 @@ VERSION=0.17.0
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
+CERT_RESOLVER=certificates
 
 # Agent
 AGENT_TYPE= # -nvidia | -intel
