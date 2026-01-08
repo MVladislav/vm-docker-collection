@@ -7,6 +7,7 @@ x-basic-deploy-labels: &basic-deploy-labels
     - traefik.http.routers.patchmon.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
     - traefik.http.routers.patchmon.rule=Host(`${DOMAIN?domain variable not set}`)
     - traefik.http.routers.patchmon.tls=true
+    - traefik.http.routers.patchmon.tls.certresolver=${CERT_RESOLVER:-}
     - traefik.http.routers.patchmon.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
     - traefik.http.routers.patchmon.service=patchmon
     - traefik.http.services.patchmon.loadbalancer.server.scheme=${PROTOCOL:-http}
@@ -130,7 +131,7 @@ services:
   ##############################################################################
   valkey:
     # https://hub.docker.com/r/valkey/valkey
-    image: valkey/valkey:${VERSION_VALKEY:-9.0.0-alpine}
+    image: valkey/valkey:${VERSION_VALKEY:-9.0.1-alpine}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -161,7 +162,7 @@ services:
   ##############################################################################
   postgresql:
     # https://hub.docker.com/_/postgres
-    image: postgres:${VERSION_POSTGRESQL:-18-alpine}
+    image: postgres:${VERSION_POSTGRESQL:-18.1-alpine}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -189,7 +190,7 @@ services:
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-      - postgresql:/var/lib/postgresql/18/data
+      - postgresql_v18:/var/lib/postgresql/18/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
       start_period: 2s
@@ -212,7 +213,7 @@ networks:
 volumes:
   agent_files: {}
   valkey: {}
-  postgresql: {}
+  postgresql_v18: {}
 
 secrets:
   postgres_password_file:
