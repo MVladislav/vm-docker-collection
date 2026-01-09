@@ -64,7 +64,7 @@ services:
   ##############################################################################
   open-archiver:
     # https://hub.docker.com/r/logiclabshq/open-archiver
-    image: logiclabshq/open-archiver:${VERSION_OPEN_ARCHIVER:-latest}
+    image: logiclabshq/open-archiver:${VERSION_OPEN_ARCHIVER:-v0.4.0}
     <<:
       - *basic
       - *basic-deploy-labels
@@ -118,7 +118,7 @@ services:
   ##############################################################################
   meilisearch:
     # https://hub.docker.com/r/getmeili/meilisearch
-    image: getmeili/meilisearch:${VERSION_MEILISEARCH:-latest}
+    image: getmeili/meilisearch:${VERSION_MEILISEARCH:-v1.31}
     <<:
       - *basic
     deploy:
@@ -155,7 +155,7 @@ services:
   ##############################################################################
   postgresql:
     # https://hub.docker.com/_/postgres
-    image: postgres:${VERSION_POSTGRESQL:-17.5-alpine}
+    image: postgres:${VERSION_POSTGRESQL:-18.1-alpine}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -170,6 +170,7 @@ services:
       - CHOWN
       - FOWNER
       - DAC_READ_SEARCH
+      - DAC_OVERRIDE
       - SETUID
       - SETGID
     secrets:
@@ -178,11 +179,11 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-open_archive}
       POSTGRES_USER: ${POSTGRES_USER:-open-archive}
       POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password_file
-      PGDATA: /var/lib/postgresql/data
+      PGDATA: /var/lib/postgresql/18/data
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-      - postgresql:/var/lib/postgresql/data
+      - postgresql_v18:/var/lib/postgresql/18/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
       start_period: 2s
@@ -195,7 +196,7 @@ services:
   ##############################################################################
   valkey:
     # https://hub.docker.com/r/valkey/valkey
-    image: valkey/valkey:${VERSION_VALKEY:-8.1.0-alpine}
+    image: valkey/valkey:${VERSION_VALKEY:-9.0.1-alpine}
     <<: *basic
     deploy:
       <<: *basic-deploy
