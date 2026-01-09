@@ -8,6 +8,7 @@
 
 - [SETUP](#setup)
   - [basic](#basic)
+    - [create empty `rclone.conf`:](#create-empty-rcloneconf)
     - [create `.env` file following:](#create-env-file-following)
       - [example short .env (swarm)](#example-short-env-swarm)
       - [example short .env (bridge)](#example-short-env-bridge)
@@ -57,7 +58,7 @@ VERSION=v0.20
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
-# NOTE: extend additional info here ...
+CERT_RESOLVER=certificates
 ```
 
 #### example short .env (swarm)
