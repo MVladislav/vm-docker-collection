@@ -63,6 +63,9 @@ services:
       - pangolin_data:/app/config
       - maxmind:${GEOIPUPDATE_DB_DIR:-/app/geo}
     environment:
+      # SECRETS
+      SERVER_SECRET: ${SERVER_SECRET?SERVER_SECRET is not set}
+      EMAIL_SMTP_PASS: ${EMAIL_SMTP_PASS}
       # APP
       APP_DASHBOARDURL: https://${DASHBOARDURL?domain variable not set}
       APP_BASEDOMAIN: ${BASEDOMAIN?domain variable not set}
@@ -75,17 +78,14 @@ services:
       # TRAEFIK
       GENERATE_TRAEFIK_CONFIG: "false"
       # FLAGS
-      FLAGS_EMAIL_VERIFICATION_REQUIRED: ${FLAGS_EMAIL_VERIFICATION_REQUIRED:-false}
-      FLAGS_REQUIRE_EMAIL_VERIFICATION: ${FLAGS_REQUIRE_EMAIL_VERIFICATION:-false}
+      FLAGS_REQUIRE_EMAIL_VERIFICATION: ${FLAGS_REQUIRE_EMAIL_VERIFICATION:-true}
+      FLAGS_DISABLE_SIGNUP_WITHOUT_INVITE: ${FLAGS_DISABLE_SIGNUP_WITHOUT_INVITE:-true}
+      FLAGS_DISABLE_USER_CREATE_ORG: ${FLAGS_DISABLE_USER_CREATE_ORG:-true}
       FLAGS_ALLOW_RAW_RESOURCES: ${FLAGS_ALLOW_RAW_RESOURCES:-true}
+      FLAGS_ENABLE_INTEGRATION_API: ${FLAGS_ENABLE_INTEGRATION_API:-false}
       FLAGS_DISABLE_LOCAL_SITES: ${FLAGS_DISABLE_LOCAL_SITES:-false}
       FLAGS_DISABLE_BASIC_WIREGUARD_SITES: ${FLAGS_DISABLE_BASIC_WIREGUARD_SITES:-false}
-      FLAGS_ENABLE_CLIENTS: ${FLAGS_ENABLE_CLIEFLAGS_ALLOW_RAW_RESOURCESNTS:-false}
-
-      FLAGS_DISABLE_SIGNUP_WITHOUT_INVITE: ${FLAGS_DISABLE_SIGNUP_WITHOUT_INVITE:-false}
-      DISABLE_SIGNUP_WITHOUT_INVITE: ${DISABLE_SIGNUP_WITHOUT_INVITE:-false}
-      FLAGS_DISABLE_USER_CREATE_ORG: ${FLAGS_DISABLE_USER_CREATE_ORG:-true}
-      DISABLE_USER_CREATE_ORG: ${DISABLE_USER_CREATE_ORG:-true}
+      FLAGS_DISABLE_CONFIG_MANAGED_DOMAINS: ${FLAGS_DISABLE_CONFIG_MANAGED_DOMAINS:-false}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3001/api/v1/"]
       start_period: 10s
@@ -134,8 +134,7 @@ services:
     command:
       - --reachableAt=http://gerbil:3003
       - --generateAndSaveKeyTo=/var/config/key
-      - --remoteConfig=http://pangolin:3001/api/v1/gerbil/get-config
-      - --reportBandwidthTo=http://pangolin:3001/api/v1/gerbil/receive-bandwidth
+      - --remoteConfig=http://pangolin:3001/api/v1/
     networks:
       proxy: {}
 
@@ -306,10 +305,10 @@ services:
         - cscli
         - capi
         - status
-      start_period: 5s
-      interval: 10s
-      retries: 5
-      timeout: 3s
+      start_period: 30s
+      interval: 30s
+      retries: 3
+      timeout: 5s
     networks:
       proxy: {}
 
@@ -332,7 +331,7 @@ services:
     environment:
       GEOIPUPDATE_ACCOUNT_ID_FILE: /run/secrets/geoipupdate_account_id
       GEOIPUPDATE_LICENSE_KEY_FILE: /run/secrets/geoipupdate_license_key
-      GEOIPUPDATE_EDITION_IDS: ${GEOIPUPDATE_EDITION_IDS:-GeoLite2-Country} # GeoLite2-ASN GeoLite2-City GeoLite2-Country
+      GEOIPUPDATE_EDITION_IDS: ${GEOIPUPDATE_EDITION_IDS:-GeoLite2-Country GeoLite2-City GeoLite2-ASN}
       GEOIPUPDATE_FREQUENCY: ${GEOIPUPDATE_FREQUENCY:-72}
       GEOIPUPDATE_DB_DIR: ${GEOIPUPDATE_DB_DIR:-/app/geo}
     networks:

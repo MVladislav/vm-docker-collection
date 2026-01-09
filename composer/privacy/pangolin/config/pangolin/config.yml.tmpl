@@ -5,6 +5,7 @@ app:
   dashboard_url: "https://<REPLACE_DASHBOARDURL_DOMAIN>"
   log_level: "info"
   save_logs: false
+  anonymous_usage: false
 
 domains:
   domain1:
@@ -22,13 +23,14 @@ server:
     id: "P-Access-Token-Id"
     token: "P-Access-Token"
   resource_session_request_param: "p_session_request"
-  secret: <REPLACE_SERVER_SECRET>
   cors:
     origins: ["https://<REPLACE_DASHBOARDURL_DOMAIN>"]
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"]
     allowed_headers: ["X-CSRF-Token", "Content-Type"]
-    credentials: false
+    credentials: true
+  trust_proxy: 1
   maxmind_db_path: "/app/geo/GeoLite2-Country.mmdb"
+  maxmind_asn_path: "/app/geo/GeoLite2-ASN.mmdb"
 
 traefik:
   cert_resolver: "certificates"
@@ -36,30 +38,36 @@ traefik:
   https_entrypoint: "websecure"
 
 gerbil:
-  start_port: 51820
   base_endpoint: "<REPLACE_DASHBOARDURL_DOMAIN>"
+  start_port: 51820
+  clients_start_port: 21820
   use_subdomain: false
-  block_size: 24
-  site_block_size: 30
   subnet_group: 100.89.137.0/20
+  block_size: 24
+  site_block_size: 26
 
 rate_limits:
   global:
     window_minutes: 1
-    max_requests: 500
+    max_requests: 200
+  auth:
+    window_minutes: 1
+    max_requests: 100
 
 # email:
-#   smtp_host: "host.hoster.net"
+#   smtp_host: "smtp.ionos.de"
 #   smtp_port: 587
 #   smtp_user: "no-reply@<REPLACE_BASE_DOMAIN>"
-#   smtp_pass: "aaaaaaaaaaaaaaaaaa"
+#   smtp_secure: false
 #   no_reply: "no-reply@<REPLACE_BASE_DOMAIN>"
+#   smtp_tls_reject_unauthorized: true
 
 flags:
-  require_email_verification: false
+  require_email_verification: true
   disable_signup_without_invite: true
   disable_user_create_org: true
   allow_raw_resources: true
-  enable_clients: false
+  enable_integration_api: false
   disable_local_sites: false
   disable_basic_wireguard_sites: false
+  disable_config_managed_domains: false

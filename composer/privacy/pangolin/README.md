@@ -18,6 +18,7 @@
   - [FAQ](#faq)
     - [Crowdsec](#crowdsec)
       - [Test block](#test-block)
+      - [Other](#other)
   - [References](#references)
 
 ---
@@ -52,11 +53,11 @@ $sed "s|<REPLACE_DASHBOARDURL_DOMAIN>|${TMP_DOMAIN_DASHBOARD}|" -i  ./config/tra
 
 $sed "s|<REPLACE_DASHBOARDURL_DOMAIN>|${TMP_DOMAIN_DASHBOARD}|" -i  ./config/pangolin/config.yml
 $sed "s|<REPLACE_BASE_DOMAIN>|${TMP_DOMAIN_BASE}|" -i  ./config/pangolin/config.yml
-$sed "s|<REPLACE_SERVER_SECRET>|$(pwgen -s 32 1)|" -i  ./config/pangolin/config.yml
 
 $echo "BASEDOMAIN=${TMP_DOMAIN_BASE}" >> .env
 $echo "DASHBOARDURL=${TMP_DOMAIN_DASHBOARD}" >> .env
 $echo "CERTIFICATES_ACME_EMAIL=info@${TMP_DOMAIN_BASE}" >> .env
+$echo "SERVER_SECRET=$(pwgen -s 32 1)" >> .env
 ```
 
 ### create `.env` file following:
@@ -86,16 +87,23 @@ VERSION_MAXMIND=v7.1.1
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
-DASHBOARDURL=<REPLACE_DASHBOARDURL_DOMAIN>
 BASEDOMAIN=<BASE_DOMAIN>
-
-CERTIFICATES_ACME_CASERVER=https://acme-staging-v02.api.letsencrypt.org/directory # https://acme-v02.api.letsencrypt.org/directory
-CERTIFICATES_ACME_CASERVER=https://acme.zerossl.com/v2/DV90 # needs EAB Credentials (EAB KID & EAB HMAC Key)
+DASHBOARDURL=<REPLACE_DASHBOARDURL_DOMAIN>
 
 CERTIFICATES_ACME_EMAIL=<E-MAIL>
-CERTIFICATES_ACME_CERTIFICATES_DURATION=2160 # 2160 (90*24=2160) | 8760 (365*24=8760)
+CERTIFICATES_ACME_CASERVER=https://acme-staging-v02.api.letsencrypt.org/directory # https://acme-v02.api.letsencrypt.org/directory
 CERTIFICATES_ACME_DNSCHALLENGE_PROVIDER=ionos # https://doc.traefik.io/traefik/https/acme/#providers
 CERTIFICATES_ACME_DNSCHALLENGE_RESOLVERS=9.9.9.9,194.242.2.2,1.1.1.1
+
+TRAEFIK_API=false
+TRAEFIK_API_DASHBOARD=false
+
+SERVER_SECRET=<GENERATE_SERVER_SECRET>
+EMAIL_SMTP_PASS=<EMAIL_PASSWORD>
+
+# CERTIFICATES_ACME_CASERVER=https://acme.zerossl.com/v2/DV90 # needs EAB Credentials (EAB KID & EAB HMAC Key)
+# CERTIFICATES_ACME_EAB_KID=<EAB_KID>
+# CERTIFICATES_ACME_EAB_HMACENCODED=<EAB_HMACENCODED>
 ```
 
 #### example short .env
@@ -135,7 +143,13 @@ extend `networks` sections with your network names where `newt` should have acce
 docker exec -it "$(docker ps -q -f name=crowdsec)" cscli decisions list
 # Manually creating a decision against a public IP of one of your devices
 docker exec -it "$(docker ps -q -f name=crowdsec)" \
-cscli decisions add --ip <your-public-ip> --duration 1m --reason "CrowdSec remediation test"
+cscli decisions add --ip <your-public-ip> --duration 1m --type ban --reason "CrowdSec remediation test"
+```
+
+#### Other
+
+```sh
+docker exec -it "$(docker ps -q -f name=crowdsec)" cscli metrics
 ```
 
 ---
@@ -143,9 +157,17 @@ cscli decisions add --ip <your-public-ip> --duration 1m --reason "CrowdSec remed
 ## References
 
 - <https://github.com/fosrl>
-- <https://docs.fossorial.io/Getting%20Started/Manual%20Install%20Guides/docker-compose>
-- <https://docs.fossorial.io/Newt/install>
-- acme
-  - <https://go-acme.github.io/lego/dns/ionos/>
-- <https://docs.fossorial.io/Community%20Guides/crowdsec>
-- <https://github.com/maxmind/geoipupdate/blob/main/doc/docker.md>
+  - <https://github.com/fosrl/pangolin>
+- docker
+  - <https://docs.pangolin.net/self-host/manual/docker-compose>
+- pangolin
+  - <https://docs.pangolin.net/self-host/advanced/config-file>
+- newt/client
+  - <https://docs.pangolin.net/manage/sites/install-site>
+  - <https://docs.pangolin.net/manage/sites/configure-site>
+  - <https://docs.pangolin.net/manage/clients/install-client>
+  - <https://docs.pangolin.net/manage/clients/configure-client>
+- other
+  - [acme](https://go-acme.github.io/lego/dns/ionos/)
+  - [crowdsec](https://docs.pangolin.net/self-host/community-guides/crowdsec#crowdsec)
+  - [maxmind](https://github.com/maxmind/geoipupdate/blob/main/doc/docker.md)
