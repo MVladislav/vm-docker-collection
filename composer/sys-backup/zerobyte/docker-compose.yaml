@@ -64,7 +64,7 @@ services:
   ##############################################################################
   zerobyte:
     # https://github.com/nicotsx/zerobyte/pkgs/container/zerobyte
-    image: ghcr.io/nicotsx/zerobyte:${VERSION:-v0.20}
+    image: ghcr.io/nicotsx/zerobyte:${VERSION:-v0.21}
     <<:
       - *basic
       - *basic-deploy-labels
