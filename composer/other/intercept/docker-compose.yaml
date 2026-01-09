@@ -1,0 +1,124 @@
+---
+x-basic-deploy-labels: &basic-deploy-labels
+  labels:
+    - traefik.enable=true
+    - traefik.swarm.lbswarm=${LB_SWARM:-true}
+    - traefik.swarm.network=proxy
+    - traefik.http.routers.intercept.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.intercept.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.intercept.tls=true
+    - traefik.http.routers.intercept.tls.certresolver=${CERT_RESOLVER:-}
+    - traefik.http.routers.intercept.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.intercept.service=intercept
+    - traefik.http.services.intercept.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.intercept.loadbalancer.server.port=${PORT:-5050}
+
+x-basic-deploy: &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  update_config:
+    order: stop-first
+  restart_policy:
+    condition: any
+  resources:
+    limits:
+      cpus: ${RESOURCES_LIMITS_CPUS:-1}
+      memory: ${RESOURCES_LIMITS_MEMORY:-1g}
+    reservations:
+      cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
+      memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
+
+x-basic: &basic
+  env_file: ${ENV_FILE:-.env}
+  # cap_add:
+  #   - CHOWN # Allows changing file ownership (`chown`,`chgrp`)
+  #   - FOWNER # Overrides file ownership checks (`chmod`,`kill`)
+  #   - DAC_READ_SEARCH # Bypasses file read and directory execute permissions (`ls`,`cat`,`find`)
+  #   - DAC_OVERRIDE # Bypasses file read/write/execute permission checks (`cat`,`touch`,`rm`)
+  #   - SETGID # Allows setting group ID (`setgid`,`newgrp`,`chgrp`,`setregid()`)
+  #   - SETUID # Allows setting user ID (`setuid`,`su`,`sudo`,`passwd`)
+  #   - FSETID # Allows setting file SUID/SGID bits (`chmod u+s`,`chmod g+s`)
+  cap_drop: ["ALL"]
+  security_opt:
+    - no-new-privileges:true
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 655360
+      hard: 655360
+    fsize: -1
+    as: -1
+  networks:
+    proxy: {}
+  healthcheck:
+    disable: true
+  tmpfs:
+    - /tmp
+  restart: always
+
+################################################################################
+################################################################################
+################################################################################
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  intercept:
+    # https://hub.docker.com/r/...
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+      # context: https://github.com/smittix/intercept.git#main
+      # dockerfile: ./Dockerfile
+    image: intercept:${VERSION:-latest}
+    <<:
+      - *basic
+      - *basic-deploy-labels
+    deploy:
+      <<:
+        - *basic-deploy
+        - *basic-deploy-labels
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    environment:
+      INTERCEPT_HOST: 0.0.0.0
+      INTERCEPT_PORT: ${PORT:-5050}
+      INTERCEPT_LOG_LEVEL: ${INTERCEPT_LOG_LEVEL:-INFO}
+    devices:
+      - /dev/bus/usb
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - data:/app/data
+      - /lib/modules:/lib/modules:ro
+      - /run/udev:/run/udev:ro
+      - /var/run/dbus:/var/run/dbus:ro
+      # - /dev/serial:/dev/serial:ro
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -kIf ${PROTOCOL:-http}://127.0.0.1:${PORT:-5050}/health > /dev/null 2>&1 || exit 1",
+        ]
+      start_period: 10s
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  proxy:
+    external: true
+
+volumes:
+  data: {}
