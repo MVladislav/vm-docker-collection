@@ -7,6 +7,7 @@ x-basic-deploy-labels: &basic-deploy-labels
     - traefik.http.routers.open-archiver.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
     - traefik.http.routers.open-archiver.rule=Host(`${DOMAIN?domain variable not set}`)
     - traefik.http.routers.open-archiver.tls=true
+    - traefik.http.routers.open-archiver.tls.certresolver=${CERT_RESOLVER:-}
     - traefik.http.routers.open-archiver.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
     - traefik.http.routers.open-archiver.service=open-archiver
     - traefik.http.services.open-archiver.loadbalancer.server.scheme=${PROTOCOL:-http}
@@ -34,15 +35,6 @@ x-basic-deploy: &basic-deploy
 
 x-basic: &basic
   env_file: ${ENV_FILE:-.env}
-  # cap_add:
-  #   # https://dockerlabs.collabnix.com/advanced/security/capabilities/
-  #   - CHOWN # Allows changing file ownership (`chown`,`chgrp`)
-  #   - FOWNER # Overrides file ownership checks (`chmod`,`kill`)
-  #   - DAC_READ_SEARCH # Bypasses file read and directory execute permissions (`ls`,`cat`,`find`)
-  #   - DAC_OVERRIDE # Bypasses file read/write/execute permission checks (`cat`,`touch`,`rm`)
-  #   - SETGID # Allows setting group ID (`setgid`,`newgrp`,`chgrp`,`setregid()`)
-  #   - SETUID # Allows setting user ID (`setuid`,`su`,`sudo`,`passwd`)
-  #   - FSETID # Allows setting file SUID/SGID bits (`chmod u+s`,`chmod g+s`)
   cap_drop: ["ALL"]
   security_opt:
     - no-new-privileges:true
