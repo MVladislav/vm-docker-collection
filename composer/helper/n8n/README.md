@@ -22,11 +22,12 @@
 
 ### create your `secrets`:
 
-> instead of openssl for password you can also use `pwgen -s 50 1`
-
 ```sh
-$openssl rand -base64 18 | docker secret create my_external_secret -
-$openssl rand -base64 18 > config/secrets/my_file_secret.txt
+$pwgen -s 50 1 > config/secrets/postgres_password_file.txt
+$echo "DATABASE_PASSWORD=$(cat config/secrets/postgres_password_file.txt)" >> .env
+
+$echo "N8N_ENCRYPTION_KEY=$(pwgen -s 50 1)" >> .env
+$echo "N8N_RUNNERS_AUTH_TOKEN=$(pwgen -s 50 1)" >> .env
 ```
 
 ### create `.env` file following:
@@ -53,13 +54,24 @@ RESOURCES_LIMITS_MEMORY=2g
 RESOURCES_RESERVATIONS_CPUS=0.001
 RESOURCES_RESERVATIONS_MEMORY=32m
 
+RESOURCES_LIMITS_CPUS_N8N_WORKER=1
+RESOURCES_LIMITS_MEMORY_N8N_WORKER=1g
+RESOURCES_RESERVATIONS_CPUS_N8N_WORKER=0.001
+RESOURCES_RESERVATIONS_MEMORY_N8N_WORKER=32m
+
+RESOURCES_LIMITS_CPUS_N8N_RUNNER=1
+RESOURCES_LIMITS_MEMORY_N8N_RUNNER=1g
+RESOURCES_RESERVATIONS_CPUS_N8N_RUNNER=0.001
+RESOURCES_RESERVATIONS_MEMORY_N8N_RUNNER=32m
+
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION=1.102.1
+VERSION_N8N=2.3.2
+VERSION_VALKEY=9.0.1-alpine
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
-# NOTE: extend additional info here ...
+CERT_RESOLVER=certificates
 ```
 
 #### example short .env (swarm)
@@ -81,6 +93,6 @@ DOMAIN=n8n.home.local
 
 ## References
 
-- <https://n8n.io/>
+- <https://n8n.io>
 - <https://github.com/n8n-io/n8n>
-- <https://docs.n8n.io/hosting/installation/server-setups/docker-compose/#4-create-an-env-file>
+- <https://docs.n8n.io/hosting/installation/server-setups/docker-compose>
