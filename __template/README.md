@@ -16,6 +16,8 @@
     - [verify healthcheck](#verify-healthcheck)
     - [access docker in swarm mode](#access-docker-in-swarm-mode)
     - [some more useful commands](#some-more-useful-commands)
+  - [FAQ](#faq)
+    - [Postgresql Upgrade](#postgresql-upgrade)
   - [References](#references)
 
 ---
@@ -111,6 +113,21 @@ $docker rm $(docker ps -a -q)
 # for debugs and faster cleanups also
 # remove all containers
 $docker volume rm $(docker volume ls -qf dangling=true)
+```
+
+## FAQ
+
+### Postgresql Upgrade
+
+```sh
+# perform a manual backup
+$docker exec -it "$(docker ps -q -f name=postgresql)" pg_dumpall -U ${POSTGRES_USER:-postgresql} > ./upgrade_backup.sql
+# POSTGRES_DB=postgresql sed  "/connect.*$POSTGRES_DB/,\$!d" ./upgrade_backup.sql | sed "/PostgreSQL database dump complete/,\$d"
+
+# Update Postgresql
+
+# Import backup into new Postgresql
+$cat ./upgrade_backup_myapp.sql | docker exec -i "$(docker ps -q -f name=postgresql)" psql -U ${POSTGRES_USER:-postgresql}
 ```
 
 ---

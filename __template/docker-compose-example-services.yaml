@@ -23,6 +23,8 @@ services:
       # - /etc/timezone:/etc/timezone:ro
       # - /etc/localtime:/etc/localtime:ro
       - dragonfly:/data
+    # networks:
+    #   default: {}
     healthcheck:
       test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
       start_period: 2s
@@ -35,7 +37,7 @@ services:
   ##############################################################################
   valkey:
     # https://hub.docker.com/r/valkey/valkey
-    image: valkey/valkey:${VERSION_VALKEY:-9.0.0-alpine}
+    image: valkey/valkey:${VERSION_VALKEY:-9.0.1-alpine}
     # <<: *basic
     deploy:
       # <<: *basic-deploy
@@ -56,6 +58,8 @@ services:
       # - /etc/localtime:/etc/localtime:ro
       - valkey:/data
     command: --save 300 1 --loglevel warning
+    # networks:
+    #   default: {}
     healthcheck:
       test: ["CMD-SHELL", "valkey-cli ping | grep PONG"]
       # test: ["CMD", "valkey-", "--raw", "incr", "ping"]
@@ -96,6 +100,8 @@ services:
       # - /etc/localtime:/etc/localtime:ro
       - minio:/data
     command: server /data --console-address ":9001"
+    # networks:
+    #   default: {}
     healthcheck:
       test: ["CMD", "mc", "ready", "local"]
       start_period: 2s
@@ -143,8 +149,8 @@ services:
       #   tmpfs:
       #     size: 134217728 # 128*2^20 bytes = 128Mb
       - postgresql_v18:/var/lib/postgresql/18/data
-    networks:
-      default: {}
+    # networks:
+    #   default: {}
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
       start_period: 2s
@@ -194,8 +200,8 @@ services:
     command:
       - --log-bin=mysql-bin
       - --expire-logs-days=90
-    networks:
-      default: {}
+    # networks:
+    #   default: {}
     healthcheck:
       test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       # test: ["CMD-SHELL", "/usr/local/bin/healthcheck.sh --no-defaults"]
@@ -233,8 +239,8 @@ services:
     #   - /etc/timezone:/etc/timezone:ro
     #   - /etc/localtime:/etc/localtime:ro
     command: php -S 0.0.0.0:8080 -t /var/www/html
-    networks:
-      default: {}
+    # networks:
+    #   default: {}
 
   ##############################################################################
   ## NOTE: for PostgreSQL and MySQL ############################################
@@ -266,8 +272,8 @@ services:
     # volumes:
     #   - /etc/timezone:/etc/timezone:ro
     #   - /etc/localtime:/etc/localtime:ro
-    networks:
-      default: {}
+    # networks:
+    #   default: {}
 
   ##############################################################################
   ##############################################################################
@@ -305,13 +311,13 @@ services:
       DOCKER_INFLUXDB_INIT_BUCKET: ${DOCKER_INFLUXDB_INIT_BUCKET:-db0}
       # DOCKER_INFLUXDB_INIT_RETENTION: ${DOCKER_INFLUXDB_INIT_RETENTION:-1w}
       # DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: ${DOCKER_INFLUXDB_INIT_ADMIN_TOKEN:-my-super-secret-auth-token}
-    networks:
-      default: {}
     volumes:
       # - /etc/timezone:/etc/timezone:ro
       # - /etc/localtime:/etc/localtime:ro
       - influxdb-storage:/var/lib/influxdb2
       - influxdb-config:/etc/influxdb2
+    # networks:
+    #   default: {}
 
   ##############################################################################
   ##############################################################################
@@ -362,12 +368,12 @@ services:
       TZ: ${TZ:-Europe/Berlin}
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:-root}
       MONGO_INITDB_ROOT_PASSWORD_FILE: /run/secrets/mongo_initdb_root_password
-    networks:
-      default: {}
     volumes:
       # - /etc/timezone:/etc/timezone:ro
       # - /etc/localtime:/etc/localtime:ro
       - mongodb:/data/db
+    # networks:
+    #   default: {}
 
   ##############################################################################
   ## NOTE: for mongoDB              ############################################
@@ -405,8 +411,8 @@ services:
     # volumes:
     #   - /etc/timezone:/etc/timezone:ro
     #   - /etc/localtime:/etc/localtime:ro
-    networks:
-      default: {}
+    # networks:
+    #   default: {}
 
   ##############################################################################
   ##############################################################################
@@ -424,8 +430,8 @@ services:
         reservations:
           cpus: ${RESOURCES_RESERVATIONS_CPUS_RABBITMQ:-0.001}
           memory: ${RESOURCES_RESERVATIONS_MEMORY_RABBITMQ:-32m}
-    networks:
-      default: {}
+    # networks:
+    #   default: {}
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "status"]
       start_period: 10s
