@@ -62,7 +62,7 @@ services:
   ##############################################################################
   traefik:
     # https://hub.docker.com/_/traefik
-    image: traefik:${VERSION:-v3.6.6}
+    image: traefik:${VERSION:-v3.6.7}
     <<:
       - *basic
       - *basic-deploy-labels

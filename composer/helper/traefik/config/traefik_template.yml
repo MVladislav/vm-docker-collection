@@ -44,10 +44,18 @@ entryPoints:
       respondingTimeouts:
         readTimeout: 30m
     http3: {}
-    # http:
-    #   middlewares:
-    #     - default-secured@file
-    #     # - bouncer-crowdsec
+    http:
+      encodedCharacters:
+        allowEncodedSlash: false
+        allowEncodedBackSlash: false
+        allowEncodedNullCharacter: false
+        allowEncodedSemicolon: false
+        allowEncodedPercent: false
+        allowEncodedQuestionMark: false
+        allowEncodedHash: false
+      # middlewares:
+      #   - default-secured@file
+      #   # - bouncer-crowdsec
 #   # -------------------------------------
 #   mysql:
 #     address: :3306
