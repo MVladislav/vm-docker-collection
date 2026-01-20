@@ -5,7 +5,8 @@ app:
   dashboard_url: "https://<REPLACE_DASHBOARDURL_DOMAIN>"
   log_level: "info"
   save_logs: false
-  anonymous_usage: false
+  telemetry:
+    anonymous_usage: false
 
 domains:
   domain1:
@@ -27,7 +28,7 @@ server:
     origins: ["https://<REPLACE_DASHBOARDURL_DOMAIN>"]
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"]
     allowed_headers: ["X-CSRF-Token", "Content-Type"]
-    credentials: true
+    credentials: false
   trust_proxy: 1
   maxmind_db_path: "/app/geo/GeoLite2-Country.mmdb"
   maxmind_asn_path: "/app/geo/GeoLite2-ASN.mmdb"

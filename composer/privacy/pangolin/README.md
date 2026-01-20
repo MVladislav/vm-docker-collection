@@ -19,6 +19,7 @@
     - [Crowdsec](#crowdsec)
       - [Test block](#test-block)
       - [Other](#other)
+      - [Enterprise-Edition](#enterprise-edition)
   - [References](#references)
 
 ---
@@ -151,6 +152,16 @@ cscli decisions add --ip <your-public-ip> --duration 1m --type ban --reason "Cro
 ```sh
 docker exec -it "$(docker ps -q -f name=crowdsec)" cscli metrics
 ```
+
+#### Enterprise-Edition
+
+> [`Free for individuals and small businesses`](https://docs.pangolin.net/self-host/enterprise-edition#licensing-overview)
+
+```env
+VERSION_PANGOLIN=ee-<VERSION>
+```
+
+When Pangolin is started you need navigate to `/admin/license` and enter the [license key](https://app.pangolin.net/).
 
 ---
 

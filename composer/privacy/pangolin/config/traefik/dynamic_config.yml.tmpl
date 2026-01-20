@@ -35,6 +35,11 @@ http:
           #   - 127.0.0.0/8
           #   - 10.0.0.0/8
     # --------------------------------------------------------------------------
+    # badger:
+    #   plugin:
+    #     badger:
+    #       disableForwardAuth: true
+    # --------------------------------------------------------------------------
     redirect-to-https:
       redirectScheme:
         scheme: https
@@ -89,6 +94,7 @@ http:
       entryPoints:
         - websecure
       middlewares:
+        # - badger
         - traefik-basic-auth@file
       tls:
         certResolver: certificates
@@ -101,6 +107,7 @@ http:
     #     - web
     #   middlewares:
     #     - redirect-to-https
+    #     - badger
 
     # Next.js router (handles everything except API and WebSocket paths)
     next-router:
@@ -108,6 +115,8 @@ http:
       service: next-service
       entryPoints:
         - websecure
+      # middlewares:
+      #   - badger
       tls:
         certResolver: certificates
 
@@ -117,6 +126,8 @@ http:
       service: api-service
       entryPoints:
         - websecure
+      # middlewares:
+      #   - badger
       tls:
         certResolver: certificates
 
@@ -126,6 +137,8 @@ http:
       service: api-service
       entryPoints:
         - websecure
+      # middlewares:
+      #   - badger
       tls:
         certResolver: certificates
 
