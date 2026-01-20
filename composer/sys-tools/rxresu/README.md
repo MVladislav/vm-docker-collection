@@ -10,7 +10,8 @@
   - [basic](#basic)
     - [create your `secrets`:](#create-your-secrets)
     - [create `.env` file following:](#create-env-file-following)
-      - [example short .env](#example-short-env)
+      - [example short .env (swarm)](#example-short-env-swarm)
+      - [example short .env (bridge)](#example-short-env-bridge)
   - [References](#references)
 
 ---
@@ -25,12 +26,8 @@
 $pwgen -s 18 1 > config/secrets/postgres_password_file.txt
 $echo "POSTGRES_PW=$(cat config/secrets/postgres_password_file.txt)" >> .env
 
-$pwgen -s 18 1 > config/secrets/minio_root_password_file.txt
-$echo "MINIO_ROOT_SECRET=$(cat config/secrets/minio_root_password_file.txt)" >> .env
-
-$echo "ACCESS_TOKEN_SECRET=$(pwgen -s 18 1)" >> .env
-$echo "REFRESH_TOKEN_SECRET=$(pwgen -s 18 1)" >> .env
-$echo "CHROME_TOKEN=$(pwgen -s 18 1)" >> .env
+$echo "AUTH_SECRET=$(pwgen -s 32 1)" >> .env
+$echo "S3_SECRET_ACCESS_KEY=$(pwgen -s 32 1)" >> .env
 ```
 
 ### create `.env` file following:
@@ -44,15 +41,9 @@ NETWORK_MODE=overlay # overlay | bridge
 # GENERAL traefik variables (set by default, change as needed)
 # ______________________________________________________________________________
 LB_SWARM=true
-
 DOMAIN=resume.home.local # not set in docker-compose, needs to be copied to .env
 PROTOCOL=http
 PORT=3000
-
-DOMAIN_MINIO=storage.home.local # not set in docker-compose, needs to be copied to .env
-PROTOCOL_MINIO=http
-PORT_MINIO=9000
-
 # default-secured@file | public-secured@file | authentik@file
 MIDDLEWARE_SECURED=default-secured@file
 
@@ -63,48 +54,52 @@ RESOURCES_LIMITS_MEMORY=512m
 RESOURCES_RESERVATIONS_CPUS=0.001
 RESOURCES_RESERVATIONS_MEMORY=32m
 
-RESOURCES_LIMITS_CPUS_CHROMIUM=1
-RESOURCES_LIMITS_MEMORY_CHROMIUM=512m
-RESOURCES_RESERVATIONS_CPUS_CHROMIUM=0.001
-RESOURCES_RESERVATIONS_MEMORY_CHROMIUM=32m
-
 RESOURCES_LIMITS_CPUS_POSTGRESQL=1
 RESOURCES_LIMITS_MEMORY_POSTGRESQL=512m
 RESOURCES_RESERVATIONS_CPUS_POSTGRESQL=0.001
 RESOURCES_RESERVATIONS_MEMORY_POSTGRESQL=32m
 
-RESOURCES_LIMITS_CPUS_MINIO=1
-RESOURCES_LIMITS_MEMORY_MINIO=512m
-RESOURCES_RESERVATIONS_CPUS_MINIO=0.001
-RESOURCES_RESERVATIONS_MEMORY_MINIO=32m
+RESOURCES_LIMITS_CPUS_SEAWEEDFS=1
+RESOURCES_LIMITS_MEMORY_SEAWEEDFS=512m
+RESOURCES_RESERVATIONS_CPUS_SEAWEEDFS=0.001
+RESOURCES_RESERVATIONS_MEMORY_SEAWEEDFS=32m
+
+RESOURCES_LIMITS_CPUS_MINIO_MC=1
+RESOURCES_LIMITS_MEMORY_MINIO_MC=512m
+RESOURCES_RESERVATIONS_CPUS_MINIO_MC=0.001
+RESOURCES_RESERVATIONS_MEMORY_MINIO_MC=32m
+
+RESOURCES_LIMITS_CPUS_GOTENBERG=1
+RESOURCES_LIMITS_MEMORY_GOTENBERG=512m
+RESOURCES_RESERVATIONS_CPUS_GOTENBERG=0.001
+RESOURCES_RESERVATIONS_MEMORY_GOTENBERG=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION=v4.5.5
-VERSION_CHROMIUM=v2.38.2
-VERSION_POSTGRESQL=17.7-alpine
-VERSION_MINIO=RELEASE.2025-09-07T16-13-09Z-cpuv1
+VERSION_RESUME=v5.0.0
+VERSION_POSTGRESQL=18.1-alpine
+VERSION_SEAWEEDFS=4.07
+VERSION_MC=RELEASE.2025-08-13T08-35-41Z-cpuv1
+VERSION_GOTENBERG=8.25.1
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
 CERT_RESOLVER=certificates
-
-ACCESS_TOKEN_SECRET=<ACCESS_TOKEN_SECRET>
-REFRESH_TOKEN_SECRET=<REFRESH_TOKEN_SECRET>
-
-CHROME_TOKEN=<TOKEN> # https://docs.browserless.io/enterprise/docker/config
-
-MAIL_FROM=<MAIL>
-SMTP_URL: smtp://user:pass@smtp:587 # Optional # pragma: allowlist secret
 ```
 
-#### example short .env
+#### example short .env (swarm)
 
 ```env
 DOMAIN=resume.home.local
-DOMAIN_MINIO=storage.home.local
+```
 
-MAIL_FROM=<MAIL>
+#### example short .env (bridge)
+
+```env
+NETWORK_MODE=bridge
+LB_SWARM=false
+
+DOMAIN=resume.home.local
 ```
 
 ---
