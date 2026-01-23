@@ -1,0 +1,36 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "theme": "tokyonight",
+  "autoupdate": false,
+  "model": "ollama/{env:OPENCODE_MODEL}",
+  "enabled_providers": ["ollama"],
+  "permission": {
+    "*": "ask",
+    "glob": "allow",
+    "list": "allow",
+    "read": "allow",
+    "todoread": "allow",
+    "question": "allow",
+    "write": "ask",
+    "edit": "ask",
+    "bash": {
+      "*": "ask",
+      "ls *": "allow",
+      "find *": "allow"
+    }
+  },
+  "provider": {
+    "ollama": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Ollama (local)",
+      "options": {
+        "baseURL": "{env:BASE_URL}"
+      },
+      "models": {
+        "{env:OPENCODE_MODEL}": {
+          "name": "{env:OPENCODE_MODEL}"
+        }
+      }
+    }
+  }
+}

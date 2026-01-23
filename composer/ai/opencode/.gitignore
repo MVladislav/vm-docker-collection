@@ -1,0 +1,16 @@
+*
+!.gitignore
+!.gitempty
+
+!.dockerignore
+!Dockerfile
+!docker-compose.yaml
+
+!LICENCE
+!README.md
+
+
+!config/
+config/*
+
+!config/opencode.json

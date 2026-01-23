@@ -1,0 +1,86 @@
+---
+x-basic-deploy: &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  update_config:
+    order: stop-first
+  restart_policy:
+    condition: any
+  resources:
+    limits:
+      cpus: ${RESOURCES_LIMITS_CPUS:-1}
+      memory: ${RESOURCES_LIMITS_MEMORY:-1g}
+    reservations:
+      cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
+      memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
+
+x-basic: &basic
+  stdin_open: true # docker run -i
+  tty: true # docker run -t
+  cap_drop: ["ALL"]
+  security_opt:
+    - no-new-privileges:true
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 655360
+      hard: 655360
+    fsize: -1
+    as: -1
+  mem_limit: ${RESOURCES_LIMITS_MEMORY:-1g}
+  networks:
+    proxy: {}
+  healthcheck:
+    disable: true
+  restart: always
+
+################################################################################
+################################################################################
+################################################################################
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  opencode:
+    # https://github.com/anomalyco/opencode/pkgs/container/opencode
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        UBUNTU_VERSION: ${UBUNTU_VERSION:-25.10}
+    image: ghcr.io/anomalyco/opencode:${VERSION:-1.1.28}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+    environment:
+      BASE_URL: ${BASE_URL:-http://ollama:11434/v1}
+      OPENCODE_MODEL: ${OPENCODE_MODEL:-ministral-3:14b}
+    configs:
+      - source: opencode_config
+        target: /home/ubuntu/.config/opencode/opencode.json
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - ${WORKSPACE:-data}:/workspace
+    command: opencode .
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  proxy:
+    external: true
+
+volumes:
+  data: {}
+
+configs:
+  opencode_config:
+    file: $PWD/config/opencode.json
