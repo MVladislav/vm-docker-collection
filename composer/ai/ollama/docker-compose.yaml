@@ -85,6 +85,8 @@ services:
       SCARF_NO_ANALYTICS: ${SCARF_NO_ANALYTICS:-true}
       DO_NOT_TRACK: ${DO_NOT_TRACK:-true}
       ANONYMIZED_TELEMETRY: ${ANONYMIZED_TELEMETRY:-false}
+      # USER_AGENT: TODO: ...
+      # CORS_ALLOW_ORIGIN: TODO: ...
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
@@ -104,8 +106,9 @@ services:
         published: 11434
         protocol: tcp
         mode: host
-    # environment:
-    #   HSA_OVERRIDE_GFX_VERSION: 11.0.0
+    environment:
+      OLLAMA_CONTEXT_LENGTH: ${OLLAMA_CONTEXT_LENGTH:-16384}
+      # HSA_OVERRIDE_GFX_VERSION: 11.0.0
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro

@@ -10,6 +10,8 @@
   - [basic](#basic)
     - [create `.env` file following:](#create-env-file-following)
       - [example short .env](#example-short-env)
+  - [Commands](#commands)
+    - [check the model’s max context length](#check-the-models-max-context-length)
       - [download model](#download-model)
   - [References](#references)
 
@@ -60,30 +62,27 @@ DOMAIN_WEBUI=ai.home.local
 DOMAIN_OLLAMA=ollama.home.local
 ```
 
+## Commands
+
+### check the model’s max context length
+
+```sh
+$docker exec -it "$(docker ps -q -f name=ollama-ollama)" ollama show <model_name>
+# set `OLLAMA_CONTEXT_LENGTH` <= `context length`
+#   - right value is a compromise between that limit and what your RAM/VRAM and workload can handle comfortably
+#   - start testing with for example '16384' than '32768' than '65536' and so on
+```
+
 #### download model
 
 ```sh
-$docker exec -it "$(docker ps -q -f name=ollama-ollama)" ollama pull ministral-3:14b
-# => https://ollama.com/library
-# ministral-3:14b #tools #vision
-# gpt-oss:20b #tools #thinking
-# qwen2.5-coder:32b #tools
-# gemma3:12b #vision
-# gemma3:27b #vision
-#
-# llama3:8b
-# codellama
-# mistral
-# dolphin-mistral
-#   openhermes
-#   openchat
-# deepseek-coder
-# deepseek-r1:7b #tools #thinking
-# deepseek-r1:8b #tools #thinking
-# deepseek-r1:14b #tools #thinking
+$docker exec -it "$(docker ps -q -f name=ollama-ollama)" ollama pull <model_name>
+# => https://ollama.com/library (code / instruct)
+# gpt-oss:20b #tools #thinking #cloud
 # deepseek-r1:32b #tools #thinking
-# starling-lm - summarisation and text analysis
-# zephyr - summarization
+# qwen3-coder:30b #tools #cloud
+# ministral-3:14b #tools #vision #cloud
+# codestral:22b
 ```
 
 ---
