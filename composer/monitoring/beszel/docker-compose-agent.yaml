@@ -63,8 +63,8 @@ services:
         mode: host
     environment:
       LISTEN: ${PORT_AGENT:-45876}
-      # KEY: ${KEY?Key for agent is not set}
-      # HUB_URL: ${HUB_URL?Hub url for agent is not set}
+      KEY: ${KEY?KEY for agent is not set}
+      HUB_URL: ${HUB_URL?HUB_URL for agent is not set}
     extends:
       file: docker-compose-agent.override.yaml
       service: ${HWACCEL:-none} # hwaccel-amd | hwaccel-nvidia
@@ -72,8 +72,6 @@ services:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      # - /sys/class/net:/sys/class/net:ro
-      - /var/run/dbus:/var/run/dbus:ro
     healthcheck:
       test: ["CMD", "/agent", "health"]
       start_period: 10s
