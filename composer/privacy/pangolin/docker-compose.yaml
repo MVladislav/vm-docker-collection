@@ -174,7 +174,8 @@ services:
       - traefik_logs:/var/log/traefik
     environment:
       IONOS_API_KEY_FILE: /run/secrets/dnschallenge_api_key_secret
-      # https://doc.traefik.io/traefik/reference/static-configuration/env/
+      # https://doc.traefik.io/traefik/reference/install-configuration/boot-environment/#environment-variables
+      # https://doc.traefik.io/traefik/v2.0/reference/static-configuration/env/
       # Global configuration
       TRAEFIK_GLOBAL_CHECKNEWVERSION: ${TRAEFIK_GLOBAL_CHECKNEWVERSION:-true}
       TRAEFIK_GLOBAL_SENDANONYMOUSUSAGE: "false"
@@ -202,10 +203,6 @@ services:
       # TRAEFIK_LOG_FILEPATH: /var/log/traefik/traefik.log
       TRAEFIK_LOG_LEVEL: INFO # TRACE, DEBUG, PANIC, FATAL, ERROR, WARN, INFO
       TRAEFIK_LOG_FORMAT: common
-      TRAEFIK_LOG_MAX_SIZE: 100
-      TRAEFIK_LOG_MAX_BACKUPS: 3
-      TRAEFIK_LOG_MAX_AGE: 3
-      TRAEFIK_LOG_COMPRESS: "true"
       # Access logs configuration
       TRAEFIK_ACCESSLOG: ${TRAEFIK_ACCESSLOG:-true}
       TRAEFIK_ACCESSLOG_FILEPATH: /var/log/traefik/access.log
