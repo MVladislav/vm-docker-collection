@@ -10,13 +10,17 @@
     "list": "allow",
     "read": "allow",
     "todoread": "allow",
+    "webfetch": "allow",
+    "websearch": "allow",
     "question": "allow",
     "write": "ask",
     "edit": "ask",
     "bash": {
       "*": "ask",
       "ls *": "allow",
-      "find *": "allow"
+      "find *": "allow",
+      "zgrep *": "allow",
+      "apt-cache search *": "allow"
     }
   },
   "provider": {
