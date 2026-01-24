@@ -59,5 +59,6 @@ DIUN_NOTIF_WEBHOOK_TIMEOUT=10s
 
 ## References
 
+- <https://github.com/crazy-max/diun>
 - <https://crazymax.dev/diun/>
 - <https://crazymax.dev/diun/usage/basic-example/>
