@@ -50,6 +50,9 @@ VERSION=latest
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
 CERT_RESOLVER=certificates
+
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=admin
 ```
 
 #### example short .env (swarm)
