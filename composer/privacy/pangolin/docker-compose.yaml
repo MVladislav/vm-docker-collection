@@ -47,7 +47,7 @@ services:
   ##############################################################################
   pangolin:
     # https://hub.docker.com/r/fosrl/pangolin
-    image: fosrl/pangolin:${VERSION_PANGOLIN:-1.14.1}
+    image: fosrl/pangolin:${VERSION_PANGOLIN:-1.15.0}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -143,7 +143,7 @@ services:
   ##############################################################################
   traefik:
     # https://hub.docker.com/_/traefik
-    image: traefik:${VERSION_TRAEFIK:-v3.6.6}
+    image: traefik:${VERSION_TRAEFIK:-v3.6.7}
     depends_on:
       pangolin:
         condition: service_healthy
@@ -264,7 +264,7 @@ services:
   ##############################################################################
   crowdsec:
     # https://hub.docker.com/r/crowdsecurity/crowdsec
-    image: crowdsecurity/crowdsec:${VERSION_CROWDSEC:-v1.7.4-debian}
+    image: crowdsecurity/crowdsec:${VERSION_CROWDSEC:-v1.7.6-debian}
     <<: *basic
     deploy:
       <<: *basic-deploy
