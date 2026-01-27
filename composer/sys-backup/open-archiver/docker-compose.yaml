@@ -64,10 +64,10 @@ services:
   ##############################################################################
   open-archiver:
     # https://hub.docker.com/r/logiclabshq/open-archiver
-    image: logiclabshq/open-archiver:${VERSION_OPEN_ARCHIVER:-v0.4.0}
+    image: logiclabshq/open-archiver:${VERSION_OPEN_ARCHIVER:-v0.4.1}
     <<:
       - *basic
-      - *basic-deploy-labels
+      # - *basic-deploy-labels
     deploy:
       <<:
         - *basic-deploy
@@ -118,7 +118,7 @@ services:
   ##############################################################################
   meilisearch:
     # https://hub.docker.com/r/getmeili/meilisearch
-    image: getmeili/meilisearch:${VERSION_MEILISEARCH:-v1.31}
+    image: getmeili/meilisearch:${VERSION_MEILISEARCH:-v1.34}
     <<:
       - *basic
     deploy:
@@ -227,6 +227,7 @@ services:
 ################################################################################
 networks:
   default:
+    internal: true
     driver: ${NETWORK_MODE:-overlay}
     attachable: true
     driver_opts:
@@ -235,14 +236,14 @@ networks:
     external: true
 
 volumes:
-  # archiver: {}
-  archiver:
-    driver: local
-    driver_opts:
-      type: nfs
-      o: nfsvers=4.2,addr=${NFS_HOST?nfs host is not defined},rsize=2097152,wsize=2097152,tcp,nconnect=${NFS_NCON:-8}
-      device: ":${NFS_PATH?nfs path is not defined}${SERVICE_NAME_POST:-}"
-  postgresql: {}
+  archiver: {}
+  # archiver:
+  #   driver: local
+  #   driver_opts:
+  #     type: nfs
+  #     o: nfsvers=4.2,addr=${NFS_HOST?nfs host is not defined},rsize=2097152,wsize=2097152,tcp,nconnect=${NFS_NCON:-8}
+  #     device: ":${NFS_PATH?nfs path is not defined}${SERVICE_NAME_POST:-}"
+  postgresql_v18: {}
   valkey: {}
   meili: {}
 

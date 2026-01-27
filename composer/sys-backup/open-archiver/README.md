@@ -57,8 +57,8 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_OPEN_ARCHIVER=v0.4.0
-VERSION_MEILISEARCH=v1.31
+VERSION_OPEN_ARCHIVER=v0.4.1
+VERSION_MEILISEARCH=v1.34
 VERSION_POSTGRESQL=18.1-alpine
 VERSION_VALKEY=9.0.1-alpine
 
