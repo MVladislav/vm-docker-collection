@@ -72,7 +72,13 @@ services:
         - *basic-deploy-labels
     environment:
       APP_URL: https://${DOMAIN?domain variable not set}
-      # MFA_OTP: ${MFA_OTP:-false}
+
+      # USER_EMAIL: ${USER_EMAIL:-groot@${DOMAIN?domain variable not set}}
+      # USER_PASSWORD: ${USER_PASSWORD:-groot}
+
+      MFA_OTP: ${MFA_OTP:-false}
+      SHARE_ALL_SYSTEMS: ${SHARE_ALL_SYSTEMS:-false}
+      DISABLE_PASSWORD_AUTH: ${DISABLE_PASSWORD_AUTH:-false}
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
@@ -109,6 +115,7 @@ services:
       - SYS_ADMIN
       - SYS_RAWIO
     environment:
+      HUB_URL: ""
       LISTEN: /beszel_socket/beszel.sock
       KEY: ${KEY?KEY for agent is not set}
     extends:
@@ -118,6 +125,7 @@ services:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
+      - socket:/beszel_socket
     healthcheck:
       test: ["CMD", "/agent", "health"]
       start_period: 10s
