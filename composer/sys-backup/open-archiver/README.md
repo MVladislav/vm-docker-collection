@@ -28,6 +28,7 @@ $pwgen -s 32 1 > config/secrets/postgres_password_file.txt
 $echo "DB_PASSWORD=$(cat config/secrets/postgres_password_file.txt)" >> .env
 $echo "JWT_SECRET=$(pwgen -s 32 1)" >> .env
 $echo "ENCRYPTION_KEY=$(pwgen -s 32 1)" >> .env
+$echo "STORAGE_ENCRYPTION_KEY=$(openssl rand -hex 32)" >> .env
 $echo "MEILI_MASTER_KEY=$(pwgen -s 32 1)" >> .env
 ```
 
@@ -61,6 +62,7 @@ VERSION_OPEN_ARCHIVER=v0.4.1
 VERSION_MEILISEARCH=v1.34
 VERSION_POSTGRESQL=18.1-alpine
 VERSION_VALKEY=9.0.1-alpine
+VERSION_TIKA=3.2.3.0-full
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
@@ -93,3 +95,4 @@ DOMAIN=archiver.home.local
 - <https://www.meilisearch.com/>
 - <https://github.com/meilisearch/meilisearch>
   - <https://www.meilisearch.com/docs/learn/self_hosted/configure_meilisearch_at_launch#environment-variable>
+- <https://github.com/apache/tika-docker>

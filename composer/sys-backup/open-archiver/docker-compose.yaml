@@ -76,15 +76,18 @@ services:
       NODE_ENV: production
       PORT_BACKEND: 4000
       PORT_FRONTEND: ${PORT:-3000}
-      STORAGE_TYPE: ${STORAGE_TYPE:-local}
-      BODY_SIZE_LIMIT: ${BODY_SIZE_LIMIT:-100M}
-      SYNC_FREQUENCY: ${SYNC_FREQUENCY:-* * * * *}
+      # APP_URL: https://${DOMAIN?domain variable not set}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+
+      SYNC_FREQUENCY: ${SYNC_FREQUENCY:-* * * * *}
+      STORAGE_TYPE: ${STORAGE_TYPE:-local}
+      STORAGE_LOCAL_ROOT_PATH: /var/data/open-archiver
+      BODY_SIZE_LIMIT: ${BODY_SIZE_LIMIT:-100M}
+      ALL_INCLUSIVE_ARCHIVE: ${ALL_INCLUSIVE_ARCHIVE:-true}
+      ENABLE_DELETION: ${ENABLE_DELETION:-true}
 
       RATE_LIMIT_WINDOW_MS: ${RATE_LIMIT_WINDOW_MS:-60000}
       RATE_LIMIT_MAX_REQUESTS: ${RATE_LIMIT_MAX_REQUESTS:-100}
-
-      STORAGE_LOCAL_ROOT_PATH: /var/data/open-archiver
 
       POSTGRES_DB: ${POSTGRES_DB:-open_archive}
       POSTGRES_USER: ${POSTGRES_USER:-open-archive}
@@ -95,6 +98,7 @@ services:
       REDIS_TLS_ENABLED: false
 
       MEILI_HOST: http://meilisearch:7700
+      TIKA_URL: http://tika:9998
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
@@ -135,6 +139,7 @@ services:
       MEILI_ENV: production
       MEILI_HTTP_ADDR: 0.0.0.0:7700
       MEILI_NO_ANALYTICS: ${MEILI_NO_ANALYTICS:-true}
+      MEILI_INDEXING_BATCH: ${MEILI_INDEXING_BATCH:-500}
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
@@ -217,6 +222,36 @@ services:
     command: --save 300 1 --loglevel warning
     healthcheck:
       test: ["CMD-SHELL", "valkey-cli ping | grep PONG"]
+      start_period: 10s
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  tika:
+    # https://hub.docker.com/r/apache/tika
+    image: apache/tika:${VERSION_TIKA:-3.2.3.0-full}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_TIKA:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_TIKA:-1g}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_TIKA:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_TIKA:-32m}
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget --no-verbose --tries=1 --spider --no-check-certificate http://127.0.0.1:9998 || exit 1",
+        ]
       start_period: 10s
       interval: 30s
       timeout: 5s
