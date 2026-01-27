@@ -99,16 +99,25 @@ $docker inspect --format "{{json .State.Health }}" <CONTAINER_NAME> | jq
 ### access docker in swarm mode
 
 ```sh
-$docker exec -it "$(docker ps -q -f name=<SERVICE_NAME>)" <COMMAND>
+$docker exec -it "$(docker ps -q -f name=^<SERVICE_NAME>\\.)" <COMMAND>
 ```
 
 ### some more useful commands
 
 ```sh
+# all non-running containers (exited + created)
+$docker ps -a -f "status=exited" -f "status=created"
+# only stopped/exited containers
+$docker ps -a -f "status=exited"
+# only never-started containers
+$docker ps -a -f "status=created"
+
 # stop all containers
 $docker stop $(docker ps -a -q)
 # remove all containers
 $docker rm $(docker ps -a -q)
+# remove all stopped/exited containers
+$docker rm $(docker ps -a -q -f "status=exited")
 
 # for debugs and faster cleanups also
 # remove all containers

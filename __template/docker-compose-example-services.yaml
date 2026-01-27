@@ -27,10 +27,10 @@ services:
     #   default: {}
     healthcheck:
       test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
-      start_period: 2s
-      interval: 5s
-      timeout: 3s
-      retries: 5
+      start_period: 10s
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
   ##############################################################################
   ##############################################################################
@@ -63,10 +63,10 @@ services:
     healthcheck:
       test: ["CMD-SHELL", "valkey-cli ping | grep PONG"]
       # test: ["CMD", "valkey-", "--raw", "incr", "ping"]
-      start_period: 2s
-      interval: 5s
-      timeout: 3s
-      retries: 5
+      start_period: 10s
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
   ##############################################################################
   ##############################################################################
@@ -104,10 +104,10 @@ services:
     #   default: {}
     healthcheck:
       test: ["CMD", "mc", "ready", "local"]
-      start_period: 2s
-      interval: 5s
-      timeout: 3s
-      retries: 5
+      start_period: 10s
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
   ##############################################################################
   ##############################################################################
@@ -153,10 +153,10 @@ services:
     #   default: {}
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
-      start_period: 2s
-      interval: 5s
-      timeout: 3s
-      retries: 5
+      start_period: 10s
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
   ##############################################################################
   ##############################################################################
@@ -205,10 +205,10 @@ services:
     healthcheck:
       test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       # test: ["CMD-SHELL", "/usr/local/bin/healthcheck.sh --no-defaults"]
-      start_period: 2s
-      interval: 5s
-      timeout: 3s
-      retries: 5
+      start_period: 10s
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
   ##############################################################################
   ## NOTE: for PostgreSQL and MySQL ############################################
@@ -435,8 +435,8 @@ services:
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "status"]
       start_period: 10s
-      interval: 10s
-      timeout: 10s
+      interval: 30s
+      timeout: 5s
       retries: 3
 
 ################################################################################

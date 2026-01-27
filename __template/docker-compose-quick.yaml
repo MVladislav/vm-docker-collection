@@ -117,9 +117,9 @@ services:
       #   #   "wget --no-verbose --tries=1 --spider --no-check-certificate ${PROTOCOL:-https}://127.0.0.1:${PORT:-443} || exit 1",
       #   # ]
       # start_period: 10s
-      # interval: 10s
-      # timeout: 3s
-      # retries: 10
+      # interval: 30s
+      # timeout: 5s
+      # retries: 3
       disable: true
 
 ################################################################################
@@ -127,6 +127,7 @@ services:
 ################################################################################
 networks:
   default:
+    internal: true
     driver: ${NETWORK_MODE:-overlay}
     attachable: true
     driver_opts:
