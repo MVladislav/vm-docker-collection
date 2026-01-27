@@ -134,10 +134,10 @@ services:
       - postgresql:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
-      start_period: 5s
-      interval: 10s
-      retries: 5
-      timeout: 3s
+      start_period: 10s
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
   ##############################################################################
   ##############################################################################
@@ -165,10 +165,10 @@ services:
     command: --save 300 1 --loglevel warning
     healthcheck:
       test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
-      start_period: 5s
-      interval: 10s
-      retries: 5
-      timeout: 3s
+      start_period: 10s
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
 ################################################################################
 ################################################################################

@@ -140,9 +140,10 @@ services:
           "CMD-SHELL",
           "mysqladmin ping -h 127.0.0.1 -P 3306 -u root -p$$(cat $$MARIADB_ROOT_PASSWORD_FILE) | grep 'mysqld is alive' || exit 1",
         ]
+      start_period: 10s
       interval: 30s
-      timeout: 10s
-      retries: 5
+      timeout: 5s
+      retries: 3
 
 ################################################################################
 ################################################################################

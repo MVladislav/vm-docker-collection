@@ -96,9 +96,10 @@ services:
       - jwt:/etc/passbolt/jwt
     # healthcheck:
     #   test: [ "CMD", "bin/cake", "passbolt", "healthcheck" ]
+    #   start_period: 10s
     #   interval: 30s
-    #   timeout: 10s
-    #   retries: 5
+    #   timeout: 5s
+    #   retries: 3
     command:
       - "/usr/bin/wait-for.sh"
       - "-t"

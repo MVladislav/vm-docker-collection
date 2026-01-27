@@ -75,10 +75,10 @@ services:
       - conf:/app/public
     healthcheck:
       test: ["CMD", "node", "/app/services/healthcheck"]
+      start_period: 10s
       interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 40s
+      timeout: 5s
+      retries: 3
 
 ################################################################################
 ################################################################################

@@ -130,10 +130,10 @@ services:
           "-qO-",
           "http://127.0.0.1:8080/health?health_access_key=${APP__HEALTH_ACCESS_KEY}",
         ]
-      start_period: 2s
-      interval: 5s
-      timeout: 3s
-      retries: 20
+      start_period: 10s
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
   ##############################################################################
   ##############################################################################
@@ -273,10 +273,10 @@ services:
     # healthcheck:
     #   # test: curl -s http://elasticsearch:9200 >/dev/null || exit 1
     #   test: ["CMD", "curl", "-f", "-k", "https://localhost:9200"]
-    #   start_period: 2s
-    #   interval: 5s
-    #   timeout: 3s
-    #   retries: 5
+    #   start_period: 10s
+    #   interval: 30s
+    #   timeout: 5s
+    #   retries: 3
 
   # elasticsearch:
   #   # https://hub.docker.com/r/opensearchproject/opensearch
@@ -335,10 +335,10 @@ services:
     # healthcheck:
     #   # test: rabbitmq-diagnostics -q ping
     #   test: rabbitmq-diagnostics check_port_connectivity
-    #   start_period: 2s
-    #   interval: 5s
-    #   timeout: 3s
-    #   retries: 5
+    #   start_period: 10s
+    #   interval: 30s
+    #   timeout: 5s
+    #   retries: 3
 
   ##############################################################################
   ##############################################################################
@@ -367,10 +367,10 @@ services:
     healthcheck:
       test: ["CMD-SHELL", "valkey-cli ping | grep PONG"]
       # test: ["CMD", "valkey-", "--raw", "incr", "ping"]
-      start_period: 2s
-      interval: 5s
-      timeout: 3s
-      retries: 5
+      start_period: 10s
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
   ##############################################################################
   ##############################################################################
@@ -406,10 +406,10 @@ services:
     command: server /data --console-address ":9001"
     healthcheck:
       test: ["CMD", "mc", "ready", "local"]
-      start_period: 2s
-      interval: 5s
-      timeout: 3s
-      retries: 5
+      start_period: 10s
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
 ################################################################################
 ################################################################################

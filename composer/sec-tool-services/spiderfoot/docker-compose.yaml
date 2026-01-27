@@ -51,9 +51,10 @@ x-basic: &basic
     - net.ipv4.conf.lo.rp_filter=0
   healthcheck:
     test: ["CMD", "curl", "-f", "${PROTOCOL:-http}://localhost:${PORT:-5001}"]
+    start_period: 10s
     interval: 30s
-    timeout: 10s
-    retries: 5
+    timeout: 5s
+    retries: 3
   restart: always # always | on-failure
 
 ################################################################################

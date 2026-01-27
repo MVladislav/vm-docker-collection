@@ -89,9 +89,9 @@ services:
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3001/api/v1/"]
       start_period: 10s
-      interval: 10s
-      timeout: 3s
-      retries: 10
+      interval: 30s
+      timeout: 5s
+      retries: 3
     networks:
       proxy: {}
 
@@ -250,10 +250,10 @@ services:
       TRAEFIK_EXPERIMENTAL_PLUGINS_CROWDSEC_VERSION: ${VERSION_CROWDSEC_PLUGIN:-v1.4.7} # https://plugins.traefik.io/plugins/6335346ca4caa9ddeffda116/crowdsec-bouncer-traefik-plugin
     healthcheck:
       test: "traefik healthcheck --ping"
-      start_period: 5s
-      interval: 10s
-      retries: 5
-      timeout: 3s
+      start_period: 10s
+      interval: 30s
+      timeout: 5s
+      retries: 3
     network_mode: service:gerbil # Ports appear on the gerbil service
 
   ##############################################################################

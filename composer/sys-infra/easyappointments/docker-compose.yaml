@@ -129,10 +129,10 @@ services:
       - --expire-logs-days=90
     healthcheck:
       test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
-      start_period: 2s
-      interval: 5s
-      timeout: 3s
-      retries: 5
+      start_period: 10s
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
 ################################################################################
 ################################################################################

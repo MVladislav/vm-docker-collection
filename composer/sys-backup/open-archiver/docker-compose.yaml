@@ -109,9 +109,9 @@ services:
           "wget --no-verbose --tries=1 --spider --no-check-certificate ${PROTOCOL:-http}://127.0.0.1:${PORT:-3000} || exit 1",
         ]
       start_period: 10s
-      interval: 10s
-      timeout: 3s
-      retries: 10
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
   ##############################################################################
   ##############################################################################
@@ -146,9 +146,9 @@ services:
           "curl -kf ${PROTOCOL:-http}://127.0.0.1:${PORT:-7700}/health > /dev/null 2>&1 || exit 1",
         ]
       start_period: 10s
-      interval: 10s
-      timeout: 3s
-      retries: 10
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
   ##############################################################################
   ##############################################################################
@@ -186,10 +186,10 @@ services:
       - postgresql_v18:/var/lib/postgresql/18/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
-      start_period: 2s
-      interval: 5s
-      timeout: 3s
-      retries: 5
+      start_period: 10s
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
   ##############################################################################
   ##############################################################################
@@ -217,10 +217,10 @@ services:
     command: --save 300 1 --loglevel warning
     healthcheck:
       test: ["CMD-SHELL", "valkey-cli ping | grep PONG"]
-      start_period: 2s
-      interval: 5s
-      timeout: 3s
-      retries: 5
+      start_period: 10s
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
 ################################################################################
 ################################################################################

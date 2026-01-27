@@ -133,9 +133,10 @@ services:
           "CMD-SHELL",
           "curl -f ${PROTOCOL:-http}://127.0.0.1:${PORT:-8080}/api/ || exit 1",
         ]
+      start_period: 10s
       interval: 30s
-      timeout: 10s
-      retries: 5
+      timeout: 5s
+      retries: 3
 
   netbox-worker:
     <<: [*basic, *basic-netbox]
@@ -147,9 +148,10 @@ services:
       - rqworker
     healthcheck:
       test: ["CMD-SHELL", "ps -aux | grep -v grep | grep -q rqworker || exit 1"]
+      start_period: 10s
       interval: 30s
-      timeout: 10s
-      retries: 5
+      timeout: 5s
+      retries: 3
 
   netbox-housekeeping:
     <<: [*basic, *basic-netbox]
@@ -160,9 +162,10 @@ services:
     healthcheck:
       test:
         ["CMD-SHELL", "ps -aux | grep -v grep | grep -q housekeeping || exit 1"]
+      start_period: 10s
       interval: 30s
-      timeout: 10s
-      retries: 5
+      timeout: 5s
+      retries: 3
 
   ##############################################################################
   ##############################################################################

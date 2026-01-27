@@ -245,9 +245,9 @@ services:
           "wget --no-verbose --tries=1 --spider --no-check-certificate http://127.0.0.1:3000 || exit 1",
         ]
       start_period: 10s
-      interval: 10s
-      timeout: 3s
-      retries: 10
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
   api:
     # https://hub.docker.com/r/makeplane/plane-backend
@@ -284,9 +284,9 @@ services:
           "wget --no-verbose --tries=1 --spider --no-check-certificate http://127.0.0.1:8000 || exit 1",
         ]
       start_period: 10s
-      interval: 10s
-      timeout: 3s
-      retries: 10
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
   admin:
     # https://hub.docker.com/r/makeplane/plane-admin
@@ -325,9 +325,9 @@ services:
           "wget --no-verbose --tries=1 --spider --no-check-certificate http://127.0.0.1:3000/god-mode/ || exit 1",
         ]
       start_period: 10s
-      interval: 10s
-      timeout: 3s
-      retries: 10
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
   space:
     # https://hub.docker.com/r/makeplane/plane-space
@@ -362,9 +362,9 @@ services:
           "wget --no-verbose --tries=1 --spider --no-check-certificate http://127.0.0.1:3000/spaces/ || exit 1",
         ]
       start_period: 10s
-      interval: 10s
-      timeout: 3s
-      retries: 10
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
   live:
     # https://hub.docker.com/r/makeplane/plane-live
@@ -399,9 +399,9 @@ services:
           "wget --no-verbose --tries=1 --spider --no-check-certificate http://127.0.0.1:3000/live/health || exit 1",
         ]
       start_period: 10s
-      interval: 10s
-      timeout: 3s
-      retries: 10
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
   worker:
     # https://hub.docker.com/r/makeplane/plane-backend
@@ -498,10 +498,10 @@ services:
       - pgdata:/var/lib/postgresql/data
     # healthcheck:
     #   test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
-    #   start_period: 2s
-    #   interval: 5s
-    #   timeout: 3s
-    #   retries: 5
+    #   start_period: 10s
+    #   interval: 30s
+    #   timeout: 5s
+    #   retries: 3
 
   plane-mq:
     # https://hub.docker.com/_/rabbitmq
@@ -551,10 +551,10 @@ services:
     command: --save 300 1 --loglevel warning
     healthcheck:
       test: ["CMD-SHELL", "valkey-cli ping | grep PONG"]
-      start_period: 2s
-      interval: 5s
-      timeout: 3s
-      retries: 5
+      start_period: 10s
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
   plane-minio:
     # https://hub.docker.com/r/minio/minio
@@ -585,10 +585,10 @@ services:
       proxy: {}
     healthcheck:
       test: ["CMD", "mc", "ready", "local"]
-      start_period: 2s
-      interval: 5s
-      timeout: 3s
-      retries: 5
+      start_period: 10s
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
 ################################################################################
 ################################################################################

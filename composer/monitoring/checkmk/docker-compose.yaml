@@ -57,9 +57,10 @@ services:
       proxy: {}
     # healthcheck:
     #   test: ["CMD", "curl", "-f", "${PROTOCOL:-https}://localhost:${PORT:-443}"]
+    #   start_period: 10s
     #   interval: 30s
-    #   timeout: 10s
-    #   retries: 5
+    #   timeout: 5s
+    #   retries: 3
     # cmd: curl https://raw.githubusercontent.com/filipnet/checkmk-telegram-notify/main/check_mk_telegram-notify.sh -o /omd/sites/cmk/share/check_mk/notifications/telegram && chmod +x /omd/sites/cmk/share/check_mk/notifications/telegram
     restart: always
 

@@ -86,9 +86,9 @@ services:
           "wget --no-verbose --tries=1 --spider --no-check-certificate ${PROTOCOL:-http}://127.0.0.1:${PORT:-3000}/api/healthcheck || exit 1",
         ]
       start_period: 10s
-      interval: 10s
+      interval: 30s
       timeout: 5s
-      retries: 10
+      retries: 3
 
 ################################################################################
 ################################################################################

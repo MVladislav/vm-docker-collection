@@ -107,9 +107,10 @@ services:
       - consume:/usr/src/paperless/consume
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000"]
+      start_period: 10s
       interval: 30s
-      timeout: 10s
-      retries: 5
+      timeout: 5s
+      retries: 3
     networks:
       default: {}
       proxy: {}
@@ -191,10 +192,10 @@ services:
       - --expire-logs-days=90
     healthcheck:
       test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
-      start_period: 5s
-      interval: 10s
-      retries: 5
-      timeout: 3s
+      start_period: 10s
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
   ##############################################################################
   ##############################################################################
@@ -222,10 +223,10 @@ services:
     command: --save 300 1 --loglevel warning
     healthcheck:
       test: ["CMD-SHELL", "valkey-cli ping | grep PONG"]
-      start_period: 5s
-      interval: 10s
-      retries: 5
-      timeout: 3s
+      start_period: 10s
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
 ################################################################################
 ################################################################################

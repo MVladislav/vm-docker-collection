@@ -245,9 +245,10 @@ services:
           "CMD-SHELL",
           "mysqladmin ping -h 127.0.0.1 -P 3306 -u root -p$$(cat $$MARIADB_ROOT_PASSWORD_FILE) | grep 'mysqld is alive' || exit 1",
         ]
+      start_period: 10s
       interval: 30s
-      timeout: 10s
-      retries: 5
+      timeout: 5s
+      retries: 3
 
   ##############################################################################
   ##############################################################################
@@ -274,9 +275,10 @@ services:
     command: ["redis-server", "--save", "60", "1", "--loglevel", "warning"]
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
+      start_period: 10s
+      interval: 30s
       timeout: 5s
-      retries: 5
+      retries: 3
 
 ################################################################################
 ################################################################################

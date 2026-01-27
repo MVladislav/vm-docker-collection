@@ -125,9 +125,10 @@ services:
       # - html:/opt/observium/html
     healthcheck:
       test: ["CMD", "curl", "-f", "${PROTOCOL:-http}://localhost:${PORT:-80}"]
+      start_period: 10s
       interval: 30s
-      timeout: 10s
-      retries: 5
+      timeout: 5s
+      retries: 3
 
   ##############################################################################
   ##############################################################################
@@ -162,10 +163,10 @@ services:
       default: {}
     healthcheck:
       test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
-      start_period: 5s
-      interval: 10s
-      retries: 5
-      timeout: 3s
+      start_period: 10s
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
 ################################################################################
 ################################################################################

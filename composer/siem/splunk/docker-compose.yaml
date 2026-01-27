@@ -92,9 +92,10 @@ services:
       - so1-etc:/opt/splunk/etc
     healthcheck:
       test: ["CMD", "curl", "-f", "${PROTOCOL:-http}://localhost:${PORT:-8000}"]
+      start_period: 10s
       interval: 30s
-      timeout: 10s
-      retries: 5
+      timeout: 5s
+      retries: 3
 
 ################################################################################
 ################################################################################

@@ -113,10 +113,10 @@ services:
       # - traefik_logs:/var/log/traefik
     healthcheck:
       test: "traefik healthcheck --ping"
-      start_period: 5s
-      interval: 10s
-      retries: 5
-      timeout: 3s
+      start_period: 10s
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
 ################################################################################
 ################################################################################

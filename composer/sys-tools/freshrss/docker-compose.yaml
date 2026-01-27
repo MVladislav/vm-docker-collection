@@ -95,9 +95,9 @@ services:
           '$$url = "${PROTOCOL:-http}://localhost:${PORT:-8080}/i/"; $$response = @file_get_contents($$url); if ($$response !== false) { exit(0); } else { exit(1); }',
         ]
       start_period: 10s
-      interval: 10s
-      timeout: 3s
-      retries: 10
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
 ################################################################################
 ################################################################################
