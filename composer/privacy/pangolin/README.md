@@ -29,12 +29,15 @@
 ### create your `secrets`:
 
 ```sh
-$echo $(htpasswd -nB traefik) > config/secrets/traefik_basicauth_secret.txt
-$echo '<YOUR_API_TOKEN>' > config/secrets/dnschallenge_api_key_secret.txt
+$echo "$(htpasswd -nB traefik)" > config/secrets/traefik_basicauth_secret.txt
 
-# Create maxmind secrets and put your secrets in
-$touch config/secrets/geoipupdate_account_id.txt
-$touch config/secrets/geoipupdate_license_key.txt
+$echo '<YOUR_API_TOKEN>' > config/secrets/dnschallenge_api_key_secret.txt
+# replace `IONOS_API_KEY_FILE` with your provider => https://go-acme.github.io/lego/dns/index.html
+$echo "IONOS_API_KEY_FILE=/run/secrets/dnschallenge_api_key_secret" >> .env # pragma: allowlist secret
+$echo "CERTIFICATES_ACME_DNSCHALLENGE_PROVIDER=ionos" >> .env
+
+$echo '<GEO_IP_ACCOUNT_ID>' > config/secrets/geoipupdate_account_id.txt
+$echo '<GEO_IP_LICENSE_KEY>' > config/secrets/geoipupdate_license_key.txt
 ```
 
 ### create config files:
@@ -45,6 +48,7 @@ $touch config/secrets/geoipupdate_license_key.txt
 $TMP_DOMAIN_BASE="home.local"
 $TMP_DOMAIN_DASHBOARD="proxy.${TMP_DOMAIN_BASE}"
 $TMP_DOMAIN_TRAEFIK="traefik.${TMP_DOMAIN_BASE}"
+$TMP_SMTP_HOST="smtp.ionos.de"
 
 $cp ./config/traefik/dynamic_config.yml.tmpl ./config/traefik/dynamic_config.yml
 $cp ./config/pangolin/config.yml.tmpl ./config/pangolin/config.yml
@@ -54,6 +58,7 @@ $sed "s|<REPLACE_DASHBOARDURL_DOMAIN>|${TMP_DOMAIN_DASHBOARD}|" -i  ./config/tra
 
 $sed "s|<REPLACE_DASHBOARDURL_DOMAIN>|${TMP_DOMAIN_DASHBOARD}|" -i  ./config/pangolin/config.yml
 $sed "s|<REPLACE_BASE_DOMAIN>|${TMP_DOMAIN_BASE}|" -i  ./config/pangolin/config.yml
+$sed "s|<REPLACE_SMTP_HOST>|${TMP_SMTP_HOST}|" -i  ./config/pangolin/config.yml
 
 $echo "BASEDOMAIN=${TMP_DOMAIN_BASE}" >> .env
 $echo "DASHBOARDURL=${TMP_DOMAIN_DASHBOARD}" >> .env
@@ -78,7 +83,7 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_PANGOLIN=1.15.0
+VERSION_PANGOLIN=1.15.1
 VERSION_GERBIL=1.3.0
 VERSION_TRAEFIK=v3.6.7
 VERSION_BADGER=v1.3.1
@@ -96,6 +101,7 @@ CERTIFICATES_ACME_EMAIL=<E-MAIL>
 CERTIFICATES_ACME_CASERVER=https://acme-staging-v02.api.letsencrypt.org/directory # https://acme-v02.api.letsencrypt.org/directory
 CERTIFICATES_ACME_DNSCHALLENGE_PROVIDER=ionos # https://doc.traefik.io/traefik/https/acme/#providers
 CERTIFICATES_ACME_DNSCHALLENGE_RESOLVERS=9.9.9.9,194.242.2.2,1.1.1.1
+IONOS_API_KEY_FILE=/run/secrets/dnschallenge_api_key_secret # https://go-acme.github.io/lego/dns/index.html
 
 TRAEFIK_API=false
 TRAEFIK_API_DASHBOARD=false
@@ -112,6 +118,7 @@ EMAIL_SMTP_PASS=<EMAIL_PASSWORD>
 
 ```env
 CERTIFICATES_ACME_CASERVER=https://acme-v02.api.letsencrypt.org/directory
+EMAIL_SMTP_PASS=<EMAIL_PASSWORD>
 ```
 
 ## NEWT setup

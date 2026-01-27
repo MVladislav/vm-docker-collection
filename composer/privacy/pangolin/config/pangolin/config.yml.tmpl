@@ -55,13 +55,13 @@ rate_limits:
     window_minutes: 1
     max_requests: 100
 
-# email:
-#   smtp_host: "smtp.ionos.de"
-#   smtp_port: 587
-#   smtp_user: "no-reply@<REPLACE_BASE_DOMAIN>"
-#   smtp_secure: false
-#   no_reply: "no-reply@<REPLACE_BASE_DOMAIN>"
-#   smtp_tls_reject_unauthorized: true
+email:
+  smtp_host: "<REPLACE_SMTP_HOST>"
+  smtp_port: 587
+  smtp_user: "no-reply@<REPLACE_BASE_DOMAIN>"
+  smtp_secure: false
+  no_reply: "no-reply@<REPLACE_BASE_DOMAIN>"
+  smtp_tls_reject_unauthorized: true
 
 flags:
   require_email_verification: true

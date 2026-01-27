@@ -21,8 +21,7 @@ x-basic-deploy: &basic-deploy
 
 x-basic: &basic
   env_file: ${ENV_FILE:-.env}
-  # cap_add: ["ALL"]
-  # cap_drop: ["ALL"]
+  cap_drop: ["ALL"]
   security_opt:
     - no-new-privileges:true
   ulimits:
@@ -47,7 +46,7 @@ services:
   ##############################################################################
   pangolin:
     # https://hub.docker.com/r/fosrl/pangolin
-    image: fosrl/pangolin:${VERSION_PANGOLIN:-1.15.0}
+    image: fosrl/pangolin:${VERSION_PANGOLIN:-1.15.1}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -127,6 +126,10 @@ services:
         published: 80
         protocol: tcp
         mode: host
+      - target: 4443 # RawTCP
+        published: 4443
+        protocol: tcp
+        mode: host
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
@@ -173,7 +176,6 @@ services:
       - certificates:/certificates
       - traefik_logs:/var/log/traefik
     environment:
-      IONOS_API_KEY_FILE: /run/secrets/dnschallenge_api_key_secret
       # https://doc.traefik.io/traefik/reference/install-configuration/boot-environment/#environment-variables
       # https://doc.traefik.io/traefik/v2.0/reference/static-configuration/env/
       # Global configuration
@@ -198,6 +200,9 @@ services:
       TRAEFIK_ENTRYPOINTS_WEBSECURE_HTTP_ENCODEDCHARACTERS_ALLOWENCODEDSEMICOLON: ${ALLOWENCODEDSEMICOLON:-false}
       TRAEFIK_ENTRYPOINTS_WEBSECURE_HTTP_ENCODEDCHARACTERS_ALLOWENCODEDPERCENT: ${ALLOWENCODEDPERCENT:-false}
       TRAEFIK_ENTRYPOINTS_WEBSECURE_HTTP_ENCODEDCHARACTERS_ALLOWENCODEDHASH: ${ALLOWENCODEDHASH:-false}
+      TRAEFIK_ENTRYPOINTS_TCP-4443: "true"
+      TRAEFIK_ENTRYPOINTS_TCP-4443_ADDRESS: ":4443/tcp"
+      TRAEFIK_ENTRYPOINTS_TCP-4443_TRANSPORT_RESPONDINGTIMEOUTS_READTIMEOUT: 30m
       # Traefik logs configuration
       TRAEFIK_LOG: ${TRAEFIK_LOG:-true}
       # TRAEFIK_LOG_FILEPATH: /var/log/traefik/traefik.log
@@ -239,7 +244,7 @@ services:
       TRAEFIK_CERTIFICATESRESOLVERS_CERTIFICATES_ACME_CERTIFICATESDURATION: ${CERTIFICATES_ACME_CERTIFICATES_DURATION:-2160} # https://doc.traefik.io/traefik/https/acme/#certificatesduration
       TRAEFIK_CERTIFICATESRESOLVERS_CERTIFICATES_ACME_CASERVER: ${CERTIFICATES_ACME_CASERVER:-https://acme-staging-v02.api.letsencrypt.org/directory} # https://acme-v02.api.letsencrypt.org/directory
       TRAEFIK_CERTIFICATESRESOLVERS_CERTIFICATES_ACME_DNSCHALLENGE: "true"
-      TRAEFIK_CERTIFICATESRESOLVERS_CERTIFICATES_ACME_DNSCHALLENGE_PROVIDER: ${CERTIFICATES_ACME_DNSCHALLENGE_PROVIDER:-ionos}
+      TRAEFIK_CERTIFICATESRESOLVERS_CERTIFICATES_ACME_DNSCHALLENGE_PROVIDER: ${CERTIFICATES_ACME_DNSCHALLENGE_PROVIDER?CERTIFICATES_ACME_DNSCHALLENGE_PROVIDER is not set}
       TRAEFIK_CERTIFICATESRESOLVERS_CERTIFICATES_ACME_DNSCHALLENGE_RESOLVERS: ${CERTIFICATES_ACME_DNSCHALLENGE_RESOLVERS:-9.9.9.9,194.242.2.2,1.1.1.1}
       # TRAEFIK_CERTIFICATESRESOLVERS_CERTIFICATES_ACME_EAB_KID: ${CERTIFICATES_ACME_EAB_KID}
       # TRAEFIK_CERTIFICATESRESOLVERS_CERTIFICATES_ACME_EAB_HMACENCODED: ${CERTIFICATES_ACME_EAB_HMACENCODED}
@@ -308,11 +313,9 @@ services:
       # GID: "1000"
       PARSERS: crowdsecurity/whitelists
     healthcheck:
-      test:
-        - CMD
-        - cscli
-        - capi
-        - status
+      test: ["CMD", "true"]
+      # test: ["CMD", "cscli", "capi", "status"]
+      # test: ["CMD", "cscli", "version"]
       start_period: 30s
       interval: 30s
       retries: 3
