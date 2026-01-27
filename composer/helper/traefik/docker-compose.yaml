@@ -81,10 +81,7 @@ services:
         mode: host
     secrets:
       - traefik_basicauth_secret
-    #   - ionos_api_key_secret
-    # environment:
-    #   # TRAEFIK_AUTH_FILE: /run/secrets/traefik_basicauth_secret
-    #   IONOS_API_KEY_FILE: /run/secrets/ionos_api_key_secret
+      - dnschallenge_api_key_secret
     configs:
       - source: traefik_config
         target: /etc/traefik/traefik.yml
@@ -152,5 +149,5 @@ configs:
 secrets:
   traefik_basicauth_secret:
     file: config/secrets/traefik_basicauth_secret.txt
-  # ionos_api_key_secret:
-  #   file: config/secrets/ionos_api_key_secret.txt
+  dnschallenge_api_key_secret:
+    file: config/secrets/dnschallenge_api_key_secret.txt

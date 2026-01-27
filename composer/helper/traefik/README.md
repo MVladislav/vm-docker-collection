@@ -29,8 +29,9 @@
 ```sh
 $echo $(htpasswd -nB traefik) > config/secrets/traefik_basicauth_secret.txt
 
-# optional :: ACME-DNS-Challenge :: Ionos example (better not echo instead open file an past)
-$echo 'SECRET' > config/secrets/ionos_api_key_secret.txt
+# ACME-DNS-Challenge KEY :: better not echo instead open file an past
+# NOTE: if not used create a empty file, as secret file is needed for docker-compose
+$echo '<YOUR_API_TOKEN>' > config/secrets/dnschallenge_api_key_secret.txt
 ```
 
 ### traefik setup
@@ -127,6 +128,9 @@ VERSION=v3.6.7
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
 CERT_RESOLVER=certificates
+
+# optional :: replace `IONOS_API_KEY_FILE` with your provider => https://go-acme.github.io/lego/dns/index.html
+IONOS_API_KEY_FILE: /run/secrets/dnschallenge_api_key_secret
 ```
 
 #### example short .env
