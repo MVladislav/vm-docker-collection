@@ -28,7 +28,7 @@ x-basic-deploy: &basic-deploy
   resources:
     limits:
       cpus: ${RESOURCES_LIMITS_CPUS:-1}
-      memory: ${RESOURCES_LIMITS_MEMORY:-1g}
+      memory: ${RESOURCES_LIMITS_MEMORY:-2g}
     reservations:
       cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
       memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
@@ -76,14 +76,14 @@ services:
       NODE_ENV: production
       PORT_BACKEND: 4000
       PORT_FRONTEND: ${PORT:-3000}
-      # APP_URL: https://${DOMAIN?domain variable not set}
+      APP_URL: https://${DOMAIN?domain variable not set}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
 
       SYNC_FREQUENCY: ${SYNC_FREQUENCY:-* * * * *}
       STORAGE_TYPE: ${STORAGE_TYPE:-local}
       STORAGE_LOCAL_ROOT_PATH: /var/data/open-archiver
       BODY_SIZE_LIMIT: ${BODY_SIZE_LIMIT:-100M}
-      ALL_INCLUSIVE_ARCHIVE: ${ALL_INCLUSIVE_ARCHIVE:-true}
+      ALL_INCLUSIVE_ARCHIVE: ${ALL_INCLUSIVE_ARCHIVE:-false}
       ENABLE_DELETION: ${ENABLE_DELETION:-true}
 
       RATE_LIMIT_WINDOW_MS: ${RATE_LIMIT_WINDOW_MS:-60000}
@@ -110,7 +110,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "wget --no-verbose --tries=1 --spider --no-check-certificate ${PROTOCOL:-http}://127.0.0.1:${PORT:-3000} || exit 1",
+          "wget --no-verbose --tries=1 --spider --no-check-certificate http://127.0.0.1:4000 || exit 1",
         ]
       start_period: 10s
       interval: 30s
