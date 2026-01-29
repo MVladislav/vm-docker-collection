@@ -4,12 +4,12 @@ x-basic-deploy-labels: &basic-deploy-labels
     - traefik.enable=true
     - traefik.swarm.lbswarm=${LB_SWARM:-true}
     - traefik.swarm.network=proxy
-    - traefik.http.routers.freshrss.entrypoints=https
+    - traefik.http.routers.freshrss.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
     - traefik.http.routers.freshrss.rule=Host(`${DOMAIN?domain variable not set}`)
     - traefik.http.routers.freshrss.tls=true
     - traefik.http.routers.freshrss.tls.certresolver=${CERT_RESOLVER:-}
-    - traefik.http.routers.freshrss.service=freshrss
     - traefik.http.routers.freshrss.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.freshrss.service=freshrss
     - traefik.http.services.freshrss.loadbalancer.server.scheme=${PROTOCOL:-http}
     - traefik.http.services.freshrss.loadbalancer.server.port=${PORT:-8080}
 
@@ -22,7 +22,7 @@ x-basic-deploy: &basic-deploy
       - "node.role==${NODE_ROLE:-manager}"
       - node.platform.os == linux
   update_config:
-    order: start-first
+    order: stop-first
   restart_policy:
     condition: any
   resources:
@@ -36,12 +36,12 @@ x-basic-deploy: &basic-deploy
 x-basic: &basic
   env_file: ${ENV_FILE:-.env}
   cap_add:
-    - CHOWN
-    - FOWNER
-    - FSETID
-    - SETGID
-    - SETUID
-    # - DAC_OVERRIDE # Bypasses file read/write/execute permission checks (`cat`,`touch`,`rm`)
+    - CHOWN # Allows changing file ownership (`chown`,`chgrp`)
+    - FOWNER # Overrides file ownership checks (`chmod`,`kill`)
+    - FSETID # Allows setting file SUID/SGID bits (`chmod u+s`,`chmod g+s`)
+    - SETGID # Allows setting group ID (`setgid`,`newgrp`,`chgrp`,`setregid()`)
+    - SETUID # Allows setting user ID (`setuid`,`su`,`sudo`,`passwd`)
+    - DAC_READ_SEARCH # Bypasses file read and directory execute permissions (`ls`,`cat`,`find`)
   cap_drop: ["ALL"]
   security_opt:
     - no-new-privileges:true
@@ -58,31 +58,37 @@ x-basic: &basic
     proxy: {}
   healthcheck:
     disable: true
+  tmpfs:
+    - /tmp
   restart: always
 
 ################################################################################
 ################################################################################
 ################################################################################
-
 services:
   ##############################################################################
   ##############################################################################
   ##############################################################################
   freshrss:
     # https://hub.docker.com/r/freshrss/freshrss
-    image: freshrss/freshrss:${VERSION:-1.28.0}
-    <<: *basic
+    image: freshrss/freshrss:${VERSION:-1.28.1}
+    <<:
+      - *basic
+      # - *basic-deploy-labels
     deploy:
-      <<: [*basic-deploy, *basic-deploy-labels]
+      <<:
+        - *basic-deploy
+        - *basic-deploy-labels
     environment:
+      FRESHRSS_ENV: production
       TZ: ${TZ:-Europe/Berlin}
       # Cron job to refresh feeds at specified minutes
       CRON_MIN: ${CRON_MIN:-3,33}
       # Published port if running locally
       PUBLISHED_PORT: ${PORT:-8080}
       LISTEN: 0.0.0.0:${PORT:-8080}
-      FRESHRSS_ENV: production
     volumes:
+      # - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - data:/var/www/FreshRSS/data
       - extensions:/var/www/FreshRSS/extensions
@@ -103,11 +109,6 @@ services:
 ################################################################################
 ################################################################################
 networks:
-  default:
-    driver: ${NETWORK_MODE:-overlay}
-    attachable: true
-    driver_opts:
-      encrypted: "true"
   proxy:
     external: true
 

@@ -9,7 +9,8 @@
 - [SETUP](#setup)
   - [basic](#basic)
     - [create `.env` file following:](#create-env-file-following)
-      - [example short .env](#example-short-env)
+      - [example short .env (swarm)](#example-short-env-swarm)
+      - [example short .env (bridge)](#example-short-env-bridge)
   - [FAQ](#faq)
     - [oauth](#oauth)
   - [References](#references)
@@ -23,7 +24,6 @@
 ### create `.env` file following:
 
 ```env
-
 # GENERAL variables (mostly by default, change as needed)
 # ______________________________________________________________________________
 NODE_ROLE=manager
@@ -35,7 +35,7 @@ LB_SWARM=true
 DOMAIN=news.home.local # not set in docker-compose, needs to be copied to .env
 PROTOCOL=http
 PORT=8080
-# default-secured@file | public-whitelist@file | authentik@file
+# default-secured@file | public-secured@file | authentik@file
 MIDDLEWARE_SECURED=default-secured@file
 
 # GENERAL sources to be used (set by default, change as needed)
@@ -56,9 +56,18 @@ TZ=Europe/Berlin
 CRON_MIN=3,33
 ```
 
-#### example short .env
+#### example short .env (swarm)
 
 ```env
+DOMAIN=news.home.local
+```
+
+#### example short .env (bridge)
+
+```env
+NETWORK_MODE=bridge
+LB_SWARM=false
+
 DOMAIN=news.home.local
 ```
 
