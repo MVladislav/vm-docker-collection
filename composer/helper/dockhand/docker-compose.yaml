@@ -1,0 +1,103 @@
+---
+x-basic-deploy-labels: &basic-deploy-labels
+  labels:
+    - traefik.enable=true
+    - traefik.swarm.lbswarm=${LB_SWARM:-true}
+    - traefik.swarm.network=proxy
+    - traefik.http.routers.dockhand.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.dockhand.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.dockhand.tls=true
+    - traefik.http.routers.dockhand.tls.certresolver=${CERT_RESOLVER:-}
+    - traefik.http.routers.dockhand.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.dockhand.service=dockhand
+    - traefik.http.services.dockhand.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.dockhand.loadbalancer.server.port=${PORT:-3000}
+
+x-basic-deploy: &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  update_config:
+    order: stop-first
+  restart_policy:
+    condition: any
+  resources:
+    limits:
+      cpus: ${RESOURCES_LIMITS_CPUS:-1}
+      memory: ${RESOURCES_LIMITS_MEMORY:-1g}
+    reservations:
+      cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
+      memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
+
+x-basic: &basic
+  env_file: ${ENV_FILE:-.env}
+  cap_add:
+    - DAC_OVERRIDE # Bypasses file read/write/execute permission checks (`cat`,`touch`,`rm`)
+  cap_drop: ["ALL"]
+  security_opt:
+    - no-new-privileges:true
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 655360
+      hard: 655360
+    fsize: -1
+    as: -1
+  networks:
+    proxy: {}
+  healthcheck:
+    disable: true
+  tmpfs:
+    - /tmp
+  restart: always
+
+################################################################################
+################################################################################
+################################################################################
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  dockhand:
+    # https://hub.docker.com/r/fnsys/dockhand
+    image: fnsys/dockhand:${VERSION:-v1.0.13}
+    <<:
+      - *basic
+      # - *basic-deploy-labels
+    deploy:
+      <<:
+        - *basic-deploy
+        - *basic-deploy-labels
+    ports:
+      - 3000:3000
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - data:/app/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -kIf ${PROTOCOL:-http}://127.0.0.1:${PORT:-3000} > /dev/null 2>&1 || exit 1",
+        ]
+      start_period: 10s
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  proxy:
+    external: true
+
+volumes:
+  data: {}
