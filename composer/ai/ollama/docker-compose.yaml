@@ -77,9 +77,13 @@ services:
   open-webui:
     # https://github.com/open-webui/open-webui/pkgs/container/open-webui
     image: ghcr.io/open-webui/open-webui:${VERSION_OPEN_WEBUI:-latest}
-    <<: [*basic, *basic-deploy-labels]
+    <<:
+      - *basic
+      - *basic-deploy-labels
     deploy:
-      <<: [*basic-deploy, *basic-deploy-labels]
+      <<:
+        - *basic-deploy
+        # - *basic-deploy-labels
     environment:
       OLLAMA_BASE_URL: http://ollama:11434
       SCARF_NO_ANALYTICS: ${SCARF_NO_ANALYTICS:-true}
@@ -98,9 +102,13 @@ services:
   ollama:
     # https://hub.docker.com/r/ollama/ollama
     image: ollama/ollama:${VERSION_OLLAMA:-rocm}
-    <<: [*basic, *basic-deploy-labels-ollama]
+    <<:
+      - *basic
+      - *basic-deploy-labels-ollama
     deploy:
-      <<: [*basic-deploy, *basic-deploy-labels-ollama]
+      <<:
+        - *basic-deploy
+        # - *basic-deploy-labels-ollama
     ports:
       - target: 11434
         published: 11434

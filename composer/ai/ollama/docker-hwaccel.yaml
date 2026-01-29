@@ -11,7 +11,9 @@ services:
     group_add:
       - video
     environment:
+      OLLAMA_CONTEXT_LENGTH: ${OLLAMA_CONTEXT_LENGTH:-16384}
       ROCM_VISIBLE_DEVICES: ${ROCM_VISIBLE_DEVICES:-all}
+      OLLAMA_VULKAN: ${OLLAMA_VULKAN:-1}
 
   ##############################################################################
   ##############################################################################
@@ -28,5 +30,6 @@ services:
                 - compute
                 - video
     environment:
+      OLLAMA_CONTEXT_LENGTH: ${OLLAMA_CONTEXT_LENGTH:-16384}
       NVIDIA_VISIBLE_DEVICES: ${NVIDIA_VISIBLE_DEVICES:-all}
       NVIDIA_DRIVER_CAPABILITIES: ${NVIDIA_DRIVER_CAPABILITIES:-compute,utility,video}
