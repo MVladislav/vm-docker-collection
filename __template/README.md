@@ -12,11 +12,10 @@
     - [create `.env` file following:](#create-env-file-following)
       - [example short .env (swarm)](#example-short-env-swarm)
       - [example short .env (bridge)](#example-short-env-bridge)
-  - [Helper](#helper)
+  - [Guides \& Insights](#guides--insights)
     - [verify healthcheck](#verify-healthcheck)
     - [access docker in swarm mode](#access-docker-in-swarm-mode)
     - [some more useful commands](#some-more-useful-commands)
-  - [FAQ](#faq)
     - [Postgresql Upgrade](#postgresql-upgrade)
   - [References](#references)
 
@@ -88,7 +87,7 @@ DOMAIN=<HOST>.home.local
 
 ---
 
-## Helper
+## Guides & Insights
 
 ### verify healthcheck
 
@@ -123,8 +122,6 @@ $docker rm $(docker ps -a -q -f "status=exited")
 # remove all containers
 $docker volume rm $(docker volume ls -qf dangling=true)
 ```
-
-## FAQ
 
 ### Postgresql Upgrade
 

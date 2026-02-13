@@ -61,16 +61,16 @@ x-basic: &basic
   #   - AUDIT_CONTROL # Configure Linux audit subsystem (add/remove audit rules)
   #   - AUDIT_READ # Read audit logs via multicast netlink socket
   #   # --------------------------
+  #   - SYS_RAWIO # Required for S.M.A.R.T. data
+  #   - SYS_ADMIN # Required for NVMe S.M.A.R.T. data
   #   - KILL
   #   - SETPCAP
   #   - LINUX_IMMUTABLE
   #   - IPC_LOCK
   #   - IPC_OWNER
-  #   - SYS_RAWIO
   #   - SYS_CHROOT
   #   - SYS_PTRACE
   #   - SYS_PACCT
-  #   - SYS_ADMIN
   #   - SYS_BOOT
   #   - SYS_RESOURCE
   #   - SYS_TIME
@@ -112,7 +112,7 @@ x-basic: &basic
   healthcheck:
     disable: true
   tmpfs:
-    - /tmp
+    - /tmp:rw,nosuid,nodev,noexec,relatime,size=512m
     # - /run
     # - /run/lock
   sysctls:
