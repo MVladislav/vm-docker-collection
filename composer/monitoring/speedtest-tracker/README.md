@@ -55,7 +55,7 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION=1.13.4
+VERSION=1.13.9
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
@@ -68,7 +68,7 @@ APP_LOCALE=en
 TIMEZONE=Europe/Berlin
 
 SPEEDTEST_SCHEDULE=*/30 * * * *
-SPEEDTEST_SERVERS=72996,10291,28818,69359,18613,64247,61058,55133
+SPEEDTEST_SERVERS=10291,28818,69359,18613,64247,55133
 ```
 
 #### example short .env (swarm)

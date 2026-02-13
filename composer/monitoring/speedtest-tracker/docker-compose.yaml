@@ -68,7 +68,7 @@ services:
   ##############################################################################
   speedtest-tracker:
     # https://github.com/linuxserver/docker-speedtest-tracker/pkgs/container/speedtest-tracker
-    image: ghcr.io/linuxserver/speedtest-tracker:${VERSION:-1.13.4}
+    image: ghcr.io/linuxserver/speedtest-tracker:${VERSION:-1.13.9}
     <<:
       - *basic
       # - *basic-deploy-labels
