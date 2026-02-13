@@ -48,14 +48,14 @@ services:
   ##############################################################################
   beszel-agent:
     # https://github.com/henrygd/beszel/pkgs/container/beszel%2Fbeszel-agent
-    image: ghcr.io/henrygd/beszel/beszel-agent${AGENT_TYPE:-}:${VERSION:-0.18.2}
+    image: ghcr.io/henrygd/beszel/beszel-agent${AGENT_TYPE:-}:${VERSION_AGENT:-0.18.3-alpine}
     <<: *basic
     deploy:
       <<: *basic-deploy
     cap_add:
       - NET_RAW
-      - SYS_ADMIN
-      - SYS_RAWIO
+      - SYS_RAWIO # Required for S.M.A.R.T. data
+      - SYS_ADMIN # Required for NVMe S.M.A.R.T. data
     ports:
       - target: ${PORT_AGENT:-45876}
         published: ${PORT_AGENT:-45876}
@@ -72,6 +72,7 @@ services:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
+      # - /dev/net/tun:/dev/net/tun
     healthcheck:
       test: ["CMD", "/agent", "health"]
       start_period: 10s
