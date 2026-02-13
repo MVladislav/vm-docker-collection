@@ -90,7 +90,10 @@ VERSION_BADGER=v1.3.1
 VERSION_CROWDSEC_PLUGIN=v1.4.7
 VERSION_CROWDSEC=v1.7.6
 VERSION_MAXMIND=v7.1.1
+
 VERSION_NEWT=1.9.0
+VERSION_CLI=0.3.3
+VERSION_OLM=1.4.2
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________

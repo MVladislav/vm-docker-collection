@@ -13,15 +13,15 @@ x-basic-deploy: &basic-deploy
     condition: any
   resources:
     limits:
-      cpus: ${RESOURCES_LIMITS_CPUS_NEWT:-1}
-      memory: ${RESOURCES_LIMITS_MEMORY_NEWT:-1g}
+      cpus: ${RESOURCES_LIMITS_CPUS_CLI:-1}
+      memory: ${RESOURCES_LIMITS_MEMORY_CLI:-1g}
     reservations:
-      cpus: ${RESOURCES_RESERVATIONS_CPUS_NEWT:-0.001}
-      memory: ${RESOURCES_RESERVATIONS_MEMORY_NEWT:-32m}
+      cpus: ${RESOURCES_RESERVATIONS_CPUS_CLI:-0.001}
+      memory: ${RESOURCES_RESERVATIONS_MEMORY_CLI:-32m}
 
 x-basic: &basic
   env_file:
-    - ${ENV_FILE_NEWT:-.env}
+    - ${ENV_FILE_CLI:-.env}
   cap_drop: ["ALL"]
   security_opt:
     - no-new-privileges:true
@@ -45,25 +45,26 @@ services:
   ##############################################################################
   ##############################################################################
   ##############################################################################
-  newt:
-    # https://hub.docker.com/r/fosrl/newt
-    image: fosrl/newt:${VERSION_NEWT:-1.9.0}
+  cli:
+    # https://hub.docker.com/r/fosrl/pangolin-cli
+    image: fosrl/pangolin-cli:${VERSION_CLI:-0.3.3}
     <<: *basic
     deploy:
       <<: *basic-deploy
-    # cap_add:
-    #   - NET_ADMIN
-    #   - SYS_MODULE
+    cap_add:
+      - NET_ADMIN
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /dev/net/tun:/dev/net/tun
     environment:
-      PANGOLIN_ENDPOINT: ${PANGOLIN_ENDPOINT?endpoint not set}
-      NEWT_ID: ${NEWT_ID?id not set}
-      NEWT_SECRET: ${NEWT_SECRET?secret not set}
-      DOCKER_SOCKET: /var/run/docker.sock
-      DISABLE_CLIENTS: ${DISABLE_CLIENTS:-true}
+      PANGOLIN_ENDPOINT: ${PANGOLIN_ENDPOINT?PANGOLIN_ENDPOINT not set}
+      CLIENT_ID: ${CLIENT_ID?CLIENT_ID not set}
+      CLIENT_SECRET: ${CLIENT_SECRET?CLIENT_SECRET not set}
+      DNS: ${DNS:-1.1.1.1}
+      UPSTREAM_DNS: ${UPSTREAM_DNS:-1.1.1.1:53}
+      OVERRIDE_DNS: ${OVERRIDE_DNS:-true}
+      TUNNEL_DNS: ${TUNNEL_DNS:-true}
     networks:
       default: {}
 
@@ -72,7 +73,7 @@ services:
 ################################################################################
 networks:
   default:
-    name: pangolin_newt
+    name: pangolin_cli
     driver: ${NETWORK_MODE:-overlay}
     attachable: true
     driver_opts:

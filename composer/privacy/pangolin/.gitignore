@@ -5,6 +5,8 @@
 !docker-compose.yaml
 !docker-compose-newt.yaml
 !docker-compose-newt.override.yaml.tmpl
+!docker-compose-olm.yaml
+!docker-compose-cli.yaml
 
 !README.md
 
