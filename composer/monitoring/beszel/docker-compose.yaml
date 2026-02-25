@@ -62,7 +62,7 @@ services:
   ##############################################################################
   beszel:
     # https://github.com/henrygd/beszel/pkgs/container/beszel%2Fbeszel
-    image: ghcr.io/henrygd/beszel/beszel:${VERSION:-0.18.3}
+    image: ghcr.io/henrygd/beszel/beszel:${VERSION:-0.18.4}
     <<:
       - *basic
       # - *basic-deploy-labels
@@ -106,7 +106,7 @@ services:
   ##############################################################################
   beszel-agent:
     # https://github.com/henrygd/beszel/pkgs/container/beszel%2Fbeszel-agent
-    image: ghcr.io/henrygd/beszel/beszel-agent${AGENT_TYPE:-}:${VERSION_AGENT:-0.18.3-alpine}
+    image: ghcr.io/henrygd/beszel/beszel-agent${AGENT_TYPE:-}:${VERSION_AGENT:-0.18.4-alpine}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -126,7 +126,8 @@ services:
       - /etc/localtime:/etc/localtime:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - socket:/beszel_socket
-      # - /dev/net/tun:/dev/net/tun
+      # - /dev:/dev:ro
+      # - /run/udev:/run/udev:ro
     healthcheck:
       test: ["CMD", "/agent", "health"]
       start_period: 10s

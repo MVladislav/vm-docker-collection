@@ -48,7 +48,7 @@ services:
   ##############################################################################
   beszel-agent:
     # https://github.com/henrygd/beszel/pkgs/container/beszel%2Fbeszel-agent
-    image: ghcr.io/henrygd/beszel/beszel-agent${AGENT_TYPE:-}:${VERSION_AGENT:-0.18.3-alpine}
+    image: ghcr.io/henrygd/beszel/beszel-agent${AGENT_TYPE:-}:${VERSION_AGENT:-0.18.4-alpine}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -72,7 +72,8 @@ services:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      # - /dev/net/tun:/dev/net/tun
+      # - /dev:/dev:ro
+      # - /run/udev:/run/udev:ro
     healthcheck:
       test: ["CMD", "/agent", "health"]
       start_period: 10s
