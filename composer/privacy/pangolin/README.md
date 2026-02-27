@@ -19,6 +19,7 @@
     - [Crowdsec](#crowdsec)
       - [Test block](#test-block)
       - [Other](#other)
+      - [NEWT as binary with user scope](#newt-as-binary-with-user-scope)
       - [Enterprise-Edition](#enterprise-edition)
   - [References](#references)
 
@@ -83,7 +84,7 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_PANGOLIN=1.15.4
+VERSION_PANGOLIN=1.16.0
 VERSION_GERBIL=1.3.0
 VERSION_TRAEFIK=v3.6.9
 VERSION_BADGER=v1.3.1
@@ -91,8 +92,8 @@ VERSION_CROWDSEC_PLUGIN=v1.5.1
 VERSION_CROWDSEC=v1.7.6
 VERSION_MAXMIND=v7.1.1
 
-VERSION_NEWT=1.10.0
-VERSION_CLI=0.4.0
+VERSION_NEWT=1.10.1
+VERSION_CLI=0.5.1
 VERSION_OLM=1.4.2
 
 # APPLICATION general variable to adjust the apps
@@ -162,6 +163,28 @@ cscli decisions add --ip <your-public-ip> --duration 1m --type ban --reason "Cro
 
 ```sh
 docker exec -it "$(docker ps -q -f name=crowdsec)" cscli metrics
+```
+
+#### NEWT as binary with user scope
+
+```sh
+tee .config/systemd/user/newt.service >/dev/null <<EOF
+[Unit]
+Description=Newt
+After=network.target
+
+[Service]
+ExecStart=/home/$USER/.local/bin/newt --id $ID --secret $SECRET --endpoint $ENDPOINT
+Restart=always
+
+[Install]
+WantedBy=default.target
+
+EOF
+
+systemctl --user daemon-reload
+systemctl --user enable --now newt
+sudo loginctl enable-linger $USER
 ```
 
 #### Enterprise-Edition
