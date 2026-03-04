@@ -48,20 +48,28 @@ services:
         reservations:
           cpus: ${RESOURCES_RESERVATIONS_CPUS_VALKEY:-0.001}
           memory: ${RESOURCES_RESERVATIONS_MEMORY_VALKEY:-32m}
+    # ports:
+    #   - target: 6379
+    #     published: 6379
+    #     protocol: tcp
+    #     # host_ip: 127.0.0.1
+    #     mode: host
     cap_add:
       - SETUID
       - SETGID
     # environment:
     #   - VALKEY_EXTRA_FLAGS=--maxmemory 128mb --maxmemory-policy volatile-lfu
+    #   - VALKEY_EXTRA_FLAGS=--requirepass ${VALKEY_PASSWORD?VALKEY_PASSWORD not set}
     volumes:
       # - /etc/timezone:/etc/timezone:ro
       # - /etc/localtime:/etc/localtime:ro
       - valkey:/data
-    command: --save 300 1 --loglevel warning
+    command: --port 6379 --save 300 1 --loglevel warning
     # networks:
     #   default: {}
     healthcheck:
       test: ["CMD-SHELL", "valkey-cli ping | grep PONG"]
+      # test: ["CMD-SHELL", 'valkey-cli -a "${VALKEY_PASSWORD?VALKEY_PASSWORD not set}" ping | grep PONG']
       # test: ["CMD", "valkey-", "--raw", "incr", "ping"]
       start_period: 10s
       interval: 30s
@@ -88,6 +96,7 @@ services:
     #   - target: ${PORT_MINIO:-9001}
     #     published: ${PORT_MINIO_PUBLISH:-9001}
     #     protocol: tcp
+    #     # host_ip: 127.0.0.1
     #     mode: host
     secrets:
       - minio_root_password_file
@@ -182,6 +191,7 @@ services:
     #   - target: ${PORT_MARIADB:-3306}
     #     published: ${PORT_MARIADB_PUBLISH:-3306}
     #     protocol: tcp
+    #     # host_ip: 127.0.0.1
     #     mode: host
     secrets:
       - mariadb_root_password
@@ -230,6 +240,7 @@ services:
     #   - target: ${PORT_ADMINER:-8080}
     #     published: ${PORT_ADMINER_PUBLISH:-8080}
     #     protocol: tcp
+    #     # host_ip: 127.0.0.1
     #     mode: host
     environment:
       ADMINER_DEFAULT_SERVER: mysql # mysql | postgresql
@@ -263,6 +274,7 @@ services:
     #   - target: ${PORT_PHPMYADMIN:-80}
     #     published: ${PORT_PUBLISH_PHPMYADMIN:-80}
     #     protocol: tcp
+    #     # host_ip: 127.0.0.1
     #     mode: host
     environment:
       PMA_HOST: mariadb
@@ -300,6 +312,7 @@ services:
     #   - target: ${PORT_INFLUXDB:-8086}
     #     published: ${PORT_INFLUXDB_PUBLISH:-8086}
     #     protocol: tcp
+    #     # host_ip: 127.0.0.1
     #     mode: host
     secrets:
       - influxdb_init_password
@@ -361,6 +374,7 @@ services:
     #   - target: ${PORT_MONGODB:-27017}
     #     published: ${PORT_MONGODB_PUBLISH:-27017}
     #     protocol: tcp
+    #     # host_ip: 127.0.0.1
     #     mode: host
     secrets:
       - mongo_initdb_root_password
@@ -396,6 +410,7 @@ services:
     #   - target: ${PORT_EXPRESS:-8081}
     #     published: ${PORT_PUBLISH_EXPRESS:-8081}
     #     protocol: tcp
+    #     # host_ip: 127.0.0.1
     #     mode: host
     secrets:
       - me_config_basicauth_password
