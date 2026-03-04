@@ -7,6 +7,7 @@ x-basic-deploy-labels: &basic-deploy-labels
     - traefik.http.routers.it-tools.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
     - traefik.http.routers.it-tools.rule=Host(`${DOMAIN?domain variable not set}`)
     - traefik.http.routers.it-tools.tls=true
+    - traefik.http.routers.it-tools.tls.certresolver=${CERT_RESOLVER:-}
     - traefik.http.routers.it-tools.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
     - traefik.http.routers.it-tools.service=it-tools
     - traefik.http.services.it-tools.loadbalancer.server.scheme=${PROTOCOL:-http}
@@ -54,6 +55,8 @@ x-basic: &basic
     proxy: {}
   healthcheck:
     disable: true
+  tmpfs:
+    - /tmp:rw,nosuid,nodev,noexec,relatime,size=512m
   restart: always
 
 ################################################################################
@@ -65,10 +68,14 @@ services:
   ##############################################################################
   it-tools:
     # https://hub.docker.com/r/sharevb/it-tools
-    image: sharevb/it-tools:${VERSION:-2025.8.31-13b8f041}
-    <<: [*basic, *basic-deploy-labels]
+    image: sharevb/it-tools:${VERSION:-2026.1.4}
+    <<:
+      - *basic
+      # - *basic-deploy-labels
     deploy:
-      <<: [*basic-deploy, *basic-deploy-labels]
+      <<:
+        - *basic-deploy
+        - *basic-deploy-labels
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
