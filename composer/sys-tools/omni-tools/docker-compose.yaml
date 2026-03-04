@@ -7,6 +7,7 @@ x-basic-deploy-labels: &basic-deploy-labels
     - traefik.http.routers.omni-tools.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
     - traefik.http.routers.omni-tools.rule=Host(`${DOMAIN?domain variable not set}`)
     - traefik.http.routers.omni-tools.tls=true
+    - traefik.http.routers.omni-tools.tls.certresolver=${CERT_RESOLVER:-}
     - traefik.http.routers.omni-tools.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
     - traefik.http.routers.omni-tools.service=omni-tools
     - traefik.http.services.omni-tools.loadbalancer.server.scheme=${PROTOCOL:-http}
@@ -55,7 +56,7 @@ x-basic: &basic
   healthcheck:
     disable: true
   tmpfs:
-    - /tmp
+    - /tmp:rw,nosuid,nodev,noexec,relatime,size=512m
   restart: always
 
 ################################################################################
