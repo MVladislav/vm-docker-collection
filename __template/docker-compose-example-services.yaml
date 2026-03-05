@@ -394,8 +394,8 @@ services:
   ## TODO: not complete ready       ############################################
   ##############################################################################
   mongo-express:
-    # https://hub.docker.com/_/mongo-express
-    image: mongo-express:${VERSION_EXPRESS:-0.54.0}
+    # https://hub.docker.com/_/mongo-express/tags
+    image: mongo-express:${VERSION_EXPRESS:-1.0.2-20}
     # <<: *basic
     deploy:
       # <<: *basic-deploy
