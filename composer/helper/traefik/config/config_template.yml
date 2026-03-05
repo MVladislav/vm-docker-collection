@@ -8,7 +8,8 @@ http:
   #     rule: "Host(`example.home.local`)"
   #     middlewares:
   #       - default-secured
-  #     tls: {}
+  #     tls:
+  #       certresolver: certificates
   #     service: example
 
   # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -86,6 +87,26 @@ http:
           - public-whitelist
           - default-headers
 tcp:
+  # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  # routers:
+  #   example:
+  #     entryPoints:
+  #       - https
+  #     rule: "HostSNI(`example.home.local`)"
+  #     middlewares:
+  #       - default-whitelist
+  #    tls:
+  #      passthrough: false
+  #      certresolver: certificates
+  #     service: example
+
+  # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  # services:
+  #   example:
+  #     loadBalancer:
+  #       servers:
+  #         - address: "192.168.xx.xx:8080"
+
   # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   middlewares:
     default-whitelist:

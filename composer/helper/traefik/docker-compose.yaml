@@ -134,11 +134,11 @@ volumes:
 
 configs:
   traefik_config:
-    file: $PWD/config/traefik.yml
+    file: $PWD/config/${TRAEFIK_FILE:-traefik.yml}
   traefik_config_traefik_dynamic:
-    file: $PWD/config/traefik_dynamic.yml
+    file: $PWD/config/${TRAEFIK_DYNAMIC_FILE:-traefik_dynamic.yml}
   traefik_config_http:
-    file: $PWD/config/config.yml
+    file: $PWD/config/${TRAEFIK_CONFIG_FILE:-config.yml}
   traefik_ca_config:
     file: $PWD/config/ssl/ca.pem
   traefik_crt_config:
