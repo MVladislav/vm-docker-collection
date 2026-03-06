@@ -7,6 +7,7 @@ x-basic-deploy-labels: &basic-deploy-labels
     - traefik.http.routers.nextcloud-aio.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
     - traefik.http.routers.nextcloud-aio.rule=Host(`${DOMAIN?domain variable not set}`)
     - traefik.http.routers.nextcloud-aio.tls=true
+    - traefik.http.routers.nextcloud-aio.tls.certresolver=${CERT_RESOLVER:-}
     - traefik.http.routers.nextcloud-aio.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
     - traefik.http.routers.nextcloud-aio.service=nextcloud-aio
     - traefik.http.services.nextcloud-aio.loadbalancer.server.url=http://nextcloud-aio-apache:11000
@@ -14,10 +15,11 @@ x-basic-deploy-labels: &basic-deploy-labels
     - traefik.http.routers.nextcloud-aio-admin.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
     - traefik.http.routers.nextcloud-aio-admin.rule=Host(`${DOMAIN_AIO?domain variable not set}`)
     - traefik.http.routers.nextcloud-aio-admin.tls=true
+    - traefik.http.routers.nextcloud-aio-admin.tls.certresolver=${CERT_RESOLVER:-}
     - traefik.http.routers.nextcloud-aio-admin.middlewares=${MIDDLEWARE_SECURED_AIO:-default-secured@file}
     - traefik.http.routers.nextcloud-aio-admin.service=nextcloud-aio-admin
-    - traefik.http.services.nextcloud-aio-admin.loadbalancer.server.scheme=${PROTOCOL_AIO:-https}
-    - traefik.http.services.nextcloud-aio-admin.loadbalancer.server.port=${PORT_AIO:-8080}
+    - traefik.http.services.nextcloud-aio-admin.loadbalancer.server.scheme=${PROTOCOL_AIO_ADMIN:-https}
+    - traefik.http.services.nextcloud-aio-admin.loadbalancer.server.port=${PORT_AIO_ADMIN:-8080}
 
 x-basic-deploy: &basic-deploy
   mode: replicated

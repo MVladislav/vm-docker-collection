@@ -99,6 +99,8 @@ VERSION_NEXTCLOUD=20250325_084656
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
+CERT_RESOLVER=certificates
+
 NEXTCLOUD_NFS_IP=<NFS_SYSTEM_IP_ADDRESS>
 NEXTCLOUD_NFS_PATH_MASTER=<NFS_PATH>
 ```
