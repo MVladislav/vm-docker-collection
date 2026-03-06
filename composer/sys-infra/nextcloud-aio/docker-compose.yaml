@@ -40,15 +40,15 @@ x-basic-deploy: &basic-deploy
       memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
 
 x-basic: &basic
-  # cap_add:
-  #   - CHOWN # Allows changing file ownership (`chown`,`chgrp`)
-  #   - FOWNER # Overrides file ownership checks (`chmod`,`kill`)
-  #   - DAC_READ_SEARCH # Bypasses file read and directory execute permissions (`ls`,`cat`,`find`)
-  #   - DAC_OVERRIDE # Bypasses file read/write/execute permission checks (`cat`,`touch`,`rm`)
-  #   - SETGID # Allows setting group ID (`setgid`,`newgrp`,`chgrp`,`setregid()`)
-  #   - SETUID # Allows setting user ID (`setuid`,`su`,`sudo`,`passwd`)
-  #   - FSETID # Allows setting file SUID/SGID bits (`chmod u+s`,`chmod g+s`)
-  # cap_drop: ["ALL"]
+  cap_add:
+    - CHOWN # Allows changing file ownership (`chown`,`chgrp`)
+    - FOWNER # Overrides file ownership checks (`chmod`,`kill`)
+    - DAC_READ_SEARCH # Bypasses file read and directory execute permissions (`ls`,`cat`,`find`)
+    - SETGID # Allows setting group ID (`setgid`,`newgrp`,`chgrp`,`setregid()`)
+    - SETUID # Allows setting user ID (`setuid`,`su`,`sudo`,`passwd`)
+    - FSETID # Allows setting file SUID/SGID bits (`chmod u+s`,`chmod g+s`)
+    - NET_BIND_SERVICE # Bind to ports <1024 (privileged ports like 80, 443, 25)
+  cap_drop: ["ALL"]
   security_opt:
     - no-new-privileges:true
   ulimits:
@@ -76,7 +76,7 @@ services:
   ##############################################################################
   ##############################################################################
   nextcloud-aio-mastercontainer:
-    # https://hub.docker.com/r/nextcloud/all-in-one
+    # https://hub.docker.com/r/nextcloud/all-in-one/tags
     image: nextcloud/all-in-one:${VERSION_NEXTCLOUD:-20250325_084656}
     <<:
       - *basic
