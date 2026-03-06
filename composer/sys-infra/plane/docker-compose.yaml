@@ -210,7 +210,7 @@ services:
   ##############################################################################
   web:
     # https://hub.docker.com/r/makeplane/plane-frontend
-    image: makeplane/plane-frontend:${VERSION_PLANE:-v1.2.1}
+    image: makeplane/plane-frontend:${VERSION_PLANE:-v1.2.3}
     <<:
       - *basic
       # - *basic-deploy-labels-web
@@ -251,7 +251,7 @@ services:
 
   api:
     # https://hub.docker.com/r/makeplane/plane-backend
-    image: makeplane/plane-backend:${VERSION_PLANE:-v1.2.1}
+    image: makeplane/plane-backend:${VERSION_PLANE:-v1.2.3}
     <<:
       - *basic
       # - *basic-deploy-labels-api
@@ -290,7 +290,7 @@ services:
 
   admin:
     # https://hub.docker.com/r/makeplane/plane-admin
-    image: makeplane/plane-admin:${VERSION_PLANE:-v1.2.1}
+    image: makeplane/plane-admin:${VERSION_PLANE:-v1.2.3}
     <<:
       - *basic
       # - *basic-deploy-labels-admin
@@ -331,7 +331,7 @@ services:
 
   space:
     # https://hub.docker.com/r/makeplane/plane-space
-    image: makeplane/plane-space:${VERSION_PLANE:-v1.2.1}
+    image: makeplane/plane-space:${VERSION_PLANE:-v1.2.3}
     <<:
       - *basic
       # - *basic-deploy-labels-space
@@ -368,7 +368,7 @@ services:
 
   live:
     # https://hub.docker.com/r/makeplane/plane-live
-    image: makeplane/plane-live:${VERSION_PLANE:-v1.2.1}
+    image: makeplane/plane-live:${VERSION_PLANE:-v1.2.3}
     <<:
       - *basic
       # - *basic-deploy-labels-live
@@ -405,7 +405,7 @@ services:
 
   worker:
     # https://hub.docker.com/r/makeplane/plane-backend
-    image: makeplane/plane-backend:${VERSION_PLANE:-v1.2.1}
+    image: makeplane/plane-backend:${VERSION_PLANE:-v1.2.3}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -428,7 +428,7 @@ services:
 
   beat-worker:
     # https://hub.docker.com/r/makeplane/plane-backend
-    image: makeplane/plane-backend:${VERSION_PLANE:-v1.2.1}
+    image: makeplane/plane-backend:${VERSION_PLANE:-v1.2.3}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -453,7 +453,7 @@ services:
   ##############################################################################
   migrator:
     # https://hub.docker.com/r/makeplane/plane-backend
-    image: makeplane/plane-backend:${VERSION_PLANE:-v1.2.1}
+    image: makeplane/plane-backend:${VERSION_PLANE:-v1.2.3}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -472,7 +472,7 @@ services:
   ##############################################################################
   plane-db:
     # https://hub.docker.com/_/postgres
-    image: postgres:${VERSION_POSTGRESQL:-17.7-alpine}
+    image: postgres:${VERSION_POSTGRESQL:-17.9-alpine}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -505,7 +505,7 @@ services:
 
   plane-mq:
     # https://hub.docker.com/_/rabbitmq
-    image: rabbitmq:${VERSION_RABBITMQ:-4.2.2-management-alpine}
+    image: rabbitmq:${VERSION_RABBITMQ:-4.2.4-management-alpine}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -528,7 +528,7 @@ services:
 
   plane-redis:
     # https://hub.docker.com/r/valkey/valkey
-    image: valkey/valkey:${VERSION_VALKEY:-9.0.1-alpine}
+    image: valkey/valkey:${VERSION_VALKEY:-9.0.3-alpine}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -557,7 +557,7 @@ services:
       retries: 3
 
   plane-minio:
-    # https://hub.docker.com/r/minio/minio
+    # https://hub.docker.com/r/minio/minio/tags
     image: minio/minio:${VERSION_MINIO:-RELEASE.2025-09-07T16-13-09Z-cpuv1}
     <<:
       - *basic
