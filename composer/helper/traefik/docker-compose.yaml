@@ -150,4 +150,4 @@ secrets:
   traefik_basicauth_secret:
     file: config/secrets/traefik_basicauth_secret.txt
   dnschallenge_api_key_secret:
-    file: config/secrets/dnschallenge_api_key_secret.txt
+    file: config/secrets/${DNSCHALLENGE_API_KEY_SECRET:-dnschallenge_api_key_secret.txt}

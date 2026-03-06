@@ -129,10 +129,13 @@ VERSION=v3.6.9
 # ______________________________________________________________________________
 CERT_RESOLVER=certificates
 
-# file name located under '$PWD/config//...'
+# file name located under '$PWD/config/...'
 TRAEFIK_FILE=traefik.yml
 TRAEFIK_DYNAMIC_FILE=traefik_dynamic.yml
 TRAEFIK_CONFIG_FILE=config.yml
+
+# file name located under '$PWD/secrets/...'
+DNSCHALLENGE_API_KEY_SECRET=dnschallenge_api_key_secret.txt
 
 # optional :: replace `IONOS_API_KEY_FILE` with your provider => https://go-acme.github.io/lego/dns/index.html
 IONOS_API_KEY_FILE: /run/secrets/dnschallenge_api_key_secret
