@@ -87,3 +87,4 @@ If self hosted cert use `GIT_SSL_NO_VERIFY=true git ...`.
 
 - <https://codeberg.org/forgejo/forgejo>
 - <https://forgejo.org/docs/latest/admin/installation/docker/#docker>
+- <https://forgejo.org/docs/latest/admin/config-cheat-sheet/#server-server>

@@ -91,6 +91,12 @@ services:
     environment:
       USER_UID: ${USER_UID:-1000}
       USER_GID: ${USER_GID:-1000}
+      # FORGEJO__[SECTION]__[KEY]
+      FORGEJO__DEFAULT__APP_NAME: "${APP_NAME:-Forgejo: Beyond coding. We forge.}"
+      FORGEJO__server__ROOT_URL: https://${DOMAIN?domain variable not set}
+      FORGEJO__server__SSH_DOMAIN: ${DOMAIN?domain variable not set}
+      FORGEJO__security__GLOBAL_TWO_FACTOR_REQUIREMENT: all
+      FORGEJO__security__PASSWORD_COMPLEXITY: "lower,upper,digit,spec" # pragma: allowlist secret
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
@@ -120,11 +126,10 @@ networks:
     external: true
 
 volumes:
-  data:
   # sudo apt install nfs-common
-  data-nfs:
-    driver: local
-    driver_opts:
-      type: nfs
-      o: nfsvers=4.2,addr=${NFS_HOST?nfs host is not defined},rsize=2097152,wsize=2097152,tcp,nconnect=${NFS_NCON:-8}
-      device: ":${NFS_PATH?nfs path is not defined}${SERVICE_NAME_POST:-}"
+  data:
+    # driver: local
+    # driver_opts:
+    #   type: nfs
+    #   o: nfsvers=4.2,addr=${NFS_HOST?nfs host is not defined},rsize=2097152,wsize=2097152,tcp,nconnect=${NFS_NCON:-8}
+    #   device: ":${NFS_PATH?nfs path is not defined}${SERVICE_NAME_POST:-}"
