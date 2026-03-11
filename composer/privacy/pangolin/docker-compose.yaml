@@ -45,8 +45,8 @@ services:
   ##############################################################################
   ##############################################################################
   pangolin:
-    # https://hub.docker.com/r/fosrl/pangolin
-    image: fosrl/pangolin:${VERSION_PANGOLIN:-${PANGOLIN_EE:-}1.16.0}
+    # https://hub.docker.com/r/fosrl/pangolin/tags
+    image: fosrl/pangolin:${VERSION_PANGOLIN:-${PANGOLIN_EE:-}1.16.2}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -98,7 +98,7 @@ services:
   ##############################################################################
   ##############################################################################
   gerbil:
-    # https://hub.docker.com/r/fosrl/gerbil
+    # https://hub.docker.com/r/fosrl/gerbil/tags
     image: fosrl/gerbil:${VERSION_GERBIL:-1.3.0}
     depends_on:
       pangolin:
@@ -265,7 +265,7 @@ services:
   ##############################################################################
   ##############################################################################
   crowdsec:
-    # https://hub.docker.com/r/crowdsecurity/crowdsec
+    # https://hub.docker.com/r/crowdsecurity/crowdsec/tags
     image: crowdsecurity/crowdsec:${VERSION_CROWDSEC:-v1.7.6-debian}
     <<: *basic
     deploy:

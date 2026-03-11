@@ -84,7 +84,7 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_PANGOLIN=1.16.0
+VERSION_PANGOLIN=1.16.2
 VERSION_GERBIL=1.3.0
 VERSION_TRAEFIK=v3.6.9
 VERSION_BADGER=v1.3.1
@@ -171,11 +171,14 @@ docker exec -it "$(docker ps -q -f name=crowdsec)" cscli metrics
 tee .config/systemd/user/newt.service >/dev/null <<EOF
 [Unit]
 Description=Newt
-After=network.target
+After=network-online.target
+Wants=network-online.target
 
 [Service]
 ExecStart=/home/$USER/.local/bin/newt --id $ID --secret $SECRET --endpoint $ENDPOINT
 Restart=always
+RestartSec=5s
+StartLimitBurst=5
 
 [Install]
 WantedBy=default.target
