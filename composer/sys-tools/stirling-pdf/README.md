@@ -38,18 +38,18 @@ MIDDLEWARE_SECURED=default-secured@file
 
 # GENERAL sources to be used (set by default, change as needed)
 # ______________________________________________________________________________
-RESOURCES_LIMITS_CPUS=2
-RESOURCES_LIMITS_MEMORY=1g
+RESOURCES_LIMITS_CPUS=4
+RESOURCES_LIMITS_MEMORY=4g
 RESOURCES_RESERVATIONS_CPUS=0.001
 RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION=0.28.3
+VERSION=2.7.2-fat
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
-# NOTE: extend additional info here ...
+CERT_RESOLVER=certificates
 ```
 
 #### example short .env (swarm)

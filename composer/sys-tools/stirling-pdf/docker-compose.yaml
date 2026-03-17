@@ -7,6 +7,7 @@ x-basic-deploy-labels: &basic-deploy-labels
     - traefik.http.routers.stirling-pdf.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
     - traefik.http.routers.stirling-pdf.rule=Host(`${DOMAIN?domain variable not set}`)
     - traefik.http.routers.stirling-pdf.tls=true
+    - traefik.http.routers.stirling-pdf.tls.certresolver=${CERT_RESOLVER:-}
     - traefik.http.routers.stirling-pdf.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
     - traefik.http.routers.stirling-pdf.service=stirling-pdf
     - traefik.http.services.stirling-pdf.loadbalancer.server.scheme=${PROTOCOL:-http}
@@ -26,8 +27,8 @@ x-basic-deploy: &basic-deploy
     condition: any
   resources:
     limits:
-      cpus: ${RESOURCES_LIMITS_CPUS:-2}
-      memory: ${RESOURCES_LIMITS_MEMORY:-1g}
+      cpus: ${RESOURCES_LIMITS_CPUS:-4}
+      memory: ${RESOURCES_LIMITS_MEMORY:-4g}
     reservations:
       cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
       memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
@@ -39,6 +40,7 @@ x-basic: &basic
     - FOWNER # Overrides file ownership checks (`chmod`,`kill`)
     - SETGID # Allows setting group ID (`setgid`,`newgrp`,`chgrp`,`setregid()`)
     - SETUID # Allows setting user ID (`setuid`,`su`,`sudo`,`passwd`)
+    - DAC_OVERRIDE # Bypasses file read/write/execute permission checks (`cat`,`touch`,`rm`)
   cap_drop: ["ALL"]
   security_opt:
     - no-new-privileges:true
@@ -51,12 +53,13 @@ x-basic: &basic
       hard: 655360
     fsize: -1
     as: -1
+  # mem_limit: ${RESOURCES_LIMITS_MEMORY:-1g}
   networks:
     proxy: {}
   healthcheck:
     disable: true
   tmpfs:
-    - /tmp
+    - /tmp:rw,nosuid,nodev,noexec,relatime,size=512m
   restart: always
 
 ################################################################################
@@ -68,7 +71,7 @@ services:
   ##############################################################################
   app:
     # https://github.com/Stirling-Tools/Stirling-PDF/pkgs/container/s-pdf
-    image: ghcr.io/stirling-tools/s-pdf:${VERSION:-2.1.5-fat}
+    image: ghcr.io/stirling-tools/s-pdf:${VERSION:-2.7.2-fat}
     <<:
       - *basic
       # - *basic-deploy-labels
@@ -77,13 +80,43 @@ services:
         - *basic-deploy
         - *basic-deploy-labels
     environment:
+      MODE: BOTH
+      FAT_DOCKER: "true"
+
       SECURITY_ENABLELOGIN: ${SECURITY_ENABLELOGIN:-false}
-      LANGS: ${LANGS:-en_GB}
+      DISABLE_ADDITIONAL_FEATURES: ${DISABLE_ADDITIONAL_FEATURES:-false}
+
+      LANGS: ${LANGS:-en_US,de_DE}
+      SYSTEM_DEFAULTLOCALE: en-US
+
+      UI_APPNAME: Stirling-PDF
+      UI_HOMEDESCRIPTION: Full-featured Stirling-PDF with all capabilities
+      UI_APPNAMENAVBAR: Stirling-PDF Fat
+
+      SYSTEM_MAXFILESIZE: "200" # MB
+      METRICS_ENABLED: "false"
+      SYSTEM_GOOGLEVISIBILITY: "false"
+      SHOW_SURVEY: "false"
+
+      springdoc.api-docs.enabled: "false"
+      springdoc.swagger-ui.enabled: "false"
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-      - trainingData:/usr/share/tessdata
-      - extraConfigs:/configs
+      - data:/usr/share/tessdata
+      - config:/configs
+      - logs:/logs
+      - pipeline:/pipeline
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -kf ${PROTOCOL:-http}://127.0.0.1:${PORT:-8080}/api/v1/info/status | grep -q 'UP'",
+        ]
+      start_period: 10s
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
 ################################################################################
 ################################################################################
@@ -93,5 +126,7 @@ networks:
     external: true
 
 volumes:
-  trainingData: {}
-  extraConfigs: {}
+  data: {}
+  config: {}
+  logs: {}
+  pipeline: {}
