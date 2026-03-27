@@ -94,7 +94,9 @@ RUN locale-gen en_US.UTF-8
 
 # ------------------------------------------------------------------------------
 
-USER 1000:1000
+#RUN adduser --disable-password --gecos "" appuser
+RUN adduser --disable-password --comment "" appuser
+USER appuser
 
 # ------------------------------------------------------------------------------
 

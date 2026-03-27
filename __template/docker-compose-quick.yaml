@@ -102,10 +102,7 @@ services:
       - data:/root
     # extends:
     #   file: docker-hwaccel.yaml
-    #   service: hwaccel-amd
-    # extends:
-    #   file: docker-hwaccel.yaml
-    #   service: hwaccel-nvidia
+    #   service: ${HWACCEL:-none} # hwaccel-amd | hwaccel-nvidia
     # command: >
     #   ...
     healthcheck:

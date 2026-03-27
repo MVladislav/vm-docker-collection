@@ -133,7 +133,7 @@ $docker exec -it "$(docker ps -q -f name=postgresql)" pg_dumpall -U ${POSTGRES_U
 # Update Postgresql
 
 # Import backup into new Postgresql
-$cat ./upgrade_backup_myapp.sql | docker exec -i "$(docker ps -q -f name=postgresql)" psql -U ${POSTGRES_USER:-postgresql}
+$cat ./upgrade_backup.sql | docker exec -i "$(docker ps -q -f name=postgresql)" psql -U ${POSTGRES_USER:-postgresql}
 ```
 
 ---
