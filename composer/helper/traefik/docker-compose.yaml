@@ -62,7 +62,7 @@ services:
   ##############################################################################
   traefik:
     # https://hub.docker.com/_/traefik
-    image: traefik:${VERSION:-v3.6.9}
+    image: traefik:${VERSION:-v3.6.12}
     <<:
       - *basic
       - *basic-deploy-labels
@@ -140,11 +140,11 @@ configs:
   traefik_config_http:
     file: $PWD/config/${TRAEFIK_CONFIG_FILE:-config.yml}
   traefik_ca_config:
-    file: $PWD/config/ssl/ca.pem
+    file: $PWD/config/ssl/${CA_FILE:-ca.pem}
   traefik_crt_config:
-    file: $PWD/config/ssl/cert.pem
+    file: $PWD/config/ssl/${CRT_FILE:-cert.pem}
   traefik_key_config:
-    file: $PWD/config/ssl/cert-key.pem
+    file: $PWD/config/ssl/${KEY_FILE:-cert-key.pem}
 
 secrets:
   traefik_basicauth_secret:

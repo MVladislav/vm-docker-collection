@@ -84,6 +84,7 @@ http:
     public-secured:
       chain:
         middlewares:
+          # - default-whitelist
           - public-whitelist
           - default-headers
 tcp:
@@ -120,4 +121,5 @@ tcp:
     public-whitelist:
       IPAllowList:
         sourceRange:
+          # - 127.0.0.0/8
           - 0.0.0.0/0
