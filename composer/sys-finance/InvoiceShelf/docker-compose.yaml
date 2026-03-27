@@ -61,8 +61,8 @@ services:
   ##############################################################################
   ##############################################################################
   invoiceshelf:
-    # https://hub.docker.com/r/invoiceshelf/invoiceshelf
-    image: invoiceshelf/invoiceshelf:${VERSION_INVOICE_SHELF:-2.2.0-alpha2}
+    # https://hub.docker.com/r/invoiceshelf/invoiceshelf/tags
+    image: invoiceshelf/invoiceshelf:${VERSION_INVOICE_SHELF:-2.2.1}
     <<:
       - *basic
       # - *basic-deploy-labels
@@ -80,12 +80,14 @@ services:
       SANCTUM_STATEFUL_DOMAINS: ${DOMAIN?domain variable not set}
       TRUSTED_PROXIES: "*"
 
+      APP_NAME: ${APP_NAME:-InvoiceShelf}
+      APP_LOCALE: en
+      APP_ENV: ${APP_ENV:-production}
+      APP_DEBUG: ${APP_DEBUG:-false}
+
       PHP_TZ: ${PHP_TZ:-Europe/Berlin} # UTC
       APP_TIMEZONE: ${APP_TIMEZONE:-Europe/Berlin} # UTC
       TIMEZONE: ${TIMEZONE:-Europe/Berlin} # UTC
-      APP_NAME: ${APP_NAME:-InvoiceShelf}
-      APP_ENV: ${APP_ENV:-production}
-      APP_DEBUG: ${APP_DEBUG:-false}
 
       DB_CONNECTION: pgsql
       DB_HOST: postgresql
@@ -93,10 +95,13 @@ services:
       DB_DATABASE: ${POSTGRES_DB:-invoiceshelf}
       DB_USERNAME: ${POSTGRES_USER:-invoiceshelf}
       DB_PASSWORD_FILE: /run/secrets/postgres_password_file
+
       CACHE_STORE: file
+      DOMPDF_ENABLE_REMOTE: "false"
+
       SESSION_DRIVER: file
-      SESSION_LIFETIME: 120
-      SESSION_ENCRYPT: false
+      SESSION_LIFETIME: 240
+      SESSION_ENCRYPT: "false"
       SESSION_PATH: /
     volumes:
       # - /etc/timezone:/etc/timezone:ro
@@ -122,7 +127,7 @@ services:
   ##############################################################################
   postgresql:
     # https://hub.docker.com/_/postgres
-    image: postgres:${VERSION_POSTGRESQL:-17.7-alpine}
+    image: postgres:${VERSION_POSTGRESQL:-18.3-alpine}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -137,6 +142,7 @@ services:
       - CHOWN
       - FOWNER
       - DAC_READ_SEARCH
+      - DAC_OVERRIDE
       - SETUID
       - SETGID
     secrets:
@@ -145,17 +151,41 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-invoiceshelf}
       POSTGRES_USER: ${POSTGRES_USER:-invoiceshelf}
       POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password_file
-      PGDATA: /var/lib/postgresql/data
+      PGDATA: /var/lib/postgresql/18/data
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-      - postgresql:/var/lib/postgresql/data
+      - postgresql_v18:/var/lib/postgresql/18/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
       start_period: 10s
       interval: 30s
       timeout: 5s
       retries: 3
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  gotenberg:
+    # https://hub.docker.com/r/gotenberg/gotenberg
+    image: gotenberg/gotenberg:${VERSION_GOTENBERG:-8.28}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_GOTENBERG:-2}
+          memory: ${RESOURCES_LIMITS_MEMORY_GOTENBERG:-1g}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_GOTENBERG:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_GOTENBERG:-32m}
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    command:
+      - "gotenberg"
+      - "--chromium-disable-javascript=true"
+      - "--chromium-allow-list=file:///tmp/.*"
 
 ################################################################################
 ################################################################################
@@ -172,7 +202,7 @@ networks:
 volumes:
   data: {}
   modules: {}
-  postgresql: {}
+  postgresql_v18: {}
 
 secrets:
   postgres_password_file:
