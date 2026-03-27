@@ -65,7 +65,7 @@ services:
   ##############################################################################
   yamtrack:
     # https://github.com/fuzzygrim/Yamtrack/pkgs/container/yamtrack
-    image: ghcr.io/fuzzygrim/yamtrack:${VERSION_YAMTRACK:-0.24.10}
+    image: ghcr.io/fuzzygrim/yamtrack:${VERSION_YAMTRACK:-0.25.0}
     <<:
       - *basic
       # - *basic-deploy-labels
@@ -101,7 +101,7 @@ services:
   ##############################################################################
   valkey:
     # https://hub.docker.com/r/valkey/valkey
-    image: valkey/valkey:${VERSION_VALKEY:-9.0.1-alpine}
+    image: valkey/valkey:${VERSION_VALKEY:-9.0.3-alpine}
     <<: *basic
     deploy:
       <<: *basic-deploy

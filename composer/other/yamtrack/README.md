@@ -52,8 +52,8 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_YAMTRACK=0.24.10
-VERSION_VALKEY=9.0.1-alpine
+VERSION_YAMTRACK=0.25.0
+VERSION_VALKEY=9.0.3-alpine
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
