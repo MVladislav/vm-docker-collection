@@ -51,8 +51,8 @@ services:
   ##############################################################################
   ##############################################################################
   acme:
-    # https://hub.docker.com/r/...
-    image: neilpang/acme.sh:${VERSION:-latest}
+    # https://hub.docker.com/r/neilpang/acme.sh
+    image: neilpang/acme.sh:${VERSION:-3.1.2}
     <<:
       - *basic
     deploy:
