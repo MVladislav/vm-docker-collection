@@ -69,6 +69,8 @@ VERSION_VALKEY=8.1.0-alpine
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
+CERT_RESOLVER=certificates
+
 OWNCLOUD_ADMIN_USERNAME=root
 OWNCLOUD_ADMIN_PASSWORD=<PASSWORD>
 ```

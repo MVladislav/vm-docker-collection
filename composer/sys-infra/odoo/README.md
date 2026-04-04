@@ -62,6 +62,10 @@ RESOURCES_RESERVATIONS_MEMORY_POSTGRESQL=32m
 # ______________________________________________________________________________
 VERSION_ODOO=18.0
 VERSION_POSTGRESQL=17.2-alpine
+
+# APPLICATION general variable to adjust the apps
+# ______________________________________________________________________________
+CERT_RESOLVER=certificates
 ```
 
 #### example short .env
