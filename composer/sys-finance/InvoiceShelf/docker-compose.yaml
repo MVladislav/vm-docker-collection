@@ -62,7 +62,7 @@ services:
   ##############################################################################
   invoiceshelf:
     # https://hub.docker.com/r/invoiceshelf/invoiceshelf/tags
-    image: invoiceshelf/invoiceshelf:${VERSION_INVOICE_SHELF:-2.2.1}
+    image: invoiceshelf/invoiceshelf:${VERSION_INVOICE_SHELF:-2.3.0}
     <<:
       - *basic
       # - *basic-deploy-labels
@@ -168,7 +168,7 @@ services:
   ##############################################################################
   gotenberg:
     # https://hub.docker.com/r/gotenberg/gotenberg
-    image: gotenberg/gotenberg:${VERSION_GOTENBERG:-8.28}
+    image: gotenberg/gotenberg:${VERSION_GOTENBERG:-8.29}
     <<: *basic
     deploy:
       <<: *basic-deploy
