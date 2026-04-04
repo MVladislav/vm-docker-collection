@@ -13,8 +13,8 @@ x-basic-deploy: &basic-deploy
     condition: any
   resources:
     limits:
-      cpus: ${RESOURCES_LIMITS_CPUS:-4}
-      memory: ${RESOURCES_LIMITS_MEMORY:-2g}
+      cpus: ${RESOURCES_LIMITS_CPUS:-2}
+      memory: ${RESOURCES_LIMITS_MEMORY:-1g}
     reservations:
       cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
       memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
@@ -50,6 +50,13 @@ services:
     <<: *basic
     deploy:
       <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_PANGOLIN:-2}
+          memory: ${RESOURCES_LIMITS_MEMORY_PANGOLIN:-1g}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_PANGOLIN:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_PANGOLIN:-32m}
     configs:
       - source: pangolin_config
         target: /app/config/config.yml
@@ -107,6 +114,13 @@ services:
     <<: *basic
     deploy:
       <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_GERBIL:-2}
+          memory: ${RESOURCES_LIMITS_MEMORY_GERBIL:-512m}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_GERBIL:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_GERBIL:-32m}
     cap_add:
       - NET_ADMIN
       - SYS_MODULE
@@ -160,6 +174,13 @@ services:
     <<: *basic
     deploy:
       <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_TRAEFIK:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_TRAEFIK:-512m}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_TRAEFIK:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_TRAEFIK:-32m}
     configs:
       - source: dynamic_config
         target: /etc/traefik/dynamic_config.yml
@@ -277,6 +298,13 @@ services:
     <<: *basic
     deploy:
       <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_CROWDSEC:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_CROWDSEC:-512m}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_CROWDSEC:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_CROWDSEC:-32m}
     configs:
       - source: acquis_config
         target: /etc/crowdsec/acquis.yaml
@@ -339,6 +367,13 @@ services:
     <<: *basic
     deploy:
       <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_GEOIPUPDATE:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_GEOIPUPDATE:-64m}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_GEOIPUPDATE:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_GEOIPUPDATE:-32m}
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
