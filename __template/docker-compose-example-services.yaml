@@ -121,6 +121,78 @@ services:
   ##############################################################################
   ##############################################################################
   ##############################################################################
+  rustfs:
+    # https://hub.docker.com/r/rustfs/rustfs/tags
+    image: rustfs/rustfs:${VERSION_RUSTFS:-1.0.0-alpha.90}
+    # <<: *basic
+    deploy:
+      # <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_RUSTFS:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_RUSTFS:-1g}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_RUSTFS:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_RUSTFS:-32m}
+    # ports:
+    #   - target: ${PORT_RUSTFS_S3_API:-9000}
+    #     published: ${PORT_RUSTFS_S3_API_PUBLISH:-9000}
+    #     protocol: tcp
+    #     # host_ip: 127.0.0.1
+    #     mode: host
+    #   - target: ${PORT_RUSTFS_CONSOLE:-9001}
+    #     published: ${PORT_RUSTFS_PUBLISH_CONSOLE:-9001}
+    #     protocol: tcp
+    #     # host_ip: 127.0.0.1
+    #     mode: host
+    secrets:
+      - rustfs_access_key_file
+      - rustfs_secret_key_file
+    environment:
+      RUSTFS_ACCESS_KEY_FILE: /run/secrets/rustfs_access_key_file
+      RUSTFS_SECRET_KEY_FILE: /run/secrets/rustfs_secret_key_file
+
+      RUSTFS_VOLUMES: /data/rustfs{0...3}
+
+      RUSTFS_ADDRESS: 0.0.0.0:${PORT_RUSTFS_S3_API:-9000}
+      RUSTFS_CONSOLE_ADDRESS: 0.0.0.0:${PORT_RUSTFS_CONSOLE:-9001}
+
+      RUSTFS_CONSOLE_ENABLE: ${RUSTFS_CONSOLE_ENABLE:-true}
+      RUSTFS_CORS_ALLOWED_ORIGINS: ${RUSTFS_CORS_ALLOWED_ORIGINS:-*}
+      RUSTFS_CONSOLE_CORS_ALLOWED_ORIGINS: ${RUSTFS_CONSOLE_CORS_ALLOWED_ORIGINS:-*}
+      RUSTFS_OBS_LOGGER_LEVEL: ${RUSTFS_OBS_LOGGER_LEVEL:-info}
+      RUSTFS_TLS_PATH: ${RUSTFS_TLS_PATH:-/opt/tls}
+
+      # Object Cache
+      RUSTFS_OBJECT_CACHE_ENABLE: ${RUSTFS_OBJECT_CACHE_ENABLE:-true}
+      RUSTFS_OBJECT_CACHE_TTL_SECS: ${RUSTFS_OBJECT_CACHE_TTL_SECS:-300}
+    volumes:
+      # - /etc/timezone:/etc/timezone:ro
+      # - /etc/localtime:/etc/localtime:ro
+      - rustfs_data_0:/data/rustfs0
+      - rustfs_data_1:/data/rustfs1
+      - rustfs_data_2:/data/rustfs2
+      - rustfs_data_3:/data/rustfs3
+      - rustfs_logs:/app/logs
+    command: server /data --console-address ":9001"
+    # networks:
+    #   default: {}
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "sh",
+          "-c",
+          "curl -f http://127.0.0.1:9000/health && curl -f http://127.0.0.1:9001/rustfs/console/health",
+        ]
+      start_period: 10s
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
   postgresql:
     # https://hub.docker.com/_/postgres
     image: postgres:${VERSION_POSTGRESQL:-18.3-alpine}
@@ -462,6 +534,11 @@ volumes:
   dragonfly: {}
   valkey: {}
   minio: {}
+  rustfs_data_0: {}
+  rustfs_data_1: {}
+  rustfs_data_2: {}
+  rustfs_data_3: {}
+  rustfs_logs: {}
   postgresql_v18: {}
   mariadb: {}
   influxdb-storage: {}
@@ -471,6 +548,10 @@ volumes:
 secrets:
   minio_root_password_file:
     file: config/secrets/minio_root_password_file.txt
+  rustfs_access_key_file:
+    file: config/secrets/rustfs_access_key_file.txt
+  rustfs_secret_key_file:
+    file: config/secrets/rustfs_secret_key_file.txt
   postgres_password_file:
     file: config/secrets/postgres_password_file.txt
   mariadb_root_password:
