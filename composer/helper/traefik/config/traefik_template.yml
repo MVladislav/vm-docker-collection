@@ -43,7 +43,8 @@ entryPoints:
     transport:
       respondingTimeouts:
         readTimeout: 30m
-    http3: {}
+    http3:
+      advertisedPort: 443
     http:
       encodedCharacters:
         allowEncodedSlash: false

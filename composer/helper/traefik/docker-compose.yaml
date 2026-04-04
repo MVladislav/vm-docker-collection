@@ -79,6 +79,10 @@ services:
         published: 443
         protocol: tcp
         mode: host
+      - target: 443 # https (QUIC)
+        published: 443
+        protocol: udp
+        mode: host
     secrets:
       - traefik_basicauth_secret
       - dnschallenge_api_key_secret
