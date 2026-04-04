@@ -7,7 +7,7 @@ x-basic-deploy-labels: &basic-deploy-labels
     - traefik.http.routers.odoo.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
     - traefik.http.routers.odoo.rule=Host(`${DOMAIN?domain variable not set}`)
     - traefik.http.routers.odoo.tls=true
-    - traefik.http.routers.owncloud.tls.certresolver=${CERT_RESOLVER:-}
+    - traefik.http.routers.odoo.tls.certresolver=${CERT_RESOLVER:-}
     - traefik.http.routers.odoo.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
     - traefik.http.routers.odoo.service=odoo
     - traefik.http.services.odoo.loadbalancer.server.scheme=${PROTOCOL:-http}
