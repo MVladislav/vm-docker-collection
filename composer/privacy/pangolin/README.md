@@ -18,9 +18,12 @@
   - [FAQ](#faq)
     - [Crowdsec](#crowdsec)
       - [Test block](#test-block)
-      - [Other](#other)
-      - [NEWT as binary with user scope](#newt-as-binary-with-user-scope)
-      - [Enterprise-Edition](#enterprise-edition)
+      - [Helpful information's](#helpful-informations)
+    - [NEWT as binary with user scope](#newt-as-binary-with-user-scope)
+      - [Systemd-Service](#systemd-service)
+    - [CLI as binary with user scope](#cli-as-binary-with-user-scope)
+      - [Systemd-Service](#systemd-service-1)
+    - [Enterprise-Edition](#enterprise-edition)
   - [References](#references)
 
 ---
@@ -84,17 +87,17 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_PANGOLIN=1.16.2
-VERSION_GERBIL=1.3.0
-VERSION_TRAEFIK=v3.6.9
-VERSION_BADGER=v1.3.1
+VERSION_PANGOLIN=1.17.0
+VERSION_GERBIL=1.3.1
+VERSION_TRAEFIK=v3.6.12
+VERSION_BADGER=v1.4.0
 VERSION_CROWDSEC_PLUGIN=v1.5.1
-VERSION_CROWDSEC=v1.7.6
+VERSION_CROWDSEC=v1.7.7-debian
 VERSION_MAXMIND=v7.1.1
 
-VERSION_NEWT=1.10.1
-VERSION_CLI=0.5.1
-VERSION_OLM=1.4.2
+VERSION_NEWT=1.11.0
+VERSION_CLI=0.5.2
+VERSION_OLM=1.4.4
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
@@ -159,23 +162,29 @@ docker exec -it "$(docker ps -q -f name=crowdsec)" \
 cscli decisions add --ip <your-public-ip> --duration 1m --type ban --reason "CrowdSec remediation test"
 ```
 
-#### Other
+#### Helpful information's
 
 ```sh
 docker exec -it "$(docker ps -q -f name=crowdsec)" cscli metrics
 ```
 
-#### NEWT as binary with user scope
+### NEWT as binary with user scope
 
 ```sh
-tee .config/systemd/user/newt.service >/dev/null <<EOF
+curl -fsSL https://static.pangolin.net/get-newt.sh | bash
+```
+
+#### Systemd-Service
+
+```sh
+tee ~/.config/systemd/user/newt.service >/dev/null <<EOF
 [Unit]
 Description=Newt
 After=network-online.target
 Wants=network-online.target
 
 [Service]
-ExecStart=/home/$USER/.local/bin/newt --id $ID --secret $SECRET --endpoint $ENDPOINT
+ExecStart=/home/$USER/.local/bin/newt --id $NEWT_ID --secret $NEWT_SECRET --endpoint $ENDPOINT
 Restart=always
 RestartSec=5s
 StartLimitBurst=5
@@ -190,7 +199,42 @@ systemctl --user enable --now newt
 sudo loginctl enable-linger $USER
 ```
 
-#### Enterprise-Edition
+### CLI as binary with user scope
+
+```sh
+curl -fsSL https://static.pangolin.net/get-cli.sh | sed 's|INSTALL_DIR=.*|INSTALL_DIR=$HOME/.local/bin|' | bash
+#sudo setcap 'cap_net_admin=ep cap_net_bind_service=ep' "$HOME/.local/bin/pangolin"
+
+pangolin login
+pangolin up
+```
+
+#### Systemd-Service
+
+```sh
+tee ~/.config/systemd/user/pangolin.service >/dev/null <<EOF
+[Unit]
+Description=Pangolin CLI
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+ExecStart=/home/$USER/.local/bin/pangolin up --id $CLIENT_ID --secret $CLIENT_SECRET --endpoint $ENDPOINT --attach
+Restart=always
+RestartSec=5s
+StartLimitBurst=5
+
+[Install]
+WantedBy=default.target
+
+EOF
+
+systemctl --user daemon-reload
+systemctl --user enable --now pangolin
+sudo loginctl enable-linger $USER
+```
+
+### Enterprise-Edition
 
 > [`Free for individuals and small businesses`](https://docs.pangolin.net/self-host/enterprise-edition#licensing-overview)
 

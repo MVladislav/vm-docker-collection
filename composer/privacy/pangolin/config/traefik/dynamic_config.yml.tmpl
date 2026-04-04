@@ -87,17 +87,17 @@ http:
 
   # ############################################################################
   routers:
-    # Traefik
-    traefik-router:
-      rule: "Host(`<REPLACE_TRAEFIK_DOMAIN>`)" # REPLACE THIS WITH YOUR DOMAIN
-      service: api@internal
-      entryPoints:
-        - websecure
-      middlewares:
-        # - badger
-        - traefik-basic-auth@file
-      tls:
-        certResolver: certificates
+    # # Traefik
+    # traefik-router:
+    #   rule: "Host(`<REPLACE_TRAEFIK_DOMAIN>`)" # REPLACE THIS WITH YOUR DOMAIN
+    #   service: api@internal
+    #   entryPoints:
+    #     - websecure
+    #   middlewares:
+    #     # - badger
+    #     - traefik-basic-auth@file
+    #   tls:
+    #     certResolver: certificates
 
     # # HTTP to HTTPS redirect router
     # main-app-router-redirect:
