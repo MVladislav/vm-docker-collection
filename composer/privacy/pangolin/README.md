@@ -7,6 +7,7 @@
 ---
 
 - [SETUP](#setup)
+  - [TODO](#todo)
   - [basic](#basic)
     - [create your `secrets`:](#create-your-secrets)
     - [create config files:](#create-config-files)
@@ -25,6 +26,15 @@
       - [Systemd-Service](#systemd-service-1)
     - [Enterprise-Edition](#enterprise-edition)
   - [References](#references)
+
+---
+
+## TODO
+
+```log
+time="2026-03-07T06:53:34+01:00" level=error msg="Error setting up tail for /var/log/auth.log: unable to read /var/log/auth.log : open /var/log/auth.log: permission denied" module=acquisition.file type=file
+time="2026-03-07T06:53:34+01:00" level=error msg="Error setting up tail for /var/log/syslog: unable to read /var/log/syslog : open /var/log/syslog: permission denied" module=acquisition.file type=file
+```
 
 ---
 
@@ -98,9 +108,9 @@ RESOURCES_LIMITS_MEMORY_GEOIPUPDATE=64m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_PANGOLIN=1.17.0
+VERSION_PANGOLIN=1.17.1
 VERSION_GERBIL=1.3.1
-VERSION_TRAEFIK=v3.6.12
+VERSION_TRAEFIK=v3.6.13
 VERSION_BADGER=v1.4.0
 VERSION_CROWDSEC_PLUGIN=v1.5.1
 VERSION_CROWDSEC=v1.7.7-debian
