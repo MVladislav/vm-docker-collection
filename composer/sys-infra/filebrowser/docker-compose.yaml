@@ -65,10 +65,14 @@ services:
   ##############################################################################
   filebrowser:
     # https://hub.docker.com/r/filebrowser/filebrowser/tags
-    image: filebrowser/filebrowser:${VERSION:-v2.62.1}
-    <<: [*basic, *basic-deploy-labels]
+    image: filebrowser/filebrowser:${VERSION:-v2.63.2}
+    <<:
+      - *basic
+      - *basic-deploy-labels
     deploy:
-      <<: [*basic-deploy, *basic-deploy-labels]
+      <<:
+        - *basic-deploy
+        - *basic-deploy-labels
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
