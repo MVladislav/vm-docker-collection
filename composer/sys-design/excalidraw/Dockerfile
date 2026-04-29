@@ -1,5 +1,5 @@
-ARG VERSION_NODE=24.10.0
-ARG VERSION_NGNIX=1.29-alpine
+ARG VERSION_NODE=22.22 # https://hub.docker.com/_/node
+ARG VERSION_NGNIX=1.29-alpine # https://hub.docker.com/_/nginx
 
 FROM node:$VERSION_NODE AS build
 
@@ -30,7 +30,7 @@ ARG VITE_APP_PLUS_LP=https://plus.excalidraw.com
 ARG VITE_APP_PLUS_APP=https://app.excalidraw.com
 ARG VITE_APP_PLUS_EXPORT_PUBLIC_KEY=''
 
-ARG VERSION_EXCALIDRAW=v0.18.0
+ARG VERSION_EXCALIDRAW=v0.18.1
 RUN \
   rm -rf /opt/node_app && \
   mkdir -p /opt/node_app && \
