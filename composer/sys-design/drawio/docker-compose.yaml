@@ -7,6 +7,7 @@ x-basic-deploy-labels: &basic-deploy-labels
     - traefik.http.routers.drawio.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
     - traefik.http.routers.drawio.rule=Host(`${DOMAIN?domain variable not set}`)
     - traefik.http.routers.drawio.tls=true
+    - traefik.http.routers.drawio.tls.certresolver=${CERT_RESOLVER:-}
     - traefik.http.routers.drawio.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
     - traefik.http.routers.drawio.service=drawio
     - traefik.http.services.drawio.loadbalancer.server.scheme=${PROTOCOL:-http}
@@ -46,10 +47,13 @@ x-basic: &basic
       hard: 655360
     fsize: -1
     as: -1
+  # mem_limit: ${RESOURCES_LIMITS_MEMORY:-1g}
   networks:
     proxy: {}
   healthcheck:
     disable: true
+  tmpfs:
+    - /tmp:rw,nosuid,nodev,noexec,relatime,size=512m
   restart: always
 
 ################################################################################
@@ -61,10 +65,14 @@ services:
   ##############################################################################
   drawio:
     # https://hub.docker.com/r/jgraph/drawio
-    image: jgraph/drawio:${VERSION:-28.2.5}
-    <<: [*basic, *basic-deploy-labels]
+    image: jgraph/drawio:${VERSION:-29.7.9}
+    <<:
+      - *basic
+      - *basic-deploy-labels
     deploy:
-      <<: [*basic-deploy, *basic-deploy-labels]
+      <<:
+        - *basic-deploy
+        - *basic-deploy-labels
     environment:
       PUBLIC_DNS: ${DOMAIN?domain variable not set}
     volumes:
