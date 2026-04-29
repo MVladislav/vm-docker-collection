@@ -62,7 +62,7 @@ services:
   ##############################################################################
   invoiceshelf:
     # https://hub.docker.com/r/invoiceshelf/invoiceshelf/tags
-    image: invoiceshelf/invoiceshelf:${VERSION_INVOICE_SHELF:-2.3.0}
+    image: invoiceshelf/invoiceshelf:${VERSION_INVOICE_SHELF:-2.3.3}
     <<:
       - *basic
       # - *basic-deploy-labels
