@@ -66,6 +66,7 @@ $TMP_SMTP_HOST="smtp.ionos.de"
 
 $cp ./config/traefik/dynamic_config.yml.tmpl ./config/traefik/dynamic_config.yml
 $cp ./config/pangolin/config.yml.tmpl ./config/pangolin/config.yml
+$cp ./config/pangolin/privateConfig.yml.tmpl ./config/pangolin/privateConfig.yml
 
 $sed "s|<REPLACE_TRAEFIK_DOMAIN>|${TMP_DOMAIN_TRAEFIK}|" -i  ./config/traefik/dynamic_config.yml
 $sed "s|<REPLACE_DASHBOARDURL_DOMAIN>|${TMP_DOMAIN_DASHBOARD}|" -i  ./config/traefik/dynamic_config.yml

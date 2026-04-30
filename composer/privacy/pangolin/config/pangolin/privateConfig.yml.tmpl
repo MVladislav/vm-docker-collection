@@ -1,0 +1,41 @@
+---
+app:
+  identity_provider_mode: "global"
+
+# redis:
+#   host: "valkey"
+#   port: 6379
+#   db: 0
+#   # password: "your-secure-password" # pragma: allowlist secret
+
+## https://docs.pangolin.net/manage/branding
+# branding:
+#   app_name: "MyApp"
+#
+#   logo:
+#     light_path: "/app/public/branding/logo-light.svg"
+#     dark_path: "/app/public/branding/logo-dark.svg"
+#
+#   colors:
+#     light:
+#       primary: "hsl(212, 65%, 35%)"
+#       background: "hsl(212, 65%, 35%)"
+#       foreground: "hsl(0 0% 98%)"
+#     dark:
+#       primary: "hsl(212, 65%, 45%)"
+#       background: "hsl(212, 65%, 35%)"
+#       foreground: "hsl(0 0% 98%)"
+#
+#   # footer:
+#   #   - text: "Privacy Policy"
+#   #     href: "https://example.com/privacy"
+#   #   - text: "Terms of Service"
+#   #     href: "https://example.com/terms"
+
+acme:
+  acme_json_path: "/certificates/acme.json"
+
+flags:
+  enable_acme_cert_sync: true
+  enable_redis: false
+  use_pangolin_dns: false

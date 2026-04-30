@@ -22,6 +22,7 @@ config/secrets/*
 !config/pangolin/
 config/pangolin/*
 !config/pangolin/config.yml.tmpl
+!config/pangolin/privateConfig.yml.tmpl
 
 !config/traefik/
 config/traefik/*

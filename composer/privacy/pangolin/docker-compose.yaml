@@ -63,11 +63,16 @@ services:
         mode: 0440
         uid: "0"
         gid: "0"
+      - source: pangolin_private_config
+        target: /app/config/privateConfig.yml
+        mode: 0440
+        uid: "0"
+        gid: "0"
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - pangolin_data:/app/config
-      - pangolin_branding:/branding
+      - pangolin_branding:/app/public/branding
       - maxmind:${GEOIPUPDATE_DB_DIR:-/app/geo}
       - certificates:/certificates
     environment:
@@ -415,6 +420,8 @@ volumes:
 configs:
   pangolin_config:
     file: ${FILE_PATH:-$PWD}/config/pangolin/config.yml
+  pangolin_private_config:
+    file: ${FILE_PATH:-$PWD}/config/pangolin/privateConfig.yml
   dynamic_config:
     file: ${FILE_PATH:-$PWD}/config/traefik/dynamic_config.yml
   ban_page:
