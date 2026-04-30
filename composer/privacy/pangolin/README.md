@@ -193,7 +193,7 @@ docker exec -it "$(docker ps -q -f name=crowdsec)" cscli metrics
 ### NEWT as binary with user scope
 
 ```sh
-curl -fsSL https://static.pangolin.net/get-newt.sh | bash
+curl -fsSL https://static.pangolin.net/get-newt.sh | bash -s -- --path "$HOME/.local/bin"
 ```
 
 #### Systemd-Service
@@ -224,7 +224,7 @@ sudo loginctl enable-linger $USER
 ### CLI as binary with user scope
 
 ```sh
-curl -fsSL https://static.pangolin.net/get-cli.sh | sed 's|INSTALL_DIR=.*|INSTALL_DIR=$HOME/.local/bin|' | bash
+curl -fsSL https://static.pangolin.net/get-cli.sh | bash -s -- --path "$HOME/.local/bin"
 #sudo setcap 'cap_net_admin=ep cap_net_bind_service=ep' "$HOME/.local/bin/pangolin"
 
 pangolin login
