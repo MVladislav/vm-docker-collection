@@ -108,17 +108,17 @@ RESOURCES_LIMITS_MEMORY_GEOIPUPDATE=64m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_PANGOLIN=1.17.1
+VERSION_PANGOLIN=1.18.1
 VERSION_GERBIL=1.3.1
-VERSION_TRAEFIK=v3.6.13
+VERSION_TRAEFIK=v3.6.15
 VERSION_BADGER=v1.4.0
-VERSION_CROWDSEC_PLUGIN=v1.5.1
+VERSION_CROWDSEC_PLUGIN=v1.6.0
 VERSION_CROWDSEC=v1.7.7-debian
 VERSION_MAXMIND=v7.1.1
 
-VERSION_NEWT=1.11.0
+VERSION_NEWT=1.12.3
 VERSION_CLI=0.5.2
-VERSION_OLM=1.4.4
+VERSION_OLM=1.5.0
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
@@ -205,7 +205,7 @@ After=network-online.target
 Wants=network-online.target
 
 [Service]
-ExecStart=/home/$USER/.local/bin/newt --id $NEWT_ID --secret $NEWT_SECRET --endpoint $ENDPOINT
+ExecStart=/home/$USER/.local/bin/newt --id $NEWT_ID --secret $NEWT_SECRET --endpoint $ENDPOINT -log-level WARN
 Restart=always
 RestartSec=5s
 StartLimitBurst=5

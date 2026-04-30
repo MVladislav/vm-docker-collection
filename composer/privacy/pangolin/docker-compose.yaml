@@ -46,7 +46,7 @@ services:
   ##############################################################################
   pangolin:
     # https://hub.docker.com/r/fosrl/pangolin/tags
-    image: fosrl/pangolin:${VERSION_PANGOLIN:-${PANGOLIN_EE:-}1.17.1}
+    image: fosrl/pangolin:${VERSION_PANGOLIN:-${PANGOLIN_EE:-}1.18.1}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -69,6 +69,7 @@ services:
       - pangolin_data:/app/config
       - pangolin_branding:/branding
       - maxmind:${GEOIPUPDATE_DB_DIR:-/app/geo}
+      - certificates:/certificates
     environment:
       # SECRETS
       SERVER_SECRET: ${SERVER_SECRET?SERVER_SECRET is not set}
@@ -165,7 +166,7 @@ services:
   ##############################################################################
   traefik:
     # https://hub.docker.com/_/traefik
-    image: traefik:${VERSION_TRAEFIK:-v3.6.13}
+    image: traefik:${VERSION_TRAEFIK:-v3.6.15}
     depends_on:
       pangolin:
         condition: service_healthy
@@ -280,7 +281,7 @@ services:
       TRAEFIK_EXPERIMENTAL_PLUGINS_BADGER_MODULENAME: github.com/fosrl/badger
       TRAEFIK_EXPERIMENTAL_PLUGINS_BADGER_VERSION: ${VERSION_BADGER:-v1.4.0} # https://github.com/fosrl/badger
       TRAEFIK_EXPERIMENTAL_PLUGINS_CROWDSEC_MODULENAME: github.com/maxlerebourg/crowdsec-bouncer-traefik-plugin
-      TRAEFIK_EXPERIMENTAL_PLUGINS_CROWDSEC_VERSION: ${VERSION_CROWDSEC_PLUGIN:-v1.5.1} # https://plugins.traefik.io/plugins/6335346ca4caa9ddeffda116/crowdsec-bouncer-traefik-plugin
+      TRAEFIK_EXPERIMENTAL_PLUGINS_CROWDSEC_VERSION: ${VERSION_CROWDSEC_PLUGIN:-v1.6.0} # https://plugins.traefik.io/plugins/6335346ca4caa9ddeffda116/crowdsec-bouncer-traefik-plugin
     healthcheck:
       test: "traefik healthcheck --ping"
       start_period: 10s
