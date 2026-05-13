@@ -46,7 +46,7 @@ services:
   ##############################################################################
   pangolin:
     # https://hub.docker.com/r/fosrl/pangolin/tags
-    image: fosrl/pangolin:${VERSION_PANGOLIN:-${PANGOLIN_EE:-}1.18.1}
+    image: fosrl/pangolin:${VERSION_PANGOLIN:-${PANGOLIN_EE:-}1.18.4}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -113,7 +113,7 @@ services:
   ##############################################################################
   gerbil:
     # https://hub.docker.com/r/fosrl/gerbil/tags
-    image: fosrl/gerbil:${VERSION_GERBIL:-1.3.1}
+    image: fosrl/gerbil:${VERSION_GERBIL:-1.4.0}
     depends_on:
       pangolin:
         condition: service_healthy
@@ -171,7 +171,7 @@ services:
   ##############################################################################
   traefik:
     # https://hub.docker.com/_/traefik
-    image: traefik:${VERSION_TRAEFIK:-v3.6.15}
+    image: traefik:${VERSION_TRAEFIK:-v3.7.1}
     depends_on:
       pangolin:
         condition: service_healthy
@@ -211,8 +211,8 @@ services:
       # https://doc.traefik.io/traefik/reference/install-configuration/boot-environment/#environment-variables
       # https://doc.traefik.io/traefik/v2.0/reference/static-configuration/env/
       # Global configuration
-      TRAEFIK_GLOBAL_CHECKNEWVERSION: ${TRAEFIK_GLOBAL_CHECKNEWVERSION:-true}
-      TRAEFIK_GLOBAL_SENDANONYMOUSUSAGE: "false"
+      TRAEFIK_GLOBAL_CHECKNEWVERSION: ${TRAEFIK_GLOBAL_CHECKNEWVERSION:-false}
+      TRAEFIK_GLOBAL_SENDANONYMOUSUSAGE: ${TRAEFIK_GLOBAL_SENDANONYMOUSUSAGE:-false}
       # EntryPoints configuration
       TRAEFIK_ENTRYPOINTS_WEB: "true"
       TRAEFIK_ENTRYPOINTS_WEB_ADDRESS: ":80"
@@ -300,7 +300,7 @@ services:
   ##############################################################################
   crowdsec:
     # https://hub.docker.com/r/crowdsecurity/crowdsec/tags
-    image: crowdsecurity/crowdsec:${VERSION_CROWDSEC:-v1.7.7-debian}
+    image: crowdsecurity/crowdsec:${VERSION_CROWDSEC:-v1.7.8-debian}
     <<: *basic
     deploy:
       <<: *basic-deploy

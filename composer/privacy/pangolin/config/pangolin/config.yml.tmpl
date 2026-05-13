@@ -1,12 +1,17 @@
+---
 # To see all available options, please visit the docs:
-# https://docs.fossorial.io/Pangolin/Configuration/config
+# https://docs.pangolin.net/self-host/advanced/config-file
 
 app:
   dashboard_url: "https://<REPLACE_DASHBOARDURL_DOMAIN>"
-  log_level: "info"
+  log_level: "info" # debug|info|warn|error
   save_logs: false
+  log_failed_attempts: true
   telemetry:
     anonymous_usage: false
+  notifications:
+    product_updates: true
+    new_releases: true
 
 domains:
   domain1:
