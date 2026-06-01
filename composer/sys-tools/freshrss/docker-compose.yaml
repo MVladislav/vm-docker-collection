@@ -70,8 +70,8 @@ services:
   ##############################################################################
   ##############################################################################
   freshrss:
-    # https://hub.docker.com/r/freshrss/freshrss
-    image: freshrss/freshrss:${VERSION:-1.28.1}
+    # https://hub.docker.com/r/freshrss/freshrss/tags
+    image: freshrss/freshrss:${VERSION:-1.29.1}
     <<:
       - *basic
       # - *basic-deploy-labels
