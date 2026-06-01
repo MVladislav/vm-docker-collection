@@ -1,5 +1,5 @@
 # Arguments to control the version of Ubuntu and the Velociraptor build version
-ARG VERSION_UBUNTU=24.04
+ARG VERSION_UBUNTU=26.04
 ARG VERSION=latest
 ARG BUILD_DATE=$(date +"%Y-%m-%d")
 
