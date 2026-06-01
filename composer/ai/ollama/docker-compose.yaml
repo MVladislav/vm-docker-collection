@@ -86,6 +86,7 @@ services:
         # - *basic-deploy-labels
     environment:
       OLLAMA_BASE_URL: http://ollama:11434
+      WEBUI_SECRET_KEY:
       SCARF_NO_ANALYTICS: ${SCARF_NO_ANALYTICS:-true}
       DO_NOT_TRACK: ${DO_NOT_TRACK:-true}
       ANONYMIZED_TELEMETRY: ${ANONYMIZED_TELEMETRY:-false}
@@ -102,6 +103,7 @@ services:
   ollama:
     # https://hub.docker.com/r/ollama/ollama
     image: ollama/ollama:${VERSION_OLLAMA:-rocm}
+    tty: true
     <<:
       - *basic
       - *basic-deploy-labels-ollama
@@ -116,7 +118,7 @@ services:
         mode: host
     environment:
       OLLAMA_CONTEXT_LENGTH: ${OLLAMA_CONTEXT_LENGTH:-16384}
-      # HSA_OVERRIDE_GFX_VERSION: 11.0.0
+      HSA_OVERRIDE_GFX_VERSION: ${HSA_OVERRIDE_GFX_VERSION-11.0.0}
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
