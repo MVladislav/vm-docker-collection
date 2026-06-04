@@ -5,7 +5,7 @@ services:
   ##############################################################################
   dragonfly:
     # https://github.com/dragonflydb/dragonfly/releases
-    image: docker.dragonflydb.io/dragonflydb/dragonfly:${VERSION_DRAGONFLY:-v1.34.2}
+    image: docker.dragonflydb.io/dragonflydb/dragonfly:${VERSION_DRAGONFLY:-v1.38.1}
     # <<: *basic
     deploy:
       # <<: *basic-deploy
@@ -37,7 +37,7 @@ services:
   ##############################################################################
   valkey:
     # https://hub.docker.com/r/valkey/valkey
-    image: valkey/valkey:${VERSION_VALKEY:-9.0.1-alpine}
+    image: valkey/valkey:${VERSION_VALKEY:-9.1.0-alpine}
     # <<: *basic
     deploy:
       # <<: *basic-deploy
@@ -80,7 +80,7 @@ services:
   ##############################################################################
   ##############################################################################
   minio:
-    # https://hub.docker.com/r/minio/minio
+    # https://hub.docker.com/r/minio/minio/tags?name=RELEASE.202
     image: minio/minio:${VERSION_MINIO:-RELEASE.2025-09-07T16-13-09Z-cpuv1}
     # <<: *basic
     deploy:
@@ -123,7 +123,7 @@ services:
   ##############################################################################
   rustfs:
     # https://hub.docker.com/r/rustfs/rustfs/tags
-    image: rustfs/rustfs:${VERSION_RUSTFS:-1.0.0-alpha.90}
+    image: rustfs/rustfs:${VERSION_RUSTFS:-1.0.0-beta.7}
     # <<: *basic
     deploy:
       # <<: *basic-deploy
@@ -195,7 +195,7 @@ services:
   ##############################################################################
   postgresql:
     # https://hub.docker.com/_/postgres
-    image: postgres:${VERSION_POSTGRESQL:-18.3-alpine}
+    image: postgres:${VERSION_POSTGRESQL:-18.4-alpine}
     # <<: *basic
     deploy:
       # <<: *basic-deploy
@@ -244,7 +244,7 @@ services:
   ##############################################################################
   mariadb:
     # https://hub.docker.com/_/mariadb
-    image: mariadb:${VERSION_MARIADB:-12.0.2}
+    image: mariadb:${VERSION_MARIADB:-12.3.2}
     # <<: *basic
     deploy:
       # <<: *basic-deploy
@@ -297,7 +297,7 @@ services:
   ##############################################################################
   adminer:
     # https://hub.docker.com/_/adminer
-    image: adminer:${VERSION_ADMINER:-4.8.1-standalone}
+    image: adminer:${VERSION_ADMINER:-5.4.2-standalone}
     # <<: *basic
     deploy:
       # <<: *basic-deploy
@@ -331,7 +331,7 @@ services:
   ##############################################################################
   phpmyadmin:
     # https://hub.docker.com/_/phpmyadmin
-    image: phpmyadmin:${VERSION_PHPMYADMIN:-5.2.0-apache}
+    image: phpmyadmin:${VERSION_PHPMYADMIN:-5.2.3-apache}
     # <<: *basic
     deploy:
       # <<: *basic-deploy
@@ -362,9 +362,9 @@ services:
   ##############################################################################
   ##############################################################################
   ##############################################################################
-  influxdb:
+  influxdb2:
     # https://hub.docker.com/_/influxdb
-    image: influxdb:${VERSION_INFLUXDB:-2.7.11-alpine}
+    image: influxdb:${VERSION_INFLUXDB:-2.9.1-alpine}
     # <<: *basic
     deploy:
       # <<: *basic-deploy
@@ -407,6 +407,69 @@ services:
   ##############################################################################
   ##############################################################################
   ##############################################################################
+  influxdb3:
+    # https://hub.docker.com/_/influxdb
+    image: influxdb:${VERSION_INFLUXDB3:-3-core}
+    # <<: *basic
+    deploy:
+      # <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_INFLUXDB3:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_INFLUXDB3:-512m}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_INFLUXDB3:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_INFLUXDB3:-32m}
+    # ports:
+    #   - target: ${PORT_INFLUXDB3:-8181}
+    #     published: ${PORT_INFLUXDB3_PUBLISH:-8181}
+    #     protocol: tcp
+    #     # host_ip: 127.0.0.1
+    #     mode: host
+    volumes:
+      # - /etc/timezone:/etc/timezone:ro
+      # - /etc/localtime:/etc/localtime:ro
+      - influxdb3-data:/var/lib/influxdb3/data
+      - influxdb3-plugins:/var/lib/influxdb3/plugins
+    command:
+      - influxdb3
+      - serve
+      - --node-id=node0
+      - --object-store=file
+      - --data-dir=/var/lib/influxdb3/data
+      - --plugin-dir=/var/lib/influxdb3/plugins
+    # networks:
+    #   default: {}
+
+  influxdb3-explorer:
+    # https://hub.docker.com/r/influxdata/influxdb3-ui/tags
+    # TOKEN: docker exec -it "TODO" influxdb3 create token --admin
+    image: influxdata/influxdb3-ui:${VERSION_INFLUXDB3_EXPLORER:-1.8.0}
+    # <<: *basic
+    deploy:
+      # <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_INFLUXDB3_EXPLORER:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_INFLUXDB3_EXPLORER:-512m}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_INFLUXDB3_EXPLORER:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_INFLUXDB3_EXPLORER:-32m}
+    # ports:
+    #   - target: ${PORT_INFLUXDB3_EXPLORER:-8080}
+    #     published: ${PORT_INFLUXDB3_EXPLORER_PUBLISH:-8080}
+    #     protocol: tcp
+    #     # host_ip: 127.0.0.1
+    #     mode: host
+    # volumes:
+    #   - /etc/timezone:/etc/timezone:ro
+    #   - /etc/localtime:/etc/localtime:ro
+    # networks:
+    #   default: {}
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
   # ```sh
   # $docker exec -it "$(docker ps -q -f name=mongodb_mongodb)" mongosh --port 27017 --authenticationDatabase "admin" -u "root" -p
   # ```
@@ -423,8 +486,8 @@ services:
   # ```
   ##############################################################################
   mongodb:
-    # https://hub.docker.com/_/mongo
-    image: mongo:${VERSION_MONGODB:-8.2.1}
+    # https://hub.docker.com/_/mongo/tags
+    image: mongo:${VERSION_MONGODB:-8.3.2}
     # <<: *basic
     deploy:
       # <<: *basic-deploy
@@ -506,7 +569,7 @@ services:
   ##############################################################################
   rabbitmq:
     # https://hub.docker.com/_/rabbitmq
-    image: rabbitmq:${VERSION_RABBITMQ:-4}
+    image: rabbitmq:${VERSION_RABBITMQ:-4.3.1}
     # <<: *basic
     deploy:
       # <<: *basic-deploy
@@ -543,6 +606,8 @@ volumes:
   mariadb: {}
   influxdb-storage: {}
   influxdb-config: {}
+  influxdb3-data: {}
+  influxdb3-plugins: {}
   mongodb: {}
 
 secrets:

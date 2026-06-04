@@ -92,6 +92,7 @@ x-basic: &basic
   #   # - label=disable
   # pids_limit: 200
   # read_only: ${CONTAINER_READONLY:-false}
+  pull_policy: missing # always | never | missing | build | daily | weekly | every_<duration>
   ulimits:
     memlock:
       soft: -1
@@ -108,7 +109,7 @@ x-basic: &basic
     proxy: {}
   # network_mode: host
   # extra_hosts:
-  #   - host.docker.internal:host-gateway
+  #   - host.docker.internal:host-gateway  # Enables host.docker.internal on Linux
   healthcheck:
     disable: true
   tmpfs:
