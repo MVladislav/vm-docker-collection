@@ -46,7 +46,7 @@ services:
   ##############################################################################
   pangolin:
     # https://hub.docker.com/r/fosrl/pangolin/tags
-    image: fosrl/pangolin:${VERSION_PANGOLIN:-${PANGOLIN_EE:-}1.18.4}
+    image: fosrl/pangolin:${VERSION_PANGOLIN:-${PANGOLIN_EE:-}1.19.1}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -100,7 +100,7 @@ services:
       FLAGS_DISABLE_BASIC_WIREGUARD_SITES: ${FLAGS_DISABLE_BASIC_WIREGUARD_SITES:-false}
       FLAGS_DISABLE_CONFIG_MANAGED_DOMAINS: ${FLAGS_DISABLE_CONFIG_MANAGED_DOMAINS:-false}
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3001/api/v1/"]
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:3001/api/v1/"]
       start_period: 10s
       interval: 30s
       timeout: 5s
@@ -113,7 +113,7 @@ services:
   ##############################################################################
   gerbil:
     # https://hub.docker.com/r/fosrl/gerbil/tags
-    image: fosrl/gerbil:${VERSION_GERBIL:-1.4.0}
+    image: fosrl/gerbil:${VERSION_GERBIL:-1.4.1}
     depends_on:
       pangolin:
         condition: service_healthy
@@ -158,6 +158,8 @@ services:
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
+      # - /lib/modules:/lib/modules:ro
+      # - /dev/net/tun:/dev/net/tun
       - pangolin_data:/var/config
     command:
       - --reachableAt=http://gerbil:3003
@@ -171,7 +173,7 @@ services:
   ##############################################################################
   traefik:
     # https://hub.docker.com/_/traefik
-    image: traefik:${VERSION_TRAEFIK:-v3.7.1}
+    image: traefik:${VERSION_TRAEFIK:-v3.7.5}
     depends_on:
       pangolin:
         condition: service_healthy
@@ -241,6 +243,10 @@ services:
       # TRAEFIK_LOG_FILEPATH: /var/log/traefik/traefik.log
       TRAEFIK_LOG_LEVEL: INFO # TRACE, DEBUG, PANIC, FATAL, ERROR, WARN, INFO
       TRAEFIK_LOG_FORMAT: common
+      # TRAEFIK_LOG_maxSize: 100
+      # TRAEFIK_LOG_maxBackups: 3
+      # TRAEFIK_LOG_maxAge: 3
+      # TRAEFIK_LOG_COMPRESS: "true"
       # Access logs configuration
       TRAEFIK_ACCESSLOG: ${TRAEFIK_ACCESSLOG:-true}
       TRAEFIK_ACCESSLOG_FILEPATH: /var/log/traefik/access.log
@@ -263,10 +269,10 @@ services:
       TRAEFIK_PROVIDERS_HTTP: "true"
       TRAEFIK_PROVIDERS_HTTP_ENDPOINT: http://pangolin:3001/api/v1/traefik-config
       TRAEFIK_PROVIDERS_HTTP_POLLINTERVAL: 5s
-      TRAEFIK_PROVIDERS_DOCKER: ${TRAEFIK_PROVIDERS_DOCKER:-false}
-      TRAEFIK_PROVIDERS_DOCKER_ENDPOINT: unix:///var/run/docker.sock
-      TRAEFIK_PROVIDERS_DOCKER_EXPOSEDBYDEFAULT: "false"
-      TRAEFIK_PROVIDERS_DOCKER_WATCH: "true"
+      # TRAEFIK_PROVIDERS_DOCKER: ${TRAEFIK_PROVIDERS_DOCKER:-false}
+      # TRAEFIK_PROVIDERS_DOCKER_ENDPOINT: unix:///var/run/docker.sock
+      # TRAEFIK_PROVIDERS_DOCKER_EXPOSEDBYDEFAULT: ${TRAEFIK_PROVIDERS_DOCKER_EXPOSEDBYDEFAULT:-false}
+      # TRAEFIK_PROVIDERS_DOCKER_WATCH: ${TRAEFIK_PROVIDERS_DOCKER_WATCH:-false}
       TRAEFIK_PROVIDERS_FILE_FILENAME: /etc/traefik/dynamic_config.yml
       TRAEFIK_PROVIDERS_FILE_WATCH: "true"
       # TLS
@@ -284,7 +290,7 @@ services:
       # TRAEFIK_CERTIFICATESRESOLVERS_CERTIFICATES_ACME_EAB_HMACENCODED: ${CERTIFICATES_ACME_EAB_HMACENCODED}
       # PLUGINS
       TRAEFIK_EXPERIMENTAL_PLUGINS_BADGER_MODULENAME: github.com/fosrl/badger
-      TRAEFIK_EXPERIMENTAL_PLUGINS_BADGER_VERSION: ${VERSION_BADGER:-v1.4.0} # https://github.com/fosrl/badger
+      TRAEFIK_EXPERIMENTAL_PLUGINS_BADGER_VERSION: ${VERSION_BADGER:-v1.4.1} # https://github.com/fosrl/badger
       TRAEFIK_EXPERIMENTAL_PLUGINS_CROWDSEC_MODULENAME: github.com/maxlerebourg/crowdsec-bouncer-traefik-plugin
       TRAEFIK_EXPERIMENTAL_PLUGINS_CROWDSEC_VERSION: ${VERSION_CROWDSEC_PLUGIN:-v1.6.0} # https://plugins.traefik.io/plugins/6335346ca4caa9ddeffda116/crowdsec-bouncer-traefik-plugin
     healthcheck:
@@ -354,9 +360,8 @@ services:
       # GID: "1000"
       PARSERS: crowdsecurity/whitelists
     healthcheck:
-      test: ["CMD", "true"]
+      test: ["CMD", "cscli", "version"]
       # test: ["CMD", "cscli", "capi", "status"]
-      # test: ["CMD", "cscli", "version"]
       start_period: 30s
       interval: 30s
       retries: 3
@@ -395,6 +400,59 @@ services:
       GEOIPUPDATE_DB_DIR: ${GEOIPUPDATE_DB_DIR:-/app/geo}
     networks:
       proxy: {}
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  # sqlite:
+  #   image: alpine:latest
+  #   <<: *basic
+  #   deploy:
+  #     <<: *basic-deploy
+  #     resources:
+  #       limits:
+  #         cpus: ${RESOURCES_LIMITS_CPUS_SQLITE:-1}
+  #         memory: ${RESOURCES_LIMITS_MEMORY_SQLITE:-64m}
+  #       reservations:
+  #         cpus: ${RESOURCES_RESERVATIONS_CPUS_SQLITE:-0.001}
+  #         memory: ${RESOURCES_RESERVATIONS_MEMORY_SQLITE:-32m}
+  #   volumes:
+  #     - /etc/timezone:/etc/timezone:ro
+  #     - /etc/localtime:/etc/localtime:ro
+  #     - pangolin_data:/pangolin
+  #   networks:
+  #     proxy: {}
+  #   stdin_open: true
+  #   tty: true
+  #   entrypoint: sh
+  #   command: -c "apk add --no-cache sqlite && exec sh"
+
+  # crowdsec-dashboard:
+  #   # DEFAULT-USERNAME: crowdsec@crowdsec.net
+  #   # DEFAULT-PASSWORD: !!Cr0wdS3c_M3t4b4s3??
+  #   build: https://raw.githubusercontent.com/crowdsecurity/example-docker-compose/refs/heads/main/basic/crowdsec/dashboard/Dockerfile
+  #   image: crowdsec-dashboard:local-build
+  #   <<: *basic
+  #   deploy:
+  #     <<: *basic-deploy
+  #     resources:
+  #       limits:
+  #         cpus: ${RESOURCES_LIMITS_CPUS_CROWDSEC_DASHBOARD:-1}
+  #         memory: ${RESOURCES_LIMITS_MEMORY_CROWDSEC_DASHBOARD:-1g}
+  #       reservations:
+  #         cpus: ${RESOURCES_RESERVATIONS_CPUS_CROWDSEC_DASHBOARD:-0.001}
+  #         memory: ${RESOURCES_RESERVATIONS_MEMORY_CROWDSEC_DASHBOARD:-32m}
+  #   cap_add:
+  #     - SETUID
+  #     - SETGID
+  #     # - ALL
+  #   volumes:
+  #     - crowdsec_db:/metabase-data:ro
+  #   environment:
+  #     MB_DB_FILE: /data/metabase.db
+  #     MGID: "1000"
+  #   networks:
+  #     proxy: {}
 
 ################################################################################
 ################################################################################
