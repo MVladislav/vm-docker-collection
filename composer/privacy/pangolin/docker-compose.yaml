@@ -46,7 +46,7 @@ services:
   ##############################################################################
   pangolin:
     # https://hub.docker.com/r/fosrl/pangolin/tags
-    image: fosrl/pangolin:${VERSION_PANGOLIN:-${PANGOLIN_EE:-}1.19.1}
+    image: fosrl/pangolin:${VERSION_PANGOLIN:-${PANGOLIN_EE:-}1.19.2}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -113,7 +113,7 @@ services:
   ##############################################################################
   gerbil:
     # https://hub.docker.com/r/fosrl/gerbil/tags
-    image: fosrl/gerbil:${VERSION_GERBIL:-1.4.1}
+    image: fosrl/gerbil:${VERSION_GERBIL:-1.4.2}
     depends_on:
       pangolin:
         condition: service_healthy
