@@ -79,19 +79,28 @@ x-basic-deploy-labels-live: &basic-deploy-labels-live
     - traefik.http.services.plane-live.loadbalancer.server.scheme=http
     - traefik.http.services.plane-live.loadbalancer.server.port=3000
 
-x-basic-deploy-labels-minio: &basic-deploy-labels-minio
+x-basic-deploy-labels-rustfs: &basic-deploy-labels-rustfs
   labels:
     - traefik.enable=true
     - traefik.swarm.lbswarm=${LB_SWARM:-true}
     - traefik.swarm.network=proxy
-    - traefik.http.routers.plane-minio.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
-    - traefik.http.routers.plane-minio.rule=Host(`${DOMAIN?domain variable not set}`) && PathPrefix(`/${AWS_S3_BUCKET_NAME:-uploads}`)
-    - traefik.http.routers.plane-minio.tls=true
-    - traefik.http.routers.plane-minio.tls.certresolver=${CERT_RESOLVER:-}
-    - traefik.http.routers.plane-minio.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
-    - traefik.http.routers.plane-minio.service=plane-minio
-    - traefik.http.services.plane-minio.loadbalancer.server.scheme=http
-    - traefik.http.services.plane-minio.loadbalancer.server.port=9000
+    - traefik.http.routers.plane-rustfs.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.plane-rustfs.rule=Host(`${DOMAIN?domain variable not set}`) && PathPrefix(`/${AWS_S3_BUCKET_NAME:-uploads}`)
+    - traefik.http.routers.plane-rustfs.tls=true
+    - traefik.http.routers.plane-rustfs.tls.certresolver=${CERT_RESOLVER:-}
+    - traefik.http.routers.plane-rustfs.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.plane-rustfs.service=plane-rustfs
+    - traefik.http.services.plane-rustfs.loadbalancer.server.scheme=http
+    - traefik.http.services.plane-rustfs.loadbalancer.server.port=9000
+
+    # - traefik.http.routers.plane-rustfs-cls.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    # - traefik.http.routers.plane-rustfs-cls.rule=Host(`cli-${DOMAIN?domain variable not set}`)
+    # - traefik.http.routers.plane-rustfs-cls.tls=true
+    # - traefik.http.routers.plane-rustfs-cls.tls.certresolver=${CERT_RESOLVER:-}
+    # - traefik.http.routers.plane-rustfs-cls.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    # - traefik.http.routers.plane-rustfs-cls.service=plane-rustfs-cls
+    # - traefik.http.services.plane-rustfs-cls.loadbalancer.server.scheme=http
+    # - traefik.http.services.plane-rustfs-cls.loadbalancer.server.port=9090
 
 x-basic-deploy: &basic-deploy
   mode: replicated
@@ -144,7 +153,7 @@ x-pg-env: &pg-env
   POSTGRES_USER: ${POSTGRES_USER:-plane}
   POSTGRES_PASSWORD: ${POSTGRES_PASSWORD?Postgres password not set}
   POSTGRES_PORT: ${POSTGRES_PORT:-5432}
-  PGDATA: /var/lib/postgresql/data
+  PGDATA: /var/lib/postgresql/18/data
   PGHOST: plane-db
   PGDATABASE: ${POSTGRES_DB:-plane}
 
@@ -163,13 +172,37 @@ x-redis-env: &redis-env
 
 x-minio-env: &minio-env
   MINIO_ROOT_USER: ${AWS_ACCESS_KEY_ID:-access-key}
-  MINIO_ROOT_PASSWORD: ${AWS_SECRET_ACCESS_KEY?Minio root password not set}
+  MINIO_ROOT_PASSWORD: ${AWS_SECRET_ACCESS_KEY?rustfs root password not set}
+
+x-rustfs-env: &rustfs-env
+  RUSTFS_ACCESS_KEY: ${AWS_ACCESS_KEY_ID:-access-key}
+  RUSTFS_SECRET_KEY: ${AWS_SECRET_ACCESS_KEY?rustfs root password not set}
+
+x-rustfs-conf-env: &rustfs-conf-env
+  RUSTFS_VOLUMES: /data
+  # RUSTFS_VOLUMES: /data/rustfs{0..3}
+
+  RUSTFS_ADDRESS: 0.0.0.0:9000
+  RUSTFS_CONSOLE_ADDRESS: 0.0.0.0:9090
+
+  RUSTFS_CONSOLE_ENABLE: ${RUSTFS_CONSOLE_ENABLE:-true}
+  RUSTFS_CORS_ALLOWED_ORIGINS: ${RUSTFS_CORS_ALLOWED_ORIGINS:-*}
+  RUSTFS_CONSOLE_CORS_ALLOWED_ORIGINS: ${RUSTFS_CONSOLE_CORS_ALLOWED_ORIGINS:-*}
+  RUSTFS_OBS_LOGGER_LEVEL: ${RUSTFS_OBS_LOGGER_LEVEL:-info}
+
+  # Object Cache
+  RUSTFS_OBJECT_CACHE_ENABLE: ${RUSTFS_OBJECT_CACHE_ENABLE:-true}
+  RUSTFS_OBJECT_CACHE_TTL_SECS: ${RUSTFS_OBJECT_CACHE_TTL_SECS:-300}
+
+  # Keep strict disk topology checks enabled by default.
+  # For local testing only, set `RUSTFS_UNSAFE_BYPASS_DISK_CHECK=true` explicitly.
+  RUSTFS_UNSAFE_BYPASS_DISK_CHECK: ${RUSTFS_UNSAFE_BYPASS_DISK_CHECK:-true}
 
 x-aws-s3-env: &aws-s3-env
   AWS_REGION: ${AWS_REGION:-}
   AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-access-key}
-  AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY?Minio root password not set}
-  AWS_S3_ENDPOINT_URL: http://plane-minio:9000
+  AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY?rustfs root password not set}
+  AWS_S3_ENDPOINT_URL: http://plane-rustfs:9000
   AWS_S3_BUCKET_NAME: ${AWS_S3_BUCKET_NAME:-uploads}
 
 x-live-env: &live-env
@@ -210,7 +243,7 @@ services:
   ##############################################################################
   web:
     # https://hub.docker.com/r/makeplane/plane-frontend
-    image: makeplane/plane-frontend:${VERSION_PLANE:-v1.3.0}
+    image: makeplane/plane-frontend:${VERSION_PLANE:-v1.3.1}
     <<:
       - *basic
       # - *basic-deploy-labels-web
@@ -268,7 +301,16 @@ services:
           cpus: ${RESOURCES_RESERVATIONS_CPUS_PLANE_API:-0.001}
           memory: ${RESOURCES_RESERVATIONS_MEMORY_PLANE_API:-32m}
     environment:
-      <<: [*web-env, *app-env, *pg-env, *redis-env, *minio-env, *aws-s3-env]
+      <<:
+        [
+          *web-env,
+          *app-env,
+          *pg-env,
+          *redis-env,
+          *minio-env,
+          *rustfs-env,
+          *aws-s3-env,
+        ]
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
@@ -418,7 +460,7 @@ services:
           memory: ${RESOURCES_RESERVATIONS_MEMORY_PLANE_WORKER:-32m}
       replicas: ${WORKER_REPLICAS:-1}
     environment:
-      <<: [*app-env, *pg-env, *redis-env, *minio-env, *aws-s3-env]
+      <<: [*app-env, *pg-env, *redis-env, *minio-env, *rustfs-env, *aws-s3-env]
       GUNICORN_WORKERS: ${GUNICORN_WORKERS_WORKER:-1}
     volumes:
       - /etc/timezone:/etc/timezone:ro
@@ -441,7 +483,7 @@ services:
           cpus: ${RESOURCES_RESERVATIONS_CPUS_PLANE_BEAT:-0.001}
           memory: ${RESOURCES_RESERVATIONS_MEMORY_PLANE_BEAT:-32m}
     environment:
-      <<: [*app-env, *pg-env, *redis-env, *minio-env, *aws-s3-env]
+      <<: [*app-env, *pg-env, *redis-env, *minio-env, *rustfs-env, *aws-s3-env]
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
@@ -460,7 +502,7 @@ services:
       restart_policy:
         condition: on-failure
     environment:
-      <<: [*app-env, *pg-env, *redis-env, *minio-env, *aws-s3-env]
+      <<: [*app-env, *pg-env, *redis-env, *minio-env, *rustfs-env, *aws-s3-env]
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
@@ -472,7 +514,7 @@ services:
   ##############################################################################
   plane-db:
     # https://hub.docker.com/_/postgres
-    image: postgres:${VERSION_POSTGRESQL:-17.9-alpine}
+    image: postgres:${VERSION_POSTGRESQL:-18.4-alpine}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -487,7 +529,7 @@ services:
       - CHOWN
       - FOWNER
       - DAC_READ_SEARCH
-      # - DAC_OVERRIDE
+      - DAC_OVERRIDE
       - SETUID
       - SETGID
     environment:
@@ -495,17 +537,21 @@ services:
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-      - pgdata:/var/lib/postgresql/data
-    # healthcheck:
-    #   test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
-    #   start_period: 10s
-    #   interval: 30s
-    #   timeout: 5s
-    #   retries: 3
+      - postgresql_v18:/var/lib/postgresql/18/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -h 127.0.0.1 -d $${POSTGRES_DB} -U $${POSTGRES_USER}",
+        ]
+      start_period: 10s
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
   plane-mq:
     # https://hub.docker.com/_/rabbitmq
-    image: rabbitmq:${VERSION_RABBITMQ:-4.2.4-management-alpine}
+    image: rabbitmq:${VERSION_RABBITMQ:-4.3.1-management-alpine}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -528,7 +574,7 @@ services:
 
   plane-redis:
     # https://hub.docker.com/r/valkey/valkey
-    image: valkey/valkey:${VERSION_VALKEY:-9.0.3-alpine}
+    image: valkey/valkey:${VERSION_VALKEY:-9.1.0-alpine}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -556,35 +602,41 @@ services:
       timeout: 5s
       retries: 3
 
-  plane-minio:
-    # https://hub.docker.com/r/minio/minio/tags
-    image: minio/minio:${VERSION_MINIO:-RELEASE.2025-09-07T16-13-09Z-cpuv1}
+  plane-rustfs:
+    # https://hub.docker.com/r/rustfs/rustfs/tags
+    image: rustfs/rustfs:${VERSION_RUSTFS:-1.0.0-beta.8}
     <<:
       - *basic
-      # - *basic-deploy-labels-minio
+      # - *basic-deploy-labels-rustfs
     deploy:
       <<:
         - *basic-deploy
-        - *basic-deploy-labels-minio
+        - *basic-deploy-labels-rustfs
       resources:
         limits:
-          cpus: ${RESOURCES_LIMITS_CPUS_MINIO:-1}
-          memory: ${RESOURCES_LIMITS_MEMORY_MINIO:-1G}
+          cpus: ${RESOURCES_LIMITS_CPUS_RUSTFS:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_RUSTFS:-1g}
         reservations:
-          cpus: ${RESOURCES_RESERVATIONS_CPUS_MINIO:-0.001}
-          memory: ${RESOURCES_RESERVATIONS_MEMORY_MINIO:-32m}
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_RUSTFS:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_RUSTFS:-32m}
     environment:
-      <<: [*minio-env, *base-env]
+      <<: [*rustfs-env, *rustfs-conf-env, *base-env]
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-      - uploads:/export
-    command: server /export --console-address ":9090"
+      - uploads:/data
+      - rustfs_logs:/app/logs
     networks:
       default: {}
       proxy: {}
     healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
+      test:
+        [
+          "CMD",
+          "sh",
+          "-c",
+          "curl -f http://127.0.0.1:9000/health && curl -f http://127.0.0.1:9090/rustfs/console/health",
+        ]
       start_period: 10s
       interval: 30s
       timeout: 5s
@@ -603,11 +655,12 @@ networks:
     external: true
 
 volumes:
-  uploads: {}
+  api_logs: {}
+  worker_logs: {}
+  beat_worker_logs: {}
+  migrator_logs: {}
+  postgresql_v18: {}
   rabbitmq_data: {}
   valkey: {}
-  pgdata: {}
-  migrator_logs: {}
-  beat_worker_logs: {}
-  worker_logs: {}
-  api_logs: {}
+  uploads: {}
+  rustfs_logs: {}
