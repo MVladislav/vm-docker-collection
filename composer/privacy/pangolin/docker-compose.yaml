@@ -53,7 +53,7 @@ services:
       resources:
         limits:
           cpus: ${RESOURCES_LIMITS_CPUS_PANGOLIN:-2}
-          memory: ${RESOURCES_LIMITS_MEMORY_PANGOLIN:-1g}
+          memory: ${RESOURCES_LIMITS_MEMORY_PANGOLIN:-2g}
         reservations:
           cpus: ${RESOURCES_RESERVATIONS_CPUS_PANGOLIN:-0.001}
           memory: ${RESOURCES_RESERVATIONS_MEMORY_PANGOLIN:-32m}
@@ -77,6 +77,7 @@ services:
       - certificates:/certificates
     environment:
       # SECRETS
+      # `pangctl rotate-server-secret`
       SERVER_SECRET: ${SERVER_SECRET?SERVER_SECRET is not set}
       EMAIL_SMTP_PASS: ${EMAIL_SMTP_PASS}
       # APP
@@ -99,6 +100,8 @@ services:
       FLAGS_DISABLE_LOCAL_SITES: ${FLAGS_DISABLE_LOCAL_SITES:-false}
       FLAGS_DISABLE_BASIC_WIREGUARD_SITES: ${FLAGS_DISABLE_BASIC_WIREGUARD_SITES:-false}
       FLAGS_DISABLE_CONFIG_MANAGED_DOMAINS: ${FLAGS_DISABLE_CONFIG_MANAGED_DOMAINS:-false}
+      # DATABASE
+      ENABLE_SQLITE_WAL_MODE: ${ENABLE_SQLITE_WAL_MODE:-true}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://127.0.0.1:3001/api/v1/"]
       start_period: 10s
@@ -162,7 +165,7 @@ services:
       # - /dev/net/tun:/dev/net/tun
       - pangolin_data:/var/config
     command:
-      - --reachableAt=http://gerbil:3003
+      - --reachableAt=http://gerbil:3004
       - --generateAndSaveKeyTo=/var/config/key
       - --remoteConfig=http://pangolin:3001/api/v1/
     networks:

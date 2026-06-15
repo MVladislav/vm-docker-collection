@@ -95,7 +95,7 @@ RESOURCES_LIMITS_CPUS_GERBIL=2
 RESOURCES_LIMITS_MEMORY_GERBIL=512m
 
 RESOURCES_LIMITS_CPUS_PANGOLIN=2
-RESOURCES_LIMITS_MEMORY_PANGOLIN=1g
+RESOURCES_LIMITS_MEMORY_PANGOLIN=2g
 
 RESOURCES_LIMITS_CPUS_TRAEFIK=1
 RESOURCES_LIMITS_MEMORY_TRAEFIK=512m
@@ -199,17 +199,32 @@ curl -fsSL https://static.pangolin.net/get-newt.sh | bash -s -- --path "$HOME/.l
 #### Systemd-Service
 
 ```sh
-tee ~/.config/systemd/user/newt.service >/dev/null <<EOF
+install -d -m 0750 "$HOME/.config/newt"
+ tee "$HOME/.config/newt/newt.env" > /dev/null << 'EOF'
+NEWT_ID=<TODO>
+NEWT_SECRET=<TODO>
+PANGOLIN_ENDPOINT=<TODO>
+EOF
+chmod 600 "$HOME/.config/newt/newt.env"
+```
+
+```sh
+tee "$HOME/.config/systemd/user/newt.service" >/dev/null <<EOF
 [Unit]
 Description=Newt
 After=network-online.target
 Wants=network-online.target
 
 [Service]
-ExecStart=/home/$USER/.local/bin/newt --id $NEWT_ID --secret $NEWT_SECRET --endpoint $ENDPOINT -log-level WARN
+Type=simple
+EnvironmentFile="$HOME/.config/newt/newt.env"
+ExecStart="$HOME/.local/bin/newt" -log-level WARN
 Restart=always
-RestartSec=5s
-StartLimitBurst=5
+RestartSec=5
+UMask=0077
+
+NoNewPrivileges=true
+PrivateTmp=true
 
 [Install]
 WantedBy=default.target
@@ -234,17 +249,37 @@ pangolin up
 #### Systemd-Service
 
 ```sh
-tee ~/.config/systemd/user/pangolin.service >/dev/null <<EOF
+install -d -m 0750 "$HOME/.config/pangolin"
+ tee "$HOME/.config/pangolin/cli.env" > /dev/null << 'EOF'
+CLIENT_ID=<TODO>
+CLIENT_SECRET=<TODO>
+PANGOLIN_ENDPOINT=<TODO>
+
+DNS=1.1.1.1
+UPSTREAM_DNS=1.1.1.1:53
+OVERRIDE_DNS=true
+TUNNEL_DNS=true
+EOF
+chmod 600 "$HOME/.config/pangolin/cli.env"
+```
+
+```sh
+tee "$HOME/.config/systemd/user/pangolin.service" >/dev/null <<EOF
 [Unit]
 Description=Pangolin CLI
 After=network-online.target
 Wants=network-online.target
 
 [Service]
-ExecStart=/home/$USER/.local/bin/pangolin up --id $CLIENT_ID --secret $CLIENT_SECRET --endpoint $ENDPOINT --attach
+Type=simple
+EnvironmentFile="$HOME/.config/pangolin/cli.env"
+ExecStart="$HOME/.local/bin/pangolin" up --attach
 Restart=always
-RestartSec=5s
-StartLimitBurst=5
+RestartSec=5
+UMask=0077
+
+NoNewPrivileges=true
+PrivateTmp=true
 
 [Install]
 WantedBy=default.target
