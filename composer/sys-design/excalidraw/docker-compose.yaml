@@ -107,6 +107,7 @@ services:
       dockerfile: ./Dockerfile
       args:
         <<: *basic-env
+        VERSION_NODE: 22.22.2
         VERSION_EXCALIDRAW: v0.18.1
     # https://github.com/excalidraw/excalidraw/releases
     image: excalidraw:${VERSION_EXCALIDRAW:-v0.18.1}
@@ -138,11 +139,11 @@ services:
   ##############################################################################
   excalidraw-room:
     build:
-      context: https://github.com/excalidraw/excalidraw-room.git#${VERSION_EXCALIDRAW_ROOM_GIT:-master}
+      context: https://github.com/excalidraw/excalidraw-room.git#${VERSION_EXCALIDRAW_ROOM:-master}
       dockerfile: ./Dockerfile
       args:
         NODE_ENV: ${NODE_ENV:-production}
-    image: excalidraw-room:${VERSION_EXCALIDRAW_ROOM:-v0.18.1}
+    image: excalidraw-room:${VERSION_EXCALIDRAW_ROOM:-master}
     <<:
       - *basic
       - *room-deploy-labels

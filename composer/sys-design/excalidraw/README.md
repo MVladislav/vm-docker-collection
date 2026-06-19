@@ -59,8 +59,9 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
+VERSION_NODE=22.22.2
 VERSION_EXCALIDRAW=v0.18.1
-VERSION_EXCALIDRAW_ROOM=v0.18.1
+VERSION_EXCALIDRAW_ROOM=master
 # VERSION_EXCALIDRAW_STORAGE=v2023.11.11
 # VERSION_VALKEY=8.1.0-alpine
 
