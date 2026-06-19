@@ -131,6 +131,12 @@ cat ./upgrade_backup.sql | docker exec -i "$(docker ps -q -f name=pg_upgrade_tem
 
 **Stop the temp postgres container, and start plane as normal.**
 
+### Upgrade Minio to Rustfs
+
+```sh
+sudo chown -R 10001:10001 /var/lib/docker/volumes/plane_uploads/_data
+```
+
 ---
 
 ## References
