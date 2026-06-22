@@ -130,21 +130,23 @@ services:
       - DAC_OVERRIDE
     secrets:
       - mariadb_user_password
+      - mariadb_root_password
     environment:
       TZ: ${TZ:-Europe/Berlin}
       MARIADB_DATABASE: ${MARIADB_DATABASE:-owncloud}
       MARIADB_USER: ${MARIADB_USER:-owncloud}
       MARIADB_PASSWORD_FILE: /run/secrets/mariadb_user_password
-      MARIADB_RANDOM_ROOT_PASSWORD: ${MARIADB_RANDOM_ROOT_PASSWORD:-true}
+      MARIADB_ROOT_PASSWORD_FILE: /run/secrets/mariadb_root_password
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - mariadb:/var/lib/mysql
     command:
       - --log-bin=mysql-bin
-      - --expire-logs-days=90
+      - --binlog-expire-logs-seconds=604800 # 7days | 7*24*60*60
       - --max-allowed-packet=128M
       - --innodb-log-file-size=64M
+      # - --skip-log-bin
     networks:
       default: {}
     healthcheck:
@@ -177,7 +179,7 @@ services:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - valkey:/data
-    command: --save 300 1 --loglevel warning
+    command: --port 6379 --save 300 1 --loglevel warning
     healthcheck:
       test: ["CMD-SHELL", "valkey-cli ping | grep PONG"]
       start_period: 10s
@@ -205,3 +207,5 @@ volumes:
 secrets:
   mariadb_user_password:
     file: config/secrets/mariadb_user_password.txt
+  mariadb_root_password:
+    file: config/secrets/mariadb_root_password.txt
