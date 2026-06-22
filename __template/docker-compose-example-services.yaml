@@ -219,6 +219,7 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-postgresql}
       POSTGRES_USER: ${POSTGRES_USER:-postgresql}
       POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password_file
+      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
       PGDATA: /var/lib/postgresql/18/data
       # POSTGRES_INITDB_ARGS: --data-checksums
       # POSTGRES_HOST_AUTH_METHOD: trust
@@ -233,7 +234,11 @@ services:
     # networks:
     #   default: {}
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -h 127.0.0.1 -d $${POSTGRES_DB} -U $${POSTGRES_USER}",
+        ]
       start_period: 10s
       interval: 30s
       timeout: 5s
@@ -275,13 +280,17 @@ services:
       MARIADB_PASSWORD_FILE: /run/secrets/mariadb_user_password
       MARIADB_ROOT_PASSWORD_FILE: /run/secrets/mariadb_root_password
       # MARIADB_RANDOM_ROOT_PASSWORD: ${MARIADB_RANDOM_ROOT_PASSWORD:-true}
+      # MARIADB_LOG_BIN: ${MARIADB_LOG_BIN:-0}
     volumes:
       # - /etc/timezone:/etc/timezone:ro
       # - /etc/localtime:/etc/localtime:ro
       - mariadb:/var/lib/mysql
     command:
       - --log-bin=mysql-bin
-      - --expire-logs-days=90
+      - --binlog-expire-logs-seconds=604800 # 7days | 7*24*60*60
+      - --max-allowed-packet=128M
+      - --innodb-log-file-size=64M
+      # - --skip-log-bin
     # networks:
     #   default: {}
     healthcheck:

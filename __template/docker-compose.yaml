@@ -113,8 +113,8 @@ x-basic: &basic
   healthcheck:
     disable: true
   tmpfs:
-    - /tmp:rw,nosuid,nodev,noexec,relatime,size=512m
-    # - /run
+    - /tmp:rw,relatime,size=512m,nodev,nosuid,noexec
+    # - /run:exec
     # - /run/lock
   sysctls:
     - net.ipv4.ip_forward=1
