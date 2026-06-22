@@ -1,28 +1,5 @@
 # SETUP
 
-```sh
-    MVladislav
-```
-
----
-
-- [SETUP](#setup)
-  - [basic](#basic)
-    - [create nfs storage](#create-nfs-storage)
-    - [setup proxy (caddy)](#setup-proxy-caddy)
-    - [create `.env` file following:](#create-env-file-following)
-      - [example short .env](#example-short-env)
-  - [Manual run after install](#manual-run-after-install)
-    - [set default phone region](#set-default-phone-region)
-  - [Helpers](#helpers)
-    - [Bruteforce protection - unblock ip](#bruteforce-protection---unblock-ip)
-    - [On migration](#on-migration)
-    - [Troubleshooting file encoding on external storages](#troubleshooting-file-encoding-on-external-storages)
-  - [TODO](#todo)
-  - [References](#references)
-
----
-
 ## basic
 
 > defined to work with traefik
@@ -34,9 +11,9 @@ on your NAS system, or what you prefer, create an NFS storage path.
 in that created path create two folder as:
 
 ```sh
-$mkdir {master,data}
-$chown 33:0 {master,data}
-$chmod -R 750 {master,data}
+mkdir {master,data}
+chown 33:0 {master,data}
+chmod -R 750 {master,data}
 ```
 
 for the **data** path the, volume needs to be create manually:
@@ -48,7 +25,7 @@ for the **data** path the, volume needs to be create manually:
 > > `<NEXTCLOUD_NFS_PATH_DATA>`: path to NFS storage
 
 ```sh
-$docker volume create \
+docker volume create \
   --name nextcloud_aio_nextcloud_datadir \
   --driver local \
   --opt type=nfs \
@@ -63,7 +40,7 @@ copy the template `Caddyfile` file as:
 > in copied file change `<your-nc-domain>`:
 
 ```sh
-$cp config/Caddyfile_Template config/Caddyfile
+cp config/Caddyfile_Template config/Caddyfile
 ```
 
 add your certificate into `config/certs` as:
@@ -74,11 +51,11 @@ add your certificate into `config/certs` as:
 open port to access nextcloud over caddy:
 
 ```sh
-$sudo ufw allow 80/tcp
-$sudo ufw allow 443/tcp
+sudo ufw allow 80/tcp
+sudo ufw allow 443/tcp
 
-# $sudo ufw allow 3478/tcp
-# $sudo ufw allow 3478/udp
+# sudo ufw allow 3478/tcp
+# sudo ufw allow 3478/udp
 ```
 
 ### create `.env` file following:
@@ -119,7 +96,7 @@ NEXTCLOUD_NFS_PATH_MASTER=<NFS_PATH>
 > change "DE" with your country code
 
 ```sh
-$docker exec --user www-data nextcloud-aio-nextcloud php occ config:system:set default_phone_region --value="DE"
+docker exec --user www-data nextcloud-aio-nextcloud php occ config:system:set default_phone_region --value="DE"
 ```
 
 ## Helpers
@@ -127,7 +104,7 @@ $docker exec --user www-data nextcloud-aio-nextcloud php occ config:system:set d
 ### Bruteforce protection - unblock ip
 
 ```sh
-$docker exec --user www-data -it nextcloud-aio-nextcloud php occ security:bruteforce:reset <ip-address>
+docker exec --user www-data -it nextcloud-aio-nextcloud php occ security:bruteforce:reset <ip-address>
 ```
 
 ### On migration
@@ -135,13 +112,13 @@ $docker exec --user www-data -it nextcloud-aio-nextcloud php occ security:brutef
 > _mimetype migrations_
 
 ```sh
-$docker exec --user www-data -it nextcloud-aio-nextcloud php occ maintenance:repair --include-expensive
+docker exec --user www-data -it nextcloud-aio-nextcloud php occ maintenance:repair --include-expensive
 ```
 
 ### Troubleshooting file encoding on external storages
 
 ```sh
-$docker exec --user www-data -it nextcloud-aio-nextcloud php occ files:scan --all
+docker exec --user www-data -it nextcloud-aio-nextcloud php occ files:scan --all
 ```
 
 ---
@@ -149,8 +126,8 @@ $docker exec --user www-data -it nextcloud-aio-nextcloud php occ files:scan --al
 ## TODO
 
 ```sh
-$docker exec --user www-data -it nextcloud-aio-nextcloud php occ config:system:set trusted_domains 10 --value="<DOMAIN_NAME>"
-$docker exec --user www-data -it nextcloud-aio-nextcloud php occ maintenance:update:htaccess
+docker exec --user www-data -it nextcloud-aio-nextcloud php occ config:system:set trusted_domains 10 --value="<DOMAIN_NAME>"
+docker exec --user www-data -it nextcloud-aio-nextcloud php occ maintenance:update:htaccess
 ```
 
 ---

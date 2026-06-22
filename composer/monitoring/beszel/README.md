@@ -1,22 +1,5 @@
 # SETUP
 
-```sh
-    MVladislav
-```
-
----
-
-- [SETUP](#setup)
-  - [basic](#basic)
-    - [create `.env` file following:](#create-env-file-following)
-      - [example short .env (swarm)](#example-short-env-swarm)
-      - [example short .env (bridge)](#example-short-env-bridge)
-  - [FAQ](#faq)
-    - [Reset SuperUser password](#reset-superuser-password)
-  - [References](#references)
-
----
-
 ## basic
 
 > defined to work with traefik
@@ -78,8 +61,8 @@ DOMAIN=beszel.home.local
 
 ### Reset SuperUser password
 
-```
-$docker exec -it "$(docker ps -q -f name=^beszel_beszel\\.)" /beszel superuser upsert <MAIL> <PASSWORD>
+```sh
+docker exec -it "$(docker ps -q -f name=^beszel_beszel\\.)" /beszel superuser upsert <MAIL> <PASSWORD>
 ```
 
 ---

@@ -1,22 +1,5 @@
 # SETUP
 
-```sh
-    MVladislav
-```
-
----
-
-- [SETUP](#setup)
-  - [basic](#basic)
-    - [create your `secrets`:](#create-your-secrets)
-    - [create `.env` file following:](#create-env-file-following)
-      - [example short .env](#example-short-env)
-  - [FAQ](#faq)
-    - [Create additional `god-mode` admins](#create-additional-god-mode-admins)
-  - [References](#references)
-
----
-
 ## basic
 
 > defined to work with traefik
@@ -24,12 +7,12 @@
 ### create your `secrets`:
 
 ```sh
-$echo "SECRET_KEY=$(pwgen -s 32 1)" >> .env
-$echo "AWS_ACCESS_KEY_ID=$(pwgen -s 12 1)" >> .env
-$echo "AWS_SECRET_ACCESS_KEY=$(pwgen -s 32 1)" >> .env
-$echo "RABBITMQ_DEFAULT_PASS=$(pwgen -s 12 1)" >> .env
-$echo "POSTGRES_PASSWORD=$(pwgen -s 12 1)" >> .env
-$echo "LIVE_SERVER_SECRET_KEY=$(pwgen -s 32 1)" >> .env
+echo "SECRET_KEY=$(pwgen -s 32 1)" >> .env
+echo "AWS_ACCESS_KEY_ID=$(pwgen -s 12 1)" >> .env
+echo "AWS_SECRET_ACCESS_KEY=$(pwgen -s 32 1)" >> .env
+echo "RABBITMQ_DEFAULT_PASS=$(pwgen -s 12 1)" >> .env
+echo "POSTGRES_PASSWORD=$(pwgen -s 12 1)" >> .env
+echo "LIVE_SERVER_SECRET_KEY=$(pwgen -s 32 1)" >> .env
 ```
 
 ### create `.env` file following:

@@ -1,37 +1,15 @@
 # SETUP
 
-```sh
-    MVladislav
-```
-
----
-
-- [SETUP](#setup)
-  - [basic](#basic)
-    - [create your `secrets`:](#create-your-secrets)
-    - [traefik setup](#traefik-setup)
-    - [traefik_dynamic setup](#traefik_dynamic-setup)
-    - [config setup](#config-setup)
-    - [cert setup](#cert-setup)
-      - [example quick create](#example-quick-create)
-    - [optional - create your `secrets`:](#optional---create-your-secrets)
-    - [create `.env` file following:](#create-env-file-following)
-      - [example short .env](#example-short-env)
-  - [label setup](#label-setup)
-  - [References](#references)
-
----
-
 ## basic
 
 ### create your `secrets`:
 
 ```sh
-$echo $(htpasswd -nB traefik) > config/secrets/traefik_basicauth_secret.txt
+echo $(htpasswd -nB traefik) > config/secrets/traefik_basicauth_secret.txt
 
 # ACME-DNS-Challenge KEY :: better not echo instead open file an past
 # NOTE: if not used create a empty file, as secret file is needed for docker-compose
-$echo '<YOUR_API_TOKEN>' > config/secrets/dnschallenge_api_key_secret.txt
+echo '<YOUR_API_TOKEN>' > config/secrets/dnschallenge_api_key_secret.txt
 ```
 
 ### traefik setup
@@ -39,7 +17,7 @@ $echo '<YOUR_API_TOKEN>' > config/secrets/dnschallenge_api_key_secret.txt
 > copy and update the general traefik setup
 
 ```sh
-$cp ./config/traefik_template.yml ./config/traefik.yml
+cp ./config/traefik_template.yml ./config/traefik.yml
 ```
 
 - In most cases no changes are necessary, when setup with swarm
@@ -51,7 +29,7 @@ $cp ./config/traefik_template.yml ./config/traefik.yml
 > copy and update the traefik_dynamic setup
 
 ```sh
-$cp ./config/traefik_dynamic_template.yml ./config/traefik_dynamic.yml
+cp ./config/traefik_dynamic_template.yml ./config/traefik_dynamic.yml
 ```
 
 - In most cases no changes are necessary
@@ -61,7 +39,7 @@ $cp ./config/traefik_dynamic_template.yml ./config/traefik_dynamic.yml
 > instead or on side to labels you can also define a config.yml
 
 ```sh
-$cp ./config/config_template.yml ./config/config.yml
+cp ./config/config_template.yml ./config/config.yml
 ```
 
 - In most cases no changes are necessary
@@ -80,14 +58,14 @@ create following files inside `config/ssl`:
 #### example quick create
 
 ```sh
-$openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:P-521 -quiet -out config/ssl/ca-key.pem
-$openssl req -new -x509 -key config/ssl/ca-key.pem -out config/ssl/ca.pem -subj "/CN=*.test.local"
+openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:P-521 -quiet -out config/ssl/ca-key.pem
+openssl req -new -x509 -key config/ssl/ca-key.pem -out config/ssl/ca.pem -subj "/CN=*.test.local"
 
-$openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:P-521 -quiet -out config/ssl/cert-key.pem
-$openssl req -new -key config/ssl/cert-key.pem -out config/ssl/cert.csr -subj "/CN=*.test.local" -addext "subjectAltName=DNS:*.test.local"
+openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:P-521 -quiet -out config/ssl/cert-key.pem
+openssl req -new -key config/ssl/cert-key.pem -out config/ssl/cert.csr -subj "/CN=*.test.local" -addext "subjectAltName=DNS:*.test.local"
 
-$openssl x509 -req -in config/ssl/cert.csr -CA config/ssl/ca.pem -CAkey config/ssl/ca-key.pem -CAcreateserial -out config/ssl/cert.pem -days 365 -extfile <(printf "subjectAltName=DNS:*.test.local")
-$rm config/ssl/cert.csr config/ssl/ca.srl
+openssl x509 -req -in config/ssl/cert.csr -CA config/ssl/ca.pem -CAkey config/ssl/ca-key.pem -CAcreateserial -out config/ssl/cert.pem -days 365 -extfile <(printf "subjectAltName=DNS:*.test.local")
+rm config/ssl/cert.csr config/ssl/ca.srl
 ```
 
 ### optional - create your `secrets`:
