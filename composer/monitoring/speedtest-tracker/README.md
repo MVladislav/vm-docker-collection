@@ -36,7 +36,7 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION=1.14.3
+VERSION=1.14.4
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
@@ -79,7 +79,7 @@ DOMAIN=net.home.local
 ### Get a list of nearby servers
 
 ```sh
-$docker compose run --rm -it --entrypoint /bin/bash speedtest-tracker list-servers
+docker compose run --rm -it --entrypoint /bin/bash speedtest-tracker list-servers
 ```
 
 ---
