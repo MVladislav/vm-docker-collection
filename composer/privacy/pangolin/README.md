@@ -109,7 +109,7 @@ RESOURCES_LIMITS_MEMORY_GEOIPUPDATE=64m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_PANGOLIN=1.19.2
+VERSION_PANGOLIN=1.19.3
 VERSION_GERBIL=1.4.2
 VERSION_TRAEFIK=v3.7.5
 VERSION_BADGER=v1.4.1
@@ -118,8 +118,8 @@ VERSION_CROWDSEC=v1.7.8-debian
 VERSION_MAXMIND=v7.1.1
 
 VERSION_NEWT=1.13.0
-VERSION_CLI=0.10.1
-VERSION_OLM=1.6.0
+VERSION_CLI=0.10.2
+VERSION_OLM=1.6.1
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________

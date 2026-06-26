@@ -47,7 +47,7 @@ services:
   ##############################################################################
   olm:
     # https://hub.docker.com/r/fosrl/olm/tags
-    image: fosrl/olm:${VERSION_OLM:-1.6.0}
+    image: fosrl/olm:${VERSION_OLM:-1.6.1}
     <<: *basic
     deploy:
       <<: *basic-deploy

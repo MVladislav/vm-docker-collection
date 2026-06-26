@@ -46,7 +46,7 @@ services:
   ##############################################################################
   pangolin:
     # https://hub.docker.com/r/fosrl/pangolin/tags
-    image: fosrl/pangolin:${VERSION_PANGOLIN:-${PANGOLIN_EE:-}1.19.2}
+    image: fosrl/pangolin:${VERSION_PANGOLIN:-${PANGOLIN_EE:-}1.19.3}
     <<: *basic
     deploy:
       <<: *basic-deploy
