@@ -57,6 +57,7 @@ services:
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
+      # - /dev/net/tun:/dev/net/tun
       - /var/run/docker.sock:/var/run/docker.sock:ro
     environment:
       PANGOLIN_ENDPOINT: ${PANGOLIN_ENDPOINT?endpoint not set}
@@ -64,6 +65,7 @@ services:
       NEWT_SECRET: ${NEWT_SECRET?secret not set}
       DOCKER_SOCKET: /var/run/docker.sock
       DISABLE_CLIENTS: ${DISABLE_CLIENTS:-true}
+      USE_NATIVE_INTERFACE: ${USE_NATIVE_INTERFACE:-false}
     networks:
       default: {}
 

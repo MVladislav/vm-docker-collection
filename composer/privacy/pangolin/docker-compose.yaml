@@ -142,6 +142,10 @@ services:
         published: 21820
         protocol: udp
         mode: host
+      # - target: ${PROXY_PROTOCOL:-8443} # SNI proxy
+      #   published: 443
+      #   protocol: tcp
+      #   mode: host
       - target: 443 # Port for traefik because of the network_mode
         published: 443
         protocol: tcp
@@ -164,10 +168,28 @@ services:
       # - /lib/modules:/lib/modules:ro
       # - /dev/net/tun:/dev/net/tun
       - pangolin_data:/var/config
+    environment:
+      # REACHABLE_AT: http://gerbil:3004
+      # GENERATE_AND_SAVE_KEY_TO: /var/config/key
+      # REMOTE_CONFIG: http://pangolin:3001/api/v1/
+      # PROXY_PROTOCOL: ${PROXY_PROTOCOL:-8443}
+      # SNI_PORT: ${SNI_PORT:-false}
+      LOG_LEVEL: ${LOG_LEVEL:-WARN} # DEBUG | INFO | WARN | ERROR | FATAL
+      # MTU: ${MTU:-1280}
     command:
       - --reachableAt=http://gerbil:3004
       - --generateAndSaveKeyTo=/var/config/key
       - --remoteConfig=http://pangolin:3001/api/v1/
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget --no-verbose --tries=1 --spider --no-check-certificate http://127.0.0.1:3004/healthz || exit 1",
+        ]
+      start_period: 10s
+      interval: 30s
+      timeout: 5s
+      retries: 3
     networks:
       proxy: {}
 
@@ -401,6 +423,12 @@ services:
       GEOIPUPDATE_EDITION_IDS: ${GEOIPUPDATE_EDITION_IDS:-GeoLite2-Country GeoLite2-City GeoLite2-ASN}
       GEOIPUPDATE_FREQUENCY: ${GEOIPUPDATE_FREQUENCY:-72}
       GEOIPUPDATE_DB_DIR: ${GEOIPUPDATE_DB_DIR:-/app/geo}
+    healthcheck:
+      test: ["CMD", "/usr/bin/healthcheck.sh"]
+      start_period: 10s
+      interval: 30s
+      timeout: 5s
+      retries: 3
     networks:
       proxy: {}
 

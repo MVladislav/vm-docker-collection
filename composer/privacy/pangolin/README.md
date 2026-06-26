@@ -1,57 +1,19 @@
 # SETUP
 
-```sh
-    MVladislav
-```
-
----
-
-- [SETUP](#setup)
-  - [TODO](#todo)
-  - [basic](#basic)
-    - [create your `secrets`:](#create-your-secrets)
-    - [create config files:](#create-config-files)
-    - [create `.env` file following:](#create-env-file-following)
-      - [example short .env](#example-short-env)
-  - [NEWT setup](#newt-setup)
-    - [create `.env` file following:](#create-env-file-following-1)
-    - [copy/update `docker-compose-newt.override.yaml.tmpl`](#copyupdate-docker-compose-newtoverrideyamltmpl)
-  - [FAQ](#faq)
-    - [Crowdsec](#crowdsec)
-      - [Test block](#test-block)
-      - [Helpful information's](#helpful-informations)
-    - [NEWT as binary with user scope](#newt-as-binary-with-user-scope)
-      - [Systemd-Service](#systemd-service)
-    - [CLI as binary with user scope](#cli-as-binary-with-user-scope)
-      - [Systemd-Service](#systemd-service-1)
-    - [Enterprise-Edition](#enterprise-edition)
-  - [References](#references)
-
----
-
-## TODO
-
-```log
-time="2026-03-07T06:53:34+01:00" level=error msg="Error setting up tail for /var/log/auth.log: unable to read /var/log/auth.log : open /var/log/auth.log: permission denied" module=acquisition.file type=file
-time="2026-03-07T06:53:34+01:00" level=error msg="Error setting up tail for /var/log/syslog: unable to read /var/log/syslog : open /var/log/syslog: permission denied" module=acquisition.file type=file
-```
-
----
-
 ## basic
 
 ### create your `secrets`:
 
 ```sh
-$echo "$(htpasswd -nB traefik)" > config/secrets/traefik_basicauth_secret.txt
+echo "$(htpasswd -nB traefik)" > config/secrets/traefik_basicauth_secret.txt
 
-$echo '<YOUR_API_TOKEN>' > config/secrets/dnschallenge_api_key_secret.txt
+echo '<YOUR_API_TOKEN>' > config/secrets/dnschallenge_api_key_secret.txt
 # replace `IONOS_API_KEY_FILE` with your provider => https://go-acme.github.io/lego/dns/index.html
-$echo "IONOS_API_KEY_FILE=/run/secrets/dnschallenge_api_key_secret" >> .env # pragma: allowlist secret
-$echo "CERTIFICATES_ACME_DNSCHALLENGE_PROVIDER=ionos" >> .env
+echo "IONOS_API_KEY_FILE=/run/secrets/dnschallenge_api_key_secret" >> .env # pragma: allowlist secret
+echo "CERTIFICATES_ACME_DNSCHALLENGE_PROVIDER=ionos" >> .env
 
-$echo '<GEO_IP_ACCOUNT_ID>' > config/secrets/geoipupdate_account_id.txt
-$echo '<GEO_IP_LICENSE_KEY>' > config/secrets/geoipupdate_license_key.txt
+echo '<GEO_IP_ACCOUNT_ID>' > config/secrets/geoipupdate_account_id.txt
+echo '<GEO_IP_LICENSE_KEY>' > config/secrets/geoipupdate_license_key.txt
 ```
 
 ### create config files:
@@ -59,26 +21,26 @@ $echo '<GEO_IP_LICENSE_KEY>' > config/secrets/geoipupdate_license_key.txt
 > Replace min. `home.local`.
 
 ```sh
-$TMP_DOMAIN_BASE="home.local"
-$TMP_DOMAIN_DASHBOARD="proxy.${TMP_DOMAIN_BASE}"
-$TMP_DOMAIN_TRAEFIK="traefik.${TMP_DOMAIN_BASE}"
-$TMP_SMTP_HOST="smtp.ionos.de"
+TMP_DOMAIN_BASE="home.local"
+TMP_DOMAIN_DASHBOARD="proxy.${TMP_DOMAIN_BASE}"
+TMP_DOMAIN_TRAEFIK="traefik.${TMP_DOMAIN_BASE}"
+TMP_SMTP_HOST="smtp.ionos.de"
 
-$cp ./config/traefik/dynamic_config.yml.tmpl ./config/traefik/dynamic_config.yml
-$cp ./config/pangolin/config.yml.tmpl ./config/pangolin/config.yml
-$cp ./config/pangolin/privateConfig.yml.tmpl ./config/pangolin/privateConfig.yml
+cp ./config/traefik/dynamic_config.yml.tmpl ./config/traefik/dynamic_config.yml
+cp ./config/pangolin/config.yml.tmpl ./config/pangolin/config.yml
+cp ./config/pangolin/privateConfig.yml.tmpl ./config/pangolin/privateConfig.yml
 
-$sed "s|<REPLACE_TRAEFIK_DOMAIN>|${TMP_DOMAIN_TRAEFIK}|" -i  ./config/traefik/dynamic_config.yml
-$sed "s|<REPLACE_DASHBOARDURL_DOMAIN>|${TMP_DOMAIN_DASHBOARD}|" -i  ./config/traefik/dynamic_config.yml
+sed "s|<REPLACE_TRAEFIK_DOMAIN>|${TMP_DOMAIN_TRAEFIK}|" -i  ./config/traefik/dynamic_config.yml
+sed "s|<REPLACE_DASHBOARDURL_DOMAIN>|${TMP_DOMAIN_DASHBOARD}|" -i  ./config/traefik/dynamic_config.yml
 
-$sed "s|<REPLACE_DASHBOARDURL_DOMAIN>|${TMP_DOMAIN_DASHBOARD}|" -i  ./config/pangolin/config.yml
-$sed "s|<REPLACE_BASE_DOMAIN>|${TMP_DOMAIN_BASE}|" -i  ./config/pangolin/config.yml
-$sed "s|<REPLACE_SMTP_HOST>|${TMP_SMTP_HOST}|" -i  ./config/pangolin/config.yml
+sed "s|<REPLACE_DASHBOARDURL_DOMAIN>|${TMP_DOMAIN_DASHBOARD}|" -i  ./config/pangolin/config.yml
+sed "s|<REPLACE_BASE_DOMAIN>|${TMP_DOMAIN_BASE}|" -i  ./config/pangolin/config.yml
+sed "s|<REPLACE_SMTP_HOST>|${TMP_SMTP_HOST}|" -i  ./config/pangolin/config.yml
 
-$echo "BASEDOMAIN=${TMP_DOMAIN_BASE}" >> .env
-$echo "DASHBOARDURL=${TMP_DOMAIN_DASHBOARD}" >> .env
-$echo "CERTIFICATES_ACME_EMAIL=info@${TMP_DOMAIN_BASE}" >> .env
-$echo "SERVER_SECRET=$(pwgen -s 32 1)" >> .env
+echo "BASEDOMAIN=${TMP_DOMAIN_BASE}" >> .env
+echo "DASHBOARDURL=${TMP_DOMAIN_DASHBOARD}" >> .env
+echo "CERTIFICATES_ACME_EMAIL=info@${TMP_DOMAIN_BASE}" >> .env
+echo "SERVER_SECRET=$(pwgen -s 32 1)" >> .env
 ```
 
 ### create `.env` file following:
@@ -162,8 +124,8 @@ NEWT_SECRET=<Newt Secret Key>
 
 ### copy/update `docker-compose-newt.override.yaml.tmpl`
 
-```
-$cp docker-compose-newt.override.yaml.tmpl docker-compose-newt.override.yaml
+```sh
+cp docker-compose-newt.override.yaml.tmpl docker-compose-newt.override.yaml
 ```
 
 extend `networks` sections with your network names where `newt` should have access for and will tunnel over `pangolin`.
