@@ -67,7 +67,7 @@ services:
       HUB_URL: ${HUB_URL?HUB_URL for agent is not set}
     extends:
       file: docker-compose-agent.override.yaml
-      service: ${HWACCEL:-none} # hwaccel-amd | hwaccel-nvidia
+      service: ${HWACCEL:-none} # none|gpu-amd|gpu-nvidia|gpu-intel
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro

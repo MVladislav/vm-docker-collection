@@ -39,7 +39,8 @@ CERT_RESOLVER=certificates
 MFA_OTP=true # you need first setup SMTP inside PocketBase
 
 # Agent
-AGENT_TYPE= # -nvidia | -intel
+AGENT_TYPE=<-nvidia|-intel>
+HWACCEL=<none|gpu-amd|gpu-nvidia|gpu-intel>
 ```
 
 #### example short .env (swarm)

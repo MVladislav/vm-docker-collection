@@ -1,33 +1,54 @@
 ---
 services:
+  ##############################################################################
+  # Base: No hardware acceleration (default)
+  ##############################################################################
   none: {}
 
   ##############################################################################
+  # GPU: AMD (ROcm)
+  # Requires: /dev/kfd and /dev/dri on the host.
+  # Groups: 'video' is required for /dev/dri access.
   ##############################################################################
-  ##############################################################################
-  hwaccel-amd:
+  gpu-amd:
     devices:
-      - /dev/kfd # main compute interface
-      - /dev/dri # Direct Rendering Interface
-    # group_add:
-    #   - video
+      - /dev/kfd:/dev/kfd # AMD GPU compute (HSA)
+      - /dev/dri:/dev/dri # Direct Rendering Interface
+    group_add:
+      - video # Required for /dev/dri access
+      - render # Additional group for render nodes
     environment:
       ROCM_VISIBLE_DEVICES: ${ROCM_VISIBLE_DEVICES:-all}
 
   ##############################################################################
+  # GPU: NVIDIA
+  # Requires: NVIDIA Container Toolkit on the host.
+  # Capabilities: gpu, compute, video (adjust as needed).
   ##############################################################################
-  ##############################################################################
-  hwaccel-nvidia:
+  gpu-nvidia:
     deploy:
       resources:
         reservations:
           devices:
             - driver: nvidia
-              count: ${RESOURCES_RESERVATIONS_DEVICE0_COUNT:-1}
-              capabilities:
-                - gpu
-                - compute
-                - video
+              count: ${NVIDIA_COUNT:-1} # Number of GPUs to reserve
+              # device_ids: ['0']
+              capabilities: [gpu, compute, video]
     environment:
       NVIDIA_VISIBLE_DEVICES: ${NVIDIA_VISIBLE_DEVICES:-all}
       NVIDIA_DRIVER_CAPABILITIES: ${NVIDIA_DRIVER_CAPABILITIES:-compute,utility,video}
+
+  ##############################################################################
+  # GPU: Intel (oneAPI/i915)
+  # Requires: /dev/dri on the host.
+  # Groups: 'video' and 'render' are typically required.
+  ##############################################################################
+  gpu-intel:
+    devices:
+      - /dev/dri:/dev/dri # Intel GPU (i915)
+    group_add:
+      - video
+      - render
+    environment:
+      INTEL_VISIBLE_DEVICES: ${INTEL_VISIBLE_DEVICES:-all}
+      ONEAPI_DEVICE_SELECTOR: ${ONEAPI_DEVICE_SELECTOR:-gpu} # For oneAPI workloads
