@@ -1,26 +1,5 @@
 # SETUP
 
-```sh
-    MVladislav
-```
-
----
-
-- [SETUP](#setup)
-  - [basic](#basic)
-    - [create your `secrets`:](#create-your-secrets)
-    - [create `.env` file following:](#create-env-file-following)
-      - [example short .env (swarm)](#example-short-env-swarm)
-      - [example short .env (bridge)](#example-short-env-bridge)
-  - [Guides \& Insights](#guides--insights)
-    - [verify healthcheck](#verify-healthcheck)
-    - [access docker in swarm mode](#access-docker-in-swarm-mode)
-    - [some more useful commands](#some-more-useful-commands)
-    - [Postgresql Upgrade](#postgresql-upgrade)
-  - [References](#references)
-
----
-
 ## basic
 
 > defined to work with traefik
@@ -30,8 +9,10 @@
 > instead of openssl for password you can also use `pwgen -s 50 1`
 
 ```sh
-$openssl rand -base64 18 | docker secret create my_external_secret -
-$openssl rand -base64 18 > config/secrets/my_file_secret.txt
+openssl rand -base64 18 | docker secret create my_external_secret -
+openssl rand -base64 18 > config/secrets/my_file_secret.txt
+openssl rand -hex 18 | docker secret create my_external_secret -
+openssl rand -hex 18 > config/secrets/my_file_secret.txt
 ```
 
 ### create `.env` file following:
@@ -92,35 +73,35 @@ DOMAIN=<HOST>.home.local
 ### verify healthcheck
 
 ```sh
-$docker inspect --format "{{json .State.Health }}" <CONTAINER_NAME> | jq
+docker inspect --format "{{json .State.Health }}" <CONTAINER_NAME> | jq
 ```
 
 ### access docker in swarm mode
 
 ```sh
-$docker exec -it "$(docker ps -q -f name=^<SERVICE_NAME>\\.)" <COMMAND>
+docker exec -it "$(docker ps -q -f name=^<SERVICE_NAME>\\.)" <COMMAND>
 ```
 
 ### some more useful commands
 
 ```sh
 # all non-running containers (exited + created)
-$docker ps -a -f "status=exited" -f "status=created"
+docker ps -a -f "status=exited" -f "status=created"
 # only stopped/exited containers
-$docker ps -a -f "status=exited"
+docker ps -a -f "status=exited"
 # only never-started containers
-$docker ps -a -f "status=created"
+docker ps -a -f "status=created"
 
 # stop all containers
-$docker stop $(docker ps -a -q)
+docker stop $(docker ps -a -q)
 # remove all containers
-$docker rm $(docker ps -a -q)
+docker rm $(docker ps -a -q)
 # remove all stopped/exited containers
-$docker rm $(docker ps -a -q -f "status=exited")
+docker rm $(docker ps -a -q -f "status=exited")
 
 # for debugs and faster cleanups also
 # remove all containers
-$docker volume rm $(docker volume ls -qf dangling=true)
+docker volume rm $(docker volume ls -qf dangling=true)
 ```
 
 ### PostgreSQL Major Version Upgrade Guide
