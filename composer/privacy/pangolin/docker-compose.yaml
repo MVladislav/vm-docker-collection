@@ -35,6 +35,8 @@ x-basic: &basic
     as: -1
   healthcheck:
     disable: true
+  tmpfs:
+    - /tmp:rw,relatime,size=512m,nodev,nosuid,noexec
   restart: always
 
 ################################################################################
@@ -133,6 +135,7 @@ services:
     cap_add:
       - NET_ADMIN
       - SYS_MODULE
+      - SYS_RESOURCE
     ports:
       - target: 51820 # UDP port for WireGuard, used by Newt and WireGuard clients
         published: 51820
@@ -215,12 +218,12 @@ services:
           cpus: ${RESOURCES_RESERVATIONS_CPUS_TRAEFIK:-0.001}
           memory: ${RESOURCES_RESERVATIONS_MEMORY_TRAEFIK:-32m}
     configs:
-      - source: dynamic_config
+      - source: traefik_dynamic_config
         target: /etc/traefik/dynamic_config.yml
         mode: 0440
         uid: "0"
         gid: "0"
-      - source: ban_page
+      - source: traefik_ban_page
         target: /etc/traefik/ban.html
         mode: 0440
         uid: "0"
@@ -236,11 +239,12 @@ services:
       - traefik_logs:/var/log/traefik
     environment:
       # https://doc.traefik.io/traefik/reference/install-configuration/boot-environment/#environment-variables
+      # https://doc.traefik.io/traefik/v3.7/reference/install-configuration/configuration-options/
       # https://doc.traefik.io/traefik/v2.0/reference/static-configuration/env/
-      # Global configuration
+      # --- Global configuration ---
       TRAEFIK_GLOBAL_CHECKNEWVERSION: ${TRAEFIK_GLOBAL_CHECKNEWVERSION:-false}
       TRAEFIK_GLOBAL_SENDANONYMOUSUSAGE: ${TRAEFIK_GLOBAL_SENDANONYMOUSUSAGE:-false}
-      # EntryPoints configuration
+      # --- EntryPoints configuration ---
       TRAEFIK_ENTRYPOINTS_WEB: "true"
       TRAEFIK_ENTRYPOINTS_WEB_ADDRESS: ":80"
       TRAEFIK_ENTRYPOINTS_WEB_HTTP_REDIRECTIONS_ENTRYPOINT_TO: websecure
@@ -248,7 +252,11 @@ services:
       TRAEFIK_ENTRYPOINTS_WEB_HTTP_REDIRECTIONS_ENTRYPOINT_PERMANENT: "true"
       TRAEFIK_ENTRYPOINTS_WEBSECURE: "true"
       TRAEFIK_ENTRYPOINTS_WEBSECURE_ADDRESS: ":443"
-      TRAEFIK_ENTRYPOINTS_WEBSECURE_TRANSPORT_RESPONDINGTIMEOUTS_READTIMEOUT: 30m
+      # TRAEFIK_ENTRYPOINTS_WEBSECURE_ALLOWACMEBYPASS: ${TRAEFIK_ENTRYPOINTS_WEBSECURE_ALLOWACMEBYPASS:-true}
+      # # Disable timeouts for long-lived gRPC streams
+      TRAEFIK_ENTRYPOINTS_WEBSECURE_TRANSPORT_RESPONDINGTIMEOUTS_READTIMEOUT: 0 # 30m
+      TRAEFIK_ENTRYPOINTS_WEBSECURE_TRANSPORT_RESPONDINGTIMEOUTS_WRITETIMEOUT: 0
+      TRAEFIK_ENTRYPOINTS_WEBSECURE_TRANSPORT_RESPONDINGTIMEOUTS_IDLETIMEOUT: 0
       TRAEFIK_ENTRYPOINTS_WEBSECURE_HTTP3: ${TRAEFIK_ENTRYPOINTS_WEBSECURE_HTTP3:-true}
       TRAEFIK_ENTRYPOINTS_WEBSECURE_HTTP3_ADVERTISEDPORT: 443
       TRAEFIK_ENTRYPOINTS_WEBSECURE_HTTP_TLS_CERTRESOLVER: certificates
@@ -263,16 +271,16 @@ services:
       TRAEFIK_ENTRYPOINTS_TCP-4443: "true"
       TRAEFIK_ENTRYPOINTS_TCP-4443_ADDRESS: ":4443/tcp"
       TRAEFIK_ENTRYPOINTS_TCP-4443_TRANSPORT_RESPONDINGTIMEOUTS_READTIMEOUT: 30m
-      # Traefik logs configuration
+      # --- Traefik logs configuration ---
       TRAEFIK_LOG: ${TRAEFIK_LOG:-true}
       # TRAEFIK_LOG_FILEPATH: /var/log/traefik/traefik.log
       TRAEFIK_LOG_LEVEL: INFO # TRACE, DEBUG, PANIC, FATAL, ERROR, WARN, INFO
       TRAEFIK_LOG_FORMAT: common
-      # TRAEFIK_LOG_maxSize: 100
-      # TRAEFIK_LOG_maxBackups: 3
-      # TRAEFIK_LOG_maxAge: 3
+      # TRAEFIK_LOG_MAXSIZE: 100
+      # TRAEFIK_LOG_MAXBACKUPS: 3
+      # TRAEFIK_LOG_MAXAGE: 3
       # TRAEFIK_LOG_COMPRESS: "true"
-      # Access logs configuration
+      # --- Access logs configuration ---
       TRAEFIK_ACCESSLOG: ${TRAEFIK_ACCESSLOG:-true}
       TRAEFIK_ACCESSLOG_FILEPATH: /var/log/traefik/access.log
       TRAEFIK_ACCESSLOG_FORMAT: common
@@ -282,26 +290,32 @@ services:
       TRAEFIK_ACCESSLOG_FIELDS_HEADERS_NAMES_User-Agent: keep
       TRAEFIK_ACCESSLOG_FIELDS_HEADERS_NAMES_Authorization: drop
       TRAEFIK_ACCESSLOG_FIELDS_HEADERS_NAMES_Content-Type: keep
-      # API and dashboard configuration
+      # --- API and dashboard configuration ---
       TRAEFIK_API: ${TRAEFIK_API:-true}
       TRAEFIK_API_DASHBOARD: ${TRAEFIK_API_DASHBOARD:-false}
       TRAEFIK_API_INSECURE: "false"
       TRAEFIK_API_DEBUG: ${TRAEFIK_API_DEBUG:-false}
-      # Ping configuration
+      # --- Ping configuration ---
       TRAEFIK_PING: "true"
       # TRAEFIK_PING_ENTRYPOINT: "web"
-      # Docker configuration backend
+      # --- Docker provider ---
+      TRAEFIK_PROVIDERS_FILE_FILENAME: /etc/traefik/dynamic_config.yml
+      TRAEFIK_PROVIDERS_FILE_WATCH: "true"
       TRAEFIK_PROVIDERS_HTTP: "true"
       TRAEFIK_PROVIDERS_HTTP_ENDPOINT: http://pangolin:3001/api/v1/traefik-config
       TRAEFIK_PROVIDERS_HTTP_POLLINTERVAL: 5s
+      TRAEFIK_PROVIDERS_DOCKER: false
       # TRAEFIK_PROVIDERS_DOCKER: ${TRAEFIK_PROVIDERS_DOCKER:-false}
       # TRAEFIK_PROVIDERS_DOCKER_ENDPOINT: unix:///var/run/docker.sock
       # TRAEFIK_PROVIDERS_DOCKER_EXPOSEDBYDEFAULT: ${TRAEFIK_PROVIDERS_DOCKER_EXPOSEDBYDEFAULT:-false}
       # TRAEFIK_PROVIDERS_DOCKER_WATCH: ${TRAEFIK_PROVIDERS_DOCKER_WATCH:-false}
-      TRAEFIK_PROVIDERS_FILE_FILENAME: /etc/traefik/dynamic_config.yml
-      TRAEFIK_PROVIDERS_FILE_WATCH: "true"
-      # TLS
+      # TRAEFIK_PROVIDERS_DOCKER_NETWORK: ${TRAEFIK_PROVIDERS_DOCKER_NETWORK:-proxy}
+      TRAEFIK_PROVIDERS_SWARM: false
+      # --- gRPC transport settings ---
       TRAEFIK_SERVERSTRANSPORT_INSECURESKIPVERIFY: "true"
+      TRAEFIK_SERVERSTRANSPORT_FORWARDINGTIMEOUTS_RESPONSEHEADERTIMEOUT: 0s
+      TRAEFIK_SERVERSTRANSPORT_FORWARDINGTIMEOUTS_IDLECONNTIMEOUT: 0s
+      # --- TLS ---
       TRAEFIK_CERTIFICATESRESOLVERS_CERTIFICATES: "true"
       TRAEFIK_CERTIFICATESRESOLVERS_CERTIFICATES_ACME_EMAIL: ${CERTIFICATES_ACME_EMAIL?ACME Mail not set}
       TRAEFIK_CERTIFICATESRESOLVERS_CERTIFICATES_ACME_STORAGE: /certificates/acme.json
@@ -313,7 +327,7 @@ services:
       TRAEFIK_CERTIFICATESRESOLVERS_CERTIFICATES_ACME_DNSCHALLENGE_RESOLVERS: ${CERTIFICATES_ACME_DNSCHALLENGE_RESOLVERS:-9.9.9.9,194.242.2.2,1.1.1.1}
       # TRAEFIK_CERTIFICATESRESOLVERS_CERTIFICATES_ACME_EAB_KID: ${CERTIFICATES_ACME_EAB_KID}
       # TRAEFIK_CERTIFICATESRESOLVERS_CERTIFICATES_ACME_EAB_HMACENCODED: ${CERTIFICATES_ACME_EAB_HMACENCODED}
-      # PLUGINS
+      # --- PLUGINS ---
       TRAEFIK_EXPERIMENTAL_PLUGINS_BADGER_MODULENAME: github.com/fosrl/badger
       TRAEFIK_EXPERIMENTAL_PLUGINS_BADGER_VERSION: ${VERSION_BADGER:-v1.4.1} # https://github.com/fosrl/badger
       TRAEFIK_EXPERIMENTAL_PLUGINS_CROWDSEC_MODULENAME: github.com/maxlerebourg/crowdsec-bouncer-traefik-plugin
@@ -342,32 +356,42 @@ services:
         reservations:
           cpus: ${RESOURCES_RESERVATIONS_CPUS_CROWDSEC:-0.001}
           memory: ${RESOURCES_RESERVATIONS_MEMORY_CROWDSEC:-32m}
+    # labels:
+    #   - traefik.enable=false
     configs:
-      - source: acquis_config
+      - source: crowdsec_acquis_config
         target: /etc/crowdsec/acquis.yaml
         mode: 0440
         uid: "0"
         gid: "0"
-      - source: appsec_config
+      - source: crowdsec_appsec_config
         target: /etc/crowdsec/acquis.d/appsec.yaml
         mode: 0440
         uid: "0"
         gid: "0"
-      - source: traefik_config
+      - source: crowdsec_traefik_config
         target: /etc/crowdsec/acquis.d/traefik.yaml
         mode: 0440
         uid: "0"
         gid: "0"
-      - source: syslog_config
+      - source: crowdsec_syslog_config
         target: /etc/crowdsec/acquis.d/syslog.yaml
         mode: 0440
         uid: "0"
         gid: "0"
-      - source: journalctl_config
+      - source: crowdsec_journalctl_config
         target: /etc/crowdsec/acquis.d/journalctl.yaml
         mode: 0440
         uid: "0"
         gid: "0"
+    environment:
+      BOUNCER_KEY_traefik: ${BOUNCER_KEY_traefik:-PANGOLINLAPI1234}
+      CUSTOM_HOSTNAME: crowdsec
+      COLLECTIONS: crowdsecurity/traefik crowdsecurity/appsec-virtual-patching crowdsecurity/appsec-generic-rules crowdsecurity/linux crowdsecurity/iptables
+      ENROLL_INSTANCE_NAME: pangolin-crowdsec
+      ENROLL_TAGS: docker
+      # GID: "1000"
+      PARSERS: crowdsecurity/whitelists
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
@@ -376,17 +400,10 @@ services:
       # Syslog
       - traefik_logs:/var/log-traefik:ro
       - /var/log:/var/log:ro
-    environment:
-      CUSTOM_HOSTNAME: crowdsec
-      BOUNCER_KEY_traefik: PANGOLINLAPI1234
-      COLLECTIONS: crowdsecurity/traefik crowdsecurity/appsec-virtual-patching crowdsecurity/appsec-generic-rules crowdsecurity/linux crowdsecurity/iptables
-      ENROLL_INSTANCE_NAME: pangolin-crowdsec
-      ENROLL_TAGS: docker
-      # GID: "1000"
-      PARSERS: crowdsecurity/whitelists
     healthcheck:
-      test: ["CMD", "cscli", "version"]
-      # test: ["CMD", "cscli", "capi", "status"]
+      test: [CMD, cscli, version]
+      # test: [CMD, cscli, capi, status]
+      # test: [CMD, cscli, lapi, status]
       start_period: 30s
       interval: 30s
       retries: 3
@@ -511,19 +528,19 @@ configs:
     file: ${FILE_PATH:-$PWD}/config/pangolin/config.yml
   pangolin_private_config:
     file: ${FILE_PATH:-$PWD}/config/pangolin/privateConfig.yml
-  dynamic_config:
+  traefik_dynamic_config:
     file: ${FILE_PATH:-$PWD}/config/traefik/dynamic_config.yml
-  ban_page:
+  traefik_ban_page:
     file: ${FILE_PATH:-$PWD}/config/traefik/ban.html
-  acquis_config:
+  crowdsec_acquis_config:
     file: ${FILE_PATH:-$PWD}/config/crowdsec/acquis.yaml
-  appsec_config:
+  crowdsec_appsec_config:
     file: ${FILE_PATH:-$PWD}/config/crowdsec/appsec.yaml
-  traefik_config:
+  crowdsec_traefik_config:
     file: ${FILE_PATH:-$PWD}/config/crowdsec/traefik.yaml
-  syslog_config:
+  crowdsec_syslog_config:
     file: ${FILE_PATH:-$PWD}/config/crowdsec/syslog.yaml
-  journalctl_config:
+  crowdsec_journalctl_config:
     file: ${FILE_PATH:-$PWD}/config/crowdsec/journalctl.yaml
 
 secrets:

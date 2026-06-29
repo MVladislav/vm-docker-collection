@@ -37,6 +37,9 @@ x-basic: &basic
   healthcheck:
     disable: true
   restart: always
+  sysctls:
+    - net.ipv6.conf.all.disable_ipv6=0
+    - net.ipv6.conf.all.forwarding=1
 
 ################################################################################
 ################################################################################
@@ -51,13 +54,15 @@ services:
     <<: *basic
     deploy:
       <<: *basic-deploy
-    # cap_add:
-    #   - NET_ADMIN
-    #   - SYS_MODULE
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+      - SYS_RESOURCE
+      # - SYS_MODULE
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-      # - /dev/net/tun:/dev/net/tun
+      - /dev/net/tun:/dev/net/tun
       - /var/run/docker.sock:/var/run/docker.sock:ro
     environment:
       PANGOLIN_ENDPOINT: ${PANGOLIN_ENDPOINT?endpoint not set}
