@@ -148,6 +148,13 @@ x-basic: &basic
 x-base-env: &base-env
   TZ: "Europe/Berlin"
 
+x-plane: &plane
+  APP_VERSION: ${VERSION_PLANE:-v1.3.1}
+  APP_DOMAIN: ${DOMAIN?domain variable not set}
+  DEPLOY_PLATFORM: docker_compose
+  # MACHINE_SIGNATURE: ${MACHINE_SIGNATURE}
+  # PRIME_HOST: https://prime.plane.so
+
 x-pg-env: &pg-env
   POSTGRES_DB: ${POSTGRES_DB:-plane}
   POSTGRES_USER: ${POSTGRES_USER:-plane}
@@ -164,6 +171,7 @@ x-mq-env: &mq-env
   RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS?RabbitMQ default password not set}
   RABBITMQ_DEFAULT_VHOST: ${RABBITMQ_VHOST:-plane}
   RABBITMQ_VHOST: ${RABBITMQ_VHOST:-plane}
+  # AMQP_URL: ${AMQP_URL:-amqp://plane:plane@plane-mq:5672/plane}
 
 x-redis-env: &redis-env
   REDIS_HOST: plane-redis
@@ -212,27 +220,36 @@ x-live-env: &live-env
 
 x-web-env: &web-env
   HOSTNAME: 0.0.0.0
-  # DOMAIN_NAME: localhost
   WEB_URL: ${DOMAIN_PROTO:-https}://${DOMAIN?domain variable not set}
-  # APP_BASE_URL: ${DOMAIN_PROTO:-https}://${DOMAIN?domain variable not set}
-  # APP_PROTOCOL: http
   CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-${DOMAIN_PROTO:-https}://${DOMAIN?domain variable not set}}
+  # APP_PROTOCOL: http
   # TRUSTED_PROXIES: 0.0.0.0/0
 
 x-app-env: &app-env
   DEBUG: ${DEBUG:-0}
   GUNICORN_WORKERS: ${GUNICORN_WORKERS:-1}
 
+  # Databases
   DATABASE_URL: postgresql://${POSTGRES_USER:-plane}:${POSTGRES_PASSWORD?Postgres password not set}@plane-db/${POSTGRES_DB:-plane}
-  USE_MINIO: ${USE_MINIO:-1}
-  MINIO_ENDPOINT_SSL: ${MINIO_ENDPOINT_SSL:-0}
-  BUCKET_NAME: ${AWS_S3_BUCKET_NAME:-uploads}
-  FILE_SIZE_LIMIT: ${FILE_SIZE_LIMIT:-5242880} # size in bytes
-
-  SECRET_KEY: ${SECRET_KEY?Secret key not set}
+  DB_URL: postgresql://${POSTGRES_USER:-plane}:${POSTGRES_PASSWORD?Postgres password not set}@plane-db/${POSTGRES_DB:-plane}
   AMQP_URL: amqp://${RABBITMQ_USER:-plane}:${RABBITMQ_DEFAULT_PASS?RabbitMQ default password not set}@plane-mq:5672/plane
-  API_KEY_RATE_LIMIT: ${API_KEY_RATE_LIMIT:-60/minute}
+  REDIS_URL: redis://plane-redis:6379/
+  API_BASE_URL: http://api:8000
+
+  USE_MINIO: ${USE_MINIO:-1}
+  BUCKET_NAME: ${AWS_S3_BUCKET_NAME:-uploads}
+
+  # Force HTTPS for handling SSL Termination
+  MINIO_ENDPOINT_SSL: ${MINIO_ENDPOINT_SSL:-0}
+
+  # Application secret
+  SECRET_KEY: ${SECRET_KEY?Secret key not set}
   LIVE_SERVER_SECRET_KEY: ${LIVE_SERVER_SECRET_KEY?Live secret key not set}
+  SSL_VERIFY: ${SSL_VERIFY:-1}
+
+  # API key rate limit
+  API_KEY_RATE_LIMIT: ${API_KEY_RATE_LIMIT:-60/minute}
+  FILE_SIZE_LIMIT: ${FILE_SIZE_LIMIT:-5242880} # size in bytes
 
 ################################################################################
 ################################################################################
@@ -284,7 +301,7 @@ services:
 
   api:
     # https://hub.docker.com/r/makeplane/plane-backend
-    image: makeplane/plane-backend:${VERSION_PLANE:-v1.3.0}
+    image: makeplane/plane-backend:${VERSION_PLANE:-v1.3.1}
     <<:
       - *basic
       # - *basic-deploy-labels-api
@@ -303,6 +320,7 @@ services:
     environment:
       <<:
         [
+          *plane,
           *web-env,
           *app-env,
           *pg-env,
@@ -332,7 +350,7 @@ services:
 
   admin:
     # https://hub.docker.com/r/makeplane/plane-admin
-    image: makeplane/plane-admin:${VERSION_PLANE:-v1.3.0}
+    image: makeplane/plane-admin:${VERSION_PLANE:-v1.3.1}
     <<:
       - *basic
       # - *basic-deploy-labels-admin
@@ -373,7 +391,7 @@ services:
 
   space:
     # https://hub.docker.com/r/makeplane/plane-space
-    image: makeplane/plane-space:${VERSION_PLANE:-v1.3.0}
+    image: makeplane/plane-space:${VERSION_PLANE:-v1.3.1}
     <<:
       - *basic
       # - *basic-deploy-labels-space
@@ -410,7 +428,7 @@ services:
 
   live:
     # https://hub.docker.com/r/makeplane/plane-live
-    image: makeplane/plane-live:${VERSION_PLANE:-v1.3.0}
+    image: makeplane/plane-live:${VERSION_PLANE:-v1.3.1}
     <<:
       - *basic
       # - *basic-deploy-labels-live
@@ -447,7 +465,7 @@ services:
 
   worker:
     # https://hub.docker.com/r/makeplane/plane-backend
-    image: makeplane/plane-backend:${VERSION_PLANE:-v1.3.0}
+    image: makeplane/plane-backend:${VERSION_PLANE:-v1.3.1}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -460,8 +478,16 @@ services:
           memory: ${RESOURCES_RESERVATIONS_MEMORY_PLANE_WORKER:-32m}
       replicas: ${WORKER_REPLICAS:-1}
     environment:
-      <<: [*app-env, *pg-env, *redis-env, *minio-env, *rustfs-env, *aws-s3-env]
-      GUNICORN_WORKERS: ${GUNICORN_WORKERS_WORKER:-1}
+      <<:
+        [
+          *plane,
+          *app-env,
+          *pg-env,
+          *redis-env,
+          *minio-env,
+          *rustfs-env,
+          *aws-s3-env,
+        ]
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
@@ -470,7 +496,7 @@ services:
 
   beat-worker:
     # https://hub.docker.com/r/makeplane/plane-backend
-    image: makeplane/plane-backend:${VERSION_PLANE:-v1.3.0}
+    image: makeplane/plane-backend:${VERSION_PLANE:-v1.3.1}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -483,7 +509,16 @@ services:
           cpus: ${RESOURCES_RESERVATIONS_CPUS_PLANE_BEAT:-0.001}
           memory: ${RESOURCES_RESERVATIONS_MEMORY_PLANE_BEAT:-32m}
     environment:
-      <<: [*app-env, *pg-env, *redis-env, *minio-env, *rustfs-env, *aws-s3-env]
+      <<:
+        [
+          *plane,
+          *app-env,
+          *pg-env,
+          *redis-env,
+          *minio-env,
+          *rustfs-env,
+          *aws-s3-env,
+        ]
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
@@ -495,14 +530,23 @@ services:
   ##############################################################################
   migrator:
     # https://hub.docker.com/r/makeplane/plane-backend
-    image: makeplane/plane-backend:${VERSION_PLANE:-v1.3.0}
+    image: makeplane/plane-backend:${VERSION_PLANE:-v1.3.1}
     <<: *basic
     deploy:
       <<: *basic-deploy
       restart_policy:
         condition: on-failure
     environment:
-      <<: [*app-env, *pg-env, *redis-env, *minio-env, *rustfs-env, *aws-s3-env]
+      <<:
+        [
+          *plane,
+          *app-env,
+          *pg-env,
+          *redis-env,
+          *minio-env,
+          *rustfs-env,
+          *aws-s3-env,
+        ]
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro

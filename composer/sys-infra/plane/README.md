@@ -68,6 +68,8 @@ VERSION_RUSTFS=1.0.0-beta.8
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
 CERT_RESOLVER=certificates
+
+GUNICORN_WORKERS=1
 ```
 
 #### example short .env
