@@ -1,19 +1,5 @@
 # SETUP
 
-```sh
-    MVladislav
-```
-
----
-
-- [SETUP](#setup)
-  - [basic](#basic)
-    - [create `.env` file following:](#create-env-file-following)
-      - [example short .env](#example-short-env)
-  - [References](#references)
-
----
-
 ## basic
 
 > defined to work with traefik

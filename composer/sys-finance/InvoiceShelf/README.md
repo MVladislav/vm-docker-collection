@@ -1,20 +1,5 @@
 # SETUP
 
-```sh
-    MVladislav
-```
-
----
-
-- [SETUP](#setup)
-  - [basic](#basic)
-    - [create your `secrets`:](#create-your-secrets)
-    - [create `.env` file following:](#create-env-file-following)
-      - [example short .env](#example-short-env)
-  - [References](#references)
-
----
-
 ## basic
 
 > defined to work with traefik
@@ -22,7 +7,7 @@
 ### create your `secrets`:
 
 ```sh
-$pwgen -s 32 1 > config/secrets/postgres_password_file.txt
+pwgen -s 32 1 > config/secrets/postgres_password_file.txt
 ```
 
 ### create `.env` file following:

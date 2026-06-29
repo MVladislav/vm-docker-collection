@@ -1,46 +1,68 @@
 # SETUP
 
-```sh
-    MVladislav
-```
-
----
-
-- [SETUP](#setup)
-  - [basic](#basic)
-    - [create `.env` file following:](#create-env-file-following)
-  - [generate api token for web-ui usage](#generate-api-token-for-web-ui-usage)
-  - [References](#references)
-
----
-
 ## basic
 
 > defined to work with traefik
 
+### create your `secrets`:
+
+> generate api token for web-ui usage
+
+```sh
+docker exec -it "$(docker ps -q -f name=shlink-short)" shlink api-key:generate
+```
+
 ### create `.env` file following:
 
 ```env
+# GENERAL variables (mostly by default, change as needed)
+# ______________________________________________________________________________
 NODE_ROLE=manager
-VERSION=latest
+NETWORK_MODE=overlay # overlay | bridge
 
+# GENERAL traefik variables (set by default, change as needed)
+# ______________________________________________________________________________
 LB_SWARM=true
-DOMAIN=short.home.local
-DOMAIN_SHORT=s.home.local
+DOMAIN=short.home.local # not set in docker-compose, needs to be copied to .env
+DOMAIN_SHORT=s.home.local # not set in docker-compose, needs to be copied to .env
 PROTOCOL=http
 PORT=80
 PORT_SHORT=8080
-# default-secured@file | public-whitelist@file | authentik@file
+# default-secured@file | public-secured@file | authentik@file
 MIDDLEWARE_SECURED=default-secured@file
+
+# GENERAL sources to be used (set by default, change as needed)
+# ______________________________________________________________________________
+RESOURCES_LIMITS_CPUS=1
+RESOURCES_LIMITS_MEMORY=1g
+RESOURCES_RESERVATIONS_CPUS=0.001
+RESOURCES_RESERVATIONS_MEMORY=32m
+
+# APPLICATION version for easy update
+# ______________________________________________________________________________
+VERSION=latest
+
+# APPLICATION general variable to adjust the apps
+# ______________________________________________________________________________
+CERT_RESOLVER=certificates
 
 TZ=Europe/Berlin
 IS_HTTPS_ENABLED=true
 ```
 
-## generate api token for web-ui usage
+#### example short .env (swarm)
 
-```sh
-$docker exec -it "$(docker ps -q -f name=shlink-short)" shlink api-key:generate
+```env
+DOMAIN=short.home.local
+```
+
+#### example short .env (bridge)
+
+```env
+NETWORK_MODE=bridge
+LB_SWARM=false
+
+DOMAIN=short.home.local
 ```
 
 ---
