@@ -1,0 +1,78 @@
+---
+# Hardware Acceleration Overrides Template
+# Usage: Set HWACCEL=<profile> in your .env or CLI (e.g., HWACCEL=gpu-amd)
+# Example in docker-compose.yml:
+#   extends:
+#     file: docker-hwaccel.yaml
+#     service: ${HWACCEL:-none} # none|gpu-amd|gpu-amd-extended|gpu-nvidia|gpu-intel|usb
+services:
+  ##############################################################################
+  # Base: No hardware acceleration (default)
+  ##############################################################################
+  none: {}
+
+  ##############################################################################
+  # GPU: AMD (ROcm)
+  # Requires: /dev/kfd and /dev/dri on the host.
+  # Groups: 'video' is required for /dev/dri access.
+  ##############################################################################
+  gpu-amd:
+    devices:
+      - /dev/kfd:/dev/kfd # AMD GPU compute (HSA)
+      - /dev/dri:/dev/dri # Direct Rendering Interface
+    group_add:
+      - video # Required for /dev/dri access
+    environment:
+      ROCM_VISIBLE_DEVICES: ${ROCM_VISIBLE_DEVICES:-all}
+
+  # Extended AMD (CPU pinning + extra devices)
+  gpu-amd-extended:
+    extends: gpu-amd # Inherits all from gpu-amd
+    cpuset: "2-15" # Pin to CPU cores 2-15 (adjust via `lscpu -ae`)
+    devices:
+      - /dev/sr0:/dev/sr0 # Optical drive (example)
+      - /dev/dri/renderD128:/dev/dri/renderD128 # Specific render node
+      - /dev/dri/card1:/dev/dri/card1 # Specific card
+    group_add:
+      - render # Additional group for render nodes
+
+  ##############################################################################
+  # GPU: NVIDIA
+  # Requires: NVIDIA Container Toolkit on the host.
+  # Capabilities: gpu, compute, video (adjust as needed).
+  ##############################################################################
+  gpu-nvidia:
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: ${NVIDIA_COUNT:-1} # Number of GPUs to reserve
+              # device_ids: ['0']
+              capabilities: [gpu, compute, video]
+    environment:
+      NVIDIA_VISIBLE_DEVICES: ${NVIDIA_VISIBLE_DEVICES:-all}
+      NVIDIA_DRIVER_CAPABILITIES: ${NVIDIA_DRIVER_CAPABILITIES:-compute,utility,video}
+
+  ##############################################################################
+  # GPU: Intel (oneAPI/i915)
+  # Requires: /dev/dri on the host.
+  # Groups: 'video' and 'render' are typically required.
+  ##############################################################################
+  gpu-intel:
+    devices:
+      - /dev/dri:/dev/dri # Intel GPU (i915)
+    group_add:
+      - video
+      - render
+    environment:
+      INTEL_VISIBLE_DEVICES: ${INTEL_VISIBLE_DEVICES:-all}
+      ONEAPI_DEVICE_SELECTOR: ${ONEAPI_DEVICE_SELECTOR:-gpu} # For oneAPI workloads
+
+  ##############################################################################
+  # USB Devices
+  # Requires: /dev/bus/usb on the host.
+  ##############################################################################
+  usb:
+    devices:
+      - /dev/bus/usb:/dev/bus/usb # Full USB bus access
