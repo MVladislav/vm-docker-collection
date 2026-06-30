@@ -1,0 +1,986 @@
+---
+x-basic-deploy-labels-web: &basic-deploy-labels-web
+  labels:
+    - traefik.enable=true
+    - traefik.swarm.lbswarm=${LB_SWARM:-true}
+    - traefik.swarm.network=proxy
+    - traefik.http.routers.plane-web.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.plane-web.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.plane-web.tls=true
+    - traefik.http.routers.plane-web.tls.certresolver=${CERT_RESOLVER:-}
+    - traefik.http.routers.plane-web.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.plane-web.service=plane-web
+    - traefik.http.services.plane-web.loadbalancer.server.scheme=http
+    - traefik.http.services.plane-web.loadbalancer.server.port=3000
+
+x-basic-deploy-labels-api: &basic-deploy-labels-api
+  labels:
+    - traefik.enable=true
+    - traefik.swarm.lbswarm=${LB_SWARM:-true}
+    - traefik.swarm.network=proxy
+    # API
+    - traefik.http.routers.plane-api.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.plane-api.rule=Host(`${DOMAIN?domain variable not set}`) && PathPrefix(`/api/`) || Host(`${DOMAIN?domain variable not set}`) && PathPrefix(`/graphql/`) || Host(`${DOMAIN?domain variable not set}`) && PathPrefix(`/marketplace/`) || Host(`${DOMAIN?domain variable not set}`) && PathPrefix(`/static/`)
+    - traefik.http.routers.plane-api.tls=true
+    - traefik.http.routers.plane-api.tls.certresolver=${CERT_RESOLVER:-}
+    - traefik.http.routers.plane-api.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.plane-api.service=plane-api
+    - traefik.http.services.plane-api.loadbalancer.server.scheme=http
+    - traefik.http.services.plane-api.loadbalancer.server.port=8000
+    # AUTH
+    - traefik.http.routers.plane-api-auth.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.plane-api-auth.rule=Host(`${DOMAIN?domain variable not set}`) && PathPrefix(`/auth/`)
+    - traefik.http.routers.plane-api-auth.tls=true
+    - traefik.http.routers.plane-api-auth.tls.certresolver=${CERT_RESOLVER:-}
+    - traefik.http.routers.plane-api-auth.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.plane-api-auth.service=plane-api-auth
+    - traefik.http.services.plane-api-auth.loadbalancer.server.scheme=http
+    - traefik.http.services.plane-api-auth.loadbalancer.server.port=8000
+
+x-basic-deploy-labels-admin: &basic-deploy-labels-admin
+  labels:
+    - traefik.enable=true
+    - traefik.swarm.lbswarm=${LB_SWARM:-true}
+    - traefik.swarm.network=proxy
+    - traefik.http.routers.plane-admin.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.plane-admin.rule=Host(`${DOMAIN?domain variable not set}`) && PathPrefix(`/god-mode/`)
+    - traefik.http.routers.plane-admin.tls=true
+    - traefik.http.routers.plane-admin.tls.certresolver=${CERT_RESOLVER:-}
+    - traefik.http.routers.plane-admin.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.plane-admin.service=plane-admin
+    - traefik.http.services.plane-admin.loadbalancer.server.scheme=http
+    - traefik.http.services.plane-admin.loadbalancer.server.port=3000
+
+x-basic-deploy-labels-space: &basic-deploy-labels-space
+  labels:
+    - traefik.enable=true
+    - traefik.swarm.lbswarm=${LB_SWARM:-true}
+    - traefik.swarm.network=proxy
+    - traefik.http.routers.plane-space.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.plane-space.rule=Host(`${DOMAIN?domain variable not set}`) && PathPrefix(`/spaces/`)
+    - traefik.http.routers.plane-space.tls=true
+    - traefik.http.routers.plane-space.tls.certresolver=${CERT_RESOLVER:-}
+    - traefik.http.routers.plane-space.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.plane-space.service=plane-space
+    - traefik.http.services.plane-space.loadbalancer.server.scheme=http
+    - traefik.http.services.plane-space.loadbalancer.server.port=3000
+
+x-basic-deploy-labels-live: &basic-deploy-labels-live
+  labels:
+    - traefik.enable=true
+    - traefik.swarm.lbswarm=${LB_SWARM:-true}
+    - traefik.swarm.network=proxy
+    - traefik.http.routers.plane-live.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.plane-live.rule=Host(`${DOMAIN?domain variable not set}`) && PathPrefix(`/live/`)
+    - traefik.http.routers.plane-live.tls=true
+    - traefik.http.routers.plane-live.tls.certresolver=${CERT_RESOLVER:-}
+    - traefik.http.routers.plane-live.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.plane-live.service=plane-live
+    - traefik.http.services.plane-live.loadbalancer.server.scheme=http
+    - traefik.http.services.plane-live.loadbalancer.server.port=3000
+
+x-basic-deploy-labels-rustfs: &basic-deploy-labels-rustfs
+  labels:
+    - traefik.enable=true
+    - traefik.swarm.lbswarm=${LB_SWARM:-true}
+    - traefik.swarm.network=proxy
+    - traefik.http.routers.plane-rustfs.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.plane-rustfs.rule=Host(`${DOMAIN?domain variable not set}`) && PathPrefix(`/${AWS_S3_BUCKET_NAME:-uploads}`)
+    - traefik.http.routers.plane-rustfs.tls=true
+    - traefik.http.routers.plane-rustfs.tls.certresolver=${CERT_RESOLVER:-}
+    - traefik.http.routers.plane-rustfs.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.plane-rustfs.service=plane-rustfs
+    - traefik.http.services.plane-rustfs.loadbalancer.server.scheme=http
+    - traefik.http.services.plane-rustfs.loadbalancer.server.port=9000
+
+    # - traefik.http.routers.plane-rustfs-cls.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    # - traefik.http.routers.plane-rustfs-cls.rule=Host(`cli-${DOMAIN?domain variable not set}`)
+    # - traefik.http.routers.plane-rustfs-cls.tls=true
+    # - traefik.http.routers.plane-rustfs-cls.tls.certresolver=${CERT_RESOLVER:-}
+    # - traefik.http.routers.plane-rustfs-cls.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    # - traefik.http.routers.plane-rustfs-cls.service=plane-rustfs-cls
+    # - traefik.http.services.plane-rustfs-cls.loadbalancer.server.scheme=http
+    # - traefik.http.services.plane-rustfs-cls.loadbalancer.server.port=9090
+
+x-basic-deploy-labels-silo: &basic-deploy-labels-silo
+  labels:
+    - traefik.enable=true
+    - traefik.swarm.lbswarm=${LB_SWARM:-true}
+    - traefik.swarm.network=proxy
+    - traefik.http.routers.plane-silo.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.plane-silo.rule=Host(`${DOMAIN?domain variable not set}`) && PathPrefix(`/silo/`)
+    - traefik.http.routers.plane-silo.tls=true
+    - traefik.http.routers.plane-silo.tls.certresolver=${CERT_RESOLVER:-}
+    - traefik.http.routers.plane-silo.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.plane-silo.service=plane-silo
+    - traefik.http.services.plane-silo.loadbalancer.server.scheme=http
+    - traefik.http.services.plane-silo.loadbalancer.server.port=3000
+
+# x-basic-deploy-labels-pi: &basic-deploy-labels-pi
+#   labels: # TODO: add later to "pi-api"
+#     - traefik.enable=true
+#     - traefik.swarm.lbswarm=${LB_SWARM:-true}
+#     - traefik.swarm.network=proxy
+#     - traefik.http.routers.plane-pi.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+#     - traefik.http.routers.plane-pi.rule=Host(`${DOMAIN?domain variable not set}`) && PathPrefix(`/pi/`)
+#     - traefik.http.routers.plane-pi.tls=true
+#     - traefik.http.routers.plane-pi.tls.certresolver=${CERT_RESOLVER:-}
+#     - traefik.http.routers.plane-pi.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+#     - traefik.http.routers.plane-pi.service=plane-pi
+#     - traefik.http.services.plane-pi.loadbalancer.server.scheme=http
+#     - traefik.http.services.plane-pi.loadbalancer.server.port=8000
+
+x-basic-deploy: &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  update_config:
+    order: stop-first
+  restart_policy:
+    condition: any
+  resources:
+    limits:
+      cpus: ${RESOURCES_LIMITS_CPUS:-1}
+      memory: ${RESOURCES_LIMITS_MEMORY:-1g}
+    reservations:
+      cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
+      memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
+
+x-basic: &basic
+  env_file: ${ENV_FILE:-.env}
+  cap_drop: ["ALL"]
+  security_opt:
+    - no-new-privileges:true
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 655360
+      hard: 655360
+    fsize: -1
+    as: -1
+  networks:
+    default: {}
+  healthcheck:
+    disable: true
+  restart: always
+
+################################################################################
+################################################################################
+################################################################################
+x-base-env: &base-env
+  TZ: "Europe/Berlin"
+
+x-plane: &plane
+  APP_VERSION: ${VERSION_PLANE:-v2.6.3}
+  APP_DOMAIN: ${DOMAIN?domain variable not set}
+  DEPLOY_PLATFORM: docker_compose
+  MACHINE_SIGNATURE: ${MACHINE_SIGNATURE?MACHINE_SIGNATURE not set}
+  PRIME_HOST: ${PRIME_HOST:-https://prime.plane.so}
+  IS_AIRGAPPED: ${IS_AIRGAPPED:-0}
+
+x-pg-env: &pg-env
+  POSTGRES_DB: ${POSTGRES_DB:-plane}
+  POSTGRES_USER: ${POSTGRES_USER:-plane}
+  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD?Postgres password not set}
+  POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+  PGDATA: /var/lib/postgresql/18/data
+  PGHOST: plane-db
+  PGDATABASE: ${POSTGRES_DB:-plane}
+
+x-mq-env: &mq-env
+  RABBITMQ_HOST: plane-mq
+  RABBITMQ_PORT: 5672
+  RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-plane}
+  RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS?RabbitMQ default password not set}
+  RABBITMQ_DEFAULT_VHOST: ${RABBITMQ_VHOST:-plane}
+  RABBITMQ_VHOST: ${RABBITMQ_VHOST:-plane}
+  AMQP_URL: amqp://${RABBITMQ_USER:-plane}:${RABBITMQ_DEFAULT_PASS?RabbitMQ default password not set}@plane-mq:5672/plane
+
+x-redis-env: &redis-env
+  REDIS_HOST: plane-redis
+  REDIS_PORT: 6379
+  REDIS_URL: redis://plane-redis:6379/
+
+x-docstore-env: &docstore-env
+  MINIO_ROOT_USER: ${AWS_ACCESS_KEY_ID:-access-key}
+  MINIO_ROOT_PASSWORD: ${AWS_SECRET_ACCESS_KEY?rustfs root password not set}
+  BUCKET_NAME: ${AWS_S3_BUCKET_NAME:-uploads}
+  USE_MINIO: ${USE_MINIO:-1}
+  USE_STORAGE_PROXY: ${USE_STORAGE_PROXY:-0}
+
+  AWS_REGION: ${AWS_REGION:-}
+  AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-access-key}
+  AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY?rustfs root password not set}
+  AWS_S3_ENDPOINT_URL: http://plane-rustfs:9000
+  AWS_S3_BUCKET_NAME: ${AWS_S3_BUCKET_NAME:-uploads}
+
+x-rustfs-env: &rustfs-env
+  RUSTFS_ACCESS_KEY: ${AWS_ACCESS_KEY_ID:-access-key}
+  RUSTFS_SECRET_KEY: ${AWS_SECRET_ACCESS_KEY?rustfs root password not set}
+
+x-rustfs-conf-env: &rustfs-conf-env
+  RUSTFS_VOLUMES: /data
+  # RUSTFS_VOLUMES: /data/rustfs{0..3}
+
+  RUSTFS_ADDRESS: 0.0.0.0:9000
+  RUSTFS_CONSOLE_ADDRESS: 0.0.0.0:9090
+
+  RUSTFS_CONSOLE_ENABLE: ${RUSTFS_CONSOLE_ENABLE:-true}
+  RUSTFS_CORS_ALLOWED_ORIGINS: ${RUSTFS_CORS_ALLOWED_ORIGINS:-*}
+  RUSTFS_CONSOLE_CORS_ALLOWED_ORIGINS: ${RUSTFS_CONSOLE_CORS_ALLOWED_ORIGINS:-*}
+  RUSTFS_OBS_LOGGER_LEVEL: ${RUSTFS_OBS_LOGGER_LEVEL:-info}
+
+  # Object Cache
+  RUSTFS_OBJECT_CACHE_ENABLE: ${RUSTFS_OBJECT_CACHE_ENABLE:-true}
+  RUSTFS_OBJECT_CACHE_TTL_SECS: ${RUSTFS_OBJECT_CACHE_TTL_SECS:-300}
+
+  # Keep strict disk topology checks enabled by default.
+  # For local testing only, set `RUSTFS_UNSAFE_BYPASS_DISK_CHECK=true` explicitly.
+  RUSTFS_UNSAFE_BYPASS_DISK_CHECK: ${RUSTFS_UNSAFE_BYPASS_DISK_CHECK:-true}
+
+x-live-env: &live-env
+  API_BASE_URL: http://api:8000
+  LIVE_BASE_PATH: /live
+  LIVE_SERVER_SECRET_KEY: ${LIVE_SERVER_SECRET_KEY?Live secret key not set}
+  # IFRAMELY_URL: http://iframely:8061
+
+x-web-env: &web-env
+  HOSTNAME: 0.0.0.0
+  WEB_URL: ${DOMAIN_PROTO:-https}://${DOMAIN?domain variable not set}
+  CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-${DOMAIN_PROTO:-https}://${DOMAIN?domain variable not set}}
+
+x-monitor-env: &monitor-env
+  SERVICE_HTTP_WEB: web:3000
+  SERVICE_HTTP_API: api:8000
+  SERVICE_HTTP_LIVE: live:3000/live/health
+  # SERVICE_HTTP_PROXY: proxy:80
+  SERVICE_HTTP_MINIO: plane-rustfs:9090/health
+  SERVICE_TCP_REDIS: plane-redis:6379
+  SERVICE_TCP_POSTGRES: plane-db:5432
+  TRUSTED_PROXIES: ${TRUSTED_PROXIES:-0.0.0.0/0}
+  API_HOSTNAME: http://api:8000
+
+x-outbox-poller-env: &outbox-poller-env
+  OUTBOX_POLLER_MEMORY_LIMIT_MB: ${OUTBOX_POLLER_MEMORY_LIMIT_MB:-512}
+  OUTBOX_POLLER_INTERVAL_MIN: ${OUTBOX_POLLER_INTERVAL_MIN:-0.25}
+  OUTBOX_POLLER_INTERVAL_MAX: ${OUTBOX_POLLER_INTERVAL_MAX:-2}
+  OUTBOX_POLLER_BATCH_SIZE: ${OUTBOX_POLLER_BATCH_SIZE:-250}
+  OUTBOX_POLLER_MEMORY_CHECK_INTERVAL: ${OUTBOX_POLLER_MEMORY_CHECK_INTERVAL:-30}
+  OUTBOX_POLLER_POOL_SIZE: ${OUTBOX_POLLER_POOL_SIZE:-4}
+  OUTBOX_POLLER_POOL_MIN_SIZE: ${OUTBOX_POLLER_POOL_MIN_SIZE:-2}
+  OUTBOX_POLLER_POOL_MAX_SIZE: ${OUTBOX_POLLER_POOL_MAX_SIZE:-10}
+  OUTBOX_POLLER_POOL_TIMEOUT: ${OUTBOX_POLLER_POOL_TIMEOUT:-30.0}
+  OUTBOX_POLLER_POOL_MAX_IDLE: ${OUTBOX_POLLER_POOL_MAX_IDLE:-300.0}
+  OUTBOX_POLLER_POOL_MAX_LIFETIME: ${OUTBOX_POLLER_POOL_MAX_LIFETIME:-3600}
+  OUTBOX_POLLER_POOL_RECONNECT_TIMEOUT: ${OUTBOX_POLLER_POOL_RECONNECT_TIMEOUT:-5.0}
+  OUTBOX_POLLER_POOL_HEALTH_CHECK_INTERVAL: ${OUTBOX_POLLER_POOL_HEALTH_CHECK_INTERVAL:-30}
+
+x-automation-consumer-env: &automation-consumer-env
+  AUTOMATION_EVENT_STREAM_QUEUE_NAME: ${AUTOMATION_EVENT_STREAM_QUEUE_NAME:-plane.event_stream.automations}
+  AUTOMATION_EVENT_STREAM_PREFETCH: ${AUTOMATION_EVENT_STREAM_PREFETCH:-10}
+  AUTOMATION_EXCHANGE_NAME: ${AUTOMATION_EXCHANGE_NAME:-plane.event_stream}
+
+x-silo-env: &silo-env
+  PORT: 3000
+  # Silo App Envs
+  BATCH_SIZE: ${BATCH_SIZE:-60}
+  DEDUP_INTERVAL: ${DEDUP_INTERVAL:-3}
+
+  APP_BASE_URL: ${DOMAIN_PROTO:-https}://${DOMAIN?domain variable not set}
+  API_BASE_URL: http://api:8000
+  SILO_API_BASE_URL: ${INTEGRATION_CALLBACK_BASE_URL:-${DOMAIN_PROTO:-https}://${DOMAIN?domain variable not set}}
+  SILO_BASE_PATH: ${SILO_BASE_PATH:-/silo}
+  WEBHOOK_SECRET: ${WEBHOOK_SECRET:-plane-silo}
+  MQ_PREFETCH_COUNT: ${MQ_PREFETCH_COUNT:-10}
+
+  # Authentication
+  SILO_HMAC_SECRET_KEY: ${SILO_HMAC_SECRET_KEY?SILO_HMAC_SECRET_KEY secret not set}
+  AES_SECRET_KEY: ${AES_SECRET_KEY?AES_SECRET_KEY secret not set}
+
+  # # Feature Flag Envs
+  FEATURE_FLAG_SERVER_BASE_URL: ${FEATURE_FLAG_SERVER_BASE_URL:-http://monitor:8080}
+
+  # # Github Envs
+  # GITHUB_APP_NAME: ${GITHUB_APP_NAME}
+  # GITHUB_APP_ID: ${GITHUB_APP_ID}
+  # GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID}
+  # GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET}
+  # GITHUB_PRIVATE_KEY: ${GITHUB_PRIVATE_KEY}
+
+  # # Gitlab Envs
+  # GITLAB_CLIENT_ID: ${GITLAB_CLIENT_ID}
+  # GITLAB_CLIENT_SECRET: ${GITLAB_CLIENT_SECRET}
+
+  # # Slack Envs
+  # SLACK_BASE_URL: ${SLACK_BASE_URL:-https://slack.com}
+  # SLACK_CLIENT_ID: ${SLACK_CLIENT_ID}
+  # SLACK_CLIENT_SECRET: ${SLACK_CLIENT_SECRET}
+
+  # # Sentry Envs
+  # SENTRY_BASE_URL: ${SENTRY_BASE_URL}
+  # SENTRY_CLIENT_ID: ${SENTRY_CLIENT_ID}
+  # SENTRY_CLIENT_SECRET: ${SENTRY_CLIENT_SECRET}
+  # SENTRY_INTEGRATION_SLUG: ${SENTRY_INTEGRATION_SLUG}
+
+x-app-env: &app-env
+  DEBUG: ${DEBUG:-0}
+  GUNICORN_WORKERS: ${GUNICORN_WORKERS:-1}
+
+  # Databases
+  DATABASE_URL: postgresql://${POSTGRES_USER:-plane}:${POSTGRES_PASSWORD?Postgres password not set}@plane-db/${POSTGRES_DB:-plane}
+  DB_URL: postgresql://${POSTGRES_USER:-plane}:${POSTGRES_PASSWORD?Postgres password not set}@plane-db/${POSTGRES_DB:-plane}
+  AMQP_URL: amqp://${RABBITMQ_USER:-plane}:${RABBITMQ_DEFAULT_PASS?RabbitMQ default password not set}@plane-mq:5672/plane
+  REDIS_URL: redis://plane-redis:6379/
+
+  API_BASE_URL: http://api:8000
+  LIVE_BASE_URL: http://live:3000
+  LIVE_BASE_PATH: /live
+
+  BUCKET_NAME: ${AWS_S3_BUCKET_NAME:-uploads}
+  USE_MINIO: ${USE_MINIO:-1}
+  USE_STORAGE_PROXY: ${USE_STORAGE_PROXY:-0}
+
+  # Force HTTPS for handling SSL Termination
+  MINIO_ENDPOINT_SSL: ${MINIO_ENDPOINT_SSL:-0}
+
+  # Application secret
+  SECRET_KEY: ${SECRET_KEY?Secret key not set}
+  LIVE_SERVER_SECRET_KEY: ${LIVE_SERVER_SECRET_KEY?Live secret key not set}
+  SSL_VERIFY: ${SSL_VERIFY:-1}
+
+  # API key rate limit
+  API_KEY_RATE_LIMIT: ${API_KEY_RATE_LIMIT:-60/minute}
+  FILE_SIZE_LIMIT: ${FILE_SIZE_LIMIT:-5242880} # size in bytes
+
+  # External Services Config
+  SILO_HMAC_SECRET_KEY: ${SILO_HMAC_SECRET_KEY?SILO_HMAC_SECRET_KEY secret not set}
+  FEATURE_FLAG_SERVER_BASE_URL: ${FEATURE_FLAG_SERVER_BASE_URL:-http://monitor:8080}
+  PAYMENT_SERVER_BASE_URL: http://monitor:8080
+
+################################################################################
+################################################################################
+################################################################################
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  web:
+    # https://hub.docker.com/r/makeplane/web-commercial
+    image: makeplane/web-commercial:${VERSION_PLANE:-v2.6.3}
+    <<:
+      - *basic
+      # - *basic-deploy-labels-web
+    deploy:
+      <<:
+        - *basic-deploy
+        - *basic-deploy-labels-web
+      replicas: ${WEB_REPLICAS:-1}
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_PLANE_WEB:-2}
+          memory: ${RESOURCES_LIMITS_MEMORY_PLANE_WEB:-500m}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_PLANE_WEB:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_PLANE_WEB:-32m}
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+    environment:
+      <<: *web-env
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    networks:
+      default: {}
+      proxy: {}
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget --no-verbose --tries=1 --spider --no-check-certificate http://127.0.0.1:3000 || exit 1",
+        ]
+      start_period: 10s
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  api:
+    # https://hub.docker.com/r/makeplane/backend-commercial
+    image: makeplane/backend-commercial:${VERSION_PLANE:-v2.6.3}
+    <<:
+      - *basic
+      # - *basic-deploy-labels-api
+    deploy:
+      <<:
+        - *basic-deploy
+        - *basic-deploy-labels-api
+      replicas: ${API_REPLICAS:-1}
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_PLANE_API:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_PLANE_API:-500m}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_PLANE_API:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_PLANE_API:-32m}
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+    environment:
+      <<:
+        - *plane
+        - *web-env
+        - *app-env
+        - *pg-env
+        - *redis-env
+        - *docstore-env
+        # - *rustfs-env
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - api_logs:/code/plane/logs
+    command: ./bin/docker-entrypoint-api-ee.sh
+    networks:
+      default: {}
+      proxy: {}
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget --no-verbose --tries=1 --spider --no-check-certificate http://127.0.0.1:8000 || exit 1",
+        ]
+      start_period: 10s
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  admin:
+    # https://hub.docker.com/r/makeplane/admin-commercial
+    image: makeplane/admin-commercial:${VERSION_PLANE:-v2.6.3}
+    <<:
+      - *basic
+      # - *basic-deploy-labels-admin
+    deploy:
+      <<:
+        - *basic-deploy
+        - *basic-deploy-labels-admin
+      replicas: ${ADMIN_REPLICAS:-1}
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_PLANE_ADMIN:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_PLANE_ADMIN:-256m}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_PLANE_ADMIN:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_PLANE_ADMIN:-32m}
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+    environment:
+      <<: *web-env
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    networks:
+      default: {}
+      proxy: {}
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget --no-verbose --tries=1 --spider --no-check-certificate http://127.0.0.1:3000/god-mode/ || exit 1",
+        ]
+      start_period: 10s
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  space:
+    # https://hub.docker.com/r/makeplane/space-commercial
+    image: makeplane/space-commercial:${VERSION_PLANE:-v2.6.3}
+    <<:
+      - *basic
+      # - *basic-deploy-labels-space
+    deploy:
+      <<:
+        - *basic-deploy
+        - *basic-deploy-labels-space
+      replicas: ${SPACE_REPLICAS:-1}
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_PLANE_SPACE:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_PLANE_SPACE:-256m}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_PLANE_SPACE:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_PLANE_SPACE:-32m}
+    environment:
+      <<: *web-env
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    networks:
+      default: {}
+      proxy: {}
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget --no-verbose --tries=1 --spider --no-check-certificate http://127.0.0.1:3000/spaces/ || exit 1",
+        ]
+      start_period: 10s
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  live:
+    # https://hub.docker.com/r/makeplane/live-commercial
+    image: makeplane/live-commercial:${VERSION_PLANE:-v2.6.3}
+    <<:
+      - *basic
+      # - *basic-deploy-labels-live
+    deploy:
+      <<:
+        - *basic-deploy
+        - *basic-deploy-labels-live
+      replicas: ${LIVE_REPLICAS:-1}
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_PLANE_LIVE:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_PLANE_LIVE:-256m}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_PLANE_LIVE:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_PLANE_LIVE:-32m}
+    environment:
+      <<:
+        - *web-env
+        - *live-env
+        - *redis-env
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    networks:
+      default: {}
+      proxy: {}
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget --no-verbose --tries=1 --spider --no-check-certificate http://127.0.0.1:3000/live/health || exit 1",
+        ]
+      start_period: 10s
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  worker:
+    # https://hub.docker.com/r/makeplane/backend-commercial
+    image: makeplane/backend-commercial:${VERSION_PLANE:-v2.6.3}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_PLANE_WORKER:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_PLANE_WORKER:-2g}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_PLANE_WORKER:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_PLANE_WORKER:-32m}
+      replicas: ${WORKER_REPLICAS:-1}
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+    environment:
+      <<:
+        - *plane
+        - *app-env
+        - *pg-env
+        - *redis-env
+        - *docstore-env
+        # - *rustfs-env
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - worker_logs:/code/plane/logs
+    command: ./bin/docker-entrypoint-worker.sh
+
+  beat-worker:
+    # https://hub.docker.com/r/makeplane/backend-commercial
+    image: makeplane/backend-commercial:${VERSION_PLANE:-v2.6.3}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+      replicas: ${BEAT_WORKER_REPLICAS:-1}
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_PLANE_BEAT:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_PLANE_BEAT:-500m}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_PLANE_BEAT:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_PLANE_BEAT:-32m}
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+    environment:
+      <<:
+        - *plane
+        - *app-env
+        - *pg-env
+        - *redis-env
+        - *docstore-env
+        # - *rustfs-env
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - beat_worker_logs:/code/plane/logs
+    command: ./bin/docker-entrypoint-beat.sh
+
+  monitor:
+    # https://hub.docker.com/r/makeplane/monitor-commercial
+    image: makeplane/monitor-commercial:${VERSION_PLANE:-v2.6.3}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+      replicas: ${MONITOR_REPLICAS:-1}
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_PLANE_MONITOR:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_PLANE_MONITOR:-500m}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_PLANE_MONITOR:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_PLANE_MONITOR:-32m}
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+    environment:
+      <<:
+        - *plane
+        - *monitor-env
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - monitor_data:/app
+
+  silo:
+    # https://hub.docker.com/r/makeplane/silo-commercial
+    image: makeplane/silo-commercial:${VERSION_PLANE:-v2.6.3}
+    <<:
+      - *basic
+      # - *basic-deploy-labels-silo
+    deploy:
+      <<:
+        - *basic-deploy
+        - *basic-deploy-labels-silo
+      replicas: ${SILO_REPLICAS:-1}
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_PLANE_SILO:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_PLANE_SILO:-500m}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_PLANE_SILO:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_PLANE_SILO:-32m}
+    environment:
+      <<:
+        - *silo-env
+        - *app-env
+        - *pg-env
+        - *redis-env
+        - *docstore-env
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    networks:
+      default: {}
+      proxy: {}
+
+  automation-consumer:
+    # https://hub.docker.com/r/makeplane/backend-commercial
+    image: makeplane/backend-commercial:${VERSION_PLANE:-v2.6.3}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+      replicas: ${AUTOMATION_CONSUMER_REPLICAS:-1}
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_PLANE_AUTOMATION_CONSUMER:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_PLANE_AUTOMATION_CONSUMER:-500m}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_PLANE_AUTOMATION_CONSUMER:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_PLANE_AUTOMATION_CONSUMER:-32m}
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+    environment:
+      <<:
+        - *plane
+        - *app-env
+        - *pg-env
+        - *redis-env
+        - *automation-consumer-env
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    command: ./bin/docker-entrypoint-automation-consumer.sh
+
+  outbox-poller:
+    # https://hub.docker.com/r/makeplane/backend-commercial
+    image: makeplane/backend-commercial:${VERSION_PLANE:-v2.6.3}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+      replicas: ${OUTBOX_POLLER_REPLICAS:-1}
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_PLANE_OUTBOX_POLLER:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_PLANE_OUTBOX_POLLER:-500m}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_PLANE_OUTBOX_POLLER:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_PLANE_OUTBOX_POLLER:-32m}
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+    environment:
+      <<:
+        - *plane
+        - *app-env
+        - *pg-env
+        - *redis-env
+        - *outbox-poller-env
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    command: ./bin/docker-entrypoint-outbox-poller.sh
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  migrator:
+    # https://hub.docker.com/r/makeplane/backend-commercial
+    image: makeplane/backend-commercial:${VERSION_PLANE:-v2.6.3}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+      restart_policy:
+        condition: on-failure
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_PLANE_MIGRATOR:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_PLANE_MIGRATOR:-500m}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_PLANE_MIGRATOR:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_PLANE_MIGRATOR:-32m}
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+    environment:
+      <<:
+        - *plane
+        - *app-env
+        - *pg-env
+        - *redis-env
+        - *docstore-env
+        # - *rustfs-env
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - migrator_logs:/code/plane/logs
+    command: ./bin/docker-entrypoint-migrator.sh
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  plane-db:
+    # https://hub.docker.com/_/postgres
+    image: postgres:${VERSION_POSTGRESQL:-18.4-alpine}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_POSTGRESQL:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_POSTGRESQL:-1g}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_POSTGRESQL:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_POSTGRESQL:-32m}
+    cap_add:
+      - CHOWN
+      - FOWNER
+      - DAC_READ_SEARCH
+      - DAC_OVERRIDE
+      - SETUID
+      - SETGID
+    environment:
+      <<:
+        - *pg-env
+        - *base-env
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - postgresql_v18:/var/lib/postgresql/18/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -h 127.0.0.1 -d $${POSTGRES_DB} -U $${POSTGRES_USER}",
+        ]
+      start_period: 10s
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  plane-mq:
+    # https://hub.docker.com/_/rabbitmq
+    image: rabbitmq:${VERSION_RABBITMQ:-3.13.6-management-alpine}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_RABBITMQ:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_RABBITMQ:-500m}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_RABBITMQ:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_RABBITMQ:-32m}
+    cap_add:
+      - SETGID # Allows setting group ID (`setgid`,`newgrp`,`chgrp`,`setregid()`)
+      - SETUID # Allows setting user ID (`setuid`,`su`,`sudo`,`passwd`)
+    environment:
+      <<:
+        - *mq-env
+        - *base-env
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - rabbitmq_data:/var/lib/rabbitmq
+
+  plane-redis:
+    # https://hub.docker.com/r/valkey/valkey
+    image: valkey/valkey:${VERSION_VALKEY:-9.1.0-alpine}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_VALKEY:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_VALKEY:-256m}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_VALKEY:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_VALKEY:-32m}
+    cap_add:
+      - SETGID
+      - SETUID
+    environment:
+      <<:
+        - *redis-env
+        - *base-env
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - valkey:/data
+    command: --save 300 1 --loglevel warning
+    healthcheck:
+      test: ["CMD-SHELL", "valkey-cli ping | grep PONG"]
+      start_period: 10s
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  plane-rustfs:
+    # https://hub.docker.com/r/rustfs/rustfs/tags
+    image: rustfs/rustfs:${VERSION_RUSTFS:-1.0.0-beta.8}
+    <<:
+      - *basic
+      # - *basic-deploy-labels-rustfs
+    deploy:
+      <<:
+        - *basic-deploy
+        - *basic-deploy-labels-rustfs
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_RUSTFS:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_RUSTFS:-1g}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_RUSTFS:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_RUSTFS:-32m}
+    environment:
+      <<:
+        - *rustfs-env
+        - *rustfs-conf-env
+        - *base-env
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - uploads:/data
+      - rustfs_logs:/app/logs
+    networks:
+      default: {}
+      proxy: {}
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "sh",
+          "-c",
+          "curl -f http://127.0.0.1:9000/health && curl -f http://127.0.0.1:9090/rustfs/console/health",
+        ]
+      start_period: 10s
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # iframely:
+  #   # https://hub.docker.com/r/makeplane/iframely
+  #   image: makeplane/iframely:${VERSION_IFRAMELY:-v1.2.0}
+  #   <<:
+  #     - *basic
+  #   deploy:
+  #     <<:
+  #       - *basic-deploy
+  #     restart_policy:
+  #       condition: on-failure
+  #     resources:
+  #       limits:
+  #         cpus: ${RESOURCES_LIMITS_CPUS_IFRAMELY:-1}
+  #         memory: ${RESOURCES_LIMITS_MEMORY_IFRAMELY:-500m}
+  #       reservations:
+  #         cpus: ${RESOURCES_RESERVATIONS_CPUS_IFRAMELY:-0.001}
+  #         memory: ${RESOURCES_RESERVATIONS_MEMORY_IFRAMELY:-32m}
+  #   volumes:
+  #     - /etc/timezone:/etc/timezone:ro
+  #     - /etc/localtime:/etc/localtime:ro
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  default:
+    driver: ${NETWORK_MODE:-overlay}
+    attachable: true
+    driver_opts:
+      encrypted: "true"
+  proxy:
+    external: true
+
+volumes:
+  api_logs: {}
+  worker_logs: {}
+  beat_worker_logs: {}
+  monitor_data: {}
+  migrator_logs: {}
+  postgresql_v18: {}
+  rabbitmq_data: {}
+  valkey: {}
+  uploads: {}
+  rustfs_logs: {}
