@@ -20,7 +20,7 @@ x-basic-deploy-labels-api: &basic-deploy-labels-api
     - traefik.swarm.network=proxy
     # API
     - traefik.http.routers.plane-api.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
-    - traefik.http.routers.plane-api.rule=Host(`${DOMAIN?domain variable not set}`) && PathPrefix(`/api/`)
+    - traefik.http.routers.plane-api.rule=Host(`${DOMAIN?domain variable not set}`) && PathPrefix(`/api/`) || Host(`${DOMAIN?domain variable not set}`) && PathPrefix(`/graphql/`) || Host(`${DOMAIN?domain variable not set}`) && PathPrefix(`/marketplace/`) || Host(`${DOMAIN?domain variable not set}`) && PathPrefix(`/static/`)
     - traefik.http.routers.plane-api.tls=true
     - traefik.http.routers.plane-api.tls.certresolver=${CERT_RESOLVER:-}
     - traefik.http.routers.plane-api.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
@@ -152,8 +152,7 @@ x-plane: &plane
   APP_VERSION: ${VERSION_PLANE:-v1.3.1}
   APP_DOMAIN: ${DOMAIN?domain variable not set}
   DEPLOY_PLATFORM: docker_compose
-  # MACHINE_SIGNATURE: ${MACHINE_SIGNATURE}
-  # PRIME_HOST: https://prime.plane.so
+  IS_AIRGAPPED: ${IS_AIRGAPPED:-0}
 
 x-pg-env: &pg-env
   POSTGRES_DB: ${POSTGRES_DB:-plane}
@@ -171,16 +170,25 @@ x-mq-env: &mq-env
   RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS?RabbitMQ default password not set}
   RABBITMQ_DEFAULT_VHOST: ${RABBITMQ_VHOST:-plane}
   RABBITMQ_VHOST: ${RABBITMQ_VHOST:-plane}
-  # AMQP_URL: ${AMQP_URL:-amqp://plane:plane@plane-mq:5672/plane}
+  AMQP_URL: amqp://${RABBITMQ_USER:-plane}:${RABBITMQ_DEFAULT_PASS?RabbitMQ default password not set}@plane-mq:5672/plane
 
 x-redis-env: &redis-env
   REDIS_HOST: plane-redis
   REDIS_PORT: 6379
   REDIS_URL: redis://plane-redis:6379/
 
-x-minio-env: &minio-env
+x-docstore-env: &docstore-env
   MINIO_ROOT_USER: ${AWS_ACCESS_KEY_ID:-access-key}
   MINIO_ROOT_PASSWORD: ${AWS_SECRET_ACCESS_KEY?rustfs root password not set}
+  BUCKET_NAME: ${AWS_S3_BUCKET_NAME:-uploads}
+  USE_MINIO: ${USE_MINIO:-1}
+  USE_STORAGE_PROXY: ${USE_STORAGE_PROXY:-0}
+
+  AWS_REGION: ${AWS_REGION:-}
+  AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-access-key}
+  AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY?rustfs root password not set}
+  AWS_S3_ENDPOINT_URL: http://plane-rustfs:9000
+  AWS_S3_BUCKET_NAME: ${AWS_S3_BUCKET_NAME:-uploads}
 
 x-rustfs-env: &rustfs-env
   RUSTFS_ACCESS_KEY: ${AWS_ACCESS_KEY_ID:-access-key}
@@ -206,13 +214,6 @@ x-rustfs-conf-env: &rustfs-conf-env
   # For local testing only, set `RUSTFS_UNSAFE_BYPASS_DISK_CHECK=true` explicitly.
   RUSTFS_UNSAFE_BYPASS_DISK_CHECK: ${RUSTFS_UNSAFE_BYPASS_DISK_CHECK:-true}
 
-x-aws-s3-env: &aws-s3-env
-  AWS_REGION: ${AWS_REGION:-}
-  AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-access-key}
-  AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY?rustfs root password not set}
-  AWS_S3_ENDPOINT_URL: http://plane-rustfs:9000
-  AWS_S3_BUCKET_NAME: ${AWS_S3_BUCKET_NAME:-uploads}
-
 x-live-env: &live-env
   API_BASE_URL: http://api:8000
   LIVE_BASE_PATH: /live
@@ -222,8 +223,6 @@ x-web-env: &web-env
   HOSTNAME: 0.0.0.0
   WEB_URL: ${DOMAIN_PROTO:-https}://${DOMAIN?domain variable not set}
   CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-${DOMAIN_PROTO:-https}://${DOMAIN?domain variable not set}}
-  # APP_PROTOCOL: http
-  # TRUSTED_PROXIES: 0.0.0.0/0
 
 x-app-env: &app-env
   DEBUG: ${DEBUG:-0}
@@ -234,10 +233,14 @@ x-app-env: &app-env
   DB_URL: postgresql://${POSTGRES_USER:-plane}:${POSTGRES_PASSWORD?Postgres password not set}@plane-db/${POSTGRES_DB:-plane}
   AMQP_URL: amqp://${RABBITMQ_USER:-plane}:${RABBITMQ_DEFAULT_PASS?RabbitMQ default password not set}@plane-mq:5672/plane
   REDIS_URL: redis://plane-redis:6379/
-  API_BASE_URL: http://api:8000
 
-  USE_MINIO: ${USE_MINIO:-1}
+  API_BASE_URL: http://api:8000
+  LIVE_BASE_URL: http://live:3000
+  LIVE_BASE_PATH: /live
+
   BUCKET_NAME: ${AWS_S3_BUCKET_NAME:-uploads}
+  USE_MINIO: ${USE_MINIO:-1}
+  USE_STORAGE_PROXY: ${USE_STORAGE_PROXY:-0}
 
   # Force HTTPS for handling SSL Termination
   MINIO_ENDPOINT_SSL: ${MINIO_ENDPOINT_SSL:-0}
@@ -317,18 +320,19 @@ services:
         reservations:
           cpus: ${RESOURCES_RESERVATIONS_CPUS_PLANE_API:-0.001}
           memory: ${RESOURCES_RESERVATIONS_MEMORY_PLANE_API:-32m}
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
     environment:
       <<:
-        [
-          *plane,
-          *web-env,
-          *app-env,
-          *pg-env,
-          *redis-env,
-          *minio-env,
-          *rustfs-env,
-          *aws-s3-env,
-        ]
+        - *plane
+        - *web-env
+        - *app-env
+        - *pg-env
+        - *redis-env
+        - *docstore-env
+        # - *rustfs-env
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
@@ -445,7 +449,10 @@ services:
           cpus: ${RESOURCES_RESERVATIONS_CPUS_PLANE_LIVE:-0.001}
           memory: ${RESOURCES_RESERVATIONS_MEMORY_PLANE_LIVE:-32m}
     environment:
-      <<: [*web-env, *live-env, *redis-env]
+      <<:
+        - *web-env
+        - *live-env
+        - *redis-env
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
@@ -477,17 +484,18 @@ services:
           cpus: ${RESOURCES_RESERVATIONS_CPUS_PLANE_WORKER:-0.001}
           memory: ${RESOURCES_RESERVATIONS_MEMORY_PLANE_WORKER:-32m}
       replicas: ${WORKER_REPLICAS:-1}
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
     environment:
       <<:
-        [
-          *plane,
-          *app-env,
-          *pg-env,
-          *redis-env,
-          *minio-env,
-          *rustfs-env,
-          *aws-s3-env,
-        ]
+        - *plane
+        - *app-env
+        - *pg-env
+        - *redis-env
+        - *docstore-env
+        # - *rustfs-env
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
@@ -508,17 +516,18 @@ services:
         reservations:
           cpus: ${RESOURCES_RESERVATIONS_CPUS_PLANE_BEAT:-0.001}
           memory: ${RESOURCES_RESERVATIONS_MEMORY_PLANE_BEAT:-32m}
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
     environment:
       <<:
-        [
-          *plane,
-          *app-env,
-          *pg-env,
-          *redis-env,
-          *minio-env,
-          *rustfs-env,
-          *aws-s3-env,
-        ]
+        - *plane
+        - *app-env
+        - *pg-env
+        - *redis-env
+        - *docstore-env
+        # - *rustfs-env
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
@@ -536,17 +545,25 @@ services:
       <<: *basic-deploy
       restart_policy:
         condition: on-failure
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_PLANE_MIGRATOR:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_PLANE_MIGRATOR:-500m}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_PLANE_MIGRATOR:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_PLANE_MIGRATOR:-32m}
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
     environment:
       <<:
-        [
-          *plane,
-          *app-env,
-          *pg-env,
-          *redis-env,
-          *minio-env,
-          *rustfs-env,
-          *aws-s3-env,
-        ]
+        - *plane
+        - *app-env
+        - *pg-env
+        - *redis-env
+        - *docstore-env
+        # - *rustfs-env
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
@@ -577,7 +594,9 @@ services:
       - SETUID
       - SETGID
     environment:
-      <<: [*pg-env, *base-env]
+      <<:
+        - *pg-env
+        - *base-env
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
@@ -610,7 +629,9 @@ services:
       - SETGID # Allows setting group ID (`setgid`,`newgrp`,`chgrp`,`setregid()`)
       - SETUID # Allows setting user ID (`setuid`,`su`,`sudo`,`passwd`)
     environment:
-      <<: [*mq-env, *base-env]
+      <<:
+        - *mq-env
+        - *base-env
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
@@ -633,7 +654,9 @@ services:
       - SETGID
       - SETUID
     environment:
-      <<: [*redis-env, *base-env]
+      <<:
+        - *redis-env
+        - *base-env
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
@@ -664,7 +687,10 @@ services:
           cpus: ${RESOURCES_RESERVATIONS_CPUS_RUSTFS:-0.001}
           memory: ${RESOURCES_RESERVATIONS_MEMORY_RUSTFS:-32m}
     environment:
-      <<: [*rustfs-env, *rustfs-conf-env, *base-env]
+      <<:
+        - *rustfs-env
+        - *rustfs-conf-env
+        - *base-env
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
