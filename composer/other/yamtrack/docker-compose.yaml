@@ -65,7 +65,7 @@ services:
   ##############################################################################
   yamtrack:
     # https://github.com/fuzzygrim/Yamtrack/pkgs/container/yamtrack
-    image: ghcr.io/fuzzygrim/yamtrack:${VERSION_YAMTRACK:-0.25.0}
+    image: ghcr.io/fuzzygrim/yamtrack:${VERSION_YAMTRACK:-0.25.3}
     <<:
       - *basic
       # - *basic-deploy-labels
@@ -79,6 +79,7 @@ services:
       - SETUID # Allows setting user ID (`setuid`,`su`,`sudo`,`passwd`)
       - DAC_OVERRIDE # Bypasses file read/write/execute permission checks (`cat`,`touch`,`rm`)
     environment:
+      SECRET: ${SECRET?SECRET not set}
       TZ: ${TZ:-Europe/Berlin}
       REDIS_URL: redis://valkey:6379
     volumes:
@@ -101,7 +102,7 @@ services:
   ##############################################################################
   valkey:
     # https://hub.docker.com/r/valkey/valkey
-    image: valkey/valkey:${VERSION_VALKEY:-9.0.3-alpine}
+    image: valkey/valkey:${VERSION_VALKEY:-9.1.0-alpine}
     <<: *basic
     deploy:
       <<: *basic-deploy
