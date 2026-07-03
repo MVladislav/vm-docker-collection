@@ -65,10 +65,10 @@ services:
   ##############################################################################
   filebrowser:
     # https://hub.docker.com/r/filebrowser/filebrowser/tags
-    image: filebrowser/filebrowser:${VERSION:-v2.63.12}
+    image: filebrowser/filebrowser:${VERSION:-v2.63.17}
     <<:
       - *basic
-      - *basic-deploy-labels
+      # - *basic-deploy-labels
     deploy:
       <<:
         - *basic-deploy
