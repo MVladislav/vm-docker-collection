@@ -52,7 +52,7 @@ x-basic: &basic
   healthcheck:
     disable: true
   tmpfs:
-    - /tmp
+    - /tmp:rw,relatime,size=512m,nodev,nosuid,noexec
   restart: always
 
 ################################################################################
@@ -64,7 +64,7 @@ services:
   ##############################################################################
   patchmon-frontend:
     # https://github.com/patchmon/PatchMon/pkgs/container/patchmon-frontend
-    image: ghcr.io/patchmon/patchmon-frontend:${VERSION_PATCHMON:-1.3.7}
+    image: ghcr.io/patchmon/patchmon-frontend:${VERSION_PATCHMON:-1.4.2}
     <<:
       - *basic
       # - *basic-deploy-labels
@@ -72,12 +72,17 @@ services:
       <<:
         - *basic-deploy
         - *basic-deploy-labels
+    cap_add:
+      - CHOWN # Allows changing file ownership (`chown`,`chgrp`)
+      - SETGID # Allows setting group ID (`setgid`,`newgrp`,`chgrp`,`setregid()`)
+      - SETUID # Allows setting user ID (`setuid`,`su`,`sudo`,`passwd`)
     environment:
       BACKEND_HOST: patchmon-backend
       BACKEND_PORT: 3001
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
+      - branding_assets:/usr/share/nginx/html/assets
     networks:
       default: {}
       proxy: {}
@@ -87,7 +92,7 @@ services:
   ##############################################################################
   patchmon-backend:
     # https://github.com/patchmon/PatchMon/pkgs/container/patchmon-backend
-    image: ghcr.io/patchmon/patchmon-backend:${VERSION_PATCHMON:-1.3.7}
+    image: ghcr.io/patchmon/patchmon-backend:${VERSION_PATCHMON:-1.4.2}
     <<:
       - *basic
     deploy:
@@ -102,36 +107,40 @@ services:
       PORT: 3001
       SERVER_PROTOCOL: ${SERVER_PROTOCOL:-https}
       SERVER_HOST: ${DOMAIN?domain variable not set}
-      SERVER_PORT: ${SERVER_PROTOCOL:-443}
+      SERVER_PORT: ${SERVER_PORT:-443}
       CORS_ORIGIN: ${SERVER_PROTOCOL:-https}://${DOMAIN?domain variable not set}
+      TRUST_PROXY: 1
       # Database Connection Pool Configuration (Prisma)
-      DB_CONNECTION_LIMIT: 30
-      DB_POOL_TIMEOUT: 20
-      DB_CONNECT_TIMEOUT: 10
-      DB_IDLE_TIMEOUT: 300
-      DB_MAX_LIFETIME: 1800
+      DB_CONNECTION_LIMIT: ${DB_CONNECTION_LIMIT:-30}
+      DB_POOL_TIMEOUT: ${DB_POOL_TIMEOUT:-20}
+      DB_CONNECT_TIMEOUT: ${DB_CONNECT_TIMEOUT:-10}
+      DB_IDLE_TIMEOUT: ${DB_IDLE_TIMEOUT:-300}
+      DB_MAX_LIFETIME: ${DB_MAX_LIFETIME:-1800}
       # Rate Limiting (times in milliseconds)
-      RATE_LIMIT_WINDOW_MS: 900000
-      RATE_LIMIT_MAX: 5000
-      AUTH_RATE_LIMIT_WINDOW_MS: 600000
-      AUTH_RATE_LIMIT_MAX: 500
-      AGENT_RATE_LIMIT_WINDOW_MS: 60000
-      AGENT_RATE_LIMIT_MAX: 1000
+      RATE_LIMIT_WINDOW_MS: ${RATE_LIMIT_WINDOW_MS:-900000}
+      RATE_LIMIT_MAX: ${RATE_LIMIT_MAX:-5000}
+      AUTH_RATE_LIMIT_WINDOW_MS: ${AUTH_RATE_LIMIT_WINDOW_MS:-600000}
+      AUTH_RATE_LIMIT_MAX: ${AUTH_RATE_LIMIT_MAX:-500}
+      AGENT_RATE_LIMIT_WINDOW_MS: ${AGENT_RATE_LIMIT_WINDOW_MS:-60000}
+      AGENT_RATE_LIMIT_MAX: ${AGENT_RATE_LIMIT_MAX:-1000}
       # Redis Configuration
       REDIS_HOST: valkey
       REDIS_PORT: 6379
       REDIS_DB: 0
+      # Other
+      ASSETS_DIR: /app/assets
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - agent_files:/app/agents
+      - branding_assets:/app/assets
 
   ##############################################################################
   ##############################################################################
   ##############################################################################
   valkey:
     # https://hub.docker.com/r/valkey/valkey
-    image: valkey/valkey:${VERSION_VALKEY:-9.0.1-alpine}
+    image: valkey/valkey:${VERSION_VALKEY:-9.1.0-alpine}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -162,7 +171,7 @@ services:
   ##############################################################################
   postgresql:
     # https://hub.docker.com/_/postgres
-    image: postgres:${VERSION_POSTGRESQL:-18.1-alpine}
+    image: postgres:${VERSION_POSTGRESQL:-18.4-alpine}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -186,13 +195,18 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-patchmon}
       POSTGRES_USER: ${POSTGRES_USER:-patchmon}
       POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password_file
+      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
       PGDATA: /var/lib/postgresql/18/data
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - postgresql_v18:/var/lib/postgresql/18/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -h 127.0.0.1 -d $${POSTGRES_DB} -U $${POSTGRES_USER}",
+        ]
       start_period: 10s
       interval: 30s
       timeout: 5s
@@ -212,6 +226,7 @@ networks:
 
 volumes:
   agent_files: {}
+  branding_assets: {}
   valkey: {}
   postgresql_v18: {}
 
