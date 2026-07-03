@@ -248,7 +248,7 @@ x-live-env: &live-env
   API_BASE_URL: http://api:8000
   LIVE_BASE_PATH: /live
   LIVE_SERVER_SECRET_KEY: ${LIVE_SERVER_SECRET_KEY?Live secret key not set}
-  # IFRAMELY_URL: http://iframely:8061
+  IFRAMELY_URL: ${IFRAMELY_URL:-} # http://iframely:8061
 
 x-web-env: &web-env
   HOSTNAME: 0.0.0.0
@@ -264,6 +264,7 @@ x-monitor-env: &monitor-env
   SERVICE_TCP_REDIS: plane-redis:6379
   SERVICE_TCP_POSTGRES: plane-db:5432
   TRUSTED_PROXIES: ${TRUSTED_PROXIES:-0.0.0.0/0}
+  # APP_PROTOCOL=http
   API_HOSTNAME: http://api:8000
 
 x-outbox-poller-env: &outbox-poller-env
@@ -279,7 +280,7 @@ x-outbox-poller-env: &outbox-poller-env
   OUTBOX_POLLER_POOL_MAX_IDLE: ${OUTBOX_POLLER_POOL_MAX_IDLE:-300.0}
   OUTBOX_POLLER_POOL_MAX_LIFETIME: ${OUTBOX_POLLER_POOL_MAX_LIFETIME:-3600}
   OUTBOX_POLLER_POOL_RECONNECT_TIMEOUT: ${OUTBOX_POLLER_POOL_RECONNECT_TIMEOUT:-5.0}
-  OUTBOX_POLLER_POOL_HEALTH_CHECK_INTERVAL: ${OUTBOX_POLLER_POOL_HEALTH_CHECK_INTERVAL:-30}
+  OUTBOX_POLLER_POOL_HEALTH_CHECK_INTERVAL: ${OUTBOX_POLLER_POOL_HEALTH_CHECK_INTERVAL:-60}
 
 x-automation-consumer-env: &automation-consumer-env
   AUTOMATION_EVENT_STREAM_QUEUE_NAME: ${AUTOMATION_EVENT_STREAM_QUEUE_NAME:-plane.event_stream.automations}
@@ -353,6 +354,9 @@ x-app-env: &app-env
   SECRET_KEY: ${SECRET_KEY?Secret key not set}
   LIVE_SERVER_SECRET_KEY: ${LIVE_SERVER_SECRET_KEY?Live secret key not set}
   SSL_VERIFY: ${SSL_VERIFY:-1}
+
+  # OpenAPI / drf-spectacular toggle for API schema and docs
+  ENABLE_DRF_SPECTACULAR: ${ENABLE_DRF_SPECTACULAR:-0}
 
   # API key rate limit
   API_KEY_RATE_LIMIT: ${API_KEY_RATE_LIMIT:-60/minute}
