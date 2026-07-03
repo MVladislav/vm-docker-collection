@@ -66,7 +66,7 @@ services:
   ##############################################################################
   dockhand:
     # https://hub.docker.com/r/fnsys/dockhand/tags?name=v
-    image: fnsys/dockhand:${VERSION:-v1.0.22}
+    image: fnsys/dockhand:${VERSION:-v1.0.36}
     <<:
       - *basic
       # - *basic-deploy-labels
@@ -76,6 +76,9 @@ services:
         - *basic-deploy-labels
     ports:
       - 3000:3000
+    environment:
+      DATA_DIR: /app/data
+      SKIP_DF_COLLECTION: ${SKIP_DF_COLLECTION:-false}
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro

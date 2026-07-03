@@ -1,20 +1,5 @@
 # SETUP
 
-```sh
-    MVladislav
-```
-
----
-
-- [SETUP](#setup)
-  - [basic](#basic)
-    - [create `.env` file following:](#create-env-file-following)
-      - [example short .env (swarm)](#example-short-env-swarm)
-      - [example short .env (bridge)](#example-short-env-bridge)
-  - [References](#references)
-
----
-
 ## basic
 
 > defined to work with traefik
@@ -45,7 +30,7 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION=v1.0.22
+VERSION=v1.0.36
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
@@ -73,3 +58,4 @@ DOMAIN=dockhand.home.local
 
 - <https://dockhand.pro/>
 - <https://github.com/Finsys/dockhand>
+- <https://dockhand.pro/manual/#environment-variables>
