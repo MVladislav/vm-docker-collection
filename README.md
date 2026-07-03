@@ -5,10 +5,12 @@ A docker collection with composer for a fast start-up.
 - Each service folder has its own **README**.
 
 | topic                 | type                  | name                                                                                                | description                                                                         |
-| :-------------------- | :-------------------- | :-------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------- |
+| --------------------- | --------------------- | --------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| **\_\_template**      | Configuration         | [README](./__template/README.md)                                                                    | Base configuration and templates for Docker Swarm with Traefik.                     |
 | **ai**                |                       |                                                                                                     |                                                                                     |
 |                       | AI                    | ~~[ai-text-generation-webui](https://github.com/oobabooga/text-generation-webui)~~                  | Web interface for AI text generation models.                                        |
-|                       | AI                    | [claude-code](https://github.com/anthropics/claude-code)                                            | Agentic coding tool that lives in your terminal.                                    |
+|                       | AI                    | ~~[claude-code](https://github.com/anthropics/claude-code)~~                                        | Agentic coding tool that lives in your terminal.                                    |
+|                       | AI                    | ~~[meetily](https://github.com/Zackriya-Solutions/meetily)~~                                        | AI meeting assistant.                                                               |
 |                       | AI                    | [ollama](https://github.com/ollama/ollama)                                                          | AI-powered automation and productivity tool.                                        |
 |                       | AI                    | [opencode](https://github.com/anomalyco/opencode)                                                   | Open source coding agent.                                                           |
 | **dev**               |                       |                                                                                                     |                                                                                     |
@@ -22,7 +24,7 @@ A docker collection with composer for a fast start-up.
 |                       | Cert                  | [acme](https://github.com/acmesh-official/acme.sh)                                                  | Client for SSL / TLS certificate automation.                                        |
 |                       | Dashboard             | [dashy](https://github.com/Lissy93/dashy)                                                           | A customizable personal dashboard for organizing web services and links.            |
 |                       | Updater               | [diun](https://github.com/crazy-max/diun)                                                           | Receive notifications when an image is updated on a Docker registry.                |
-|                       | Container Manager     | ~~[dockge](https://github.com/louislam/dockge)~~                                                    | Docker project for generic setups and experiments.                                  |
+|                       | Container Manager     | [dockhand](https://github.com/Finsys/dockhand)                                                      | Docker management you will like.                                                    |
 |                       | Dashboard             | [glance](https://github.com/glanceapp/glance)                                                       | A self-hosted dashboard that puts all your feeds in one place.                      |
 |                       | Dashboard             | [heimdall](https://github.com/linuxserver/Heimdall)                                                 | A web-based dashboard for organizing application links.                             |
 |                       | Dashboard             | [homepage](https://github.com/gethomepage/homepage)                                                 | A static start page for personal links and dashboards.                              |
@@ -34,6 +36,7 @@ A docker collection with composer for a fast start-up.
 |                       | Monitoring            | [beszel](https://github.com/henrygd/beszel)                                                         | Lightweight server monitoring hub with historical data, docker stats, and alerts.   |
 |                       | Monitoring            | [checkmate](https://github.com/bluewave-labs/Checkmate)                                             | Track and monitor server hardware, uptime, response times, and incidents.           |
 |                       | Monitoring            | [checkmk](https://checkmk.com/de)                                                                   | IT monitoring software for servers, applications, and networks.                     |
+|                       |                       | [dmarcguardhq](https://github.com/dmarcguardhq/dmarcguard)                                          | DMARC report parser.                                                                |
 |                       | Webhook               | [gotify](https://github.com/gotify/server)                                                          | A simple server for sending and receiving messages.                                 |
 |                       | Monitoring            | [librenms](https://github.com/librenms/librenms)                                                    | Network monitoring system for tracking device performance and metrics.              |
 |                       | Network Analysis      | ~~[ntopng](https://github.com/ntop/docker-ntop)~~                                                   | High-performance network traffic analysis and monitoring tool.                      |
@@ -128,7 +131,7 @@ A docker collection with composer for a fast start-up.
 | **sys-backup**        |                       |                                                                                                     |                                                                                     |
 |                       | Code                  | [forgejo](https://codeberg.org/forgejo/forgejo)                                                     | Self-hosted lightweight software forge.                                             |
 |                       | Backup                | [open-archiver](https://github.com/LogicLabs-OU/OpenArchiver)                                       | Legally compliant email archiving.                                                  |
-|                       | File Sync             | [syncthing](https://github.com/syncthing/syncthing)                                                 | Continuous file synchronization tool.                                               |
+|                       | File Management       | [syncthing](https://github.com/syncthing/syncthing)                                                 | Continuous file synchronization tool.                                               |
 |                       | Backup                | [zerobyte](https://github.com/nicotsx/zerobyte)                                                     | Backup automation.                                                                  |
 | **sys-design**        |                       |                                                                                                     |                                                                                     |
 |                       | Diagramming           | [drawio](https://github.com/jgraph/docker-drawio)                                                   | Web-based diagramming tool for creating flowcharts and designs.                     |
@@ -186,6 +189,7 @@ A docker collection with composer for a fast start-up.
 |                       | HRM                   | [orangehrm](https://github.com/orangehrm/orangehrm)                                                 |                                                                                     |
 |                       | Ticketing System      | [zammad-docker-compose](https://docs.zammad.org/en/latest/install/docker-compose.html)              | Self-hosted ticketing and customer support system.                                  |
 |                       | \*File Management     | [pydio-cells](https://github.com/pydio/cells)                                                       | Enterprise file sharing and collaboration platform.                                 |
+|                       | \*File Management     | [Sync-in](https://github.com/Sync-in/server)                                                        | Sovereign platform for file storage, sharing, synchronization, and collaboration.   |
 |                       | Customer Support      | [chatwoot](https://github.com/chatwoot/chatwoot)                                                    | Open-source customer support and engagement platform.                               |
 |                       | Monitoring            | [OpenTelemetry](https://opentelemetry.io/docs/demo/docker-deployment)                               | High-quality, ubiquitous, and portable telemetry to enable effective observability. |
 |                       | Monitoring            | [sensu-go](https://github.com/sensu/sensu-go)                                                       | Simple. Scalable. Multi-cloud monitoring.                                           |
@@ -264,12 +268,45 @@ A docker collection with composer for a fast start-up.
 |                       |                       | [logforge](https://github.com/log-forge/logforge)                                                   |                                                                                     |
 |                       | Photo Organizer       | [photonix](https://github.com/photonixapp/photonix)                                                 | Self-hosted photo management and gallery system.                                    |
 |                       | Transcoder            | [tdarr_old](https://github.com/haveagitgat/tdarr)                                                   | Media transcoding and management tool.                                              |
+|                       |                       |                                                                                                     |                                                                                     |
 
-## best practice start-up
+### Backlog / not added
 
-use docker-swarm to manage and start containers.
+| topic | type              | name                                             | description                                        |
+| :---- | :---------------- | :----------------------------------------------- | :------------------------------------------------- |
+|       | Container Manager | ~~[dockge](https://github.com/louislam/dockge)~~ | Docker project for generic setups and experiments. |
 
-for that is in each service following defined:
+### Quick Pentest
+
+| &nbsp;                                                            | &nbsp;             | &nbsp;                                                                      |
+| ----------------------------------------------------------------- | ------------------ | --------------------------------------------------------------------------- |
+| [README](./composer/helper/traefik/README.md)                     | Proxy              | [traefik](https://doc.traefik.io)                                           |
+| [README](./composer/dev/compiler-explorer/README.md)              | Programming Tool   | [compiler-explorer](https://github.com/compiler-explorer/compiler-explorer) |
+| [README](./composer/ai/ollama/README.md)                          | AI                 | [ollama](https://github.com/ollama/ollama)                                  |
+| [README](./composer/privacy/pangolin/README.md)                   | Proxy              | [pangolin](https://github.com/fosrl)                                        |
+| [README](./composer/sec/ngrok/README.md)                          | Tunneling          | [ngrok](https://ngrok.com)                                                  |
+| [README](./composer/sec-tool-cls/set/README.md)                   | Social Engineering | [set](https://github.com/trustedsec/social-engineer-toolkit)                |
+| [README](./composer/sec-tool-services/attack-navigator/README.md) | Attack Mapping     | [attack-navigator](https://github.com/mitre-attack/attack-navigator)        |
+| [README](./composer/sec-tool-services/caido/README.md)            | Analysis           | [caido](https://github.com/caido/caido)                                     |
+| [README](./composer/sec-tool-services/dependencytrack/README.md)  | Attack Mapping     | [dependencytrack](https://github.com/DependencyTrack/dependency-track)      |
+| [README](./composer/sec-tool-services/gophish/README.md)          | Phishing           | [gophish](https://github.com/gophish/gophish)                               |
+| [README](./composer/sec-tool-services/gowitness/README.md)        | Web Screenshots    | [gowitness](https://github.com/sensepost/gowitness)                         |
+| [README](./composer/sec-tool-services/opencti/README.md)          | CTI                | [opencti](https://github.com/OpenCTI-Platform/docker)                       |
+| [README](./composer/sec-tool-services/spiderfoot/README.md)       | Reconnaissance     | [spiderfoot](https://github.com/smicallef/spiderfoot)                       |
+| [README](./composer/sec-tool-services/velociraptor/README.md)     | Forensics          | [velociraptor](https://github.com/Velocidex/velociraptor)                   |
+| [README](./composer/sec-tool-services/web-check/README.md)        | Web Security       | [web-check](https://github.com/Lissy93/web-check)                           |
+| [README](./composer/sys-tools/ittools/README.md)                  | Tooling            | [IT-Tools](https://github.com/CorentinTh/it-tools)                          |
+| [README](.//README.md)                                            | Terminal           | [Termix](https://github.com/LukeGus/Termix)                                 |
+| &nbsp;                                                            |                    |                                                                             |
+| &nbsp;                                                            | &nbsp;             | [robin](https://github.com/apurvsinghgautam/robin)                          |
+
+---
+
+## Best Practice Start-Up
+
+Use docker-swarm to manage and start containers.
+
+For that, each service is configured as follows:
 
 ```yml
 services:
@@ -292,24 +329,23 @@ services:
         mode: host
 ```
 
-to start this configuration with all supportings between docker-stack and docker-composer
-run it example as follow:
+To start this configuration with all support between docker-stack and docker-compose, run it as follows:
 
-create alias for a `docker-swarm` command:
+Create alias for `docker-swarm` command:
 
-> _find aliases also here: [.dotfiles](https://github.com/MVladislav/.dotfiles/blob/7c928dc65c273021799314d0c373c73c88d3feac/zsh/zshrc-append#L124)_
+> _Find aliases also here: [.dotfiles](https://github.com/MVladislav/.dotfiles/blob/7c928dc65c273021799314d0c373c73c88d3feac/zsh/zshrc-append#L124)_
 
 ```sh
-$alias docker='DOCKER_BUILDKIT=1 docker'
-$alias docker-compose='docker compose'
-$alias docker-swarm-compose='docker compose --compatibility config | sed '\''s|cpus: \([0-9]\+\(\.[0-9]\+\)*\)|cpus: "\1"|'\'' | sed '\''1{/^name:/d}'\'' | sed '\''s/published: "\(.*\)"/published: \1/'\'' | docker stack deploy --resolve-image=never --with-registry-auth --detach=false --compose-file -'
-$alias docker-swarm='docker compose --compatibility config | sed '\''s|cpus: \([0-9]\+\(\.[0-9]\+\)*\)|cpus: "\1"|'\'' | sed '\''1{/^name:/d}'\'' | sed '\''s/published: "\(.*\)"/published: \1/'\'' | docker stack deploy --resolve-image=always --with-registry-auth --detach=false --compose-file -'
+alias docker='DOCKER_BUILDKIT=1 docker'
+alias docker-compose='docker compose'
+alias docker-swarm-compose='docker compose --compatibility config | sed '\''s|cpus: \([0-9]\+\(\.[0-9]\+\)*\)|cpus: "\1"|'\'' | sed '\''1{/^name:/d}'\'' | sed '\''s/published: "\(.*\)"/published: \1/'\'' | docker stack deploy --resolve-image=never --with-registry-auth --detach=false --compose-file -'
+alias docker-swarm='docker compose --compatibility config | sed '\''s|cpus: \([0-9]\+\(\.[0-9]\+\)*\)|cpus: "\1"|'\'' | sed '\''1{/^name:/d}'\'' | sed '\''s/published: "\(.*\)"/published: \1/'\'' | docker stack deploy --resolve-image=always --with-registry-auth --detach=false --compose-file -'
 ```
 
-and as run:
+And run:
 
 ```sh
-$docker-swarm-compose <STACK_NAME>
+docker-swarm-compose <STACK_NAME>
 ```
 
 ---
