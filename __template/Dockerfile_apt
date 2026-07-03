@@ -1,32 +1,12 @@
-ARG VERSION_PHP=7.4
 ARG VERSION_UBUNTU=26.04
 
-FROM ubuntu:${VERSION_UBUNTU}
-# FROM ghcr.io/linuxserver/baseimage-ubuntu:bionic
-# FROM ghcr.io/linuxserver/baseimage-ubuntu:arm64v8-bionic
-# FROM ubuntu:latest
+FROM ubuntu:$VERSION_UBUNTU
 
-FROM php:${VERSION_PHP}-apache-stretch
-FROM php:${VERSION_PHP}-fpm-alpine
-
-FROM node:lts-alpine as frontend
-
-# ------------------------------------------------------------------------------
-
-# set version label
-ARG BUILD_DATE=$(date +"%Y-%m-%d")
-ARG VERSION=latest
-LABEL build_version="MVladislav :: version - '${VERSION}' :: build-date - '${BUILD_DATE}'"
-LABEL maintainer="MVladislav"
-LABEL org.opencontainers.image.description="example official docker container."
-
-# ------------------------------------------------------------------------------
-
-ENV DEBIAN_FRONTEND noninteractive
-ENV PHP_EXTRA_CONFIGURE_ARGS --enable-fpm --with-fpm-user=www-data --with-fpm-group=www-data
-ENV PATH /usr/local/bin:$PATH
-
+# Avoid interactive prompts
+ENV DEBIAN_FRONTEND=noninteractive
 RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections
+
+ENV PATH=/usr/local/bin:$PATH
 
 # ------------------------------------------------------------------------------
 
@@ -44,44 +24,45 @@ RUN ln -sf /bin/true /usr/bin/ischroot
 
 # http://bugs.python.org/issue19846
 # > At the moment, setting "LANG=C" on a Linux system *fundamentally breaks Python 3*, and that's not OK.
-ENV LANG C.UTF-8
+ENV LANG=C.UTF-8
 
 # ------------------------------------------------------------------------------
 
-ENV LANG en_US.UTF-8
-ENV LANGUAGE en_US.UTF-8
-ENV LC_ALL C.UTF-8
+ENV LANG=en_US.UTF-8
+ENV LANGUAGE=en_US.UTF-8
+ENV LC_ALL=C.UTF-8
 
 # ------------------------------------------------------------------------------
 
-RUN \
-  echo "**** BASE => UPDATE :: INSTALL :: CLEAN ****" && \
-  apt-get update -q && \
-  apt-get install -y --no-install-recommends \
-    # language
-    locales \
+# Install runtime dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
     apt-utils \
+    apt-transport-https \
+    locales \
     language-pack-en \
-    # defaults \
     git \
     vim \
     curl \
-    wget \
-    apt-transport-https \
     ca-certificates \
     iproute2 \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
     supervisor \
     make \
     build-essential \
-  && \
-  apt-get clean && \
-  rm -rf \
-    /tmp/* \
-    /var/tmp/* \
-    /var/lib/apt/lists/* \
-    /var/log/* \
-    /var/www \
-    /usr/src/*
+    && rm -rf /var/lib/apt/lists/*
+
+RUN apt-get clean && \
+    rm -rf \
+      /tmp/* \
+      /var/tmp/* \
+      /var/lib/apt/lists/* \
+      /var/log/* \
+      /var/www \
+      /usr/src/*
 
 # ------------------------------------------------------------------------------
 
