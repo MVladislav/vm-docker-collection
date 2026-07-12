@@ -44,11 +44,6 @@ x-basic-deploy: &basic-deploy
 
 x-basic: &basic
   env_file: ${ENV_FILE:-.env}
-  cap_add:
-    - CHOWN # Allows changing file ownership (`chown`,`chgrp`)
-    - FOWNER # Overrides file ownership checks (`chmod`,`kill`)
-    - SETGID # Allows setting group ID (`setgid`,`newgrp`,`chgrp`,`setregid()`)
-    - SETUID # Allows setting user ID (`setuid`,`su`,`sudo`,`passwd`)
   cap_drop: ["ALL"]
   security_opt:
     - no-new-privileges:true
@@ -63,12 +58,11 @@ x-basic: &basic
     as: -1
   # mem_limit: ${RESOURCES_LIMITS_MEMORY:-1g}
   networks:
-    # default: {}
-    proxy: {}
+    default: {}
   healthcheck:
     disable: true
   tmpfs:
-    - /tmp:rw,nosuid,nodev,noexec,relatime,size=512m
+    - /tmp:rw,relatime,size=512m,nodev,nosuid,noexec
   restart: always
 
 ################################################################################
@@ -79,8 +73,8 @@ services:
   ##############################################################################
   ##############################################################################
   forgejo:
-    # https://codeberg.org/forgejo/-/packages/container/forgejo/14
-    image: codeberg.org/forgejo/forgejo:${VERSION:-14}
+    # https://codeberg.org/forgejo/-/packages/container/forgejo
+    image: codeberg.org/forgejo/forgejo:${VERSION:-15}
     <<:
       - *basic
       # - *basic-deploy-labels
@@ -88,40 +82,69 @@ services:
       <<:
         - *basic-deploy
         - *basic-deploy-labels
+    cap_add:
+      - CHOWN # Allows changing file ownership (`chown`,`chgrp`)
+      - FOWNER # Overrides file ownership checks (`chmod`,`kill`)
+      - SETGID # Allows setting group ID (`setgid`,`newgrp`,`chgrp`,`setregid()`)
+      - SETUID # Allows setting user ID (`setuid`,`su`,`sudo`,`passwd`)
+      # - DAC_OVERRIDE # Bypasses file read/write/execute permission checks (`cat`,`touch`,`rm`)
     environment:
       USER_UID: ${USER_UID:-1000}
       USER_GID: ${USER_GID:-1000}
-      # FORGEJO__[SECTION]__[KEY]
-      FORGEJO__DEFAULT__APP_NAME: "${APP_NAME:-Forgejo: Beyond coding. We forge.}"
+      # https://forgejo.org/docs/v15.0/admin/config-cheat-sheet/#overall-default
+      # - Basic Format:   FORGEJO__[SECTION]__[KEY]
+      # - DEFAULT Format: FORGEJO____[KEY]
+      # DEFAULT
+      FORGEJO____APP_NAME: "${APP_NAME:-Forgejo}"
+      FORGEJO____APP_SLOGAN: "${APP_SLOGAN:-Beyond coding. We Forge.}"
+
+      # SERVER
       FORGEJO__server__ROOT_URL: https://${DOMAIN?domain variable not set}
+      FORGEJO__server__DOMAIN: ${DOMAIN?domain variable not set}
+      FORGEJO__server__HTTP_PORT: ${PORT:-3000}
+      FORGEJO__server__DISABLE_SSH: ${FORGEJO_DISABLE_SSH:-false}
       FORGEJO__server__SSH_DOMAIN: ${DOMAIN?domain variable not set}
+      FORGEJO__server__SSH_PORT: ${PORT_SSH:-22}
+
+      # SECURITY
       FORGEJO__security__GLOBAL_TWO_FACTOR_REQUIREMENT: all
       FORGEJO__security__PASSWORD_COMPLEXITY: "lower,upper,digit,spec" # pragma: allowlist secret
+
+      # DATABASE
+      FORGEJO__database__DB_TYPE: sqlite3
+      FORGEJO__database__Path: /data/gitea/gitea.db
+
+      # ACTIONS
+      # FORGEJO__actions__ENABLED: true
+      # FORGEJO__actions__DEFAULT_ACTIONS_URL: https://github.com
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - data:/data
-    # healthcheck:
-    #   test:
-    #     [
-    #       "CMD-SHELL",
-    #       "curl -kIf ${PROTOCOL:-http}://127.0.0.1:${PORT:-3000} > /dev/null 2>&1 || exit 1",
-    #     ]
-    #   start_period: 10s
-    #   interval: 30s
-    #   timeout: 5s
-    #   retries: 3
+    networks:
+      default: {}
+      proxy: {}
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -ksSfo /dev/null ${PROTOCOL:-http}://127.0.0.1:${PORT:-3000} > /dev/null 2>&1 || exit 1",
+        ]
+      start_period: 10s
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
 ################################################################################
 ################################################################################
 ################################################################################
 networks:
-  # default:
-  #   internal: true
-  #   driver: ${NETWORK_MODE:-overlay}
-  #   attachable: true
-  #   driver_opts:
-  #     encrypted: "true"
+  default:
+    internal: true
+    driver: ${NETWORK_MODE:-overlay}
+    attachable: true
+    driver_opts:
+      encrypted: "true"
   proxy:
     external: true
 

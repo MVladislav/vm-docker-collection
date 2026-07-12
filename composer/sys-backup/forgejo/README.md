@@ -1,21 +1,5 @@
 # SETUP
 
-```sh
-    MVladislav
-```
-
----
-
-- [SETUP](#setup)
-  - [basic](#basic)
-    - [create `.env` file following:](#create-env-file-following)
-      - [example short .env (swarm)](#example-short-env-swarm)
-      - [example short .env (bridge)](#example-short-env-bridge)
-  - [Guides \& Insights](#guides--insights)
-  - [References](#references)
-
----
-
 ## basic
 
 > defined to work with traefik
@@ -49,7 +33,7 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION=14
+VERSION=15
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
@@ -88,3 +72,5 @@ If self hosted cert use `GIT_SSL_NO_VERIFY=true git ...`.
 - <https://codeberg.org/forgejo/forgejo>
 - <https://forgejo.org/docs/latest/admin/installation/docker/#docker>
 - <https://forgejo.org/docs/latest/admin/config-cheat-sheet/#server-server>
+- <https://forgejo.org/docs/latest/admin/actions/runner-installation/>
+- <https://docs.renovatebot.com/modules/platform/forgejo/>

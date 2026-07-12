@@ -3,5 +3,11 @@
 !.gitempty
 
 !docker-compose.yaml
+!docker-compose.runner.yaml
 
 !README.md
+
+!config/
+config/*
+
+!config/*.tmpl
