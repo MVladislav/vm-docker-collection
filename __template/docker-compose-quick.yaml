@@ -78,6 +78,7 @@ services:
   ##############################################################################
   app:
     # https://hub.docker.com/r/...
+    # https://github.com/.../.../pkgs/container/...
     image: localhost:5000/...:${VERSION:-latest}
     <<:
       - *basic

@@ -160,6 +160,7 @@ services:
   ##############################################################################
   app:
     # https://hub.docker.com/r/...
+    # https://github.com/.../.../pkgs/container/...
     build:
       context: .
       dockerfile: ./Dockerfile
