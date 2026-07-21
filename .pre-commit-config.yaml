@@ -5,7 +5,7 @@
 repos:
   # Codespell for spelling corrections
   - repo: https://github.com/codespell-project/codespell
-    rev: v2.4.2
+    rev: v2.4.3
     hooks:
       - id: codespell
         args:
@@ -37,7 +37,7 @@ repos:
 
   # Prettier for code formatting
   - repo: https://github.com/rbubley/mirrors-prettier
-    rev: v3.9.4
+    rev: v3.9.6
     hooks:
       - id: prettier
         additional_dependencies:
