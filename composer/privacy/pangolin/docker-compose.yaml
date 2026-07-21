@@ -48,7 +48,7 @@ services:
   ##############################################################################
   pangolin:
     # https://hub.docker.com/r/fosrl/pangolin/tags
-    image: fosrl/pangolin:${VERSION_PANGOLIN:-${PANGOLIN_EE:-}1.20.0}
+    image: fosrl/pangolin:${VERSION_PANGOLIN:-${PANGOLIN_EE:-}1.21.0}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -118,7 +118,7 @@ services:
   ##############################################################################
   gerbil:
     # https://hub.docker.com/r/fosrl/gerbil/tags
-    image: fosrl/gerbil:${VERSION_GERBIL:-1.4.2}
+    image: fosrl/gerbil:${VERSION_GERBIL:-1.4.3}
     depends_on:
       pangolin:
         condition: service_healthy
@@ -201,7 +201,7 @@ services:
   ##############################################################################
   traefik:
     # https://hub.docker.com/_/traefik
-    image: traefik:${VERSION_TRAEFIK:-v3.7.7}
+    image: traefik:${VERSION_TRAEFIK:-v3.7.8}
     depends_on:
       pangolin:
         condition: service_healthy
@@ -329,7 +329,7 @@ services:
       # TRAEFIK_CERTIFICATESRESOLVERS_CERTIFICATES_ACME_EAB_HMACENCODED: ${CERTIFICATES_ACME_EAB_HMACENCODED}
       # --- PLUGINS ---
       TRAEFIK_EXPERIMENTAL_PLUGINS_BADGER_MODULENAME: github.com/fosrl/badger
-      TRAEFIK_EXPERIMENTAL_PLUGINS_BADGER_VERSION: ${VERSION_BADGER:-v1.4.1} # https://github.com/fosrl/badger
+      TRAEFIK_EXPERIMENTAL_PLUGINS_BADGER_VERSION: ${VERSION_BADGER:-v1.5.0} # https://github.com/fosrl/badger
       TRAEFIK_EXPERIMENTAL_PLUGINS_CROWDSEC_MODULENAME: github.com/maxlerebourg/crowdsec-bouncer-traefik-plugin
       TRAEFIK_EXPERIMENTAL_PLUGINS_CROWDSEC_VERSION: ${VERSION_CROWDSEC_PLUGIN:-v1.6.0} # https://plugins.traefik.io/plugins/6335346ca4caa9ddeffda116/crowdsec-bouncer-traefik-plugin
     healthcheck:
@@ -416,7 +416,7 @@ services:
   ##############################################################################
   geoipupdate:
     # https://github.com/maxmind/geoipupdate/pkgs/container/geoipupdate
-    image: ghcr.io/maxmind/geoipupdate:${VERSION_MAXMIND:-v7.1.1}
+    image: ghcr.io/maxmind/geoipupdate:${VERSION_MAXMIND:-v8.0.0}
     <<: *basic
     deploy:
       <<: *basic-deploy

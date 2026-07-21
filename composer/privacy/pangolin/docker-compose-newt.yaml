@@ -50,7 +50,7 @@ services:
   ##############################################################################
   newt:
     # https://hub.docker.com/r/fosrl/newt/tags
-    image: fosrl/newt:${VERSION_NEWT:-1.14.0}
+    image: fosrl/newt:${VERSION_NEWT:-1.15.0}
     <<: *basic
     deploy:
       <<: *basic-deploy
