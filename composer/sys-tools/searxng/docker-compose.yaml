@@ -1,0 +1,184 @@
+---
+x-basic-deploy-labels: &basic-deploy-labels
+  labels:
+    - traefik.enable=true
+    - traefik.swarm.lbswarm=${LB_SWARM:-true}
+    - traefik.swarm.network=proxy
+    - traefik.http.routers.searxng.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.searxng.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.searxng.tls=true
+    - traefik.http.routers.searxng.tls.certresolver=${CERT_RESOLVER:-}
+    - traefik.http.routers.searxng.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.searxng.service=searxng
+    - traefik.http.services.searxng.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.searxng.loadbalancer.server.port=${PORT:-8080}
+
+x-basic-deploy: &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  update_config:
+    order: stop-first
+  restart_policy:
+    condition: any
+  resources:
+    limits:
+      cpus: ${RESOURCES_LIMITS_CPUS:-1}
+      memory: ${RESOURCES_LIMITS_MEMORY:-1g}
+    reservations:
+      cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
+      memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
+
+x-basic: &basic
+  env_file: ${ENV_FILE:-.env}
+  cap_add:
+    # - CHOWN # Allows changing file ownership (`chown`,`chgrp`)
+    # - FOWNER # Overrides file ownership checks (`chmod`,`kill`)
+    # - DAC_READ_SEARCH # Bypasses file read and directory execute permissions (`ls`,`cat`,`find`)
+    - DAC_OVERRIDE # Bypasses file read/write/execute permission checks (`cat`,`touch`,`rm`)
+    - SETGID # Allows setting group ID (`setgid`,`newgrp`,`chgrp`,`setregid()`)
+    - SETUID # Allows setting user ID (`setuid`,`su`,`sudo`,`passwd`)
+    # - FSETID # Allows setting file SUID/SGID bits (`chmod u+s`,`chmod g+s`)
+  cap_drop: ["ALL"]
+  security_opt:
+    - no-new-privileges:true
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 655360
+      hard: 655360
+    fsize: -1
+    as: -1
+  # mem_limit: ${RESOURCES_LIMITS_MEMORY:-1g}
+  networks:
+    default: {}
+  healthcheck:
+    disable: true
+  tmpfs:
+    - /tmp:rw,relatime,size=512m,nodev,nosuid,noexec
+  restart: always
+
+################################################################################
+################################################################################
+################################################################################
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  searxng:
+    # https://hub.docker.com/r/searxng/searxng
+    image: searxng/searxng:${VERSION:-2026.7.28-8372f5d85}
+    <<:
+      - *basic
+      # - *basic-deploy-labels
+    deploy:
+      <<:
+        - *basic-deploy
+        - *basic-deploy-labels
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_SEARXNG:-2}
+          memory: ${RESOURCES_LIMITS_MEMORY_SEARXNG:-512m}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_SEARXNG:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_SEARXNG:-32m}
+    environment:
+      SEARXNG_SECRET_KEY: ${SEARXNG_SECRET_KEY?SEARXNG_SECRET_KEY is not set}
+
+      SEARXNG_BASE_URL: https://${DOMAIN?domain variable not set}
+      SEARXNG_PORT: ${PORT:-8080}
+      SEARXNG_BIND_ADDRESS: "127.0.0.1"
+      SEARXNG_HOST: "127.0.0.1"
+
+      SEARXNG_LIMITER: ${SEARXNG_LIMITER:-false}
+      SEARXNG_PUBLIC_INSTANCE: ${SEARXNG_PUBLIC_INSTANCE:-false}
+
+      SEARXNG_IMAGE_PROXY: ${SEARXNG_IMAGE_PROXY:-false}
+      SEARXNG_METHOD: ${SEARXNG_METHOD:-POST}
+
+      SEARXNG_INSTANCE_NAME: ${SEARXNG_INSTANCE_NAME:-SearXNG}
+
+      SEARXNG_PRIVACYPOLICY_URL: ${SEARXNG_PRIVACYPOLICY_URL:-false}
+      SEARXNG_DONATION_URL: ${SEARXNG_DONATION_URL:-false}
+      SEARXNG_CONTACT_URL: ${SEARXNG_CONTACT_URL:-false}
+
+      SEARXNG_ENABLE_METRICS: ${SEARXNG_ENABLE_METRICS:-true}
+      SEARXNG_OPEN_METRICS: ${SEARXNG_OPEN_METRICS:-}
+      SEARXNG_DEBUG: ${SEARXNG_DEBUG:-false}
+
+      SEARXNG_VALKEY_URL: valkey://@valkey:6379/0
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - data:/var/cache/searxng/
+      - config:/etc/searxng/
+    networks:
+      default: {}
+      proxy: {}
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget --no-verbose --tries=1 --spider --no-check-certificate ${PROTOCOL:-http}://127.0.0.1:${PORT:-8080} || exit 1",
+        ]
+      start_period: 10s
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  valkey:
+    # https://hub.docker.com/r/valkey/valkey
+    image: valkey/valkey:${VERSION_VALKEY:-9.1.0-alpine}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_VALKEY:-2}
+          memory: ${RESOURCES_LIMITS_MEMORY_VALKEY:-512m}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_VALKEY:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_VALKEY:-32m}
+    cap_add:
+      - SETUID
+      - SETGID
+    environment:
+      ALLOW_EMPTY_PASSWORD: yes
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - valkey:/data
+    command: --port 6379 --save 300 1 --loglevel warning
+    healthcheck:
+      test: ["CMD-SHELL", "valkey-cli ping | grep PONG"]
+      start_period: 10s
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  default:
+    internal: true
+    driver: ${NETWORK_MODE:-overlay}
+    attachable: true
+    driver_opts:
+      encrypted: "true"
+  proxy:
+    external: true
+
+volumes:
+  data: {}
+  config: {}
+  valkey: {}
