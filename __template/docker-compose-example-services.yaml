@@ -57,9 +57,10 @@ services:
     cap_add:
       - SETUID
       - SETGID
-    # environment:
-    #   - VALKEY_EXTRA_FLAGS=--maxmemory 128mb --maxmemory-policy volatile-lfu
-    #   - VALKEY_EXTRA_FLAGS=--requirepass ${VALKEY_PASSWORD?VALKEY_PASSWORD not set}
+    environment:
+      ALLOW_EMPTY_PASSWORD: ${ALLOW_EMPTY_PASSWORD:-true}
+      # VALKEY_EXTRA_FLAGS: --maxmemory 128mb --maxmemory-policy volatile-lfu
+      # VALKEY_EXTRA_FLAGS: --requirepass ${VALKEY_PASSWORD?VALKEY_PASSWORD not set}
     volumes:
       # - /etc/timezone:/etc/timezone:ro
       # - /etc/localtime:/etc/localtime:ro
@@ -216,6 +217,7 @@ services:
     secrets:
       - postgres_password_file
     environment:
+      # DB_CONNECTION_URI: postgres://${POSTGRES_USER:-postgresql}:${POSTGRES_PW?POSTGRES_PW is not set}@postgresql:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-postgresql}
       POSTGRES_DB: ${POSTGRES_DB:-postgresql}
       POSTGRES_USER: ${POSTGRES_USER:-postgresql}
       POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password_file
