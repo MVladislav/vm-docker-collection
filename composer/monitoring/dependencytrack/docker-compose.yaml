@@ -1,0 +1,204 @@
+---
+x-basic-deploy-labels: &basic-deploy-labels
+  labels:
+    - traefik.enable=true
+    - traefik.swarm.lbswarm=${LB_SWARM:-true}
+    - traefik.swarm.network=proxy
+    - traefik.http.routers.dtrack.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.dtrack.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.dtrack.tls=true
+    - traefik.http.routers.dtrack.tls.certresolver=${CERT_RESOLVER:-}
+    - traefik.http.routers.dtrack.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.dtrack.service=dtrack
+    - traefik.http.services.dtrack.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.dtrack.loadbalancer.server.port=${PORT:-8080}
+
+x-basic-deploy-labels-api: &basic-deploy-labels-api
+  labels:
+    - traefik.enable=true
+    - traefik.swarm.lbswarm=${LB_SWARM:-true}
+    - traefik.swarm.network=proxy
+    - traefik.http.routers.dtrack-api.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.dtrack-api.rule=Host(`api-${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.dtrack-api.tls=true
+    - traefik.http.routers.dtrack-api.tls.certresolver=${CERT_RESOLVER:-}
+    - traefik.http.routers.dtrack-api.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.dtrack-api.service=dtrack-api
+    - traefik.http.services.dtrack-api.loadbalancer.server.scheme=${PROTOCOL_API:-http}
+    - traefik.http.services.dtrack-api.loadbalancer.server.port=${PORT_API:-8080}
+
+x-basic-deploy: &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  update_config:
+    order: stop-first
+  restart_policy:
+    condition: any
+  resources:
+    limits:
+      cpus: ${RESOURCES_LIMITS_CPUS:-1}
+      memory: ${RESOURCES_LIMITS_MEMORY:-1g}
+    reservations:
+      cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
+      memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
+
+x-basic: &basic
+  env_file: ${ENV_FILE:-.env}
+  cap_drop: ["ALL"]
+  security_opt:
+    - no-new-privileges:true
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 655360
+      hard: 655360
+    fsize: -1
+    as: -1
+  # mem_limit: ${RESOURCES_LIMITS_MEMORY:-1g}
+  networks:
+    default: {}
+  healthcheck:
+    disable: true
+  tmpfs:
+    - /tmp:rw,relatime,size=512m,nodev,nosuid,noexec
+  restart: always
+
+################################################################################
+################################################################################
+################################################################################
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  dtrack-frontend:
+    # https://github.com/dependencytrack/apiserver/pkgs/container/apiserver
+    image: ghcr.io/dependencytrack/frontend:${VERSION_DEPENDENCY_TRACK:-5.0.2}
+    <<:
+      - *basic
+      # - *basic-deploy-labels
+    deploy:
+      <<:
+        - *basic-deploy
+        - *basic-deploy-labels
+    environment:
+      API_BASE_URL: "https://api-${DOMAIN?domain variable not set}"
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    networks:
+      default: {}
+      proxy: {}
+    # healthcheck:
+    #   test: [
+    #       "CMD-SHELL",
+    #       "curl -kf ${PROTOCOL:-http}://127.0.0.1:${PORT:-8080} > /dev/null 2>&1 || exit 1",
+    #     ]
+    #   start_period: 10s
+    #   interval: 30s
+    #   timeout: 5s
+    #   retries: 3
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  dtrack-apiserver:
+    # https://github.com/dependencytrack/apiserver/pkgs/container/apiserver
+    image: ghcr.io/dependencytrack/apiserver:${VERSION_DEPENDENCY_TRACK:-5.0.2}
+    <<:
+      - *basic
+      # - *basic-deploy-labels-api
+    deploy:
+      <<:
+        - *basic-deploy
+        - *basic-deploy-labels-api
+    environment:
+      DT_DATASOURCE_URL: "jdbc:postgresql://postgresql:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-dtrack}"
+      DT_DATASOURCE_USERNAME: ${POSTGRES_USER:-dtrack}
+      DT_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-dtrack}
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - data:/data
+    networks:
+      default: {}
+      proxy: {}
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -kf ${PROTOCOL:-http}://127.0.0.1:${PORT:-8080} > /dev/null 2>&1 || exit 1",
+        ]
+      start_period: 10s
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  postgresql:
+    # https://hub.docker.com/_/postgres
+    image: postgres:${VERSION_POSTGRESQL:-18.4-alpine}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_POSTGRESQL:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_POSTGRESQL:-512m}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_POSTGRESQL:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_POSTGRESQL:-32m}
+    cap_add:
+      - CHOWN
+      - FOWNER
+      - DAC_READ_SEARCH
+      - DAC_OVERRIDE
+      - SETUID
+      - SETGID
+    # secrets:
+    #   - postgres_password_file
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-dtrack}
+      POSTGRES_USER: ${POSTGRES_USER:-dtrack}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dtrack}
+      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+      PGDATA: /var/lib/postgresql/18/data
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - postgresql_v18:/var/lib/postgresql/18/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -h 127.0.0.1 -d $${POSTGRES_DB} -U $${POSTGRES_USER}",
+        ]
+      start_period: 10s
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  default:
+    internal: true
+    driver: ${NETWORK_MODE:-overlay}
+    attachable: true
+    driver_opts:
+      encrypted: "true"
+  proxy:
+    external: true
+
+volumes:
+  data: {}
+  postgresql_v18: {}
