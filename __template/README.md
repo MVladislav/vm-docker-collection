@@ -1,12 +1,12 @@
-# SETUP
+# Setup
 
-## basic
+## Basic
 
-> defined to work with traefik
+> designed to work with traefik
 
-### create your `secrets`:
+### Create your `secrets`
 
-> instead of openssl for password you can also use `pwgen -s 50 1`
+> instead of openssl for passwords you can also use `pwgen -s 50 1`
 
 ```sh
 openssl rand -base64 18 | docker secret create my_external_secret -
@@ -15,7 +15,7 @@ openssl rand -hex 18 | docker secret create my_external_secret -
 openssl rand -hex 18 > config/secrets/my_file_secret.txt
 ```
 
-### create `.env` file following:
+### Create the `.env` file
 
 ```env
 # GENERAL variables (mostly by default, change as needed)
@@ -51,13 +51,13 @@ VERSION=latest
 CERT_RESOLVER=certificates
 ```
 
-#### example short .env (swarm)
+#### Example short `.env` (swarm)
 
 ```env
 DOMAIN=<HOST>.home.local
 ```
 
-#### example short .env (bridge)
+#### Example short `.env` (bridge)
 
 ```env
 NETWORK_MODE=bridge
@@ -70,19 +70,19 @@ DOMAIN=<HOST>.home.local
 
 ## Guides & Insights
 
-### verify healthcheck
+### Verify the healthcheck
 
 ```sh
 docker inspect --format "{{json .State.Health }}" <CONTAINER_NAME> | jq
 ```
 
-### access docker in swarm mode
+### Access docker in swarm mode
 
 ```sh
 docker exec -it "$(docker ps -q -f name=^<SERVICE_NAME>\\.)" <COMMAND>
 ```
 
-### some more useful commands
+### Some more useful commands
 
 ```sh
 # all non-running containers (exited + created)
@@ -154,7 +154,7 @@ source .env && docker run --rm \
 
 - Runs interactively in the terminal. Open a new terminal and proceed with step 4.
 - `--rm`: Automatically removes the container when it exits.
-- `-v <NAME>_postgresql_v18`: Persists the upgraded data in the new volume, as referenced in the updated `docker-compose.yml`.
+- `-v <NAME>_postgresql_v18`: Persists the upgraded data in the new volume, as referenced in the updated `docker-compose.yaml`.
 
 **4. Restore the Backup into the Temporary Container**
 
@@ -184,4 +184,3 @@ docker-swarm-compose <NAME>
 - <https://docs.docker.com/compose/compose-file/compose-file-v3/#configs>
 - <https://docs.docker.com/engine/swarm/secrets/>
 - <https://docs.docker.com/compose/use-secrets/>
-- <https://...>

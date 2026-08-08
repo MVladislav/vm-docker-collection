@@ -6,11 +6,10 @@
 !.github/
 !.github/**
 
+!.editorconfig
 !.gitattributes
 !.gitignore
-!.gitempty
 
-!CHANGELOG.md
 !CONTRIBUTING.md
 !LICENCE
 !SECURITY.md

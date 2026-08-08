@@ -1,15 +1,12 @@
 # Docker Collection
 
-A docker collection with composer for a fast start-up.
+A curated collection of ready-to-use Docker Compose stacks for a fast and easy
+start-up, designed for Docker Swarm with Traefik.
 
-- Each service folder has its own **README**.
-- The table below is generated from `composer/` by
-  [scripts/generate_readme.py](./scripts/generate_readme.py) - metadata is
-  curated in [scripts/readme_data.json](./scripts/readme_data.json).
-- Add a new service by creating a folder under `composer/<category>/<name>/`
-  and running the generator (or let CI do it for you).
-
-[![CI](https://github.com/MVladislav/vm-docker-collection/actions/workflows/ci.yml/badge.svg)](https://github.com/MVladislav/vm-docker-collection/actions/workflows/ci.yml)
+- Each service folder has its own **README** with setup instructions.
+- Use [`__template/`](./__template/README.md) as the base for new services.
+- Stacks run with plain `docker compose` or as Swarm services via
+  `docker-swarm-compose` (see [Best Practice Start-Up](#best-practice-start-up)).
 
 | topic                 | type                      | name                                                                                                | description                                                                              |
 | --------------------- | ------------------------- | --------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
@@ -165,7 +162,7 @@ A docker collection with composer for a fast start-up.
 |                       | Shortener                 | [shlink](https://hub.docker.com/r/shlinkio/shlink)                                                  | Self-hosted URL shortener and analytics tool.                                            |
 |                       | Tooling                   | [stirling-pdf](https://github.com/Stirling-Tools/Stirling-PDF)                                      | Tool for PDF document manipulation and editing.                                          |
 | **POSSIBLE LATER**    |                           |                                                                                                     |                                                                                          |
-|                       | AI                        | [collection](./composer/ai/collection/README.md)                                                    | Collection of AI tools.                                                                  |
+|                       | AI                        | collection                                                                                          | Collection of AI tools.                                                                  |
 |                       | Monitoring                | [dmarcguardhq](https://github.com/dmarcguardhq/dmarcguard)                                          | DMARC report parser.                                                                     |
 |                       | Security Benchmark        | [mondoo](https://github.com/mondoo/mondoo)                                                          | Universal security scanning tool.                                                        |
 |                       | Remote Desktop            | [rustdesk](https://github.com/rustdesk/rustdesk-server)                                             | Open-source remote desktop software with self-hosted server.                             |
@@ -179,7 +176,7 @@ A docker collection with composer for a fast start-up.
 |                       | \*VPN                     | [algo](https://github.com/trailofbits/algo)                                                         | Set up a personal VPN in the cloud.                                                      |
 |                       | VPN                       | [WGDashboard](https://github.com/donaldzou/WGDashboard)                                             | Simple dashboard for WireGuard VPN.                                                      |
 |                       | \*Proxy                   | [zoraxy](https://github.com/tobychui/zoraxy)                                                        | HTTP reverse proxy and forwarding tool. Now written in Go!                               |
-|                       | HRM                       | [orangehrm](https://github.com/orangehrm/orangehrm)                                                 |                                                                                          |
+|                       | HRM                       | [orangehrm](https://github.com/orangehrm/orangehrm)                                                 | Open-source HR management software.                                                      |
 |                       | Ticketing System          | [zammad-docker-compose](https://docs.zammad.org/en/latest/install/docker-compose.html)              | Self-hosted ticketing and customer support system.                                       |
 |                       | \*File Management         | [pydio-cells](https://github.com/pydio/cells)                                                       | Enterprise file sharing and collaboration platform.                                      |
 |                       | \*File Management         | [Sync-in](https://github.com/Sync-in/server)                                                        | Sovereign platform for file storage, sharing, synchronization, and collaboration.        |
@@ -198,19 +195,19 @@ A docker collection with composer for a fast start-up.
 |                       | \*Wiki                    | [outline](https://github.com/outline/outline)                                                       | The fastest knowledge base for growing teams.                                            |
 |                       | Wiki                      | [BookStack](https://github.com/BookStackApp/BookStack)                                              | A platform to create documentation/wiki content.                                         |
 |                       | CRM                       | [twenty](https://github.com/twentyhq/twenty)                                                        | Building a modern alternative to Salesforce, powered by the community.                   |
-|                       |                           | [NetAlertX](https://github.com/jokob-sk/NetAlertX)                                                  | Network intruder and presence detector.                                                  |
+|                       | Monitoring                | [NetAlertX](https://github.com/jokob-sk/NetAlertX)                                                  | Network intruder and presence detector.                                                  |
 |                       | Webhook                   | [Operational](https://github.com/operational-co/operational.co)                                     | Track important events and receive push notifications.                                   |
-|                       |                           | [urlaubsverwaltung](https://github.com/urlaubsverwaltung/urlaubsverwaltung)                         | Urlaubsverwaltung.                                                                       |
+|                       | HRM                       | [urlaubsverwaltung](https://github.com/urlaubsverwaltung/urlaubsverwaltung)                         | Open-source vacation and absence management.                                             |
 |                       |                           |                                                                                                     |                                                                                          |
 |                       | Social Marketing          | [postiz](https://github.com/gitroomhq/postiz-docker-compose)                                        | The ultimate social media scheduling tool, with a bunch of AI.                           |
 |                       |                           |                                                                                                     |                                                                                          |
 |                       |                           | [linkarr](https://github.com/itsmejoeeey/linkarr)                                                   |                                                                                          |
 |                       |                           | [cronmaster](https://github.com/fccview/cronmaster)                                                 |                                                                                          |
 |                       |                           | [HarborGuard](https://github.com/HarborGuard/HarborGuard)                                           |                                                                                          |
-|                       |                           | [discourse](https://github.com/discourse/discourse)                                                 |                                                                                          |
-|                       |                           | [coturn](https://github.com/coturn/coturn)                                                          | coturn TURN server project.                                                              |
+|                       | Forum                     | [discourse](https://github.com/discourse/discourse)                                                 | Open-source discussion platform.                                                         |
+|                       | Media Server              | [coturn](https://github.com/coturn/coturn)                                                          | coturn TURN server project.                                                              |
 |                       |                           |                                                                                                     |                                                                                          |
-|                       | AI                        | [Bytebot](https://github.com/bytebot-ai/bytebot)                                                    |                                                                                          |
+|                       | AI                        | [Bytebot](https://github.com/bytebot-ai/bytebot)                                                    | AI-powered browser automation.                                                           |
 |                       | AI                        | [airi](https://github.com/moeru-ai/airi)                                                            |                                                                                          |
 |                       | AI                        | [zeroclaw](https://github.com/zeroclaw-labs/zeroclaw)                                               |                                                                                          |
 |                       | AI                        | [nanoclaw](https://github.com/nanocoai/nanoclaw)                                                    |                                                                                          |
@@ -222,48 +219,47 @@ A docker collection with composer for a fast start-up.
 |                       |                           | [HeadlessX](https://github.com/saifyxpro/HeadlessX)                                                 |                                                                                          |
 |                       |                           | [HomeHub](https://github.com/surajverma/homehub)                                                    |                                                                                          |
 |                       |                           | [Glass-Keep](https://github.com/nikunjsingh93/react-glass-keep)                                     |                                                                                          |
-|                       |                           | [Dockpeek](https://github.com/dockpeek/dockpeek)                                                    |                                                                                          |
-|                       |                           | [Termix](https://github.com/LukeGus/Termix)                                                         |                                                                                          |
+|                       | Container Management      | [Dockpeek](https://github.com/dockpeek/dockpeek)                                                    | Web UI for managing Docker containers.                                                   |
+|                       | Terminal                  | [Termix](https://github.com/LukeGus/Termix)                                                         | Terminal emulator.                                                                       |
 |                       |                           | [SurfSense](https://github.com/MODSetter/SurfSense)                                                 |                                                                                          |
 |                       | Monitoring                | [komari](https://github.com/komari-monitor/komari)                                                  |                                                                                          |
 |                       |                           | [PigeonPod](https://github.com/aizhimou/pigeon-pod)                                                 |                                                                                          |
 |                       | \*Tooling                 | [BentoPDF](https://github.com/alam00000/bentopdf)                                                   |                                                                                          |
 |                       |                           | [Dispatcharr](https://github.com/Dispatcharr/Dispatcharr)                                           |                                                                                          |
 |                       |                           | [Foxel](https://github.com/DrizzleTime/Foxel)                                                       |                                                                                          |
-|                       | URL Shortener             | [chhoto-url](https://github.com/SinTan1729/chhoto-url)                                              |                                                                                          |
+|                       | URL Shortener             | [chhoto-url](https://github.com/SinTan1729/chhoto-url)                                              | Self-hosted URL shortener.                                                               |
 |                       |                           | [CommonForms](https://github.com/jbarrow/commonforms)                                               |                                                                                          |
 |                       |                           |                                                                                                     |                                                                                          |
 |                       |                           | [ElevenLabs UI](https://github.com/elevenlabs/ui)                                                   |                                                                                          |
-|                       | ?                         | [Dexter](https://github.com/virattt/dexter)                                                         |                                                                                          |
+|                       | AI                        | [Dexter](https://github.com/virattt/dexter)                                                         | Open-source AI agents for accounting.                                                    |
 |                       |                           | [Firm](https://github.com/42futures/firm)                                                           |                                                                                          |
-|                       |                           | [FullstackAgent](https://github.com/FullstackAgent/FullstackAgent)                                  |                                                                                          |
-|                       |                           | [Open Computer Use](https://github.com/LLmHub-dev/open-computer-use)                                |                                                                                          |
-|                       | -                         | [TinyRecursiveModels](https://github.com/SamsungSAILMontreal/TinyRecursiveModels)                   |                                                                                          |
-|                       | -                         | [Neura Hustle Tracker](https://github.com/adolfousier/neura-hustle-tracker)                         |                                                                                          |
-|                       | -                         | [Puffin](https://github.com/KangLiao929/Puffin)                                                     |                                                                                          |
-|                       | -                         | [Cronboard](https://github.com/antoniorodr/Cronboard)                                               |                                                                                          |
-|                       | -                         | [Pyversity](https://github.com/Pringled/pyversity)                                                  |                                                                                          |
-|                       | -                         | [Blaze](https://github.com/wizenheimer/blaze)                                                       |                                                                                          |
-|                       | -                         | [Keyer](https://github.com/mafik/keyer)                                                             |                                                                                          |
-|                       | -                         | [Everywhere](https://github.com/DearVa/Everywhere)                                                  |                                                                                          |
-|                       | -                         | [Mina Rich Editor](https://github.com/Mina-Massoud/Mina-Rich-Editor)                                |                                                                                          |
-|                       | -                         | [Stable Video Infinity](https://github.com/vita-epfl/Stable-Video-Infinity)                         |                                                                                          |
-|                       | -                         | [Sora MCP Server](https://github.com/Doriandarko/sora-mcp)                                          |                                                                                          |
+|                       | AI                        | [FullstackAgent](https://github.com/FullstackAgent/FullstackAgent)                                  |                                                                                          |
+|                       | AI                        | [Open Computer Use](https://github.com/LLmHub-dev/open-computer-use)                                |                                                                                          |
+|                       | AI                        | [TinyRecursiveModels](https://github.com/SamsungSAILMontreal/TinyRecursiveModels)                   |                                                                                          |
+|                       |                           | [Neura Hustle Tracker](https://github.com/adolfousier/neura-hustle-tracker)                         |                                                                                          |
+|                       |                           | [Puffin](https://github.com/KangLiao929/Puffin)                                                     |                                                                                          |
+|                       |                           | [Cronboard](https://github.com/antoniorodr/Cronboard)                                               |                                                                                          |
+|                       |                           | [Pyversity](https://github.com/Pringled/pyversity)                                                  |                                                                                          |
+|                       |                           | [Blaze](https://github.com/wizenheimer/blaze)                                                       |                                                                                          |
+|                       |                           | [Keyer](https://github.com/mafik/keyer)                                                             |                                                                                          |
+|                       |                           | [Everywhere](https://github.com/DearVa/Everywhere)                                                  |                                                                                          |
+|                       |                           | [Mina Rich Editor](https://github.com/Mina-Massoud/Mina-Rich-Editor)                                |                                                                                          |
+|                       | AI                        | [Stable Video Infinity](https://github.com/vita-epfl/Stable-Video-Infinity)                         |                                                                                          |
+|                       | AI                        | [Sora MCP Server](https://github.com/Doriandarko/sora-mcp)                                          |                                                                                          |
 |                       |                           |                                                                                                     |                                                                                          |
 |                       |                           | [ThinkDashboard](https://github.com/MatiasDesuu/ThinkDashboard)                                     |                                                                                          |
 |                       |                           | [mainline-nextjs-template](https://github.com/shadcnblocks/mainline-nextjs-template)                |                                                                                          |
 |                       |                           | [portfolio](https://github.com/NotStark/portfolio)                                                  |                                                                                          |
 |                       |                           | [WithAnyone](https://github.com/Doby-Xu/WithAnyone)                                                 |                                                                                          |
 |                       |                           |                                                                                                     |                                                                                          |
-|                       |                           | [arpwatch](https://github.com/brandonleegit/arpwatch)                                               |                                                                                          |
-|                       |                           | [SmokePing](https://github.com/oetiker/SmokePing)                                                   |                                                                                          |
-|                       |                           | [logforge](https://github.com/log-forge/logforge)                                                   |                                                                                          |
+|                       | Monitoring                | [arpwatch](https://github.com/brandonleegit/arpwatch)                                               | Monitors ARP activity on the network.                                                    |
+|                       | Monitoring                | [SmokePing](https://github.com/oetiker/SmokePing)                                                   | Network latency monitoring and graphing.                                                 |
+|                       | Logging                   | [logforge](https://github.com/log-forge/logforge)                                                   |                                                                                          |
 |                       | Photo Organizer           | [photonix](https://github.com/photonixapp/photonix)                                                 | Self-hosted photo management and gallery system.                                         |
 |                       | Transcoder                | [tdarr_old](https://github.com/haveagitgat/tdarr)                                                   | Media transcoding and management tool.                                                   |
 |                       |                           |                                                                                                     |                                                                                          |
-|                       | \*monitoring              | [sentry](https://github.com/getsentry/self-hosted)                                                  | https://develop.sentry.dev/self-hosted/                                                  |
-|                       | database                  | [ClickHouse](https://github.com/ClickHouse/ClickStack.git)                                          | https://clickhouse.com/docs/use-cases/observability/clickstack/deployment/docker-compose |
-|                       | :----------------         | :-----------------------------------------------                                                    | :-------------------------------------------------                                       |
+|                       | \*Monitoring              | [sentry](https://github.com/getsentry/self-hosted)                                                  | https://develop.sentry.dev/self-hosted/                                                  |
+|                       | Database                  | [ClickHouse](https://github.com/ClickHouse/ClickStack.git)                                          | https://clickhouse.com/docs/use-cases/observability/clickstack/deployment/docker-compose |
 
 ### Backlog / not added
 
@@ -278,10 +274,10 @@ A docker collection with composer for a fast start-up.
 |       | OS                        | ~~[win](https://github.com/dockur/windows)~~                                              | Windows inside a Docker container.                                                 |
 |       | Monitoring                | ~~[ntopng](https://github.com/ntop/docker-ntop)~~                                         | High-performance network traffic analysis and monitoring tool.                     |
 |       | Network Emulator          | ~~[gns3server](https://github.com/GNS3/gns3-server)~~                                     | Network simulation software for labs and testing.                                  |
-|       | Chat Server               | ~~[matrix](./composer/other/matrix/README.md)~~                                           | Open-source matrix messaging server.                                               |
+|       | Chat Server               | ~~[matrix](https://matrix.org)~~                                                          | Open-source matrix messaging server.                                               |
 |       | PBX                       | ~~[mikopbx](https://github.com/mikopbx/Core)~~                                            | Open-source Private Branch Exchange (PBX) system.                                  |
 |       | API Testing               | ~~[requestly](https://github.com/requestly/requestly/)~~                                  | The privacy-first Postman alternative.                                             |
-|       | SMS Gateway               | ~~[smfc](./composer/other/smfc/README.md)~~                                               | SMS gateway service.                                                               |
+|       | SMS Gateway               | ~~[smfc](https://github.com/EdJoPaTo/smfc)~~                                              | SMS gateway service.                                                               |
 |       | Appointment Scheduler     | ~~[thunderbird-appointment](https://github.com/thunderbird/appointment)~~                 | Make appointments as easy as it gets.                                              |
 |       | VPN                       | ~~[netbird](https://github.com/netbirdio/netbird)~~                                       | Secure WireGuard-based overlay network with SSO, MFA and granular access controls. |
 |       | Vulnerability Scanner     | ~~[bloodhound](https://github.com/SpecterOps/BloodHound)~~                                | Active Directory (AD) enumeration and attack path discovery tool.                  |
@@ -324,8 +320,7 @@ A docker collection with composer for a fast start-up.
 
 ## Best Practice Start-Up
 
-Use docker-swarm to manage and start containers.
-
+Use docker-swarm to manage and start containers.  
 For that, each service is configured as follows:
 
 ```yml
@@ -349,8 +344,7 @@ services:
         mode: host
 ```
 
-To start this configuration with all support between docker-stack and docker-compose, run it as follows:
-
+To start this configuration with all support between docker-stack and docker-compose, run it as follows:  
 Create alias for `docker-swarm` command:
 
 > _Find aliases also here: [.dotfiles](https://github.com/MVladislav/.dotfiles/blob/7c928dc65c273021799314d0c373c73c88d3feac/zsh/zshrc-append#L124)_
@@ -372,7 +366,10 @@ docker-swarm-compose <STACK_NAME>
 
 ## References
 
-- ...
+- [\_\_template](./__template/README.md) - base configuration and templates for new stacks
+- [Docker Compose file reference](https://docs.docker.com/compose/compose-file/)
+- [Traefik documentation](https://doc.traefik.io)
+- [Discussions](https://github.com/MVladislav/vm-docker-collection/discussions)
 
 ---
 

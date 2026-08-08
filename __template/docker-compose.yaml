@@ -273,3 +273,5 @@ networks:
 #     external: true
 #   my_file_secret:
 #     file: config/secrets/my_file_secret.txt
+#   own_secret:
+#     file: config/secrets/own_secret.txt
