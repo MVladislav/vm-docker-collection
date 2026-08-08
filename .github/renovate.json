@@ -7,6 +7,13 @@
   },
   "extends": ["config:recommended"],
   "rebaseWhen": "behind-base-branch",
+  "enabledManagers": [
+    "docker-compose",
+    "dockerfile",
+    "arg",
+    "github-actions",
+    "pre-commit"
+  ],
   "packageRules": [
     {
       "addLabels": ["github_actions"],
@@ -24,13 +31,36 @@
     },
     {
       "addLabels": ["docker"],
-      "matchManagers": ["dockerfile"],
+      "matchManagers": ["dockerfile", "arg"],
       "rangeStrategy": "pin",
-      "groupName": "Docker updates",
-      "automerge": false
+      "groupName": "Dockerfiles",
+      "automerge": false,
+      "minimumReleaseAge": "3 days"
+    },
+    {
+      "addLabels": ["docker"],
+      "matchManagers": ["docker-compose"],
+      "groupName": "Docker Compose images",
+      "automerge": false,
+      "minimumReleaseAge": "3 days",
+      "rangeStrategy": "replace",
+      "commitMessageTopic": "{{{depName}}} compose image"
     }
   ],
+  "docker-compose": {
+    "enabled": true
+  },
   "pre-commit": {
     "enabled": true
-  }
+  },
+  "ignorePaths": [
+    "**/config/**",
+    "**/docker-hwaccel.yaml",
+    "**/docker-compose-*-agent*.yaml"
+  ],
+  "prConcurrentLimit": 8,
+  "prHourlyLimit": 4,
+  "branchConcurrentLimit": 8,
+  "timezone": "Europe/Berlin",
+  "schedule": ["after 6am and before 10pm"]
 }

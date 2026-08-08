@@ -1,91 +1,101 @@
 ---
-name: Report an issue
-description: Report an issue.
+name: Bug report
+description: Report a problem with one of the compose stacks in this collection.
+labels: ["bug"]
 body:
   - type: markdown
     attributes:
       value: |
-        This issue form is for reporting bugs only!
+        This form is for reporting bugs in this collection (compose files,
+        configs, documentation). If you have a feature or enhancement request,
+        please use the feature request template.
 
-        If you have a feature or enhancement request, please use the feature request issue template
-  - type: textarea
+        For questions or support, please use
+        [Discussions](https://github.com/MVladislav/vm-docker-collection/discussions).
+  - type: input
+    id: service
+    attributes:
+      label: Affected service
+      description: >-
+        Path of the affected stack folder, e.g.
+        `composer/monitoring/uptime_kuma`.
+      placeholder: composer/<category>/<service>
     validations:
       required: true
+  - type: textarea
+    id: problem
     attributes:
       label: Describe the problem
       description: >-
-        Describe the issue you are experiencing here to communicate to the
-        maintainers. Tell us what you were trying to do and what happened.
-
-        Provide a clear and concise description of what the problem is.
-  - type: textarea
+        What were you trying to do and what happened instead? Include the exact
+        error message or a screenshot of the error.
     validations:
       required: true
+  - type: textarea
+    id: expected
     attributes:
       label: Expected behavior
+      description: What did you expect to happen?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
       description: >-
-        A clear and concise description of what you expected to happen.
+        Provide the commands you ran (e.g. `docker compose up -d`), the
+        `env_file` / `.env` values used and what happened.
+      render: bash
   - type: markdown
     attributes:
       value: |
         ## Environment
   - type: input
-    id: version
+    id: docker-version
+    attributes:
+      label: Docker version
+      description: Output of `docker --version` and `docker compose version`.
     validations:
       required: true
-    attributes:
-      label: What is version of application which has the issue?
-      placeholder: core-
-      description: >
-        Can be found in ...
-  - type: input
-    attributes:
-      label: What was the last working version of the application?
-      placeholder: core-
-      description: >
-        If known, otherwise leave blank.
   - type: dropdown
+    id: mode
+    attributes:
+      label: Deployment mode
+      options:
+        - Docker Compose
+        - Docker Swarm
+        - Podman
+        - Other
     validations:
       required: true
-    attributes:
-      label: What type of installation are you running?
-      description: >
-        If you don't know, you can find it in: Configuration panel -> Info.
-      options:
-        - OS (setup.py)
-        - Container (docker)
   - type: dropdown
+    id: os
+    attributes:
+      label: Host OS
+      options:
+        - Linux
+        - macOS
+        - Windows
+        - Other
     validations:
       required: true
-    attributes:
-      label: What type of device you use to interact with the application?
-      description: >
-        The device where you open the application and the problem pops up.
-      options:
-        - "OS: [e.g. linux, windows, ios]"
-        - "Browser: [e.g. firefox, chrome, safari]"
-        - "Smartphone: [e.g. android, ios]"
-
   - type: markdown
     attributes:
       value: |
-        # Details
+        ## Details
   - type: textarea
+    id: logs
     attributes:
-      label: Example JSON snippet
-      description: |
-        If this issue has an example piece of JSON that can help reproducing this problem, please provide.
-        This can be an piece of JSON from, e.g., a response from the API.
-      render: json
-  - type: textarea
-    attributes:
-      label: Anything in the logs that might be useful for us?
-      description: For example, error message, or stack traces.
+      label: Relevant logs
+      description: >-
+        Output of `docker compose logs`, the service logs or the compose
+        validation (`docker compose config`). Anything that helps to reproduce
+        the issue.
       render: txt
   - type: textarea
+    id: additional
     attributes:
       label: Additional information
-      description: >
-        If you have any additional information for us, use the field below.
-        Please note, you can attach screenshots or screen recordings here, by
-        dragging and dropping files in the field below.
+      description: >-
+        Any other context, e.g. modified files, custom `.env` values (without
+        secrets), screenshots. Drag and drop files here.

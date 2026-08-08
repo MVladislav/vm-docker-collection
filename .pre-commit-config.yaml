@@ -30,6 +30,8 @@ repos:
       # - id: end-of-file-fixer
       - id: check-toml
       - id: check-json
+        # code-server configs are JSONC (VS Code settings with comments)
+        exclude: composer/dev/code-server/config/.*\.json
       - id: check-yaml
         args: [--allow-multiple-documents]
       - id: mixed-line-ending
@@ -41,7 +43,7 @@ repos:
     hooks:
       - id: prettier
         additional_dependencies:
-          - prettier@3.2.5
+          - prettier@3.9.6
           - prettier-plugin-sort-json@3.1.0
         exclude_types:
           - python
@@ -65,15 +67,69 @@ repos:
     hooks:
       - id: yamllint
 
-  # Dockerfile linting #########################################################
-  # - repo: https://github.com/hadolint/hadolint
-  #   rev: v2.14.0
-  #   hooks:
-  #     - id: hadolint-docker
-  #       args:
-  #         - "--ignore"
-  #         - "DL3008"
-  #         - "--ignore"
-  #         - "DL3013"
-  #         - "--ignore"
-  #         - "SC2016"
+  # Dockerfile linting
+  # NOTE: ignores cover the existing Dockerfiles; remove ignores as the
+  #       Dockerfiles get fixed to keep the guard tight
+  - repo: https://github.com/hadolint/hadolint
+    rev: v2.15.1
+    hooks:
+      - id: hadolint-docker
+        args:
+          # WARN
+          - "--ignore"
+          - "DL3003" # Use WORKDIR to switch to a directory
+          - "--ignore"
+          - "DL3007"
+          - "--ignore"
+          - "DL3008"
+          - "--ignore"
+          - "DL3013"
+          - "--ignore"
+          - "DL3014"
+          - "--ignore"
+          - "DL3016"
+          - "--ignore"
+          - "DL3018"
+          - "--ignore"
+          - "DL3025"
+          - "--ignore"
+          - "DL3027"
+          - "--ignore"
+          - "DL3028"
+          - "--ignore"
+          - "DL3042"
+          - "--ignore"
+          - "DL3062"
+          - "--ignore"
+          - "DL4001"
+          - "--ignore"
+          - "DL4006"
+          - "--ignore"
+          - "SC1012"
+          - "--ignore"
+          - "SC2046"
+          - "--ignore"
+          - "SC2164"
+          - "--ignore"
+          - "SC2226"
+          - "--ignore"
+          - "SC3009"
+          # INFO
+          - "--ignore"
+          - "SC2016" # Expressions don't expand in single quotes, use double quotes for that.
+          - "--ignore"
+          - "SC2028" # echo may not expand escape sequences. Use printf.
+          - "--ignore"
+          - "DL3009" # Delete the apt lists (/var/lib/apt/lists) after installing something
+          - "--ignore"
+          - "DL3015" # Avoid additional packages by specifying `--no-install-recommends`
+          - "--ignore"
+          - "DL3019" # Use the `--no-cache` switch to avoid the need to use `--update` and remove `/var/cache/apk/*` when done installing packages
+          - "--ignore"
+          - "DL3047" # Avoid use of wget without progress bar. Use `wget --progress=dot:giga <url>`. Or consider using `-q` or `-nv` (shorthands for `--quiet` or `--no-verbose`).
+          - "--ignore"
+          - "DL3059" # Multiple consecutive `RUN` instructions. Consider consolidation.
+          - "--ignore"
+          - "DL3060" # `yarn cache clean` missing after `yarn install` was run.
+          - "--ignore"
+          - "DL3066" # Non-numeric user-id may not be resolvable by host system

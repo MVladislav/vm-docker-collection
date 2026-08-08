@@ -1,10 +1,12 @@
 ## Describe your changes
 
+## Affected service
+
 ## Issue ticket number and link
 
 ## Checklist before requesting a review
 
-- [ ] I have performed a self-review of my code
-- [ ] If it is a core feature, I have added thorough tests.
-- [ ] Do we need to implement analytics?
-- [ ] Will this be part of a product update? If yes, please write one phrase about this update.
+- [ ] Compose file validates with `docker compose config`
+- [ ] No secrets or real credentials are committed
+- [ ] Service `README.md` / root `README.md` updated
+- [ ] `pre-commit run --all-files` passes

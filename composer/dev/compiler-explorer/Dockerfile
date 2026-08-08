@@ -33,7 +33,7 @@ RUN echo "*** Installing Compiler Explorer ***" \
     && npm i @sentry/node \
     && make prebuild
 
-ADD config/cpp.properties /compiler-explorer/etc/config/c++.local.properties
+COPY config/cpp.properties /compiler-explorer/etc/config/c++.local.properties
 
 # ------------------------------------------------------------------------------
 
