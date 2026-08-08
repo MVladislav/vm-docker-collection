@@ -2,15 +2,11 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "dependencyDashboard": false,
   "labels": ["dependencies"],
-  "lockFileMaintenance": {
-    "enabled": true
-  },
   "extends": ["config:recommended"],
   "rebaseWhen": "behind-base-branch",
   "enabledManagers": [
     "docker-compose",
     "dockerfile",
-    "arg",
     "github-actions",
     "pre-commit"
   ],
@@ -20,39 +16,31 @@
       "matchManagers": ["github-actions"],
       "rangeStrategy": "pin",
       "groupName": "GitHub Actions",
-      "automerge": false
+      "minimumReleaseAge": "3 days"
     },
     {
       "addLabels": ["pre-commit"],
       "matchManagers": ["pre-commit"],
       "rangeStrategy": "pin",
       "groupName": "Pre-commit hooks",
-      "automerge": false
+      "minimumReleaseAge": "3 days"
     },
     {
       "addLabels": ["docker"],
-      "matchManagers": ["dockerfile", "arg"],
+      "matchManagers": ["dockerfile"],
       "rangeStrategy": "pin",
       "groupName": "Dockerfiles",
-      "automerge": false,
       "minimumReleaseAge": "3 days"
     },
     {
       "addLabels": ["docker"],
       "matchManagers": ["docker-compose"],
       "groupName": "Docker Compose images",
-      "automerge": false,
       "minimumReleaseAge": "3 days",
       "rangeStrategy": "replace",
       "commitMessageTopic": "{{{depName}}} compose image"
     }
   ],
-  "docker-compose": {
-    "enabled": true
-  },
-  "pre-commit": {
-    "enabled": true
-  },
   "ignorePaths": [
     "**/config/**",
     "**/docker-hwaccel.yaml",
