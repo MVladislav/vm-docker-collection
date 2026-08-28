@@ -1,5 +1,5 @@
-ARG VERSION_NODE=24.17.0 # https://hub.docker.com/_/node
-ARG VERSION_NGNIX=1.29-alpine # https://hub.docker.com/_/nginx
+ARG VERSION_NODE=24.18.1 # https://hub.docker.com/_/node
+ARG VERSION_NGNIX=1.31-alpine # https://hub.docker.com/_/nginx
 
 FROM node:$VERSION_NODE AS build
 
