@@ -71,17 +71,17 @@ RESOURCES_LIMITS_MEMORY_GEOIPUPDATE=64m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_PANGOLIN=1.21.0
-VERSION_GERBIL=1.4.3
-VERSION_TRAEFIK=v3.7.8
-VERSION_BADGER=v1.5.0
-VERSION_CROWDSEC_PLUGIN=v1.6.0
+VERSION_PANGOLIN=1.22.0
+VERSION_GERBIL=1.5.0
+VERSION_TRAEFIK=v3.7.12
+VERSION_BADGER=v1.7.0
+VERSION_CROWDSEC_PLUGIN=v1.7.1
 VERSION_CROWDSEC=v1.7.8-debian
 VERSION_MAXMIND=v7.1.1
 
-VERSION_NEWT=1.15.0
-VERSION_CLI=0.15.0
-VERSION_OLM=1.8.0
+VERSION_NEWT=1.16.0
+VERSION_CLI=0.16.0
+VERSION_OLM=1.9.0
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
@@ -150,6 +150,16 @@ cscli decisions add --ip <your-public-ip> --duration 1m --type ban --reason "Cro
 
 ```sh
 docker exec -it "$(docker ps -q -f name=crowdsec)" cscli metrics
+```
+
+### CLI
+
+> <https://docs.pangolin.net/manage/clients/configure-client>
+
+Personal recommended configs:
+
+```sh
+pangolin config set up.prefer_local_routes true
 ```
 
 ### NEWT as binary with user scope
@@ -262,6 +272,14 @@ VERSION_PANGOLIN=ee-<VERSION>
 ```
 
 When Pangolin is started you need navigate to `/admin/license` and enter the [license key](https://app.pangolin.net/).
+
+---
+
+## Future notes
+
+```sh
+echo "wireguard" | sudo tee -a /etc/modules-load.d/modules.conf
+```
 
 ---
 

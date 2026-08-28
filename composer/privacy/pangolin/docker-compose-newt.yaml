@@ -50,7 +50,7 @@ services:
   ##############################################################################
   newt:
     # https://hub.docker.com/r/fosrl/newt/tags
-    image: fosrl/newt:${VERSION_NEWT:-1.15.0}
+    image: fosrl/newt:${VERSION_NEWT:-1.16.0}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -58,7 +58,7 @@ services:
       - NET_ADMIN
       - SYS_ADMIN
       - SYS_RESOURCE
-      # - SYS_MODULE
+    # - SYS_MODULE
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro

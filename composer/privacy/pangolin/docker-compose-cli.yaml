@@ -50,7 +50,7 @@ services:
   ##############################################################################
   cli:
     # https://hub.docker.com/r/fosrl/pangolin-cli/tags
-    image: fosrl/pangolin-cli:${VERSION_CLI:-0.15.0}
+    image: fosrl/pangolin-cli:${VERSION_CLI:-0.16.0}
     <<: *basic
     deploy:
       <<: *basic-deploy

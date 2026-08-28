@@ -48,7 +48,7 @@ services:
   ##############################################################################
   pangolin:
     # https://hub.docker.com/r/fosrl/pangolin/tags
-    image: fosrl/pangolin:${VERSION_PANGOLIN:-${PANGOLIN_EE:-}1.21.0}
+    image: fosrl/pangolin:${VERSION_PANGOLIN:-${PANGOLIN_EE:-}1.22.0}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -118,7 +118,7 @@ services:
   ##############################################################################
   gerbil:
     # https://hub.docker.com/r/fosrl/gerbil/tags
-    image: fosrl/gerbil:${VERSION_GERBIL:-1.4.3}
+    image: fosrl/gerbil:${VERSION_GERBIL:-1.5.0}
     depends_on:
       pangolin:
         condition: service_healthy
@@ -201,7 +201,7 @@ services:
   ##############################################################################
   traefik:
     # https://hub.docker.com/_/traefik
-    image: traefik:${VERSION_TRAEFIK:-v3.7.8}
+    image: traefik:${VERSION_TRAEFIK:-v3.7.12}
     depends_on:
       pangolin:
         condition: service_healthy
@@ -234,7 +234,7 @@ services:
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+      # - /var/run/docker.sock:/var/run/docker.sock:ro
       - certificates:/certificates
       - traefik_logs:/var/log/traefik
     environment:
@@ -325,13 +325,15 @@ services:
       TRAEFIK_CERTIFICATESRESOLVERS_CERTIFICATES_ACME_DNSCHALLENGE: "true"
       TRAEFIK_CERTIFICATESRESOLVERS_CERTIFICATES_ACME_DNSCHALLENGE_PROVIDER: ${CERTIFICATES_ACME_DNSCHALLENGE_PROVIDER?CERTIFICATES_ACME_DNSCHALLENGE_PROVIDER is not set}
       TRAEFIK_CERTIFICATESRESOLVERS_CERTIFICATES_ACME_DNSCHALLENGE_RESOLVERS: ${CERTIFICATES_ACME_DNSCHALLENGE_RESOLVERS:-9.9.9.9,194.242.2.2,1.1.1.1}
+      TRAEFIK_CERTIFICATESRESOLVERS_CERTIFICATES_ACME_DNSCHALLENGE_PROPAGATION_DELAYBEFORECHECKS: ${CERTIFICATES_ACME_DNSCHALLENGE_PROPAGATION_DELAYBEFORECHECKS:-30}
+      TRAEFIK_CERTIFICATESRESOLVERS_CERTIFICATES_ACME_DNSCHALLENGE_PROPAGATION_DISABLECHECKS: ${CERTIFICATES_ACME_DNSCHALLENGE_PROPAGATION_DISABLECHECKS:-true}
       # TRAEFIK_CERTIFICATESRESOLVERS_CERTIFICATES_ACME_EAB_KID: ${CERTIFICATES_ACME_EAB_KID}
       # TRAEFIK_CERTIFICATESRESOLVERS_CERTIFICATES_ACME_EAB_HMACENCODED: ${CERTIFICATES_ACME_EAB_HMACENCODED}
       # --- PLUGINS ---
       TRAEFIK_EXPERIMENTAL_PLUGINS_BADGER_MODULENAME: github.com/fosrl/badger
-      TRAEFIK_EXPERIMENTAL_PLUGINS_BADGER_VERSION: ${VERSION_BADGER:-v1.5.0} # https://github.com/fosrl/badger
+      TRAEFIK_EXPERIMENTAL_PLUGINS_BADGER_VERSION: ${VERSION_BADGER:-v1.7.0} # https://github.com/fosrl/badger
       TRAEFIK_EXPERIMENTAL_PLUGINS_CROWDSEC_MODULENAME: github.com/maxlerebourg/crowdsec-bouncer-traefik-plugin
-      TRAEFIK_EXPERIMENTAL_PLUGINS_CROWDSEC_VERSION: ${VERSION_CROWDSEC_PLUGIN:-v1.6.0} # https://plugins.traefik.io/plugins/6335346ca4caa9ddeffda116/crowdsec-bouncer-traefik-plugin
+      TRAEFIK_EXPERIMENTAL_PLUGINS_CROWDSEC_VERSION: ${VERSION_CROWDSEC_PLUGIN:-v1.7.1} # https://plugins.traefik.io/plugins/6335346ca4caa9ddeffda116/crowdsec-bouncer-traefik-plugin
     healthcheck:
       test: "traefik healthcheck --ping"
       start_period: 10s
@@ -449,58 +451,58 @@ services:
     networks:
       proxy: {}
 
-  ##############################################################################
-  ##############################################################################
-  ##############################################################################
-  # sqlite:
-  #   image: alpine:latest
-  #   <<: *basic
-  #   deploy:
-  #     <<: *basic-deploy
-  #     resources:
-  #       limits:
-  #         cpus: ${RESOURCES_LIMITS_CPUS_SQLITE:-1}
-  #         memory: ${RESOURCES_LIMITS_MEMORY_SQLITE:-64m}
-  #       reservations:
-  #         cpus: ${RESOURCES_RESERVATIONS_CPUS_SQLITE:-0.001}
-  #         memory: ${RESOURCES_RESERVATIONS_MEMORY_SQLITE:-32m}
-  #   volumes:
-  #     - /etc/timezone:/etc/timezone:ro
-  #     - /etc/localtime:/etc/localtime:ro
-  #     - pangolin_data:/pangolin
-  #   networks:
-  #     proxy: {}
-  #   stdin_open: true
-  #   tty: true
-  #   entrypoint: sh
-  #   command: -c "apk add --no-cache sqlite && exec sh"
+##############################################################################
+##############################################################################
+##############################################################################
+# sqlite:
+#   image: alpine:latest
+#   <<: *basic
+#   deploy:
+#     <<: *basic-deploy
+#     resources:
+#       limits:
+#         cpus: ${RESOURCES_LIMITS_CPUS_SQLITE:-1}
+#         memory: ${RESOURCES_LIMITS_MEMORY_SQLITE:-64m}
+#       reservations:
+#         cpus: ${RESOURCES_RESERVATIONS_CPUS_SQLITE:-0.001}
+#         memory: ${RESOURCES_RESERVATIONS_MEMORY_SQLITE:-32m}
+#   volumes:
+#     - /etc/timezone:/etc/timezone:ro
+#     - /etc/localtime:/etc/localtime:ro
+#     - pangolin_data:/pangolin
+#   networks:
+#     proxy: {}
+#   stdin_open: true
+#   tty: true
+#   entrypoint: sh
+#   command: -c "apk add --no-cache sqlite && exec sh"
 
-  # crowdsec-dashboard:
-  #   # DEFAULT-USERNAME: crowdsec@crowdsec.net
-  #   # DEFAULT-PASSWORD: !!Cr0wdS3c_M3t4b4s3??
-  #   build: https://raw.githubusercontent.com/crowdsecurity/example-docker-compose/refs/heads/main/basic/crowdsec/dashboard/Dockerfile
-  #   image: crowdsec-dashboard:local-build
-  #   <<: *basic
-  #   deploy:
-  #     <<: *basic-deploy
-  #     resources:
-  #       limits:
-  #         cpus: ${RESOURCES_LIMITS_CPUS_CROWDSEC_DASHBOARD:-1}
-  #         memory: ${RESOURCES_LIMITS_MEMORY_CROWDSEC_DASHBOARD:-1g}
-  #       reservations:
-  #         cpus: ${RESOURCES_RESERVATIONS_CPUS_CROWDSEC_DASHBOARD:-0.001}
-  #         memory: ${RESOURCES_RESERVATIONS_MEMORY_CROWDSEC_DASHBOARD:-32m}
-  #   cap_add:
-  #     - SETUID
-  #     - SETGID
-  #     # - ALL
-  #   volumes:
-  #     - crowdsec_db:/metabase-data:ro
-  #   environment:
-  #     MB_DB_FILE: /data/metabase.db
-  #     MGID: "1000"
-  #   networks:
-  #     proxy: {}
+# crowdsec-dashboard:
+#   # DEFAULT-USERNAME: crowdsec@crowdsec.net
+#   # DEFAULT-PASSWORD: !!Cr0wdS3c_M3t4b4s3??
+#   build: https://raw.githubusercontent.com/crowdsecurity/example-docker-compose/refs/heads/main/basic/crowdsec/dashboard/Dockerfile
+#   image: crowdsec-dashboard:local-build
+#   <<: *basic
+#   deploy:
+#     <<: *basic-deploy
+#     resources:
+#       limits:
+#         cpus: ${RESOURCES_LIMITS_CPUS_CROWDSEC_DASHBOARD:-1}
+#         memory: ${RESOURCES_LIMITS_MEMORY_CROWDSEC_DASHBOARD:-1g}
+#       reservations:
+#         cpus: ${RESOURCES_RESERVATIONS_CPUS_CROWDSEC_DASHBOARD:-0.001}
+#         memory: ${RESOURCES_RESERVATIONS_MEMORY_CROWDSEC_DASHBOARD:-32m}
+#   cap_add:
+#     - SETUID
+#     - SETGID
+#     # - ALL
+#   volumes:
+#     - crowdsec_db:/metabase-data:ro
+#   environment:
+#     MB_DB_FILE: /data/metabase.db
+#     MGID: "1000"
+#   networks:
+#     proxy: {}
 
 ################################################################################
 ################################################################################
