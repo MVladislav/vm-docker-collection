@@ -1,7 +1,7 @@
 # https://hub.docker.com/_/golang
 ARG VERSION_GO=1.19-alpine
 # https://hub.docker.com/_/alpine
-ARG VERSION_ALPINE=3.17
+ARG VERSION_ALPINE=3.24
 
 FROM golang:${VERSION_GO} as build
 
