@@ -7,6 +7,7 @@ x-basic-deploy-labels: &basic-deploy-labels
     - traefik.http.routers.authentik.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
     - traefik.http.routers.authentik.rule=Host(`${DOMAIN?domain variable not set}`)
     - traefik.http.routers.authentik.tls=true
+    - traefik.http.routers.authentik.tls.certresolver=${CERT_RESOLVER:-}
     - traefik.http.routers.authentik.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
     - traefik.http.routers.authentik.service=authentik
     - traefik.http.services.authentik.loadbalancer.server.scheme=${PROTOCOL:-http}
@@ -36,8 +37,10 @@ x-basic-deploy: &basic-deploy
     constraints:
       - "node.role==${NODE_ROLE:-manager}"
       - node.platform.os == linux
+  update_config:
+    order: stop-first
   restart_policy:
-    condition: on-failure
+    condition: any
   resources:
     limits:
       cpus: ${RESOURCES_LIMITS_CPUS:-1}
@@ -56,14 +59,17 @@ x-basic: &basic
       soft: -1
       hard: -1
     nofile:
-      soft: 65535
-      hard: 65535
+      soft: 655360
+      hard: 655360
     fsize: -1
     as: -1
+  # mem_limit: ${RESOURCES_LIMITS_MEMORY:-1g}
   networks:
     default: {}
   healthcheck:
     disable: true
+  tmpfs:
+    - /tmp:rw,relatime,size=512m,nodev,nosuid,noexec
   restart: always
 
 ################################################################################
@@ -71,7 +77,6 @@ x-basic: &basic
 ################################################################################
 
 x-authentik-env: &authentik-env
-  AUTHENTIK_REDIS__HOST: redis
   AUTHENTIK_POSTGRESQL__HOST: postgresql
   AUTHENTIK_POSTGRESQL__NAME: ${PG_DB:-authentik}
   AUTHENTIK_POSTGRESQL__USER: ${PG_USER:-authentik}
@@ -80,7 +85,7 @@ x-authentik-env: &authentik-env
 
 x-authentik-extend-env: &authentik-extend-env
   AUTHENTIK_COOKIE_DOMAIN: ${DOMAIN?domain variable not set}
-  AUTHENTIK_HOST: http://goauthentik-server:9000
+  AUTHENTIK_HOST: http://goauthentik-server:${PORT:-9000}
   AUTHENTIK_HOST_BROWSER: https://${DOMAIN?domain variable not set}
   AUTHENTIK_INSECURE: "false"
 
@@ -88,30 +93,43 @@ x-authentik-extend-env: &authentik-extend-env
   AUTHENTIK_ERROR_REPORTING__ENABLED: ${AUTHENTIK_ERROR_REPORTING__ENABLED:-false}
   AUTHENTIK_DISABLE_STARTUP_ANALYTICS: ${AUTHENTIK_DISABLE_STARTUP_ANALYTICS:-true}
   AUTHENTIK_AVATARS: ${AUTHENTIK_AVATARS:-initials}
-  # AUTHENTIK_LISTEN__HTTP: ${AUTHENTIK_LISTEN__HTTP:-9000}
-  # AUTHENTIK_LISTEN__HTTPS: ${AUTHENTIK_LISTEN__HTTPS:-9443}
+  # reverse proxy: only the listed networks can set forwarded headers (default covers private ranges)
+  # https://docs.goauthentik.io/install-config/reverse-proxy/
+  # AUTHENTIK_LISTEN__TRUSTED_PROXY_CIDRS: ${AUTHENTIK_LISTEN__TRUSTED_PROXY_CIDRS:-127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,::1/128}
+  # AUTHENTIK_LISTEN__HTTP: '[::]:${PORT:-9000}'
+  # AUTHENTIK_LISTEN__HTTPS: '[::]:${COMPOSE_PORT_HTTPS:-9443}'
   # AUTHENTIK_LISTEN__LDAP: ${AUTHENTIK_LISTEN__LDAP:-3389}
   # AUTHENTIK_LISTEN__LDAPS: ${AUTHENTIK_LISTEN__LDAPS:-6636}
   # AUTHENTIK_LISTEN__METRICS: ${AUTHENTIK_LISTEN__METRICS:-9300}
   # AUTHENTIK_LISTEN__DEBUG: ${AUTHENTIK_LISTEN__DEBUG:-9900}
 
+################################################################################
+################################################################################
+################################################################################
 services:
   ##############################################################################
   ##############################################################################
   ##############################################################################
   goauthentik-server:
     # https://github.com/goauthentik/authentik/pkgs/container/server
-    image: ghcr.io/goauthentik/server:${VERSION_GOAUTHENTIK:-2024.2.2}
-    <<: [*basic, *basic-deploy-labels]
+    image: ghcr.io/goauthentik/server:${VERSION_GOAUTHENTIK:-2026.8.2}
+    <<:
+      - *basic
+      # - *basic-deploy-labels
     deploy:
-      <<: [*basic-deploy, *basic-deploy-labels]
+      <<:
+        - *basic-deploy
+        - *basic-deploy-labels
+    shm_size: 512mb
     secrets:
       - postgres_password_file
       - authentik_secret_key
     environment:
       <<: [*authentik-env, *authentik-extend-env]
+      COMPOSE_PORT_HTTP: ${PORT:-9000}
+      COMPOSE_PORT_HTTPS: ${COMPOSE_PORT_HTTPS:-9443}
     volumes:
-      - media:/media
+      - data:/data
       - custom-templates:/templates
     command: server
     networks:
@@ -123,10 +141,11 @@ services:
   ##############################################################################
   goauthentik-worker:
     # https://github.com/goauthentik/authentik/pkgs/container/server
-    image: ghcr.io/goauthentik/server:${VERSION_GOAUTHENTIK:-2024.2.2}
+    image: ghcr.io/goauthentik/server:${VERSION_GOAUTHENTIK:-2026.8.2}
     <<: *basic
     deploy:
       <<: *basic-deploy
+    shm_size: 512mb
     user: root
     cap_add:
       - CHOWN
@@ -139,10 +158,12 @@ services:
       - postgres_password_file
       - authentik_secret_key
     environment:
-      <<: [*authentik-env, *authentik-extend-env]
+      <<:
+        - *authentik-env
+        - *authentik-extend-env
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - media:/media
+      - data:/data
       - custom-templates:/templates
       - certs:/certs
     command: worker
@@ -152,10 +173,14 @@ services:
   ##############################################################################
   # goauthentik-ldap:
   #   # https://github.com/goauthentik/authentik/pkgs/container/ldap
-  #   image: ghcr.io/goauthentik/ldap:${VERSION_GOAUTHENTIK:-2024.2.2}
-  #   <<: [*basic, *ldap-deploy-labels]
+  #   image: ghcr.io/goauthentik/ldap:${VERSION_GOAUTHENTIK:-2026.8.2}
+  #   <<:
+  #     - *basic
+  #     # - *ldap-deploy-labels
   #   deploy:
-  #     <<: [*basic-deploy, *ldap-deploy-labels]
+  #     <<:
+  #       - *basic-deploy
+  #       - *ldap-deploy-labels
   #   environment:
   #     <<: *authentik-extend-env
   #     AUTHENTIK_TOKEN: ${AUTHENTIK_TOKEN_LDAP:-}
@@ -166,31 +191,9 @@ services:
   ##############################################################################
   ##############################################################################
   ##############################################################################
-  redis:
-    # https://hub.docker.com/_/redis
-    image: redis:${VERSION_REDIS:-7.2.3-alpine}
-    <<: *basic
-    deploy:
-      <<: *basic-deploy
-    cap_add:
-      - SETGID
-      - SETUID
-    volumes:
-      - redis:/data
-    command: --save 60 1 --loglevel warning
-    healthcheck:
-      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
-      start_period: 10s
-      interval: 30s
-      timeout: 5s
-      retries: 3
-
-  ##############################################################################
-  ##############################################################################
-  ##############################################################################
   postgresql:
     # https://hub.docker.com/_/postgres
-    image: postgres:${VERSION_POSTGRESQL:-16.1-alpine}
+    image: postgres:${VERSION_POSTGRESQL:-18.4-alpine}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -202,20 +205,27 @@ services:
           cpus: ${RESOURCES_RESERVATIONS_CPUS_POSTGRESQL:-0.001}
           memory: ${RESOURCES_RESERVATIONS_MEMORY_POSTGRESQL:-32m}
     cap_add:
+      - CHOWN
       - FOWNER
-      - SETGID
-      - SETUID
+      - DAC_READ_SEARCH
       - DAC_OVERRIDE
+      - SETUID
+      - SETGID
     secrets:
       - postgres_password_file
     environment:
       POSTGRES_DB: ${PG_DB:-authentik}
       POSTGRES_USER: ${PG_USER:-authentik}
       POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password_file
+      PGDATA: /var/lib/postgresql/18/data
     volumes:
-      - database:/var/lib/postgresql/data
+      - postgresql_v18:/var/lib/postgresql/18/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -h 127.0.0.1 -d $${POSTGRES_DB} -U $${POSTGRES_USER}",
+        ]
       start_period: 10s
       interval: 30s
       timeout: 5s
@@ -226,6 +236,7 @@ services:
 ################################################################################
 networks:
   default:
+    # internal: true
     driver: ${NETWORK_MODE:-overlay}
     attachable: true
     driver_opts:
@@ -234,11 +245,10 @@ networks:
     external: true
 
 volumes:
-  media: {}
-  certs: {}
+  data: {}
   custom-templates: {}
-  redis: {}
-  database: {}
+  certs: {}
+  postgresql_v18: {}
 
 secrets:
   postgres_password_file:

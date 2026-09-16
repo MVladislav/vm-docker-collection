@@ -1,33 +1,16 @@
 # SETUP
 
-```sh
-    MVladislav
-```
-
----
-
-- [SETUP](#setup)
-  - [basic](#basic)
-    - [create your `secrets`:](#create-your-secrets)
-    - [create `.env` file following:](#create-env-file-following)
-      - [example short .env](#example-short-env)
-  - [FAQ](#faq)
-    - [Create first account](#create-first-account)
-  - [References](#references)
-
----
-
 ## basic
 
 > defined to work with traefik
 
 ### create your `secrets`:
 
-> instead of openssl for password you can also use `pwgen -s 50 1`
+> instead of openssl for passwords you can also use `pwgen -s 50 1`
 
 ```sh
-$openssl rand -base64 18 > config/secrets/postgres_password_file.txt
-$openssl rand -base64 66 > config/secrets/authentik_secret_key.txt
+openssl rand -base64 18 > config/secrets/postgres_password_file.txt
+openssl rand -base64 66 > config/secrets/authentik_secret_key.txt
 ```
 
 ### create `.env` file following:
@@ -44,7 +27,7 @@ LB_SWARM=true
 DOMAIN=authentik.home.local # not set in docker-compose, needs to be copied to .env
 PROTOCOL=http
 PORT=9000
-# default-secured@file | public-whitelist@file | authentik@file
+# default-secured@file | public-secured@file | authentik@file
 MIDDLEWARE_SECURED=default-secured@file
 
 # GENERAL sources to be used (set by default, change as needed)
@@ -56,49 +39,70 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_GOAUTHENTIK=2024.2.2
-VERSION_REDIS=7.2.3-alpine
-VERSION_POSTGRESQL=16.1-alpine
+VERSION_GOAUTHENTIK=2026.8.2
+VERSION_POSTGRESQL=18.4-alpine
 
 # APPLICATION general variable to adjust the apps (OPTIONAL)
 # ______________________________________________________________________________
-# SMTP Host Emails are sent to
+CERT_RESOLVER=certificates
+
+# Port publishing (optional, when not using Traefik)
+# ______________________________________________________________________________
+# SMTP server
 AUTHENTIK_EMAIL__HOST=localhost
-AUTHENTIK_EMAIL__PORT=25
+AUTHENTIK_EMAIL__PORT=587
 # Optionally authenticate (don't add quotation marks to your password)
 AUTHENTIK_EMAIL__USERNAME=
 AUTHENTIK_EMAIL__PASSWORD=
-# Use StartTLS
-AUTHENTIK_EMAIL__USE_TLS=false
-# Use SSL
+# STARTTLS / explicit TLS, usually on port 587
+AUTHENTIK_EMAIL__USE_TLS=true
+# Implicit TLS/SSL on the SMTP connection (`USE_SSL` is the variable name), usually on port 465
 AUTHENTIK_EMAIL__USE_SSL=false
-AUTHENTIK_EMAIL__TIMEOUT=10
-# Email address authentik will send from, should have a correct @domain
+AUTHENTIK_EMAIL__TIMEOUT=30
+# Sender email address; verify that the domain is valid.
 AUTHENTIK_EMAIL__FROM=authentik@localhost
 ```
 
-#### example short .env
+#### example short .env (swarm)
 
 ```env
 DOMAIN=authentik.home.local
 ```
 
+#### example short .env (bridge)
+
+```env
+NETWORK_MODE=bridge
+LB_SWARM=false
+
+DOMAIN=authentik.home.local
+```
+
 ---
 
-## FAQ
+## Guides & Insights
 
-### Create first account
+### Verify the healthcheck
 
-on initial setup open page under `https://authentik.home.local/if/flow/initial-setup/`
+```sh
+docker inspect --format "{{json .State.Health }}" "$(docker ps -q -f name=goauthentik)" | jq
+```
 
-> or what every domain you setup
+### Initial setup
+
+Open `https://authentik.home.local` (or whatever domain you set in `DOMAIN`)
+and follow the initial setup flow. You will be prompted to set a password for
+the `akadmin` user (the default admin).
 
 ---
 
 ## References
 
 - <https://goauthentik.io/>
+- <https://docs.goauthentik.io/install-config/install/docker-compose/>
+- <https://docs.goauthentik.io/install-config/reverse-proxy/>
 - <https://github.com/goauthentik/authentik>
+- <https://github.com/goauthentik/authentik/pkgs/container/server>
 - [passwordless authentication setup example](https://www.youtube.com/watch?v=aEpT2fYGwLw)
 - [ldap example setup](https://www.youtube.com/watch?v=RtPKMMKRT_E)
   - <https://goauthentik.io/docs/providers/ldap/generic_setup>
