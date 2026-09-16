@@ -77,33 +77,41 @@ services:
       - pangolin_branding:/app/public/branding
       - maxmind:${GEOIPUPDATE_DB_DIR:-/app/geo}
       - certificates:/certificates
+    secrets:
+      - server_secret
+      - email_smtp_pass
     environment:
       # SECRETS
       # `pangctl rotate-server-secret`
-      SERVER_SECRET: ${SERVER_SECRET?SERVER_SECRET is not set}
-      EMAIL_SMTP_PASS: ${EMAIL_SMTP_PASS}
-      # APP
-      APP_DASHBOARDURL: https://${DASHBOARDURL?domain variable not set}
-      APP_BASEDOMAIN: ${BASEDOMAIN?domain variable not set}
-      # DOMAINS
-      DOMAINS_DEFAULT_BASEDOMAIN: ${BASEDOMAIN?base domain variable not set}
-      DOMAINS_DEFAULT_CERTRESOLVER: certificates
-      DOMAINS_DEFAULT_PREFERWILDCARDCERT: "true"
-      # GERBIL
-      GERBIL_BASEENDPOINT: ${BASEDOMAIN?base domain variable not set}
-      # TRAEFIK
-      GENERATE_TRAEFIK_CONFIG: "false"
-      # FLAGS
-      FLAGS_REQUIRE_EMAIL_VERIFICATION: ${FLAGS_REQUIRE_EMAIL_VERIFICATION:-true}
-      FLAGS_DISABLE_SIGNUP_WITHOUT_INVITE: ${FLAGS_DISABLE_SIGNUP_WITHOUT_INVITE:-true}
-      FLAGS_DISABLE_USER_CREATE_ORG: ${FLAGS_DISABLE_USER_CREATE_ORG:-true}
-      FLAGS_ALLOW_RAW_RESOURCES: ${FLAGS_ALLOW_RAW_RESOURCES:-true}
-      FLAGS_ENABLE_INTEGRATION_API: ${FLAGS_ENABLE_INTEGRATION_API:-false}
-      FLAGS_DISABLE_LOCAL_SITES: ${FLAGS_DISABLE_LOCAL_SITES:-false}
-      FLAGS_DISABLE_BASIC_WIREGUARD_SITES: ${FLAGS_DISABLE_BASIC_WIREGUARD_SITES:-false}
-      FLAGS_DISABLE_CONFIG_MANAGED_DOMAINS: ${FLAGS_DISABLE_CONFIG_MANAGED_DOMAINS:-false}
+      SERVER_SECRET_FILE: /run/secrets/server_secret
+      EMAIL_SMTP_PASS_FILE: /run/secrets/email_smtp_pass
+      EMAIL_SMTP_USER: ${EMAIL_SMTP_USER:?EMAIL_SMTP_USER is not set}
+      # Only env vars that override config.yml via getEnvOrYaml (see readConfigFile.ts).
+      # All other settings live in config.yml / privateConfig.yml mounted above.
+      # # APP
+      # APP_DASHBOARDURL: https://${DASHBOARDURL?domain variable not set}
+      # APP_BASEDOMAIN: ${BASEDOMAIN?domain variable not set}
+      # # DOMAINS
+      # DOMAINS_DEFAULT_BASEDOMAIN: ${BASEDOMAIN?base domain variable not set}
+      # DOMAINS_DEFAULT_CERTRESOLVER: certificates
+      # DOMAINS_DEFAULT_PREFERWILDCARDCERT: "true"
+      # # GERBIL
+      # GERBIL_BASEENDPOINT: ${BASEDOMAIN?base domain variable not set}
+      # # TRAEFIK
+      # GENERATE_TRAEFIK_CONFIG: "false"
+      # # FLAGS
+      # FLAGS_REQUIRE_EMAIL_VERIFICATION: ${FLAGS_REQUIRE_EMAIL_VERIFICATION:-true}
+      # FLAGS_DISABLE_SIGNUP_WITHOUT_INVITE: ${FLAGS_DISABLE_SIGNUP_WITHOUT_INVITE:-true}
+      # FLAGS_DISABLE_USER_CREATE_ORG: ${FLAGS_DISABLE_USER_CREATE_ORG:-true}
+      # FLAGS_ALLOW_RAW_RESOURCES: ${FLAGS_ALLOW_RAW_RESOURCES:-true}
+      # FLAGS_ENABLE_INTEGRATION_API: ${FLAGS_ENABLE_INTEGRATION_API:-false}
+      # FLAGS_DISABLE_LOCAL_SITES: ${FLAGS_DISABLE_LOCAL_SITES:-false}
+      # FLAGS_DISABLE_BASIC_WIREGUARD_SITES: ${FLAGS_DISABLE_BASIC_WIREGUARD_SITES:-false}
+      # FLAGS_DISABLE_CONFIG_MANAGED_DOMAINS: ${FLAGS_DISABLE_CONFIG_MANAGED_DOMAINS:-false}
       # DATABASE
       ENABLE_SQLITE_WAL_MODE: ${ENABLE_SQLITE_WAL_MODE:-true}
+      # AI gateway routes: stamp resolved client IP into X-Pangolin-Client-Ip (default on, requires Badger >= realIpHeader support)
+      ENABLE_AI_GATEWAY_CLIENT_IP_HEADER: ${ENABLE_AI_GATEWAY_CLIENT_IP_HEADER:-true}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://127.0.0.1:3001/api/v1/"]
       start_period: 10s
@@ -387,7 +395,7 @@ services:
         uid: "0"
         gid: "0"
     environment:
-      BOUNCER_KEY_traefik: ${BOUNCER_KEY_traefik:-PANGOLINLAPI1234}
+      BOUNCER_KEY_traefik: ${BOUNCER_KEY_traefik?BOUNCER_KEY_traefik is not set}
       CUSTOM_HOSTNAME: crowdsec
       COLLECTIONS: crowdsecurity/traefik crowdsecurity/appsec-virtual-patching crowdsecurity/appsec-generic-rules crowdsecurity/linux crowdsecurity/iptables
       ENROLL_INSTANCE_NAME: pangolin-crowdsec
@@ -546,6 +554,10 @@ configs:
     file: ${FILE_PATH:-$PWD}/config/crowdsec/journalctl.yaml
 
 secrets:
+  server_secret:
+    file: ${FILE_PATH:-$PWD}/config/secrets/server_secret.txt
+  email_smtp_pass:
+    file: ${FILE_PATH:-$PWD}/config/secrets/email_smtp_pass.txt
   traefik_basicauth_secret:
     file: ${FILE_PATH:-$PWD}/config/secrets/traefik_basicauth_secret.txt
   dnschallenge_api_key_secret:

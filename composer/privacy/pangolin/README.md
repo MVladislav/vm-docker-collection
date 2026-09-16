@@ -7,13 +7,16 @@
 ```sh
 echo "$(htpasswd -nB traefik)" > config/secrets/traefik_basicauth_secret.txt
 
+echo '<GEO_IP_ACCOUNT_ID>' > config/secrets/geoipupdate_account_id.txt
+echo '<GEO_IP_LICENSE_KEY>' > config/secrets/geoipupdate_license_key.txt
+
+echo "$(pwgen -s 32 1)" > config/secrets/server_secret.txt # `pangctl rotate-server-secret`
+echo '<EMAIL_SMTP_PASSWORD>' > config/secrets/email_smtp_pass.txt
+
 echo '<YOUR_API_TOKEN>' > config/secrets/dnschallenge_api_key_secret.txt
 # replace `IONOS_API_KEY_FILE` with your provider => https://go-acme.github.io/lego/dns/index.html
 echo "IONOS_API_KEY_FILE=/run/secrets/dnschallenge_api_key_secret" >> .env # pragma: allowlist secret
 echo "CERTIFICATES_ACME_DNSCHALLENGE_PROVIDER=ionos" >> .env
-
-echo '<GEO_IP_ACCOUNT_ID>' > config/secrets/geoipupdate_account_id.txt
-echo '<GEO_IP_LICENSE_KEY>' > config/secrets/geoipupdate_license_key.txt
 ```
 
 ### create config files:
@@ -21,26 +24,34 @@ echo '<GEO_IP_LICENSE_KEY>' > config/secrets/geoipupdate_license_key.txt
 > Replace min. `home.local`.
 
 ```sh
+# one source of truth for all domains/keys
 TMP_DOMAIN_BASE="home.local"
 TMP_DOMAIN_DASHBOARD="proxy.${TMP_DOMAIN_BASE}"
 TMP_DOMAIN_TRAEFIK="traefik.${TMP_DOMAIN_BASE}"
 TMP_SMTP_HOST="smtp.ionos.de"
+TMP_LAPI_KEY="$(pwgen -s 32 1)"
 
-cp ./config/traefik/dynamic_config.yml.tmpl ./config/traefik/dynamic_config.yml
-cp ./config/pangolin/config.yml.tmpl ./config/pangolin/config.yml
+# render each config from its template (one command per file)
+sed -e "s|<REPLACE_TRAEFIK_DOMAIN>|${TMP_DOMAIN_TRAEFIK}|" \
+    -e "s|<REPLACE_DASHBOARDURL>|${TMP_DOMAIN_DASHBOARD}|" \
+    -e "s|<REPLACE_LAPI_KEY>|${TMP_LAPI_KEY}|" \
+    ./config/traefik/dynamic_config.yml.tmpl > ./config/traefik/dynamic_config.yml
+
+sed -e "s|<REPLACE_DASHBOARDURL>|${TMP_DOMAIN_DASHBOARD}|" \
+    -e "s|<REPLACE_BASEDOMAIN>|${TMP_DOMAIN_BASE}|" \
+    -e "s|<REPLACE_SMTP_HOST>|${TMP_SMTP_HOST}|" \
+    ./config/pangolin/config.yml.tmpl > ./config/pangolin/config.yml
+
 cp ./config/pangolin/privateConfig.yml.tmpl ./config/pangolin/privateConfig.yml
 
-sed "s|<REPLACE_TRAEFIK_DOMAIN>|${TMP_DOMAIN_TRAEFIK}|" -i  ./config/traefik/dynamic_config.yml
-sed "s|<REPLACE_DASHBOARDURL_DOMAIN>|${TMP_DOMAIN_DASHBOARD}|" -i  ./config/traefik/dynamic_config.yml
-
-sed "s|<REPLACE_DASHBOARDURL_DOMAIN>|${TMP_DOMAIN_DASHBOARD}|" -i  ./config/pangolin/config.yml
-sed "s|<REPLACE_BASE_DOMAIN>|${TMP_DOMAIN_BASE}|" -i  ./config/pangolin/config.yml
-sed "s|<REPLACE_SMTP_HOST>|${TMP_SMTP_HOST}|" -i  ./config/pangolin/config.yml
-
-echo "BASEDOMAIN=${TMP_DOMAIN_BASE}" >> .env
-echo "DASHBOARDURL=${TMP_DOMAIN_DASHBOARD}" >> .env
-echo "CERTIFICATES_ACME_EMAIL=info@${TMP_DOMAIN_BASE}" >> .env
-echo "SERVER_SECRET=$(pwgen -s 32 1)" >> .env
+# derive the remaining app values into `.env`:
+cat >> .env <<EOF
+BASEDOMAIN=${TMP_DOMAIN_BASE}
+DASHBOARDURL=${TMP_DOMAIN_DASHBOARD}
+CERTIFICATES_ACME_EMAIL=info@${TMP_DOMAIN_BASE}
+EMAIL_SMTP_USER=no-reply@${TMP_DOMAIN_BASE}
+BOUNCER_KEY_traefik=${TMP_LAPI_KEY}
+EOF
 ```
 
 ### create `.env` file following:
@@ -71,24 +82,20 @@ RESOURCES_LIMITS_MEMORY_GEOIPUPDATE=64m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_PANGOLIN=1.22.0
-VERSION_GERBIL=1.5.0
-VERSION_TRAEFIK=v3.7.12
+VERSION_PANGOLIN=1.23.0
+VERSION_GERBIL=1.5.1
+VERSION_TRAEFIK=v3.7.13
 VERSION_BADGER=v1.7.0
 VERSION_CROWDSEC_PLUGIN=v1.7.1
-VERSION_CROWDSEC=v1.7.8-debian
-VERSION_MAXMIND=v7.1.1
+VERSION_CROWDSEC=v1.8.1-debian
+VERSION_MAXMIND=v8.0.0
 
-VERSION_NEWT=1.16.0
-VERSION_CLI=0.16.0
-VERSION_OLM=1.9.0
+VERSION_NEWT=1.17.0
+VERSION_CLI=0.17.0
+VERSION_OLM=1.9.1
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
-BASEDOMAIN=<BASE_DOMAIN>
-DASHBOARDURL=<REPLACE_DASHBOARDURL_DOMAIN>
-
-CERTIFICATES_ACME_EMAIL=<E-MAIL>
 CERTIFICATES_ACME_CASERVER=https://acme-staging-v02.api.letsencrypt.org/directory # https://acme-v02.api.letsencrypt.org/directory
 CERTIFICATES_ACME_DNSCHALLENGE_PROVIDER=ionos # https://doc.traefik.io/traefik/https/acme/#providers
 CERTIFICATES_ACME_DNSCHALLENGE_RESOLVERS=9.9.9.9,194.242.2.2,1.1.1.1
@@ -96,9 +103,6 @@ IONOS_API_KEY_FILE=/run/secrets/dnschallenge_api_key_secret # https://go-acme.gi
 
 TRAEFIK_API=false
 TRAEFIK_API_DASHBOARD=false
-
-SERVER_SECRET=<GENERATE_SERVER_SECRET>
-EMAIL_SMTP_PASS=<EMAIL_PASSWORD>
 
 # CERTIFICATES_ACME_CASERVER=https://acme.zerossl.com/v2/DV90 # needs EAB Credentials (EAB KID & EAB HMAC Key)
 # CERTIFICATES_ACME_EAB_KID=<EAB_KID>
@@ -109,7 +113,6 @@ EMAIL_SMTP_PASS=<EMAIL_PASSWORD>
 
 ```env
 CERTIFICATES_ACME_CASERVER=https://acme-v02.api.letsencrypt.org/directory
-EMAIL_SMTP_PASS=<EMAIL_PASSWORD>
 ```
 
 ## NEWT setup

@@ -24,7 +24,7 @@ http:
           crowdsecAppsecHost: crowdsec:7422
           crowdsecAppsecFailureBlock: true
           crowdsecAppsecUnreachableBlock: true
-          crowdsecLapiKey: PANGOLINLAPI1234
+          crowdsecLapiKey: <REPLACE_LAPI_KEY> # must match BOUNCER_KEY_traefik in docker-compose.yaml
           crowdsecLapiHost: crowdsec:8080
           crowdsecLapiScheme: http
           banHTMLFilePath: /etc/traefik/ban.html
@@ -101,7 +101,7 @@ http:
 
     # # HTTP to HTTPS redirect router
     # main-app-router-redirect:
-    #   rule: "Host(`<REPLACE_DASHBOARDURL_DOMAIN>`)" # REPLACE THIS WITH YOUR DOMAIN
+    #   rule: "Host(`<REPLACE_DASHBOARDURL>`)" # REPLACE THIS WITH YOUR DOMAIN
     #   service: next-service
     #   entryPoints:
     #     - web
@@ -111,7 +111,7 @@ http:
 
     # Next.js router (handles everything except API and WebSocket paths)
     next-router:
-      rule: "Host(`<REPLACE_DASHBOARDURL_DOMAIN>`) && !PathPrefix(`/api/v1`)" # REPLACE THIS WITH YOUR DOMAIN
+      rule: "Host(`<REPLACE_DASHBOARDURL>`) && !PathPrefix(`/api/v1`)" # REPLACE THIS WITH YOUR DOMAIN
       service: next-service
       entryPoints:
         - websecure
@@ -122,7 +122,7 @@ http:
 
     # API router (handles /api/v1 paths)
     api-router:
-      rule: "Host(`<REPLACE_DASHBOARDURL_DOMAIN>`) && PathPrefix(`/api/v1`)" # REPLACE THIS WITH YOUR DOMAIN
+      rule: "Host(`<REPLACE_DASHBOARDURL>`) && PathPrefix(`/api/v1`)" # REPLACE THIS WITH YOUR DOMAIN
       service: api-service
       entryPoints:
         - websecure
@@ -133,7 +133,7 @@ http:
 
     # WebSocket router
     ws-router:
-      rule: "Host(`<REPLACE_DASHBOARDURL_DOMAIN>`)" # REPLACE THIS WITH YOUR DOMAIN
+      rule: "Host(`<REPLACE_DASHBOARDURL>`)" # REPLACE THIS WITH YOUR DOMAIN
       service: api-service
       entryPoints:
         - websecure

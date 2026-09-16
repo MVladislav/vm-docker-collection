@@ -3,7 +3,7 @@
 # https://docs.pangolin.net/self-host/advanced/config-file
 
 app:
-  dashboard_url: "https://<REPLACE_DASHBOARDURL_DOMAIN>"
+  dashboard_url: "https://<REPLACE_DASHBOARDURL>"
   log_level: "info" # debug|info|warn|error
   save_logs: false
   log_failed_attempts: true
@@ -15,7 +15,7 @@ app:
 
 domains:
   domain1:
-    base_domain: "<REPLACE_BASE_DOMAIN>"
+    base_domain: "<REPLACE_BASEDOMAIN>"
     cert_resolver: "certificates"
 
 server:
@@ -30,7 +30,7 @@ server:
     token: "P-Access-Token"
   resource_session_request_param: "p_session_request"
   cors:
-    origins: ["https://<REPLACE_DASHBOARDURL_DOMAIN>"]
+    origins: ["https://<REPLACE_DASHBOARDURL>"]
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"]
     allowed_headers: ["X-CSRF-Token", "Content-Type"]
     credentials: false
@@ -44,7 +44,7 @@ traefik:
   https_entrypoint: "websecure"
 
 gerbil:
-  base_endpoint: "<REPLACE_DASHBOARDURL_DOMAIN>"
+  base_endpoint: "<REPLACE_DASHBOARDURL>"
   start_port: 51820
   clients_start_port: 21820
   use_subdomain: false
@@ -64,16 +64,19 @@ rate_limits:
 email:
   smtp_host: "<REPLACE_SMTP_HOST>"
   smtp_port: 587
-  smtp_user: "no-reply@<REPLACE_BASE_DOMAIN>"
   smtp_secure: false
-  no_reply: "no-reply@<REPLACE_BASE_DOMAIN>"
+  no_reply: "no-reply@<REPLACE_BASEDOMAIN>"
   smtp_tls_reject_unauthorized: true
+
+acme:
+  acme_json_path: "/certificates/acme.json"
 
 flags:
   require_email_verification: true
   disable_signup_without_invite: true
   disable_user_create_org: true
   allow_raw_resources: true
+  enable_acme_cert_sync: true
   enable_integration_api: false
   disable_local_sites: false
   disable_basic_wireguard_sites: false
