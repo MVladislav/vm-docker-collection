@@ -62,7 +62,7 @@ services:
   ##############################################################################
   beszel:
     # https://github.com/henrygd/beszel/pkgs/container/beszel%2Fbeszel
-    image: ghcr.io/henrygd/beszel/beszel:${VERSION:-0.18.7}
+    image: ghcr.io/henrygd/beszel/beszel:${VERSION:-0.19.0}
     <<:
       - *basic
       # - *basic-deploy-labels
@@ -79,6 +79,7 @@ services:
       MFA_OTP: ${MFA_OTP:-false}
       SHARE_ALL_SYSTEMS: ${SHARE_ALL_SYSTEMS:-false}
       DISABLE_PASSWORD_AUTH: ${DISABLE_PASSWORD_AUTH:-false}
+      USER_CREATION: ${USER_CREATION:-false}
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
@@ -106,7 +107,7 @@ services:
   ##############################################################################
   beszel-agent:
     # https://github.com/henrygd/beszel/pkgs/container/beszel%2Fbeszel-agent
-    image: ghcr.io/henrygd/beszel/beszel-agent${AGENT_TYPE:-}:${VERSION_AGENT:-0.18.7-alpine}
+    image: ghcr.io/henrygd/beszel/beszel-agent${AGENT_TYPE:-}:${VERSION_AGENT:-0.19.0-alpine}
     <<: *basic
     deploy:
       <<: *basic-deploy

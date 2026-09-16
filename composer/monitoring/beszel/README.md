@@ -30,8 +30,8 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION=0.18.7
-VERSION_AGENT=0.18.7-alpine
+VERSION=0.19.0
+VERSION_AGENT=0.19.0-alpine
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
@@ -41,6 +41,12 @@ MFA_OTP=true # you need first setup SMTP inside PocketBase
 # Agent
 AGENT_TYPE=<-nvidia|-intel>
 HWACCEL=<none|gpu-amd|gpu-nvidia|gpu-intel>
+
+# If you setup with SSO
+MFA_OTP=false
+SHARE_ALL_SYSTEMS=true
+DISABLE_PASSWORD_AUTH=true
+USER_CREATION=true
 ```
 
 #### example short .env (swarm)
