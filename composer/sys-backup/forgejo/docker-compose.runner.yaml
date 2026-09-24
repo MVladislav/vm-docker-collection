@@ -1,0 +1,87 @@
+---
+x-basic-deploy: &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  update_config:
+    order: stop-first
+  restart_policy:
+    condition: any
+  resources:
+    limits:
+      cpus: ${RESOURCES_LIMITS_CPUS_RUNNER:-2}
+      memory: ${RESOURCES_LIMITS_MEMORY_RUNNER:-2g}
+    reservations:
+      cpus: ${RESOURCES_RESERVATIONS_CPUS_RUNNER:-0.001}
+      memory: ${RESOURCES_RESERVATIONS_MEMORY_RUNNER:-32m}
+
+x-basic: &basic
+  env_file: ${ENV_FILE:-.env}
+  cap_drop: ["ALL"]
+  security_opt:
+    - no-new-privileges:true
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 655360
+      hard: 655360
+    fsize: -1
+    as: -1
+  networks:
+    default: {}
+  healthcheck:
+    disable: true
+  tmpfs:
+    - /tmp:rw,relatime,size=512m,nodev,nosuid,noexec
+  restart: always
+
+################################################################################
+################################################################################
+################################################################################
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  runner:
+    # https://code.forgejo.org/forgejo/-/packages/container/runner
+    image: data.forgejo.org/forgejo/runner:${VERSION_RUNNER:-13.2.0}
+    user: "0:0"
+    <<:
+      - *basic
+    deploy:
+      <<:
+        - *basic-deploy
+    environment:
+      TZ: ${TIMEZONE:-Europe/Berlin}
+    configs:
+      - source: runner_config
+        target: /config.yml
+        mode: 0440
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - ${DOCKER_SOCKET:-/var/run/docker.sock}:/var/run/docker.sock:ro
+      - runner:/data
+    networks:
+      proxy: {}
+    command: ["forgejo-runner", "daemon", "--config", "/config.yml"]
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  proxy:
+    external: true
+
+volumes:
+  runner: {}
+
+configs:
+  runner_config:
+    file: $PWD/config/config.yml

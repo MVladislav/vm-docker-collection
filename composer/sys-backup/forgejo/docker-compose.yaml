@@ -13,14 +13,14 @@ x-basic-deploy-labels: &basic-deploy-labels
     - traefik.http.services.forgejo.loadbalancer.server.scheme=${PROTOCOL:-http}
     - traefik.http.services.forgejo.loadbalancer.server.port=${PORT:-3000}
 
-    - traefik.tcp.routers.forgejo-ssh.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
-    - traefik.tcp.routers.forgejo-ssh.rule=HostSNI(`${DOMAIN?domain variable not set}`)
-    - traefik.tcp.routers.forgejo-ssh.tls=true
-    - traefik.tcp.routers.forgejo-ssh.tls.passthrough=false
-    - traefik.tcp.routers.forgejo-ssh.tls.certresolver=${CERT_RESOLVER:-}
-    - traefik.tcp.routers.forgejo-ssh.middlewares=${MIDDLEWARE_SECURED_SSH:-default-whitelist}
-    - traefik.tcp.routers.forgejo-ssh.service=forgejo-ssh
-    - traefik.tcp.services.forgejo-ssh.loadbalancer.server.port=${PORT_SSH:-22}
+    # - traefik.tcp.routers.forgejo-ssh.entrypoints=${TRAEFIK_ENTRYPOINT:-ssh}
+    # - traefik.tcp.routers.forgejo-ssh.rule=HostSNI(`${DOMAIN?domain variable not set}`)
+    # - traefik.tcp.routers.forgejo-ssh.tls=true
+    # - traefik.tcp.routers.forgejo-ssh.tls.passthrough=true
+    # - traefik.tcp.routers.forgejo-ssh.tls.certresolver=${CERT_RESOLVER:-}
+    # - traefik.tcp.routers.forgejo-ssh.middlewares=${MIDDLEWARE_SECURED_SSH:-default-whitelist}
+    # - traefik.tcp.routers.forgejo-ssh.service=forgejo-ssh
+    # - traefik.tcp.services.forgejo-ssh.loadbalancer.server.port=${PORT_SSH:-22}
 
 x-basic-deploy: &basic-deploy
   mode: replicated
@@ -74,7 +74,7 @@ services:
   ##############################################################################
   forgejo:
     # https://codeberg.org/forgejo/-/packages/container/forgejo
-    image: codeberg.org/forgejo/forgejo:${VERSION:-15}
+    image: codeberg.org/forgejo/forgejo:${VERSION:-16}
     <<:
       - *basic
       # - *basic-deploy-labels
@@ -87,11 +87,17 @@ services:
       - FOWNER # Overrides file ownership checks (`chmod`,`kill`)
       - SETGID # Allows setting group ID (`setgid`,`newgrp`,`chgrp`,`setregid()`)
       - SETUID # Allows setting user ID (`setuid`,`su`,`sudo`,`passwd`)
-      # - DAC_OVERRIDE # Bypasses file read/write/execute permission checks (`cat`,`touch`,`rm`)
+      - SYS_CHROOT # for chroot with ssh
+    ports:
+      - target: ${PORT_SSH:-22}
+        published: ${PORT_SSH_PUBLISH:-2222}
+        protocol: tcp
+        mode: host
     environment:
       USER_UID: ${USER_UID:-1000}
       USER_GID: ${USER_GID:-1000}
-      # https://forgejo.org/docs/v15.0/admin/config-cheat-sheet/#overall-default
+      TZ: ${TIMEZONE:-Europe/Berlin}
+      # https://forgejo.org/docs/latest/admin/config-cheat-sheet/
       # - Basic Format:   FORGEJO__[SECTION]__[KEY]
       # - DEFAULT Format: FORGEJO____[KEY]
       # DEFAULT
@@ -104,7 +110,9 @@ services:
       FORGEJO__server__HTTP_PORT: ${PORT:-3000}
       FORGEJO__server__DISABLE_SSH: ${FORGEJO_DISABLE_SSH:-false}
       FORGEJO__server__SSH_DOMAIN: ${DOMAIN?domain variable not set}
-      FORGEJO__server__SSH_PORT: ${PORT_SSH:-22}
+      FORGEJO__server__SSH_LISTEN_PORT: ${PORT_SSH:-22}
+      FORGEJO__server__SSH_PORT: ${PORT_SSH_PUBLISH:-2222}
+      # FORGEJO__server__SSH_CHROOT: "/"
 
       # SECURITY
       FORGEJO__security__GLOBAL_TWO_FACTOR_REQUIREMENT: all
@@ -114,9 +122,15 @@ services:
       FORGEJO__database__DB_TYPE: sqlite3
       FORGEJO__database__Path: /data/gitea/gitea.db
 
-      # ACTIONS
-      # FORGEJO__actions__ENABLED: true
-      # FORGEJO__actions__DEFAULT_ACTIONS_URL: https://github.com
+      # FORGEJO__indexer__MAX_FILE_SIZE: 1073741824
+      # FORGEJO__git__MAX_GIT_DIFF_LINES: 100000
+      # FORGEJO__git__MAX_GIT_DIFF_LINE_CHARACTERS: 100000
+      # FORGEJO__git__MAX_GIT_DIFF_FILES: 10000
+      # FORGEJO__quota__ENABLED: "false"
+
+      # ACTIONS (enabled by default; runner = docker-compose.runner.yaml)
+      FORGEJO__actions__ENABLED: ${FORGEJO__actions__ENABLED:-true}
+      # FORGEJO__actions__DEFAULT_ACTIONS_URL: https://github.com # default: https://data.forgejo.org
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
@@ -128,9 +142,9 @@ services:
       test:
         [
           "CMD-SHELL",
-          "curl -ksSfo /dev/null ${PROTOCOL:-http}://127.0.0.1:${PORT:-3000} > /dev/null 2>&1 || exit 1",
+          "curl -ksSfo /dev/null ${PROTOCOL:-http}://127.0.0.1:${PORT:-3000}/api/healthz || exit 1",
         ]
-      start_period: 10s
+      start_period: 30s
       interval: 30s
       timeout: 5s
       retries: 3

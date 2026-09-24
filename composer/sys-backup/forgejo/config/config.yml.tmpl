@@ -1,0 +1,56 @@
+---
+# Forgejo Actions runner config - render to config/config.yml (gitignored).
+# Schema: https://code.forgejo.org/forgejo/runner/src/branch/main/internal/pkg/config/config.example.yaml
+# Render (replace <RUNNER_*> tokens from the Forgejo UI): `sed ...` one-liner in README.md
+log:
+  level: info
+  job_level: info
+
+runner:
+  file: /data/.runner # persist registration on the runner volume (not rootfs)
+  capacity: 1 # concurrent jobs
+  envs:
+    TZ: Europe/Berlin
+  timeout: 3h # job timeout (<= instance [actions] TIMEOUT)
+  shutdown_timeout: 3h # grace period for running jobs on shutdown
+  insecure: false # true only for a self-signed instance cert
+  fetch_timeout: 30s
+  fetch_interval: 2s
+  report_interval: 1s
+
+cache:
+  enabled: true # provides ACTIONS_CACHE_URL to jobs
+  port: 0
+  dir: /data/.cache # persist on the runner volume (not $HOME on the rootfs)
+  host: ""
+  proxy_port: 0
+  external_server: ""
+  secret: ""
+
+container:
+  network: "" # "" = dedicated bridge network per job
+  enable_ipv6: false
+  privileged: false
+  options:
+  # jobs run with BindWorkdir=false -> workspaces are daemon volumes
+  workdir_parent: /data/workspace
+  valid_volumes: [] # volumes workflows may mount via `container.volumes`
+  # mounts the daemon socket (see compose) into every job container
+  docker_host: automount
+  force_pull: true
+  force_rebuild: false
+
+host:
+  workdir_parent: /data/workspace
+
+server:
+  connections:
+    forgejo:
+      # PUBLIC url: also injected into job containers (GITHUB_SERVER_URL/artifacts)
+      url: <RUNNER_URL>
+      uuid: <RUNNER_UUID>
+      token: <RUNNER_TOKEN>
+      # label -> image map; `ubuntu-latest` is the default job label
+      labels:
+        - ubuntu-latest:docker://node:24-bookworm
+      fetch_interval: 5s

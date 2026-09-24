@@ -1,0 +1,58 @@
+---
+# Forgejo Actions runner config for the Docker-in-Docker mode
+# (docker-compose.runner-dind.yaml). Render to config/config-dind.yml (gitignored).
+# Schema: https://code.forgejo.org/forgejo/runner/src/branch/main/internal/pkg/config/config.example.yaml
+# Render (replace <RUNNER_*> tokens from the Forgejo UI, see README.md):
+#   sed -e 's|<RUNNER_URL>|https://git.example.com|' \
+#       -e 's|<RUNNER_UUID>|<uuid from Forgejo UI>|' \
+#       -e 's|<RUNNER_TOKEN>|<token from Forgejo UI>|' \
+#       config/config-dind.yml.tmpl > config/config-dind.yml
+
+log:
+  level: info
+  job_level: info
+
+runner:
+  file: /data/.runner
+  capacity: 1 # concurrent jobs
+  timeout: 3h
+  shutdown_timeout: 3h
+  insecure: false
+  fetch_timeout: 30s
+  fetch_interval: 2s
+  report_interval: 1s
+  envs:
+    # docker from within a job reaches the nested daemon (see options add-host)
+    DOCKER_HOST: tcp://dind.docker.internal:2375
+
+cache:
+  enabled: true
+  port: 0
+  dir: /data/.cache # persist on the runner volume (not $HOME on the rootfs)
+  host: ""
+  proxy_port: 0
+  external_server: ""
+  secret: ""
+
+container:
+  # nested daemon reachable by the runner on the compose network
+  docker_host: tcp://dind:2375
+  network: ""
+  privileged: false
+  # resolves dind.docker.internal (used by jobs) to the dind container
+  options: --add-host=dind.docker.internal:host-gateway
+  workdir_parent: /data/workspace
+  valid_volumes: []
+  force_pull: true
+
+host:
+  workdir_parent: /data/workspace
+
+server:
+  connections:
+    forgejo:
+      url: <RUNNER_URL>
+      uuid: <RUNNER_UUID>
+      token: <RUNNER_TOKEN>
+      labels:
+        - ubuntu-latest:docker://node:24-bookworm

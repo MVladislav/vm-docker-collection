@@ -4,6 +4,7 @@
 
 !docker-compose.yaml
 !docker-compose.runner.yaml
+!docker-compose.runner-dind.yaml
 
 !README.md
 
