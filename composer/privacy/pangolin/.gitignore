@@ -9,7 +9,6 @@
 !docker-compose-cli.yaml
 
 !README.md
-!RUNBOOK.md
 
 !config/
 config/*
