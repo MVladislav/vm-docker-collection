@@ -62,7 +62,7 @@ services:
   ##############################################################################
   beszel:
     # https://github.com/henrygd/beszel/pkgs/container/beszel%2Fbeszel
-    image: ghcr.io/henrygd/beszel/beszel:${VERSION:-0.19.0}
+    image: ghcr.io/henrygd/beszel/beszel:${VERSION:-0.20.0}
     <<:
       - *basic
       # - *basic-deploy-labels
@@ -73,6 +73,10 @@ services:
     environment:
       APP_URL: https://${DOMAIN?domain variable not set}
 
+      # HEARTBEAT_URL: ${HEARTBEAT_URL:-}
+      # HEARTBEAT_INTERVAL: ${HEARTBEAT_INTERVAL:-60}
+      # HEARTBEAT_METHOD: ${HEARTBEAT_METHOD:-POST}
+
       # USER_EMAIL: ${USER_EMAIL:-groot@${DOMAIN?domain variable not set}}
       # USER_PASSWORD: ${USER_PASSWORD:-groot}
 
@@ -80,6 +84,13 @@ services:
       SHARE_ALL_SYSTEMS: ${SHARE_ALL_SYSTEMS:-false}
       DISABLE_PASSWORD_AUTH: ${DISABLE_PASSWORD_AUTH:-false}
       USER_CREATION: ${USER_CREATION:-false}
+
+      CHECK_UPDATES: ${CHECK_UPDATES:-false}
+      CONTAINER_DETAILS: ${CONTAINER_DETAILS:-true}
+      # CSP: ${CSP:-}
+      # OAUTH_DISABLE_POPUP: ${OAUTH_DISABLE_POPUP:-false}
+      # TRUSTED_AUTH_HEADER: ${TRUSTED_AUTH_HEADER:-}
+      # TRUSTED_PROXY_IPS: ${TRUSTED_PROXY_IPS:-}
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
@@ -107,7 +118,7 @@ services:
   ##############################################################################
   beszel-agent:
     # https://github.com/henrygd/beszel/pkgs/container/beszel%2Fbeszel-agent
-    image: ghcr.io/henrygd/beszel/beszel-agent${AGENT_TYPE:-}:${VERSION_AGENT:-0.19.0-alpine}
+    image: ghcr.io/henrygd/beszel/beszel-agent${AGENT_TYPE:-}:${VERSION_AGENT:-0.20.0}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -119,6 +130,16 @@ services:
       HUB_URL: ""
       LISTEN: /beszel_socket/beszel.sock
       KEY: ${KEY?KEY for agent is not set}
+
+      ### optional monitoring coverage ###
+      # additional disks (see README): EXTRA_FILESYSTEMS=${EXTRA_FILESYSTEMS:-}
+      # systemd service patterns:  SERVICE_PATTERNS=${SERVICE_PATTERNS:-}
+      # S.M.A.R.T. tuning:         EXCLUDE_SMART=${EXCLUDE_SMART:-}, SMART_INTERVAL=${SMART_INTERVAL:-1h}
+      # ZFS pool refresh:          ZFS_INTERVAL=${ZFS_INTERVAL:-1h}
+      # default memory calc:       MEM_CALC=${MEM_CALC:-}
+      # network interface filter:  NICS=${NICS:-}
+      # GPU collector override:    GPU_COLLECTOR=${GPU_COLLECTOR:-}
+      # docker container tuning:   EXCLUDE_CONTAINERS=${EXCLUDE_CONTAINERS:-}, DOCKER_TIMEOUT=${DOCKER_TIMEOUT:-2100ms}
     extends:
       file: docker-compose-agent.override.yaml
       service: ${HWACCEL:-none} # none|gpu-amd|gpu-nvidia|gpu-intel
@@ -127,8 +148,8 @@ services:
       - /etc/localtime:/etc/localtime:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - socket:/beszel_socket
-      # - /dev:/dev:ro
-      # - /run/udev:/run/udev:ro
+      - /dev:/dev:ro
+      - /run/udev:/run/udev:ro
     healthcheck:
       test: ["CMD", "/agent", "health"]
       start_period: 10s

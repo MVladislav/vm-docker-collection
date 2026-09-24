@@ -48,7 +48,7 @@ services:
   ##############################################################################
   beszel-agent:
     # https://github.com/henrygd/beszel/pkgs/container/beszel%2Fbeszel-agent
-    image: ghcr.io/henrygd/beszel/beszel-agent${AGENT_TYPE:-}:${VERSION_AGENT:-0.18.7-alpine}
+    image: ghcr.io/henrygd/beszel/beszel-agent${AGENT_TYPE:-}:${VERSION_AGENT:-0.20.0}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -64,7 +64,21 @@ services:
     environment:
       LISTEN: ${PORT_AGENT:-45876}
       KEY: ${KEY?KEY for agent is not set}
-      HUB_URL: ${HUB_URL?HUB_URL for agent is not set}
+      # WebSocket mode (agent -> hub): add HUB_URL + TOKEN to enable the agent
+      # dialing out to the hub (see https://beszel.dev/guide/agent-installation).
+      # SSH mode (hub -> agent): leave both unset, only KEY (+ published port).
+      # HUB_URL: ${HUB_URL?HUB_URL for agent is not set}
+      # TOKEN: ${TOKEN?TOKEN for agent is not set}
+
+      ### optional monitoring coverage ###
+      # additional disks (see README "Agent"): EXTRA_FILESYSTEMS=${EXTRA_FILESYSTEMS:-}
+      # systemd service patterns:  SERVICE_PATTERNS=${SERVICE_PATTERNS:-}
+      # S.M.A.R.T. tuning:         EXCLUDE_SMART=${EXCLUDE_SMART:-}, SMART_INTERVAL=${SMART_INTERVAL:-1h}
+      # ZFS pool refresh:          ZFS_INTERVAL=${ZFS_INTERVAL:-1h}
+      # default memory calc:       MEM_CALC=${MEM_CALC:-}
+      # network interface filter:  NICS=${NICS:-}
+      # GPU collector override:    GPU_COLLECTOR=${GPU_COLLECTOR:-}
+      # docker container tuning:   EXCLUDE_CONTAINERS=${EXCLUDE_CONTAINERS:-}, DOCKER_TIMEOUT=${DOCKER_TIMEOUT:-2100ms}
     extends:
       file: docker-compose-agent.override.yaml
       service: ${HWACCEL:-none} # none|gpu-amd|gpu-nvidia|gpu-intel
@@ -72,8 +86,8 @@ services:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      # - /dev:/dev:ro
-      # - /run/udev:/run/udev:ro
+      - /dev:/dev:ro
+      - /run/udev:/run/udev:ro
     healthcheck:
       test: ["CMD", "/agent", "health"]
       start_period: 10s
