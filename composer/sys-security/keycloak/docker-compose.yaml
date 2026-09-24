@@ -1,0 +1,210 @@
+---
+x-basic-deploy-labels: &basic-deploy-labels
+  labels:
+    - traefik.enable=true
+    - traefik.swarm.lbswarm=${LB_SWARM:-true}
+    - traefik.swarm.network=proxy
+    - traefik.http.routers.keycloak.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.keycloak.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.keycloak.tls=true
+    - traefik.http.routers.keycloak.tls.certresolver=${CERT_RESOLVER:-}
+    - traefik.http.routers.keycloak.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.keycloak.service=keycloak
+    - traefik.http.services.keycloak.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.keycloak.loadbalancer.server.port=${PORT:-8080}
+    # - traefik.http.services.keycloak.loadbalancer.healthcheck.port=9000
+    # - traefik.http.services.keycloak.loadbalancer.healthcheck.path=/health/ready
+    # - traefik.http.services.keycloak.loadbalancer.healthcheck.interval=30s
+    # - traefik.http.services.keycloak.loadbalancer.healthcheck.timeout=5s
+
+x-basic-deploy: &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  update_config:
+    order: stop-first
+  restart_policy:
+    condition: any
+  resources:
+    limits:
+      cpus: ${RESOURCES_LIMITS_CPUS:-1}
+      memory: ${RESOURCES_LIMITS_MEMORY:-1g}
+    reservations:
+      cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
+      memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
+
+x-basic: &basic
+  env_file: ${ENV_FILE:-.env}
+  cap_drop: ["ALL"]
+  security_opt:
+    - no-new-privileges:true
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 655360
+      hard: 655360
+    fsize: -1
+    as: -1
+  # mem_limit: ${RESOURCES_LIMITS_MEMORY:-1g}
+  networks:
+    default: {}
+  healthcheck:
+    disable: true
+  tmpfs:
+    - /tmp:rw,relatime,size=512m,nodev,nosuid,noexec
+  restart: always
+
+################################################################################
+# Keycloak runtime options
+# https://www.keycloak.org/server/containers
+# https://www.keycloak.org/server/all-config
+################################################################################
+
+x-keycloak-env: &keycloak-env # https://www.keycloak.org/server/hostname
+  KC_HOSTNAME: ${DOMAIN?domain variable not set}
+  # https://www.keycloak.org/server/reverseproxy
+  KC_PROXY_HEADERS: xforwarded
+  KC_HTTP_ENABLED: "true"
+  KC_HTTP_PORT: "8080"
+  # https://www.keycloak.org/server/management
+  KC_HEALTH_ENABLED: "true"
+  KC_METRICS_ENABLED: "true"
+  # database
+  KC_DB: postgres
+  KC_DB_URL: jdbc:postgresql://postgresql:5432/${POSTGRES_DB:-keycloak}
+  KC_DB_USERNAME: ${POSTGRES_USER:-keycloak}
+  # secrets (bridged via config/docker-entrypoint.sh file_env)
+  KC_DB_PASSWORD_FILE: /run/secrets/keycloak_db_password
+  KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN_USER:-admin}
+  KC_BOOTSTRAP_ADMIN_PASSWORD_FILE: /run/secrets/keycloak_admin_password
+
+################################################################################
+################################################################################
+################################################################################
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  keycloak:
+    # https://www.keycloak.org/server/containers
+    # https://hub.docker.com/r/quay.io/keycloak/keycloak
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+      args:
+        BUILD_DATE: ${BUILD_DATE:-2022}
+        VERSION_KEYCLOAK: ${VERSION_KEYCLOAK:-26.7.4}
+    image: keycloak:${VERSION_KEYCLOAK:-26.7.4}
+    <<:
+      - *basic
+      # - *basic-deploy-labels
+    deploy:
+      <<:
+        - *basic-deploy
+        - *basic-deploy-labels
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_KEYCLOAK:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_KEYCLOAK:-2g}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_KEYCLOAK:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_KEYCLOAK:-32m}
+    # https://www.keycloak.org/server/containers#importing_a_realm_on_startup
+    # command: start --optimized --import-realm
+    command: start --optimized
+    secrets:
+      - keycloak_db_password
+      - keycloak_admin_password
+    environment:
+      <<: *keycloak-env
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    networks:
+      default: {}
+      proxy: {}
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "exec 3<>/dev/tcp/127.0.0.1/9000 && printf 'GET /health/ready HTTP/1.1\\r\\nHost: 127.0.0.1\\r\\nConnection: close\\r\\n\\r\\n' >&3 && grep -q '200 OK' <&3",
+        ]
+      # first boot performs DB migrations
+      start_period: 60s
+      interval: 30s
+      timeout: 5s
+      retries: 5
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  postgresql:
+    # https://hub.docker.com/_/postgres
+    image: postgres:${VERSION_POSTGRESQL:-18.4-alpine}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_POSTGRESQL:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_POSTGRESQL:-512m}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_POSTGRESQL:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_POSTGRESQL:-32m}
+    cap_add:
+      - CHOWN
+      - FOWNER
+      - DAC_READ_SEARCH
+      - DAC_OVERRIDE
+      - SETUID
+      - SETGID
+    secrets:
+      - keycloak_db_password
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-keycloak}
+      POSTGRES_USER: ${POSTGRES_USER:-keycloak}
+      POSTGRES_PASSWORD_FILE: /run/secrets/keycloak_db_password
+      PGDATA: /var/lib/postgresql/18/data
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - postgresql_v18:/var/lib/postgresql/18/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -h 127.0.0.1 -d $${POSTGRES_DB} -U $${POSTGRES_USER}",
+        ]
+      start_period: 10s
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+################################################################################
+################################################################################
+################################################################################
+
+networks:
+  default:
+    internal: true
+    driver: ${NETWORK_MODE:-overlay}
+    attachable: true
+    driver_opts:
+      encrypted: "true"
+  proxy:
+    external: true
+
+volumes:
+  postgresql_v18: {}
+
+secrets:
+  keycloak_db_password:
+    file: config/secrets/keycloak_db_password.txt
+  keycloak_admin_password:
+    file: config/secrets/keycloak_admin_password.txt
