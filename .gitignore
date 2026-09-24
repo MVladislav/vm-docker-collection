@@ -23,3 +23,7 @@
 !__template/
 !composer/
 !composer/**
+
+!tools/
+!tools/readme_gen.py
+!tools/sync_readme_versions.py
