@@ -15,6 +15,11 @@ x-basic: &basic
       hard: 655360
     fsize: -1
     as: -1
+  mem_limit: ${RESOURCES_LIMITS_MEMORY:-1g}
+  networks:
+    default: {}
+  healthcheck:
+    disable: true
   tmpfs:
     - /tmp:rw,relatime,size=512m,nodev,nosuid,noexec
   restart: always
@@ -28,6 +33,8 @@ services:
       # no TLS on the internal 2375 socket (runner only, private network)
       DOCKER_TLS_CERTDIR: ""
     volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
       - dind-data:/var/lib/docker
     healthcheck:
       test: ["CMD", "docker", "info"]
@@ -35,12 +42,14 @@ services:
       timeout: 5s
       retries: 12
       start_period: 20s
+    networks:
+      default: {}
     restart: always
 
   # Forgejo Actions runner talking to the nested daemon only.
   runner:
     # https://code.forgejo.org/forgejo/-/packages/container/runner
-    image: data.forgejo.org/forgejo/runner:${VERSION_RUNNER:-13.2.0}
+    image: code.forgejo.org/forgejo/runner:${VERSION_RUNNER:-13.2.0}
     user: "0:0"
     <<:
       - *basic
@@ -54,6 +63,8 @@ services:
         target: /config.yml
         mode: 0440
     volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
       - runner-data:/data
     command: ["forgejo-runner", "daemon", "--config", "/config.yml"]
 
@@ -62,6 +73,7 @@ services:
 networks:
   default:
     driver: bridge
+    attachable: false
 
 volumes:
   runner-data: {}

@@ -34,7 +34,7 @@ x-basic: &basic
     fsize: -1
     as: -1
   networks:
-    default: {}
+    proxy: {}
   healthcheck:
     disable: true
   tmpfs:
@@ -50,7 +50,7 @@ services:
   ##############################################################################
   runner:
     # https://code.forgejo.org/forgejo/-/packages/container/runner
-    image: data.forgejo.org/forgejo/runner:${VERSION_RUNNER:-13.2.0}
+    image: code.forgejo.org/forgejo/runner:${VERSION_RUNNER:-13.2.0}
     user: "0:0"
     <<:
       - *basic
@@ -68,8 +68,6 @@ services:
       - /etc/localtime:/etc/localtime:ro
       - ${DOCKER_SOCKET:-/var/run/docker.sock}:/var/run/docker.sock:ro
       - runner:/data
-    networks:
-      proxy: {}
     command: ["forgejo-runner", "daemon", "--config", "/config.yml"]
 
 ################################################################################
