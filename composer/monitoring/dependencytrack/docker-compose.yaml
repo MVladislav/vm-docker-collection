@@ -79,7 +79,7 @@ services:
   ##############################################################################
   dtrack-frontend:
     # https://github.com/dependencytrack/apiserver/pkgs/container/apiserver
-    image: ghcr.io/dependencytrack/frontend:${VERSION_DEPENDENCY_TRACK:-5.0.2}
+    image: ghcr.io/dependencytrack/frontend:${VERSION_DEPENDENCY_TRACK:-5.1.1}
     <<:
       - *basic
       # - *basic-deploy-labels
@@ -110,7 +110,7 @@ services:
   ##############################################################################
   dtrack-apiserver:
     # https://github.com/dependencytrack/apiserver/pkgs/container/apiserver
-    image: ghcr.io/dependencytrack/apiserver:${VERSION_DEPENDENCY_TRACK:-5.0.2}
+    image: ghcr.io/dependencytrack/apiserver:${VERSION_DEPENDENCY_TRACK:-5.1.1}
     <<:
       - *basic
       # - *basic-deploy-labels-api
@@ -145,7 +145,7 @@ services:
   ##############################################################################
   postgresql:
     # https://hub.docker.com/_/postgres
-    image: postgres:${VERSION_POSTGRESQL:-18.4-alpine}
+    image: postgres:${VERSION_POSTGRESQL:-18.6-alpine}
     <<: *basic
     deploy:
       <<: *basic-deploy

@@ -126,7 +126,7 @@ services:
   ##############################################################################
   postgresql:
     # https://hub.docker.com/_/postgres
-    image: postgres:${VERSION_POSTGRESQL:-17-alpine}
+    image: postgres:${VERSION_POSTGRESQL:-18.6-alpine}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -151,13 +151,17 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-patchmon}
       POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password_file
       POSTGRES_PORT: ${POSTGRES_PORT:-5432}
-      PGDATA: /var/lib/postgresql/17/data
+      PGDATA: /var/lib/postgresql/18/data
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-      - postgresql_v17:/var/lib/postgresql/17/data
+      - postgresql_v18:/var/lib/postgresql/18/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -h 127.0.0.1 -d $${POSTGRES_DB} -U $${POSTGRES_USER}",
+        ]
       start_period: 10s
       interval: 30s
       timeout: 5s
@@ -210,7 +214,7 @@ networks:
     external: true
 
 volumes:
-  postgresql_v17: {}
+  postgresql_v18: {}
   valkey: {}
 
 secrets:

@@ -53,12 +53,12 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 # ______________________________________________________________________________
 VERSION_OPENPROJECT=15-slim
 VERSION_MEMCACHED=1.6.34-alpine
-VERSION_POSTGRESQL=17.2-alpine
+VERSION_POSTGRESQL=18.6-alpine
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
 
-POSTGRES_PASSWORD_TMP=$(cat config/secrets/postgres_password_file.txt)
+POSTGRES_PW=$(cat config/secrets/postgres_password_file.txt)
 
 EMAIL_DELIVERY_METHOD=smtp
 SMTP_ADDRESS=<ADD_HERE>
@@ -75,7 +75,7 @@ SMTP_ENABLE_STARTTLS_AUTO=true
 ```env
 DOMAIN=openproject.home.local
 
-POSTGRES_PASSWORD_TMP=$(cat config/secrets/postgres_password_file.txt)
+POSTGRES_PW=$(cat config/secrets/postgres_password_file.txt)
 ```
 
 ---

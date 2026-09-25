@@ -53,7 +53,7 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 # APPLICATION version for easy update
 # ______________________________________________________________________________
 VERSION_KESTRA=v0.23.5
-VERSION_POSTGRESQL=17.5-alpine
+VERSION_POSTGRESQL=18.6-alpine
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________

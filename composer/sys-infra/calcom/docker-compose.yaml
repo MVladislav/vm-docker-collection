@@ -67,8 +67,8 @@ services:
       <<: [*basic-deploy, *basic-deploy-labels]
     environment:
       NODE_ENV: production
-      DATABASE_URL: postgresql://${POSTGRES_USER:-postgresql}:${DATABASE_PASSWORD?DB password is not set}@postgresql/${POSTGRES_DB:-postgresql}
-      DATABASE_DIRECT_URL: postgresql://${POSTGRES_USER:-postgresql}:${DATABASE_PASSWORD?DB password is not set}@postgresql/${POSTGRES_DB:-postgresql}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-calcom}:${POSTGRES_PW?POSTGRES_PW is not set}@postgresql:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-calcom}
+      DATABASE_DIRECT_URL: postgresql://${POSTGRES_USER:-calcom}:${POSTGRES_PW?POSTGRES_PW is not set}@postgresql:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-calcom}
       CALCOM_TELEMETRY_DISABLED: 1
       EMAIL_FROM: ${EMAIL_FROM:-no-reply@${DOMAIN?domain variable not set}}
       NEXT_PUBLIC_WEBAPP_URL: https://${DOMAIN?domain variable not set}
@@ -87,35 +87,42 @@ services:
   ##############################################################################
   postgresql:
     # https://hub.docker.com/_/postgres
-    image: postgres:${VERSION_POSTGRESQL:-17.5-alpine}
+    image: postgres:${VERSION_POSTGRESQL:-18.6-alpine}
     <<: *basic
     deploy:
       <<: *basic-deploy
       resources:
         limits:
           cpus: ${RESOURCES_LIMITS_CPUS_POSTGRESQL:-1}
-          memory: ${RESOURCES_LIMITS_MEMORY_POSTGRESQL:-512M}
+          memory: ${RESOURCES_LIMITS_MEMORY_POSTGRESQL:-512m}
         reservations:
           cpus: ${RESOURCES_RESERVATIONS_CPUS_POSTGRESQL:-0.001}
           memory: ${RESOURCES_RESERVATIONS_MEMORY_POSTGRESQL:-32m}
     cap_add:
+      - CHOWN
       - FOWNER
-      - SETGID
-      - SETUID
+      - DAC_READ_SEARCH
       - DAC_OVERRIDE
+      - SETUID
+      - SETGID
     secrets:
       - postgres_password_file
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-postgresql}
-      POSTGRES_USER: ${POSTGRES_USER:-postgresql}
+      POSTGRES_DB: ${POSTGRES_DB:-calcom}
+      POSTGRES_USER: ${POSTGRES_USER:-calcom}
       POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password_file
-      PGDATA: /var/lib/postgresql/data
+      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+      PGDATA: /var/lib/postgresql/18/data
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-      - postgresql:/var/lib/postgresql/data
+      - postgresql_v18:/var/lib/postgresql/18/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -h 127.0.0.1 -d $${POSTGRES_DB} -U $${POSTGRES_USER}",
+        ]
       start_period: 10s
       interval: 30s
       timeout: 5s
@@ -126,6 +133,7 @@ services:
 ################################################################################
 networks:
   default:
+    internal: true
     driver: ${NETWORK_MODE:-overlay}
     attachable: true
     driver_opts:
@@ -134,7 +142,7 @@ networks:
     external: true
 
 volumes:
-  postgresql: {}
+  postgresql_v18: {}
 
 secrets:
   postgres_password_file:

@@ -66,7 +66,7 @@ RESOURCES_RESERVATIONS_MEMORY_REDIS=32m
 # APPLICATION version for easy update
 # ______________________________________________________________________________
 VERSION_FARADAY=5.1.1
-VERSION_POSTGRESQL=16.2-alpine3.19
+VERSION_POSTGRESQL=18.6-alpine
 VERSION_REDIS=7.2.4-alpine3.19
 ```
 

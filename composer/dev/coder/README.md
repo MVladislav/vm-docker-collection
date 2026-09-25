@@ -24,7 +24,7 @@
 
 ```sh
 $pwgen -s 18 1 > config/secrets/postgres_password_file.txt
-$echo "POSTGRES_PASSWORD_TMP=$(cat config/secrets/postgres_password_file.txt)" >> .env
+$echo "POSTGRES_PW=$(cat config/secrets/postgres_password_file.txt)" >> .env
 ```
 
 ### create `.env` file following:
@@ -54,7 +54,7 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 # APPLICATION version for easy update
 # ______________________________________________________________________________
 VERSION_CODER=v2.26.2
-VERSION_POSTGRESQL=17.5-alpine
+VERSION_POSTGRESQL=18.6-alpine
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________

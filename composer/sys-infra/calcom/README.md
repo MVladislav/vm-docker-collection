@@ -23,7 +23,7 @@
 
 ```sh
 $pwgen -s 32 1 > config/secrets/postgres_password_file.txt
-$echo "DATABASE_PASSWORD=$(cat config/secrets/postgres_password_file.txt)" >> .env
+$echo "POSTGRES_PW=$(cat config/secrets/postgres_password_file.txt)" >> .env
 
 $echo "NEXTAUTH_SECRET=$(pwgen -s 32 1)" >> .env
 $echo "CALENDSO_ENCRYPTION_KEY=$(pwgen -s 32 1)" >> .env
@@ -56,7 +56,7 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 # APPLICATION version for easy update
 # ______________________________________________________________________________
 VERSION_CALCOM=v5.4.4
-VERSION_POSTGRESQL=17.5-alpine
+VERSION_POSTGRESQL=18.6-alpine
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________

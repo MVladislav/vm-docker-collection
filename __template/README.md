@@ -149,7 +149,7 @@ source .env && docker run --rm \
   # -e PGPASSWORD=$(cat ./config/secrets/postgres_password_file.txt) \
   # -e POSTGRES_PASSWORD=$(cat ./config/secrets/postgres_password_file.txt) \
   --env-file .env \
-  postgres:${VERSION_POSTGRESQL:-18.4-alpine}
+  postgres:${VERSION_POSTGRESQL:-18.6-alpine}
 ```
 
 - Runs interactively in the terminal. Open a new terminal and proceed with step 4.

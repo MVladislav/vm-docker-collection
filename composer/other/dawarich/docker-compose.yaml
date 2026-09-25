@@ -157,39 +157,44 @@ services:
   ##############################################################################
   postgresql:
     # https://hub.docker.com/_/postgres
-    image: postgres:${VERSION_POSTGRESQL:-17.2-alpine}
+    image: postgres:${VERSION_POSTGRESQL:-18.6-alpine}
     <<: *basic
     deploy:
       <<: *basic-deploy
       resources:
         limits:
           cpus: ${RESOURCES_LIMITS_CPUS_POSTGRESQL:-1}
-          memory: ${RESOURCES_LIMITS_MEMORY_POSTGRESQL:-512M}
+          memory: ${RESOURCES_LIMITS_MEMORY_POSTGRESQL:-512m}
         reservations:
           cpus: ${RESOURCES_RESERVATIONS_CPUS_POSTGRESQL:-0.001}
           memory: ${RESOURCES_RESERVATIONS_MEMORY_POSTGRESQL:-32m}
     cap_add:
+      - CHOWN
       - FOWNER
-      - SETGID
-      - SETUID
+      - DAC_READ_SEARCH
       - DAC_OVERRIDE
+      - SETUID
+      - SETGID
     secrets:
       - postgres_password_file
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-postgresql}
       POSTGRES_USER: ${POSTGRES_USER:-postgresql}
       POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password_file
-      PGDATA: /var/lib/postgresql/data
+      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+      PGDATA: /var/lib/postgresql/18/data
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-      - postgresql:/var/lib/postgresql/data
+      - postgresql_v18:/var/lib/postgresql/18/data
       - valkey:/var/shared
     shm_size: 1G
-    networks:
-      default: {}
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -h 127.0.0.1 -d $${POSTGRES_DB} -U $${POSTGRES_USER}",
+        ]
       start_period: 10s
       interval: 30s
       timeout: 5s
@@ -239,7 +244,7 @@ networks:
     external: true
 
 volumes:
-  postgresql:
+  postgresql_v18:
   valkey:
   dawarich_public:
   dawarich_watched:

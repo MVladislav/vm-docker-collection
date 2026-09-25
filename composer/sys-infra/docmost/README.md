@@ -23,7 +23,7 @@
 
 ```sh
 $pwgen -s 32 1 > config/secrets/postgres_password_file.txt
-$echo "DB_PASSWORD=$(cat config/secrets/postgres_password_file.txt)" >> .env
+$echo "POSTGRES_PW=$(cat config/secrets/postgres_password_file.txt)" >> .env
 $echo "APP_SECRET=$(pwgen -s 32 1)" >> .env
 ```
 
@@ -54,14 +54,12 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 # APPLICATION version for easy update
 # ______________________________________________________________________________
 VERSION_DOCMOST=0.20.1
-VERSION_POSTGRESQL=17.4-alpine
+VERSION_POSTGRESQL=18.6-alpine
 VERSION_VALKEY=8.1.0-alpine
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
-DB_PASSWORD=<POSTGRESS_PASSWORD>
-
-
+POSTGRES_PW=<POSTGRESS_PASSWORD>
 ```
 
 #### example short .env

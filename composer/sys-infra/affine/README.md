@@ -53,13 +53,13 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 # ______________________________________________________________________________
 VERSION_AFFINE=stable-129ccea
 VERSION_VALKEY=8.0.1-alpine
-VERSION_POSTGRESQL=17.1-alpine3.20
+VERSION_POSTGRESQL=18.6-alpine
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
 AFFINE_ADMIN_EMAIL=<ADMIN_EMAIL>
 AFFINE_ADMIN_PASSWORD=<ADMIN_PASSWORD>
-POSTGRES_PASSWORD_TMP=<PASSWORD - cat config/secrets/postgres_password_file.txt>
+POSTGRES_PW=<PASSWORD - cat config/secrets/postgres_password_file.txt>
 ```
 
 #### example short .env
@@ -69,7 +69,7 @@ DOMAIN=affine.home.local
 
 AFFINE_ADMIN_EMAIL=<ADMIN_EMAIL>
 AFFINE_ADMIN_PASSWORD=<ADMIN_PASSWORD>
-POSTGRES_PASSWORD_TMP=<PASSWORD - cat config/secrets/postgres_password_file.txt>
+POSTGRES_PW=<PASSWORD - cat config/secrets/postgres_password_file.txt>
 ```
 
 ---

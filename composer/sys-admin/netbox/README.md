@@ -32,7 +32,7 @@ $openssl rand -base64 18 > config/secrets/superuser_password_secret.txt
 ```env
 NODE_ROLE=manager
 VERSION=v3.4
-VERSION_POSTGRES=15.2-alpine
+VERSION_POSTGRESQL=18.6-alpine
 VERSION_REDIS=7-alpine
 
 LB_SWARM=true

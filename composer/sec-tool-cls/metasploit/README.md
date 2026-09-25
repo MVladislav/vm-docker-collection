@@ -26,6 +26,7 @@
 
 ```env
 VERSION=latest
+VERSION_POSTGRESQL=18.6-alpine
 ```
 
 ```sh

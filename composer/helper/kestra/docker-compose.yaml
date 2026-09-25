@@ -132,7 +132,7 @@ services:
   ##############################################################################
   postgresql:
     # https://hub.docker.com/_/postgres
-    image: postgres:${VERSION_POSTGRESQL:-17.5-alpine}
+    image: postgres:${VERSION_POSTGRESQL:-18.6-alpine}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -144,21 +144,28 @@ services:
           cpus: ${RESOURCES_RESERVATIONS_CPUS_POSTGRESQL:-0.001}
           memory: ${RESOURCES_RESERVATIONS_MEMORY_POSTGRESQL:-32m}
     cap_add:
+      - CHOWN
+      - FOWNER
+      - DAC_READ_SEARCH
+      - DAC_OVERRIDE
       - SETUID
       - SETGID
-      - FOWNER
-      - DAC_OVERRIDE
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-kestra}
       POSTGRES_USER: ${POSTGRES_USER:-kestra}
-      PGDATA: /var/lib/postgresql/data
+      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+      PGDATA: /var/lib/postgresql/18/data
       POSTGRES_HOST_AUTH_METHOD: trust
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-      - postgresql:/var/lib/postgresql/data
+      - postgresql_v18:/var/lib/postgresql/18/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -h 127.0.0.1 -d $${POSTGRES_DB} -U $${POSTGRES_USER}",
+        ]
       start_period: 10s
       interval: 30s
       timeout: 5s
@@ -169,6 +176,7 @@ services:
 ################################################################################
 networks:
   default:
+    internal: true
     driver: ${NETWORK_MODE:-overlay}
     attachable: true
     driver_opts:
@@ -178,4 +186,4 @@ networks:
 
 volumes:
   data: {}
-  postgresql: {}
+  postgresql_v18: {}
