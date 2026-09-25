@@ -1,21 +1,5 @@
 # SETUP
 
-```sh
-    MVladislav
-```
-
----
-
-- [SETUP](#setup)
-  - [basic](#basic)
-    - [create your `secrets`:](#create-your-secrets)
-    - [create `.env` file following:](#create-env-file-following)
-      - [example short .env (swarm)](#example-short-env-swarm)
-      - [example short .env (bridge)](#example-short-env-bridge)
-  - [References](#references)
-
----
-
 ## basic
 
 > defined to work with traefik
@@ -23,11 +7,16 @@
 ### create your `secrets`:
 
 ```sh
-$pwgen -s 18 1 > config/secrets/postgres_password_file.txt
-$echo "POSTGRES_PW=$(cat config/secrets/postgres_password_file.txt)" >> .env
+openssl rand -hex 18 > config/secrets/postgres_password_file.txt
+echo "POSTGRES_PW=$(cat config/secrets/postgres_password_file.txt)" >> .env
 
-$echo "AUTH_SECRET=$(pwgen -s 32 1)" >> .env
-$echo "S3_SECRET_ACCESS_KEY=$(pwgen -s 32 1)" >> .env
+openssl rand -hex 8 > config/secrets/rustfs_access_key_file.txt
+echo "S3_ACCESS_KEY_ID=$(cat config/secrets/rustfs_access_key_file.txt)" >> .env
+openssl rand -hex 32 > config/secrets/rustfs_secret_key_file.txt
+echo "S3_SECRET_ACCESS_KEY=$(cat config/secrets/rustfs_secret_key_file.txt)" >> .env
+
+echo "AUTH_SECRET=$(openssl rand -hex 32)" >> .env
+echo "ENCRYPTION_SECRET=$(openssl rand -hex 32)" >> .env
 ```
 
 ### create `.env` file following:
@@ -50,41 +39,26 @@ MIDDLEWARE_SECURED=default-secured@file
 # GENERAL sources to be used (set by default, change as needed)
 # ______________________________________________________________________________
 RESOURCES_LIMITS_CPUS=1
-RESOURCES_LIMITS_MEMORY=512m
+RESOURCES_LIMITS_MEMORY=1g
 RESOURCES_RESERVATIONS_CPUS=0.001
 RESOURCES_RESERVATIONS_MEMORY=32m
 
-RESOURCES_LIMITS_CPUS_POSTGRESQL=1
-RESOURCES_LIMITS_MEMORY_POSTGRESQL=512m
-RESOURCES_RESERVATIONS_CPUS_POSTGRESQL=0.001
-RESOURCES_RESERVATIONS_MEMORY_POSTGRESQL=32m
-
-RESOURCES_LIMITS_CPUS_SEAWEEDFS=1
-RESOURCES_LIMITS_MEMORY_SEAWEEDFS=512m
-RESOURCES_RESERVATIONS_CPUS_SEAWEEDFS=0.001
-RESOURCES_RESERVATIONS_MEMORY_SEAWEEDFS=32m
-
-RESOURCES_LIMITS_CPUS_MINIO_MC=1
-RESOURCES_LIMITS_MEMORY_MINIO_MC=512m
-RESOURCES_RESERVATIONS_CPUS_MINIO_MC=0.001
-RESOURCES_RESERVATIONS_MEMORY_MINIO_MC=32m
-
-RESOURCES_LIMITS_CPUS_GOTENBERG=1
-RESOURCES_LIMITS_MEMORY_GOTENBERG=512m
-RESOURCES_RESERVATIONS_CPUS_GOTENBERG=0.001
-RESOURCES_RESERVATIONS_MEMORY_GOTENBERG=32m
-
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_RESUME=v5.0.0
-VERSION_POSTGRESQL=18.1-alpine
-VERSION_SEAWEEDFS=4.07
-VERSION_MC=RELEASE.2025-08-13T08-35-41Z-cpuv1
-VERSION_GOTENBERG=8.25.1
+VERSION_RESUME=v5.3.1
+VERSION_POSTGRESQL=18.6-alpine
+VERSION_RUSTFS=1.0.0
+VERSION_AWS_CLI=2.37.4
+VERSION_VALKEY=9.2-alpine
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
 CERT_RESOLVER=certificates
+
+# set to true after the first account exists
+FLAG_DISABLE_SIGNUPS=false
+# set to true for a local Ollama or other private AI base url
+FLAG_ALLOW_UNSAFE_AI_BASE_URL=false
 ```
 
 #### example short .env (swarm)
@@ -107,6 +81,5 @@ DOMAIN=resume.home.local
 ## References
 
 - <https://rxresu.me/>
-- <https://github.com/AmruthPillai/Reactive-Resume>
-  - <https://github.com/AmruthPillai/Reactive-Resume/blob/main/tools/compose/swarm.yml>
-- <https://docs.rxresu.me/product-guides/self-hosting-reactive-resume-using-docker>
+- <https://github.com/reactive-resume/reactive-resume>
+- <https://docs.rxresu.me/self-hosting/docker>

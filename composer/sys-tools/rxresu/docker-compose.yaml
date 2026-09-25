@@ -28,7 +28,7 @@ x-basic-deploy: &basic-deploy
   resources:
     limits:
       cpus: ${RESOURCES_LIMITS_CPUS:-1}
-      memory: ${RESOURCES_LIMITS_MEMORY:-512m}
+      memory: ${RESOURCES_LIMITS_MEMORY:-1g}
     reservations:
       cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
       memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
@@ -63,34 +63,54 @@ services:
   ##############################################################################
   ##############################################################################
   reactive-resume:
-    # https://github.com/amruthpillai/reactive-resume/pkgs/container/reactive-resume
-    image: ghcr.io/amruthpillai/reactive-resume:${VERSION_RESUME:-v5.0.0}
-    <<: [*basic, *basic-deploy-labels]
+    # https://github.com/reactive-resume/reactive-resume/pkgs/container/reactive-resume
+    image: ghcr.io/reactive-resume/reactive-resume:${VERSION_RESUME:-v5.3.1}
+    <<:
+      - *basic
+      # - *basic-deploy-labels
     deploy:
-      <<: [*basic-deploy, *basic-deploy-labels]
+      <<:
+        - *basic-deploy
+        - *basic-deploy-labels
     environment:
       PORT: ${PORT:-3000}
       NODE_ENV: production
-      # TZ: ${TZ:-Europe/Berlin}
+      TZ: ${TZ:-Europe/Berlin}
 
       APP_URL: https://${DOMAIN?domain variable not set}
-      PRINTER_APP_URL: http://reactive-resume:${PORT:-3000}
-
-      GOTENBERG_ENDPOINT: http://gotenberg:3000
+      # serve one already public resume at "/", needs the ID from /builder/<id>
+      ROOT_RESUME_ID: ${ROOT_RESUME_ID:-}
 
       DATABASE_URL: postgresql://${POSTGRES_USER:-resume}:${POSTGRES_PW?POSTGRES_PW is not set}@postgresql:5432/${POSTGRES_DB:-resume}
 
       AUTH_SECRET: ${AUTH_SECRET?AUTH_SECRET is not set}
+      # encrypts saved AI provider credentials, min. 32 chars
+      ENCRYPTION_SECRET: ${ENCRYPTION_SECRET?ENCRYPTION_SECRET is not set}
+      # only needed for the AI agent workspace
+      REDIS_URL: redis://valkey:6379
 
-      S3_ENDPOINT: http://seaweedfs:8333
+      S3_ENDPOINT: http://rustfs:9000
       S3_REGION: us-east-1 # Optional
       S3_BUCKET: reactive-resume
-      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-seaweedfs}
+      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID?S3_ACCESS_KEY_ID is not set}
       S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY?S3_SECRET_ACCESS_KEY is not set}
       S3_FORCE_PATH_STYLE: "true"
 
-      FLAG_DEBUG_PRINTER: ${FLAG_DEBUG_PRINTER:-false}
-      FLAG_DISABLE_SIGNUP: ${FLAG_DISABLE_SIGNUP:-false}
+      # mail is only written to the container log when SMTP is not configured
+      # SMTP_HOST: ${SMTP_HOST:-}
+      # SMTP_PORT: ${SMTP_PORT:-587}
+      # SMTP_USER: ${SMTP_USER:-}
+      # SMTP_PASS: ${SMTP_PASS:-}
+      # SMTP_FROM: ${SMTP_FROM:-Reactive Resume <noreply@rxresu.me>}
+      # SMTP_SECURE: ${SMTP_SECURE:-false}
+
+      # set to true after the first account exists, a fresh install has no way to sign up
+      FLAG_DISABLE_SIGNUPS: ${FLAG_DISABLE_SIGNUPS:-false}
+      FLAG_DISABLE_EMAIL_AUTH: ${FLAG_DISABLE_EMAIL_AUTH:-false}
+      FLAG_DISABLE_IMAGE_PROCESSING: ${FLAG_DISABLE_IMAGE_PROCESSING:-false}
+      # required for private or non public AI base urls, e.g. a local Ollama instance
+      FLAG_ALLOW_UNSAFE_AI_BASE_URL: ${FLAG_ALLOW_UNSAFE_AI_BASE_URL:-false}
+      # FLAG_DISABLE_API_RATE_LIMIT: ${FLAG_DISABLE_API_RATE_LIMIT:-false}
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
@@ -98,19 +118,13 @@ services:
     networks:
       default: {}
       proxy: {}
-    entrypoint:
-      [
-        "sh",
-        "-c",
-        "sleep 30 && node -r reflect-metadata .output/server/index.mjs",
-      ]
     healthcheck:
       test:
         [
           "CMD",
           "node",
           "-e",
-          "fetch('${PROTOCOL:-http}://localhost:${PORT:-3000}/api/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))",
+          "fetch('http://127.0.0.1:${PORT:-3000}/api/health').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))",
         ]
       start_period: 10s
       interval: 30s
@@ -122,7 +136,7 @@ services:
   ##############################################################################
   postgresql:
     # https://hub.docker.com/_/postgres
-    image: postgres:${VERSION_POSTGRESQL:-18.1-alpine}
+    image: postgres:${VERSION_POSTGRESQL:-18.6-alpine}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -161,101 +175,129 @@ services:
   ##############################################################################
   ##############################################################################
   ##############################################################################
-  seaweedfs:
-    # https://hub.docker.com/r/chrislusf/seaweedfs
-    image: chrislusf/seaweedfs:${VERSION_SEAWEEDFS:-4.07}
+  rustfs:
+    # https://hub.docker.com/r/rustfs/rustfs/tags
+    image: rustfs/rustfs:${VERSION_RUSTFS:-1.0.0}
     <<: *basic
     deploy:
       <<: *basic-deploy
       resources:
         limits:
-          cpus: ${RESOURCES_LIMITS_CPUS_SEAWEEDFS:-1}
-          memory: ${RESOURCES_LIMITS_MEMORY_SEAWEEDFS:-512m}
+          cpus: ${RESOURCES_LIMITS_CPUS_RUSTFS:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_RUSTFS:-1g}
         reservations:
-          cpus: ${RESOURCES_RESERVATIONS_CPUS_SEAWEEDFS:-0.001}
-          memory: ${RESOURCES_RESERVATIONS_MEMORY_SEAWEEDFS:-32m}
-    cap_add:
-      - CHOWN
-      - SETUID
-      - SETGID
-      # - FOWNER
-      # - DAC_READ_SEARCH
-      # - DAC_OVERRIDE
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_RUSTFS:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_RUSTFS:-32m}
+    secrets:
+      - rustfs_access_key_file
+      - rustfs_secret_key_file
     environment:
-      AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-seaweedfs}
-      AWS_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY?S3_SECRET_ACCESS_KEY is not set}
+      RUSTFS_ACCESS_KEY_FILE: /run/secrets/rustfs_access_key_file
+      RUSTFS_SECRET_KEY_FILE: /run/secrets/rustfs_secret_key_file
+
+      # single disk layout, four real drives would be "/data/rustfs{0...3}"
+      RUSTFS_VOLUMES: /data
+
+      RUSTFS_ADDRESS: 0.0.0.0:${PORT_RUSTFS_S3_API:-9000}
+      RUSTFS_CONSOLE_ADDRESS: 0.0.0.0:${PORT_RUSTFS_CONSOLE:-9001}
+
+      RUSTFS_CONSOLE_ENABLE: ${RUSTFS_CONSOLE_ENABLE:-true}
+      RUSTFS_CORS_ALLOWED_ORIGINS: ${RUSTFS_CORS_ALLOWED_ORIGINS:-*}
+      RUSTFS_CONSOLE_CORS_ALLOWED_ORIGINS: ${RUSTFS_CONSOLE_CORS_ALLOWED_ORIGINS:-*}
+      RUSTFS_OBS_LOGGER_LEVEL: ${RUSTFS_OBS_LOGGER_LEVEL:-info}
+      RUSTFS_OBS_LOG_DIRECTORY: ${RUSTFS_OBS_LOG_DIRECTORY:-/logs}
+
+      # opt out of the weekly "new RustFS release available" check
+      RUSTFS_CHECK_UPDATE: ${RUSTFS_CHECK_UPDATE:-false}
+      # on-demand migration (pull from a foreign S3 bucket on a read miss) ships
+      # enabled since 1.0.0-rc.5, a self-hosted stack should not carry it on
+      RUSTFS_ON_DEMAND_MIGRATION_ENABLED: ${RUSTFS_ON_DEMAND_MIGRATION_ENABLED:-false}
+
+      # RustFS verifies the storage dirs are independent physical disks and
+      # refuses to start otherwise. A single named volume always fails that
+      # check, so the bypass is required here. Set to `false` only with real,
+      # separate physical disks.
+      RUSTFS_UNSAFE_BYPASS_DISK_CHECK: ${RUSTFS_UNSAFE_BYPASS_DISK_CHECK:-true}
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-      - seaweedfs:/data
-    command: server -s3 -filer -dir=/data -ip=0.0.0.0
+      - rustfs_data:/data
+      - rustfs_logs:/logs
     healthcheck:
-      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:8888"]
-      start_period: 10s
+      test:
+        [
+          "CMD",
+          "sh",
+          "-c",
+          "curl -f http://127.0.0.1:${PORT_RUSTFS_S3_API:-9000}/health && curl -f http://127.0.0.1:${PORT_RUSTFS_CONSOLE:-9001}/rustfs/console/health",
+        ]
+      start_period: 30s
       interval: 30s
       timeout: 5s
       retries: 3
 
-  seaweedfs-create-bucket:
-    # https://quay.io/repository/minio/mc?tab=tags&tag=latest
-    image: quay.io/minio/mc:${VERSION_MC:-RELEASE.2025-08-13T08-35-41Z-cpuv1}
+  rustfs-create-bucket:
+    # https://hub.docker.com/r/amazon/aws-cli
+    # Reactive Resume never creates the bucket itself, its /api/health does a
+    # PutObject into it, so the app stays unhealthy until the bucket exists.
+    image: amazon/aws-cli:${VERSION_AWS_CLI:-2.37.4}
     <<: *basic
     deploy:
       <<: *basic-deploy
       resources:
         limits:
-          cpus: ${RESOURCES_LIMITS_CPUS_MINIO_MC:-1}
-          memory: ${RESOURCES_LIMITS_MEMORY_MINIO_MC:-512m}
+          cpus: ${RESOURCES_LIMITS_CPUS_AWS_CLI:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_AWS_CLI:-256m}
         reservations:
-          cpus: ${RESOURCES_RESERVATIONS_CPUS_MINIO_MC:-0.001}
-          memory: ${RESOURCES_RESERVATIONS_MEMORY_MINIO_MC:-32m}
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_AWS_CLI:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_AWS_CLI:-32m}
       restart_policy:
         condition: on-failure
     restart: on-failure
-    cap_add:
-      - DAC_OVERRIDE
     environment:
-      AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-seaweedfs}
+      AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID?S3_ACCESS_KEY_ID is not set}
       AWS_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY?S3_SECRET_ACCESS_KEY is not set}
+      AWS_DEFAULT_REGION: ${S3_REGION:-us-east-1}
+      AWS_EC2_METADATA_DISABLED: "true"
+      # aws cli >= 2.16 adds a CRC32 checksum by default, not every S3
+      # compatible server accepts one on create-bucket
+      AWS_REQUEST_CHECKSUM_CALCULATION: when_required
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
     entrypoint: >
       /bin/sh -c "
-        sleep 5;
-        mc alias set seaweedfs http://seaweedfs:8333 $${S3_ACCESS_KEY_ID:-seaweedfs} $${AWS_SECRET_ACCESS_KEY} || exit 1;
-        mc mb seaweedfs/reactive-resume || true;
+        aws --endpoint-url http://rustfs:${PORT_RUSTFS_S3_API:-9000} s3api head-bucket --bucket reactive-resume 2>/dev/null ||
+        aws --endpoint-url http://rustfs:${PORT_RUSTFS_S3_API:-9000} s3api create-bucket --bucket reactive-resume;
         exit 0;
       "
 
   ##############################################################################
   ##############################################################################
   ##############################################################################
-  gotenberg:
-    # https://hub.docker.com/r/gotenberg/gotenberg
-    image: gotenberg/gotenberg:${VERSION_GOTENBERG:-8.25.1}
+  valkey:
+    # https://hub.docker.com/r/valkey/valkey
+    image: valkey/valkey:${VERSION_VALKEY:-9.2-alpine}
     <<: *basic
     deploy:
       <<: *basic-deploy
       resources:
         limits:
-          cpus: ${RESOURCES_LIMITS_CPUS_GOTENBERG:-1}
-          memory: ${RESOURCES_LIMITS_MEMORY_GOTENBERG:-512m}
+          cpus: ${RESOURCES_LIMITS_CPUS_VALKEY:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_VALKEY:-128m}
         reservations:
-          cpus: ${RESOURCES_RESERVATIONS_CPUS_GOTENBERG:-0.001}
-          memory: ${RESOURCES_RESERVATIONS_MEMORY_GOTENBERG:-32m}
-    environment:
-      WEBHOOK_DISABLE: ${WEBHOOK_DISABLE:-true}
-      CHROMIUM_AUTO_START: ${CHROMIUM_AUTO_START:-true}
-      LIBREOFFICE_DISABLE_ROUTES: ${LIBREOFFICE_DISABLE_ROUTES:-true}
-      PROMETHEUS_DISABLE_COLLECT: ${PROMETHEUS_DISABLE_COLLECT:-true}
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_VALKEY:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_VALKEY:-32m}
+    cap_add:
+      - SETUID
+      - SETGID
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+      - valkey:/data
+    command: --port 6379 --save 300 1 --loglevel warning
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      test: ["CMD-SHELL", "valkey-cli ping | grep PONG"]
       start_period: 10s
       interval: 30s
       timeout: 5s
@@ -266,6 +308,7 @@ services:
 ################################################################################
 networks:
   default:
+    internal: true
     driver: ${NETWORK_MODE:-overlay}
     attachable: true
     driver_opts:
@@ -276,8 +319,14 @@ networks:
 volumes:
   data: {}
   postgresql_v18: {}
-  seaweedfs: {}
+  rustfs_data: {}
+  rustfs_logs: {}
+  valkey: {}
 
 secrets:
   postgres_password_file:
     file: config/secrets/postgres_password_file.txt
+  rustfs_access_key_file:
+    file: config/secrets/rustfs_access_key_file.txt
+  rustfs_secret_key_file:
+    file: config/secrets/rustfs_secret_key_file.txt
