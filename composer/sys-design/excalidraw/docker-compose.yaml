@@ -108,7 +108,7 @@ services:
       args:
         <<: *basic-env
         VERSION_NODE: 22.22.2
-        VERSION_EXCALIDRAW: v0.18.1
+        VERSION_EXCALIDRAW: ${VERSION_EXCALIDRAW:-v0.18.1}
     # https://github.com/excalidraw/excalidraw/releases
     image: excalidraw:${VERSION_EXCALIDRAW:-v0.18.1}
     <<:

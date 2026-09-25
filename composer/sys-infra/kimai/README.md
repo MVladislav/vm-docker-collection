@@ -56,7 +56,7 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 # APPLICATION version for easy update
 # ______________________________________________________________________________
 VERSION_KIMAI=apache-2.33.0
-VERSION_MARIADB=11.6.2
+VERSION_MARIADB=11.7.2
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________

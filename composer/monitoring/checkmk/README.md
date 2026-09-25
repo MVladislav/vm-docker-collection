@@ -57,7 +57,7 @@ $docker load -i check-mk-free-docker-2.0.0p12.tar.gz
 > HINT: **check `VERSION` from your downloaded version**
 
 ```env
-VERSION=2.0.0p12
+VERSION=2.1.0
 TYPE=check-mk-free
 ```
 

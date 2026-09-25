@@ -44,7 +44,7 @@ MIDDLEWARE_SECURED=default-secured@file
 # ______________________________________________________________________________
 VERSION_PLANE=v2.6.3
 VERSION_POSTGRESQL=18.4-alpine
-VERSION_RABBITMQ=4.3.1-management-alpine
+VERSION_RABBITMQ=3.13.6-management-alpine
 VERSION_VALKEY=9.1.0-alpine
 VERSION_RUSTFS=1.0.0-beta.8
 VERSION_IFRAMELY=v1.2.0
