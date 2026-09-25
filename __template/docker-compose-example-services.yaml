@@ -124,7 +124,10 @@ services:
   ##############################################################################
   rustfs:
     # https://hub.docker.com/r/rustfs/rustfs/tags
-    image: rustfs/rustfs:${VERSION_RUSTFS:-1.0.0-beta.7}
+    # https://github.com/rustfs/rustfs/releases
+    # Alpine (musl) is the default build; use `<version>-glibc` (e.g. 1.0.0-glibc)
+    # when the host cannot run musl binaries.
+    image: rustfs/rustfs:${VERSION_RUSTFS:-1.0.0}
     # <<: *basic
     deploy:
       # <<: *basic-deploy
@@ -162,20 +165,35 @@ services:
       RUSTFS_CORS_ALLOWED_ORIGINS: ${RUSTFS_CORS_ALLOWED_ORIGINS:-*}
       RUSTFS_CONSOLE_CORS_ALLOWED_ORIGINS: ${RUSTFS_CONSOLE_CORS_ALLOWED_ORIGINS:-*}
       RUSTFS_OBS_LOGGER_LEVEL: ${RUSTFS_OBS_LOGGER_LEVEL:-info}
+      RUSTFS_OBS_LOG_DIRECTORY: ${RUSTFS_OBS_LOG_DIRECTORY:-/logs}
       # RUSTFS_TLS_PATH: ${RUSTFS_TLS_PATH:-/opt/tls}
 
-      # Object Cache
-      RUSTFS_OBJECT_CACHE_ENABLE: ${RUSTFS_OBJECT_CACHE_ENABLE:-true}
-      RUSTFS_OBJECT_CACHE_TTL_SECS: ${RUSTFS_OBJECT_CACHE_TTL_SECS:-300}
+      # Opt out of the weekly "new RustFS release available" check.
+      RUSTFS_CHECK_UPDATE: ${RUSTFS_CHECK_UPDATE:-false}
+      # On-demand migration (pull from a foreign S3 bucket on a read miss) ships
+      # enabled since 1.0.0-rc.5. Harmless without a configured source bucket,
+      # but a self-hosted stack should not carry the switch on.
+      RUSTFS_ON_DEMAND_MIGRATION_ENABLED: ${RUSTFS_ON_DEMAND_MIGRATION_ENABLED:-false}
 
-      # Keep strict disk topology checks enabled by default.
-      # For local testing only, set `RUSTFS_UNSAFE_BYPASS_DISK_CHECK=true` explicitly.
+      # Object data cache (opt-in, upstream default is disabled). Caching object
+      # bodies lets co-tenant readers observe a bucket's recent access patterns,
+      # so keep it off for buckets shared between mutually untrusted parties.
+      RUSTFS_OBJECT_DATA_CACHE_ENABLE: ${RUSTFS_OBJECT_DATA_CACHE_ENABLE:-true}
+      RUSTFS_OBJECT_DATA_CACHE_TTL_SECS: ${RUSTFS_OBJECT_DATA_CACHE_TTL_SECS:-300}
+
+      # RustFS verifies the storage dirs are independent physical disks and
+      # refuses to start otherwise. A single named volume (or one host disk split
+      # into 4 dirs) always fails that check, so the bypass is required here.
+      # Set to `false` only when every RUSTFS_VOLUMES entry is a real, separate
+      # physical disk.
       RUSTFS_UNSAFE_BYPASS_DISK_CHECK: ${RUSTFS_UNSAFE_BYPASS_DISK_CHECK:-true}
     volumes:
       # - /etc/timezone:/etc/timezone:ro
       # - /etc/localtime:/etc/localtime:ro
+      # Image runs as uid/gid 10001 and pre-creates both paths owned by that
+      # user, so plain named volumes inherit the right ownership.
       - rustfs_data:/data
-      - rustfs_logs:/app/logs
+      - rustfs_logs:/logs
     # networks:
     #   default: {}
     healthcheck:
@@ -186,7 +204,7 @@ services:
           "-c",
           "curl -f http://127.0.0.1:${PORT_RUSTFS_S3_API:-9000}/health && curl -f http://127.0.0.1:${PORT_RUSTFS_CONSOLE:-9001}/rustfs/console/health",
         ]
-      start_period: 10s
+      start_period: 30s
       interval: 30s
       timeout: 5s
       retries: 3
