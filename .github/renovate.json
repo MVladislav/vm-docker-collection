@@ -55,17 +55,14 @@
       "customType": "regex",
       "managerFilePatterns": ["/(^|/)(?:docker-)?compose[^/]*\\.ya?ml$/"],
       "matchStrings": [
-        "image:\\s*[\"']?(?<depName>[^\\s\"']+):\\$\\{[A-Za-z_][A-Za-z0-9_]*:-\\s*(?<currentValue>[^}\\s\"']+)\\}[\"']?"
+        "(?m)^[ \\t]*image:\\s*[\"']?(?<depName>[^\\s\"'$]+):\\$\\{[A-Za-z_][A-Za-z0-9_]*:-\\s*(?<currentValue>[^}\\s\"']+)\\}[\"']?[ \\t]*$"
       ],
       "datasourceTemplate": "docker",
       "versioningTemplate": "docker"
     }
   ],
-  "ignorePaths": [
-    "**/config/**",
-    "**/docker-hwaccel.yaml",
-    "**/docker-compose-*-agent*.yaml"
-  ],
+  "ignoreDeps": ["typo3", "excalidraw", "keycloak"],
+  "ignorePaths": ["**/config/**", "**/docker-hwaccel.yaml"],
   "prConcurrentLimit": 8,
   "prHourlyLimit": 4,
   "branchConcurrentLimit": 8,
