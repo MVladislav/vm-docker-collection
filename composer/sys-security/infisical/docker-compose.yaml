@@ -27,8 +27,8 @@ x-basic-deploy: &basic-deploy
     condition: any
   resources:
     limits:
-      cpus: ${RESOURCES_LIMITS_CPUS:-1}
-      memory: ${RESOURCES_LIMITS_MEMORY:-1g}
+      cpus: ${RESOURCES_LIMITS_CPUS:-2}
+      memory: ${RESOURCES_LIMITS_MEMORY:-3g}
     reservations:
       cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
       memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
@@ -74,7 +74,7 @@ services:
   ##############################################################################
   infisical:
     # https://hub.docker.com/r/infisical/infisical/tags?name=v
-    image: infisical/infisical:${VERSION:-v0.162.7}
+    image: infisical/infisical:${VERSION:-v0.165.16}
     <<:
       - *basic
       # - *basic-deploy-labels
@@ -91,9 +91,17 @@ services:
 
       REDIS_URL: redis://valkey:6379
 
-      DB_CONNECTION_URI: postgres://${POSTGRES_USER:-infisical}:${POSTGRES_PW?POSTGRES_PW is not set}@postgresql:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-infisical}
+      DB_CONNECTION_URI: postgresql://${POSTGRES_USER:-infisical}:${POSTGRES_PW?POSTGRES_PW is not set}@postgresql:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-infisical}
 
-      OTEL_TELEMETRY_COLLECTION_ENABLED: "false"
+      OTEL_TELEMETRY_COLLECTION_ENABLED: ${OTEL_TELEMETRY_COLLECTION_ENABLED:-false}
+      TELEMETRY_ENABLED: ${TELEMETRY_ENABLED:-false}
+      DISABLE_UPDATE_CHECK: ${DISABLE_UPDATE_CHECK:-true} # weekly github api call
+
+      TRUSTED_PROXY_CIDRS: ${TRUSTED_PROXY_CIDRS:-10.0.0.0/8,172.16.0.0/12,192.168.0.0/16}
+
+      # unset = api + workers + cronjobs in one container
+      # INFISICAL_RUN_MODES: ${INFISICAL_RUN_MODES:-} # api, general-worker, secret-scanning
+      # PINO_LOG_LEVEL: ${PINO_LOG_LEVEL:-info}
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
@@ -106,7 +114,9 @@ services:
           "CMD-SHELL",
           "curl -kIf ${PROTOCOL:-http}://127.0.0.1:${PORT:-8080}/api/status > /dev/null 2>&1 || exit 1",
         ]
-      start_period: 10s
+      # db migrations run on boot, large datasets build indexes (concurrently),
+      # so the server needs a longer grace period before the probe counts
+      start_period: 300s
       interval: 30s
       timeout: 5s
       retries: 3
@@ -116,7 +126,7 @@ services:
   ##############################################################################
   valkey:
     # https://hub.docker.com/r/valkey/valkey
-    image: valkey/valkey:${VERSION_VALKEY:-9.1.0-alpine}
+    image: valkey/valkey:${VERSION_VALKEY:-9.1.2-alpine}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -147,7 +157,7 @@ services:
   ##############################################################################
   postgresql:
     # https://hub.docker.com/_/postgres
-    image: postgres:${VERSION_POSTGRESQL:-18.4-alpine}
+    image: postgres:${VERSION_POSTGRESQL:-18.6-alpine}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -171,7 +181,6 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-infisical}
       POSTGRES_USER: ${POSTGRES_USER:-infisical}
       POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password_file
-      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
       PGDATA: /var/lib/postgresql/18/data
     volumes:
       - /etc/timezone:/etc/timezone:ro

@@ -33,16 +33,16 @@ MIDDLEWARE_SECURED=default-secured@file
 
 # GENERAL sources to be used (set by default, change as needed)
 # ______________________________________________________________________________
-RESOURCES_LIMITS_CPUS=1
-RESOURCES_LIMITS_MEMORY=1g
+RESOURCES_LIMITS_CPUS=2
+RESOURCES_LIMITS_MEMORY=3g
 RESOURCES_RESERVATIONS_CPUS=0.001
 RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION=v0.162.7
-VERSION_VALKEY=9.1.0-alpine
-VERSION_POSTGRESQL=18.4-alpine
+VERSION=v0.165.16
+VERSION_VALKEY=9.1.2-alpine
+VERSION_POSTGRESQL=18.6-alpine
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
@@ -78,6 +78,8 @@ DOMAIN=infisical.home.local
 
 - <https://infisical.com/>
 - <https://infisical.com/docs/self-hosting/deployment-options/docker-compose>
+- <https://infisical.com/docs/self-hosting/configuration/envars>
 - <https://github.com/Infisical/infisical>
   - <https://github.com/Infisical/infisical/blob/main/docker-compose.prod.yml>
   - <https://github.com/Infisical/infisical/blob/main/.env.example>
+  - <https://github.com/Infisical/infisical/blob/main/upgrade-impact/data/releases>
