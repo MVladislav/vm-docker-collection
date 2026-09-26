@@ -4,13 +4,14 @@ x-basic-deploy-labels: &basic-deploy-labels
     - traefik.enable=true
     - traefik.swarm.lbswarm=${LB_SWARM:-true}
     - traefik.swarm.network=proxy
-    - traefik.http.routers.netbox.entrypoints=https
+    - traefik.http.routers.netbox.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
     - traefik.http.routers.netbox.rule=Host(`${DOMAIN?domain variable not set}`)
     - traefik.http.routers.netbox.tls=true
+    - traefik.http.routers.netbox.tls.certresolver=${CERT_RESOLVER:-}
+    - traefik.http.routers.netbox.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
     - traefik.http.routers.netbox.service=netbox
     - traefik.http.services.netbox.loadbalancer.server.scheme=${PROTOCOL:-http}
     - traefik.http.services.netbox.loadbalancer.server.port=${PORT:-8080}
-    - traefik.http.routers.netbox.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
 
 x-basic-deploy: &basic-deploy
   mode: replicated
@@ -20,92 +21,107 @@ x-basic-deploy: &basic-deploy
     constraints:
       - "node.role==${NODE_ROLE:-manager}"
       - node.platform.os == linux
+  update_config:
+    order: stop-first
   restart_policy:
-    condition: on-failure
+    condition: any
   resources:
     limits:
-      # cpus: "1.5"
-      memory: 500M
+      cpus: ${RESOURCES_LIMITS_CPUS:-1}
+      memory: ${RESOURCES_LIMITS_MEMORY:-1g}
     reservations:
-      cpus: "0.001"
-      memory: 32M
+      cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
+      memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
 
 x-basic: &basic
   env_file: ${ENV_FILE:-.env}
-  # cap_add:
-  #   # https://dockerlabs.collabnix.com/advanced/security/capabilities/
-  #   - CHOWN
-  #   - DAC_OVERRIDE
-  #   - DAC_READ_SEARCH
-  #   - SETGID
-  #   - SETUID
-  #   - NET_ADMIN
-  #   - NET_RAW
-  #   - NET_BIND_SERVICE
-  #   - NET_BROADCAST
-  #   - SYS_MODULE
-  #   - SYS_NICE
-  #   - AUDIT_CONTROL
-  #   - AUDIT_READ
-  # cap_drop: ["ALL"]
-  # security_opt:
-  #   - no-new-privileges:true
+  cap_drop: ["ALL"]
+  security_opt:
+    - no-new-privileges:true
   ulimits:
     memlock:
       soft: -1
       hard: -1
     nofile:
-      soft: 65535
-      hard: 65535
+      soft: 655360
+      hard: 655360
     fsize: -1
     as: -1
   networks:
     default: {}
-  restart: always # always | on-failure
+  healthcheck:
+    disable: true
+  tmpfs:
+    - /tmp:rw,relatime,size=512m,nodev,nosuid,noexec
+  restart: always
 
-x-basic-netbox:
+x-netbox:
   # https://hub.docker.com/r/netboxcommunity/netbox
-  &basic-netbox
-  image: netboxcommunity/netbox:${VERSION:-v3.4}
-  user: "unit:root"
+  &netbox
+  image: netboxcommunity/netbox:${VERSION:-v4.7.1}
+  # uid 999, gid 0, chowns media/reports/scripts in the image
+  user: "netbox:root"
+  # netbox reads a fixed name from /run/secrets, not <VAR>_FILE
+  secrets:
+    - db_password
+    - secret_key
+    - api_token_pepper_1
+    - superuser_password
   volumes:
     - /etc/timezone:/etc/timezone:ro
     - /etc/localtime:/etc/localtime:ro
-    - netbox-media-files:/opt/netbox/netbox/media:z
-  # secrets:
-  #   - superuser_api_token
-  #   - superuser_password
+    - netbox-media-files:/opt/netbox/netbox/media
+    - netbox-reports-files:/opt/netbox/netbox/reports
+    - netbox-scripts-files:/opt/netbox/netbox/scripts
   environment:
-    REDIS_CACHE_PASSWORD: ${REDIS_PASSWORD}
-    REDIS_PASSWORD: ${REDIS_PASSWORD}
-    SECRET_KEY: ${SECRET_KEY}
-    # SUPERUSER_API_TOKEN: ${SUPERUSER_API_TOKEN}
-    # SUPERUSER_API_TOKEN_FILE: /run/secrets/superuser_api_token
-    SUPERUSER_PASSWORD: ${SUPERUSER_PASSWORD}
-    # SUPERUSER_PASSWORD_FILE: /run/secrets/superuser_password
+    ALLOWED_HOSTS: ${ALLOWED_HOSTS:-${DOMAIN?domain variable not set}}
 
-    CORS_ORIGIN_ALLOW_ALL: ${CORS_ORIGIN_ALLOW_ALL:-true}
+    GRANIAN_PORT: ${PORT:-8080}
+    GRANIAN_WORKERS: ${GRANIAN_WORKERS:-2}
+    GRANIAN_BACKPRESSURE: ${GRANIAN_BACKPRESSURE:-32}
+
+    CORS_ORIGIN_ALLOW_ALL: ${CORS_ORIGIN_ALLOW_ALL:-false}
+    CSRF_COOKIE_SECURE: ${CSRF_COOKIE_SECURE:-true}
+    SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-true}
+    SECURE_SSL_REDIRECT: ${SECURE_SSL_REDIRECT:-true}
+    SECURE_HSTS_SECONDS: ${SECURE_HSTS_SECONDS:-0}
+
     DB_HOST: postgresql
     DB_NAME: ${DB_NAME:-netbox}
+    DB_PORT: ${POSTGRES_PORT:-5432}
     DB_USER: ${DB_USER:-netbox}
-    DB_PASSWORD: ${POSTGRES_PASSWORD?POSTGRES_PASSWORD is not set}
     GRAPHQL_ENABLED: ${GRAPHQL_ENABLED:-true}
-    HOUSEKEEPING_INTERVAL: ${HOUSEKEEPING_INTERVAL:-86400}
     MEDIA_ROOT: ${MEDIA_ROOT:-/opt/netbox/netbox/media}
     METRICS_ENABLED: ${METRICS_ENABLED:-false}
+    WEBHOOKS_ENABLED: ${WEBHOOKS_ENABLED:-true}
+    RQ_DEFAULT_TIMEOUT: ${RQ_DEFAULT_TIMEOUT:-300}
+    WEBHOOK_DEFAULT_TIMEOUT: ${WEBHOOK_DEFAULT_TIMEOUT:-60}
+
     REDIS_CACHE_DATABASE: ${REDIS_CACHE_DATABASE:-1}
-    REDIS_CACHE_HOST: ${REDIS_CACHE_HOST:-redis-cache}
+    REDIS_CACHE_HOST: valkey-cache
     REDIS_CACHE_INSECURE_SKIP_TLS_VERIFY: ${REDIS_CACHE_INSECURE_SKIP_TLS_VERIFY:-false}
     REDIS_CACHE_SSL: ${REDIS_CACHE_SSL:-false}
     REDIS_DATABASE: ${REDIS_DATABASE:-0}
-    REDIS_HOST: ${REDIS_HOST:-redis}
+    REDIS_HOST: valkey
     REDIS_INSECURE_SKIP_TLS_VERIFY: ${REDIS_INSECURE_SKIP_TLS_VERIFY:-false}
     REDIS_SSL: ${REDIS_SSL:-false}
-    RELEASE_CHECK_URL: ${RELEASE_CHECK_URL:-https://api.github.com/repos/netbox-community/netbox/releases}
-    WEBHOOKS_ENABLED: ${WEBHOOKS_ENABLED:-true}
-    SKIP_SUPERUSER: ${SKIP_SUPERUSER:-true}
-    SUPERUSER_EMAIL: ${SUPERUSER_EMAIL:-}
-    SUPERUSER_NAME: ${SUPERUSER_NAME:-}
+
+    SKIP_SUPERUSER: ${SKIP_SUPERUSER:-false}
+    SUPERUSER_EMAIL: ${SUPERUSER_EMAIL:-netbox@${DOMAIN?domain variable not set}}
+    SUPERUSER_NAME: ${SUPERUSER_NAME:-admin}
+
+    EMAIL_SERVER: ${EMAIL_SERVER:-localhost}
+    EMAIL_PORT: ${EMAIL_PORT:-587}
+    EMAIL_USERNAME: ${EMAIL_USERNAME:-netbox}
+    EMAIL_PASSWORD: ${EMAIL_PASSWORD:-}
+    EMAIL_FROM: ${EMAIL_FROM:-netbox@${DOMAIN?domain variable not set}}
+    EMAIL_USE_SSL: ${EMAIL_USE_SSL:-false}
+    EMAIL_USE_TLS: ${EMAIL_USE_TLS:-true}
+    EMAIL_TIMEOUT: ${EMAIL_TIMEOUT:-10}
+
+    CENSUS_REPORTING_ENABLED: ${CENSUS_REPORTING_ENABLED:-false}
+    COPILOT_ENABLED: ${COPILOT_ENABLED:-false}
+    RELEASE_CHECK_URL: ${RELEASE_CHECK_URL:-}
 
 ################################################################################
 ################################################################################
@@ -116,14 +132,21 @@ services:
   ##############################################################################
   ##############################################################################
   netbox:
-    <<: [*basic, *basic-netbox]
+    <<:
+      - *basic
+      - *netbox
+      # - *basic-deploy-labels
     deploy:
-      <<: [*basic-deploy, *basic-deploy-labels]
-    # ports:
-    #   - target: ${PORT:-8080}
-    #     published: ${PORT_PUBLISH:-8080}
-    #     protocol: tcp
-    #     mode: host
+      <<:
+        - *basic-deploy
+        - *basic-deploy-labels
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_NETBOX:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_NETBOX:-1g}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_NETBOX:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_NETBOX:-32m}
     networks:
       default: {}
       proxy: {}
@@ -131,38 +154,34 @@ services:
       test:
         [
           "CMD-SHELL",
-          "curl -f ${PROTOCOL:-http}://127.0.0.1:${PORT:-8080}/api/ || exit 1",
+          "curl -sf -H 'X-Forwarded-Proto: https' http://localhost:${PORT:-8080}/login/ || exit 1",
         ]
-      start_period: 10s
+      start_period: 300s
       interval: 30s
       timeout: 5s
       retries: 3
 
   netbox-worker:
-    <<: [*basic, *basic-netbox]
+    <<:
+      - *basic
+      - *netbox
+      # - *basic-deploy-labels
     deploy:
       <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_NETBOX_WORKER:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_NETBOX_WORKER:-1g}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_NETBOX_WORKER:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_NETBOX_WORKER:-32m}
     command:
       - /opt/netbox/venv/bin/python
       - /opt/netbox/netbox/manage.py
       - rqworker
     healthcheck:
       test: ["CMD-SHELL", "ps -aux | grep -v grep | grep -q rqworker || exit 1"]
-      start_period: 10s
-      interval: 30s
-      timeout: 5s
-      retries: 3
-
-  netbox-housekeeping:
-    <<: [*basic, *basic-netbox]
-    deploy:
-      <<: *basic-deploy
-    command:
-      - /opt/netbox/housekeeping.sh
-    healthcheck:
-      test:
-        ["CMD-SHELL", "ps -aux | grep -v grep | grep -q housekeeping || exit 1"]
-      start_period: 10s
+      start_period: 300s
       interval: 30s
       timeout: 5s
       retries: 3
@@ -195,9 +214,10 @@ services:
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-netbox}
       POSTGRES_USER: ${POSTGRES_USER:-netbox}
-      DB_PASSWORD: ${POSTGRES_PASSWORD?POSTGRES_PASSWORD is not set}
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password_file
       POSTGRES_PORT: ${POSTGRES_PORT:-5432}
       PGDATA: /var/lib/postgresql/18/data
+      POSTGRES_INITDB_ARGS: --data-checksums
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
@@ -216,39 +236,63 @@ services:
   ##############################################################################
   ##############################################################################
   ##############################################################################
-  redis:
-    # https://hub.docker.com/_/redis
-    image: redis:${VERSION_REDIS:-7-alpine}
+  valkey:
+    # https://hub.docker.com/r/valkey/valkey
+    image: valkey/valkey:${VERSION_VALKEY:-9.1.2-alpine}
     <<: *basic
     deploy:
       <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_VALKEY:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_VALKEY:-128m}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_VALKEY:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_VALKEY:-32m}
+    user: "999:1000"
     environment:
-      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      ALLOW_EMPTY_PASSWORD: ${ALLOW_EMPTY_PASSWORD:-true}
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-      - netbox-redis-data:/data
-    command:
-      - sh
-      - -c # this is to evaluate the $REDIS_PASSWORD from the env
-      - redis-server --appendonly yes --requirepass $$REDIS_PASSWORD ## $$ because of docker-compose
+      - valkey:/data
+    command: --port 6379 --appendonly yes --save 300 1 --loglevel warning
+    healthcheck:
+      test: ["CMD-SHELL", "valkey-cli ping | grep PONG"]
+      start_period: 10s
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
-  redis-cache:
-    # https://hub.docker.com/_/redis
-    image: redis:${VERSION_REDIS:-7-alpine}
+  valkey-cache:
+    # https://hub.docker.com/r/valkey/valkey
+    image: valkey/valkey:${VERSION_VALKEY:-9.1.2-alpine}
     <<: *basic
     deploy:
       <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_VALKEY_CACHE:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_VALKEY_CACHE:-128m}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_VALKEY_CACHE:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_VALKEY_CACHE:-32m}
+    user: "999:1000"
     environment:
-      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      ALLOW_EMPTY_PASSWORD: ${ALLOW_EMPTY_PASSWORD:-true}
+      # pure cache, no volatile keys to expire, stays under the 128m limit
+      VALKEY_EXTRA_FLAGS: --maxmemory 96mb --maxmemory-policy allkeys-lru
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-      - netbox-redis-cache-data:/data
-    command:
-      - sh
-      - -c # this is to evaluate the $REDIS_PASSWORD from the env
-      - redis-server --requirepass $$REDIS_PASSWORD ## $$ because of docker-compose
+      - valkey_cache:/data
+    command: --port 6379 --loglevel warning
+    healthcheck:
+      test: ["CMD-SHELL", "valkey-cli ping | grep PONG"]
+      start_period: 10s
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
 ################################################################################
 ################################################################################
@@ -265,17 +309,21 @@ networks:
 
 volumes:
   netbox-media-files: {}
+  netbox-reports-files: {}
+  netbox-scripts-files: {}
   postgresql_v18: {}
-  netbox-redis-data: {}
-  netbox-redis-cache-data: {}
-# secrets:
-#   secret_key_secret:
-#     file: config/secrets/secret_key_secret.txt
-#   postgres_password_secret:
-#     file: config/secrets/postgres_password_secret.txt
-#   redis_password_secret:
-#     file: config/secrets/redis_password_secret.txt
-#   superuser_password:
-#     file: config/secrets/superuser_password.txt
-#   superuser_api_token:
-#     file: config/secrets/superuser_api_token.txt
+  valkey: {}
+  valkey_cache: {}
+
+secrets:
+  # one file, two names: postgres wants *_FILE, netbox looks up db_password
+  postgres_password_file:
+    file: config/secrets/postgres_password_file.txt
+  db_password:
+    file: config/secrets/postgres_password_file.txt
+  secret_key:
+    file: config/secrets/secret_key_file.txt
+  api_token_pepper_1:
+    file: config/secrets/api_token_pepper_1.txt
+  superuser_password:
+    file: config/secrets/superuser_password_file.txt
