@@ -17,7 +17,7 @@ NETWORK_MODE=overlay # overlay | bridge
 LB_SWARM=true
 DOMAIN=tools.home.local # not set in docker-compose, needs to be copied to .env
 PROTOCOL=http
-PORT=80
+PORT=8080
 # default-secured@file | public-secured@file | authentik@file
 MIDDLEWARE_SECURED=default-secured@file
 
@@ -30,7 +30,7 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION=2026.1.4
+VERSION=2026.7.11
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
