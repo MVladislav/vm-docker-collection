@@ -60,7 +60,7 @@ services:
   ##############################################################################
   faraday:
     # https://hub.docker.com/r/faradaysec/faraday
-    image: faradaysec/faraday:${VERSION_FARADAY:-5.1.1}
+    image: faradaysec/faraday:${VERSION_FARADAY:-5.24.2}
     <<: [*basic, *basic-deploy-labels]
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels]

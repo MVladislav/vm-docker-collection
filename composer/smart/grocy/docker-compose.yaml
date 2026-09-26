@@ -70,7 +70,7 @@ services:
   ##############################################################################
   grocy:
     # https://hub.docker.com/r/linuxserver/grocy
-    image: linuxserver/grocy:${VERSION:-4.5.0}
+    image: linuxserver/grocy:${VERSION:-4.7.1}
     <<:
       - *basic
       - *basic-deploy-labels

@@ -340,7 +340,7 @@ services:
   ##############################################################################
   adminer:
     # https://hub.docker.com/_/adminer
-    image: adminer:${VERSION_ADMINER:-5.4.2-standalone}
+    image: adminer:${VERSION_ADMINER:-5.5.0-standalone}
     # <<: *basic
     deploy:
       # <<: *basic-deploy
@@ -487,7 +487,7 @@ services:
   influxdb3-explorer:
     # https://hub.docker.com/r/influxdata/influxdb3-ui/tags
     # TOKEN: docker exec -it "TODO" influxdb3 create token --admin
-    image: influxdata/influxdb3-ui:${VERSION_INFLUXDB3_EXPLORER:-1.8.0}
+    image: influxdata/influxdb3-ui:${VERSION_INFLUXDB3_EXPLORER:-1.9.0}
     # <<: *basic
     deploy:
       # <<: *basic-deploy
@@ -530,7 +530,7 @@ services:
   ##############################################################################
   mongodb:
     # https://hub.docker.com/_/mongo/tags
-    image: mongo:${VERSION_MONGODB:-8.3.2}
+    image: mongo:${VERSION_MONGODB:-8.3.11}
     # <<: *basic
     deploy:
       # <<: *basic-deploy

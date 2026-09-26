@@ -66,7 +66,7 @@ services:
   ##############################################################################
   influxdb:
     # https://hub.docker.com/_/influxdb
-    image: influxdb:${VERSION_INFLUXDB:-2.7.11-alpine}
+    image: influxdb:${VERSION_INFLUXDB:-2.9.1-alpine}
     <<: [*basic, *basic-deploy-labels]
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels]

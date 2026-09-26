@@ -88,7 +88,7 @@ services:
   ##############################################################################
   penpot-frontend:
     # https://hub.docker.com/r/penpotapp/frontend
-    image: penpotapp/frontend:${VERSION_PENPOT:-2.12.1}
+    image: penpotapp/frontend:${VERSION_PENPOT:-2.18.0}
     <<:
       - *basic
       # - *basic-deploy-labels
@@ -114,7 +114,7 @@ services:
 
   penpot-backend:
     # https://hub.docker.com/r/penpotapp/backend
-    image: penpotapp/backend:${VERSION_PENPOT:-2.12.1}
+    image: penpotapp/backend:${VERSION_PENPOT:-2.18.0}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -144,7 +144,7 @@ services:
 
   penpot-exporter:
     # https://hub.docker.com/r/penpotapp/exporter
-    image: penpotapp/exporter:${VERSION_PENPOT:-2.12.1}
+    image: penpotapp/exporter:${VERSION_PENPOT:-2.18.0}
     <<: *basic
     deploy:
       <<: *basic-deploy

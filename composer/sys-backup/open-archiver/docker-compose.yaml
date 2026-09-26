@@ -65,7 +65,7 @@ services:
   ##############################################################################
   open-archiver:
     # https://hub.docker.com/r/logiclabshq/open-archiver/tags?name=v
-    image: logiclabshq/open-archiver:${VERSION_OPEN_ARCHIVER:-v0.5.1}
+    image: logiclabshq/open-archiver:${VERSION_OPEN_ARCHIVER:-v0.6.0}
     <<:
       - *basic
       # - *basic-deploy-labels
@@ -128,7 +128,7 @@ services:
   ##############################################################################
   meilisearch:
     # https://hub.docker.com/r/getmeili/meilisearch/tags?name=v
-    image: getmeili/meilisearch:${VERSION_MEILISEARCH:-v1.49}
+    image: getmeili/meilisearch:${VERSION_MEILISEARCH:-v1.54}
     <<:
       - *basic
     deploy:

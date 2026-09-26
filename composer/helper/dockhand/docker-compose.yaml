@@ -66,7 +66,7 @@ services:
   ##############################################################################
   dockhand:
     # https://hub.docker.com/r/fnsys/dockhand/tags?name=v
-    image: fnsys/dockhand:${VERSION:-v1.0.36}
+    image: fnsys/dockhand:${VERSION:-v1.0.49}
     <<:
       - *basic
       # - *basic-deploy-labels
