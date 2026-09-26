@@ -36,13 +36,20 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_INVOICE_SHELF=2.3.3
+VERSION_INVOICE_SHELF=2.4.6
 VERSION_POSTGRESQL=18.6-alpine
-VERSION_GOTENBERG=8.29
+VERSION_GOTENBERG=8.37
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
 CERT_RESOLVER=certificates
+
+PDF_DRIVER=gotenberg # gotenberg | dompdf
+GOTENBERG_HOST=http://gotenberg:3000
+GOTENBERG_ALLOWED_PRIVATE_HOST=http://gotenberg:3000
+
+# honoured since 2.4.2 — schedules follow it, previously they stayed on UTC
+APP_TIMEZONE=Europe/Berlin
 ```
 
 #### example short .env

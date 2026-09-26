@@ -62,7 +62,7 @@ services:
   ##############################################################################
   invoiceshelf:
     # https://hub.docker.com/r/invoiceshelf/invoiceshelf/tags
-    image: invoiceshelf/invoiceshelf:${VERSION_INVOICE_SHELF:-2.3.3}
+    image: invoiceshelf/invoiceshelf:${VERSION_INVOICE_SHELF:-2.4.6}
     <<:
       - *basic
       # - *basic-deploy-labels
@@ -99,6 +99,10 @@ services:
       CACHE_STORE: file
       DOMPDF_ENABLE_REMOTE: "false"
 
+      PDF_DRIVER: ${PDF_DRIVER:-gotenberg} # gotenberg | dompdf
+      GOTENBERG_HOST: ${GOTENBERG_HOST:-http://gotenberg:3000}
+      GOTENBERG_ALLOWED_PRIVATE_HOST: ${GOTENBERG_ALLOWED_PRIVATE_HOST:-http://gotenberg:3000}
+
       SESSION_DRIVER: file
       SESSION_LIFETIME: 240
       SESSION_ENCRYPT: "false"
@@ -115,9 +119,9 @@ services:
       test:
         [
           "CMD-SHELL",
-          "curl -kIf ${PROTOCOL:-http}://127.0.0.1:${PORT:-8080} > /dev/null 2>&1 || exit 1",
+          "curl -fsS -o /dev/null http://127.0.0.1:${PORT:-8080}/api/ping || exit 1",
         ]
-      start_period: 10s
+      start_period: 300s
       interval: 30s
       timeout: 5s
       retries: 3
@@ -173,7 +177,7 @@ services:
   ##############################################################################
   gotenberg:
     # https://hub.docker.com/r/gotenberg/gotenberg
-    image: gotenberg/gotenberg:${VERSION_GOTENBERG:-8.29}
+    image: gotenberg/gotenberg:${VERSION_GOTENBERG:-8.37}
     <<: *basic
     deploy:
       <<: *basic-deploy
