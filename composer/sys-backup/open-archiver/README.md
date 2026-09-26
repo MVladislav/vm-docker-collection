@@ -44,7 +44,7 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 # ______________________________________________________________________________
 VERSION_OPEN_ARCHIVER=v0.5.1
 VERSION_MEILISEARCH=v1.49
-VERSION_POSTGRESQL=18.4-alpine
+VERSION_POSTGRESQL=18.6-alpine
 VERSION_VALKEY=9.1.2-alpine
 VERSION_TIKA=3.3.1.0-full
 

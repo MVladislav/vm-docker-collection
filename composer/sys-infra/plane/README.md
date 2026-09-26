@@ -60,7 +60,7 @@ RESOURCES_LIMITS_MEMORY_RUSTFS=1g
 # APPLICATION version for easy update
 # ______________________________________________________________________________
 VERSION_PLANE=v1.3.1
-VERSION_POSTGRESQL=18.4-alpine
+VERSION_POSTGRESQL=18.6-alpine
 VERSION_RABBITMQ=3.13.6-management-alpine
 VERSION_VALKEY=9.1.2-alpine
 VERSION_RUSTFS=1.0.0-beta.8

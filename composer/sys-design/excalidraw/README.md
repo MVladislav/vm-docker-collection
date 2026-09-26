@@ -48,7 +48,7 @@ VERSION_NODE=22.22.2
 VERSION_EXCALIDRAW=v0.18.1
 VERSION_EXCALIDRAW_ROOM=master
 # VERSION_EXCALIDRAW_STORAGE=v2023.11.11
-# VERSION_VALKEY=8.1.0-alpine
+# VERSION_VALKEY=9.1.2-alpine
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________

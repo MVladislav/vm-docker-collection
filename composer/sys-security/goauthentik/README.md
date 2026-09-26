@@ -40,7 +40,7 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 # APPLICATION version for easy update
 # ______________________________________________________________________________
 VERSION_GOAUTHENTIK=2026.8.2
-VERSION_POSTGRESQL=18.4-alpine
+VERSION_POSTGRESQL=18.6-alpine
 
 # APPLICATION general variable to adjust the apps (OPTIONAL)
 # ______________________________________________________________________________

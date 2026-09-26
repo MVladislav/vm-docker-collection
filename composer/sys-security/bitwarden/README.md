@@ -16,7 +16,7 @@ openssl rand -base64 18 > config/secrets/mariadb_user_password.txt
 ```env
 NODE_ROLE=manager
 
-VERSION_BITWARDEN=latest
+VERSION=beta
 VERSION_MARIADB=13.0.2
 
 LB_SWARM=true

@@ -51,6 +51,35 @@ VERSION=latest
 CERT_RESOLVER=certificates
 ```
 
+#### `docker-compose-example-services.yaml` image versions
+
+> catalogue of ready-to-copy service blocks (caches, databases, admin UIs). Copy
+> the blocks you need into your stack and override the pins below in `.env` only
+> when you deliberately want a different tag. Kept in sync with the compose
+> defaults by `tools/sync_readme_versions.py`.
+
+```env
+# DATABASE & CACHE
+VERSION_POSTGRESQL=18.6-alpine
+VERSION_MARIADB=13.0.2
+VERSION_MONGODB=8.3.2
+VERSION_VALKEY=9.1.2-alpine
+VERSION_RABBITMQ=4.3.6-management-alpine
+VERSION_DRAGONFLY=v1.38.1
+VERSION_INFLUXDB=2.9.1-alpine
+VERSION_INFLUXDB3=3-core
+VERSION_INFLUXDB3_EXPLORER=1.8.0
+
+# OBJECT STORAGE
+VERSION_MINIO=RELEASE.2025-09-07T16-13-09Z-cpuv1
+VERSION_RUSTFS=1.0.0
+
+# ADMIN UI
+VERSION_ADMINER=5.4.2-standalone
+VERSION_PHPMYADMIN=5.2.3-apache
+VERSION_EXPRESS=1.0.2-20
+```
+
 #### Example short `.env` (swarm)
 
 ```env

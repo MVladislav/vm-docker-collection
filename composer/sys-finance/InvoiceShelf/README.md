@@ -37,7 +37,7 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 # APPLICATION version for easy update
 # ______________________________________________________________________________
 VERSION_INVOICE_SHELF=2.3.3
-VERSION_POSTGRESQL=18.3-alpine
+VERSION_POSTGRESQL=18.6-alpine
 VERSION_GOTENBERG=8.29
 
 # APPLICATION general variable to adjust the apps

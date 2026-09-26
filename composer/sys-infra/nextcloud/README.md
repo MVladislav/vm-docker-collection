@@ -56,7 +56,7 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 # ______________________________________________________________________________
 VERSION_NEXTCLOUD=27.1.3-apache
 VERSION_NEXTCLOUD_CRON=27.1.3-fpm
-VERSION_REDIS=7.2.2-alpine3.18
+VERSION_VALKEY=9.1.2-alpine
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
@@ -71,10 +71,6 @@ MYSQL_USER=nextcloud
 
 ```env
 DOMAIN=nextcloud.home.local
-
-VERSION_NEXTCLOUD=27.1.3-apache
-VERSION_NEXTCLOUD_CRON=27.1.3-fpm
-VERSION_REDIS=7.2.2-alpine3.18
 ```
 
 ---

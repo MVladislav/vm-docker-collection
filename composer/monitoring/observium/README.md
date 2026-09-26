@@ -64,13 +64,6 @@ MARIADB_PORT=3306
 # ______________________________________________________________________________
 VERSION_DEBIAN=12.5-slim
 BUILD_DATE=2024
-
-# PHPMYADMIN
-# ______________________________________________________________________________
-VERSION_PHPMYADMIN=5.2.0-apache
-DOMAIN_PHPMYADMIN=phpmyadmin.home.local
-PROTOCOL_PHPMYADMIN=http
-PORT_PHPMYADMIN=8080
 ```
 
 #### example short .env

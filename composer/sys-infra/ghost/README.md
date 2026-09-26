@@ -38,7 +38,7 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_GHOST:-5-alpine
+VERSION_GHOST=5-alpine
 VERSION_MARIADB=13.0.2
 
 # APPLICATION general variable to adjust the apps
