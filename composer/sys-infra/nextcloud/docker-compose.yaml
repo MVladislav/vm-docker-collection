@@ -221,12 +221,7 @@ networks:
     driver_opts:
       encrypted: "true"
   mysql:
-    # external: true
-    name: mysql
-    driver: ${NETWORK_MODE:-overlay}
-    attachable: true
-    driver_opts:
-      encrypted: "true"
+    external: true
   proxy:
     external: true
 

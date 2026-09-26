@@ -97,7 +97,7 @@ services:
   ##############################################################################
   mariadb:
     # https://hub.docker.com/_/mariadb
-    image: mariadb:${VERSION_MARIADB:-11.8.2}
+    image: mariadb:${VERSION_MARIADB:-13.0.2}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -113,23 +113,26 @@ services:
       - SETGID
       - DAC_OVERRIDE
     secrets:
+      - mariadb_root_password
       - mariadb_user_password
     environment:
       TZ: ${TZ:-Europe/Berlin}
       MARIADB_DATABASE: ${MARIADB_DATABASE:-easyappointments}
       MARIADB_USER: ${MARIADB_USER:-easyappointments}
       MARIADB_PASSWORD_FILE: /run/secrets/mariadb_user_password
-      MARIADB_RANDOM_ROOT_PASSWORD: ${MARIADB_RANDOM_ROOT_PASSWORD:-true}
+      MARIADB_ROOT_PASSWORD_FILE: /run/secrets/mariadb_root_password
+      MARIADB_ROOT_HOST: localhost
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - mariadb:/var/lib/mysql
     command:
-      - --log-bin=mysql-bin
-      - --expire-logs-days=90
+      - --skip-log-bin
+      - --max-allowed-packet=128M
+      - --innodb-log-file-size=128M
     healthcheck:
       test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
-      start_period: 10s
+      start_period: 300s
       interval: 30s
       timeout: 5s
       retries: 3
@@ -153,3 +156,5 @@ volumes:
 secrets:
   mariadb_user_password:
     file: config/secrets/mariadb_user_password.txt
+  mariadb_root_password:
+    file: config/secrets/mariadb_root_password.txt

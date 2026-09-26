@@ -1,20 +1,5 @@
 # SETUP
 
-```sh
-    MVladislav
-```
-
----
-
-- [SETUP](#setup)
-  - [basic](#basic)
-    - [create your `secrets`:](#create-your-secrets)
-    - [create `.env` file following:](#create-env-file-following)
-      - [example short .env](#example-short-env)
-  - [References](#references)
-
----
-
 ## basic
 
 > defined to work with traefik
@@ -22,9 +7,10 @@
 ### create your `secrets`:
 
 ```sh
-$pwgen -s 32 1 > config/secrets/mariadb_user_password.txt
-$pwgen -s 32 1 > config/secrets/app_key_file_password.txt
-$echo "mail@example.com" > config/secrets/site_owner_conf.txt
+pwgen -s 32 1 > config/secrets/mariadb_user_password.txt
+pwgen -s 32 1 > config/secrets/mariadb_root_password.txt
+pwgen -s 32 1 > config/secrets/app_key_file_password.txt
+echo "mail@example.com" > config/secrets/site_owner_conf.txt
 ```
 
 ### create `.env` file following:
@@ -52,14 +38,14 @@ RESOURCES_RESERVATIONS_CPUS=0.001
 RESOURCES_RESERVATIONS_MEMORY=32m
 
 RESOURCES_LIMITS_CPUS_MARIADB=1
-RESOURCES_LIMITS_MEMORY_MARIADB=512M
+RESOURCES_LIMITS_MEMORY_MARIADB=512m
 RESOURCES_RESERVATIONS_CPUS_MARIADB=0.001
 RESOURCES_RESERVATIONS_MEMORY_MARIADB=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
 VERSION_FIREFLY=version-6.1.25
-VERSION_MARIADB=11.6.2
+VERSION_MARIADB=13.0.2
 VERSION_ALPINE=3.21.2
 
 # APPLICATION general variable to adjust the apps
@@ -88,10 +74,6 @@ MAIL_ENCRYPTION=tls
 
 ```env
 DOMAIN=firefly.home.local
-
-VERSION_FIREFLY=version-6.1.25
-VERSION_MARIADB=11.6.2
-VERSION_ALPINE=3.21.2
 
 STATIC_CRON_TOKEN=$(pwgen -s 32 1)
 

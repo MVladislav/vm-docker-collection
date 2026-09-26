@@ -1,28 +1,5 @@
 # SETUP
 
-```sh
-    MVladislav
-```
-
----
-
-- [SETUP](#setup)
-  - [basic](#basic)
-    - [create your `secrets`:](#create-your-secrets)
-    - [create `.env` file following:](#create-env-file-following)
-      - [example short .env](#example-short-env)
-  - [Helper](#helper)
-    - [mysql dump db](#mysql-dump-db)
-    - [traefik and logging](#traefik-and-logging)
-    - [mariadb import](#mariadb-import)
-      - [install from shell](#install-from-shell)
-    - [upgrade process](#upgrade-process)
-  - [Additional](#additional)
-    - [installToolPassword](#installtoolpassword)
-  - [References](#references)
-
----
-
 ## basic
 
 > defined to work with traefik
@@ -30,7 +7,8 @@
 ### create your `secrets`:
 
 ```sh
-$pwgen -s 18 1 > config/secrets/mariadb_user_password.txt
+pwgen -s 18 1 > config/secrets/mariadb_user_password.txt
+pwgen -s 32 1 > config/secrets/mariadb_root_password.txt
 ```
 
 ### create `.env` file following:
@@ -60,7 +38,7 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 # APPLICATION version for easy update
 # ______________________________________________________________________________
 VERSION_TYPO3=13.1.1
-VERSION_MARIADB=11.3
+VERSION_MARIADB=13.0.2
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________

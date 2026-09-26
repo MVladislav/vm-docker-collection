@@ -99,29 +99,28 @@ services:
   ##############################################################################
   mariadb-bitwarden:
     # https://hub.docker.com/_/mariadb
-    image: mariadb:${VERSION_MARIADB:-10.7.8}
+    image: mariadb:${VERSION_MARIADB:-13.0.2}
     <<: *basic
     cap_add:
-      - SYS_NICE
-      - DAC_OVERRIDE
-      - CHOWN
-      - SETGID
       - SETUID
+      - SETGID
+      - DAC_OVERRIDE
     deploy:
       <<: *basic-deploy
       resources:
         limits:
-          # cpus: "1.5"
-          memory: 1G
+          cpus: ${RESOURCES_LIMITS_CPUS_MARIADB:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_MARIADB:-1g}
         reservations:
-          cpus: "0.001"
-          memory: 32M
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_MARIADB:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_MARIADB:-32m}
     secrets:
       - mariadb_root_password
       - mariadb_user_password
     environment:
       TZ: ${TZ:-Europe/Berlin}
       MARIADB_ROOT_PASSWORD_FILE: /run/secrets/mariadb_root_password
+      MARIADB_ROOT_HOST: localhost
       MARIADB_DATABASE: ${MARIADB_DATABASE:-bitwarden_vault}
       MARIADB_USER: ${MARIADB_USER:-bitwarden}
       MARIADB_PASSWORD_FILE: /run/secrets/mariadb_user_password
@@ -130,17 +129,14 @@ services:
       - /etc/localtime:/etc/localtime:ro
       - db:/var/lib/mysql
     command:
-      - --log-bin=mysql-bin
-      - --expire-logs-days=90
+      - --skip-log-bin
+      - --max-allowed-packet=128M
+      - --innodb-log-file-size=128M
     networks:
       default: {}
     healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "mysqladmin ping -h 127.0.0.1 -P 3306 -u root -p$$(cat $$MARIADB_ROOT_PASSWORD_FILE) | grep 'mysqld is alive' || exit 1",
-        ]
-      start_period: 10s
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      start_period: 300s
       interval: 30s
       timeout: 5s
       retries: 3

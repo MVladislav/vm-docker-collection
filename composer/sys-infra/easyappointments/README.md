@@ -1,21 +1,5 @@
 # SETUP
 
-```sh
-    MVladislav
-```
-
----
-
-- [SETUP](#setup)
-  - [basic](#basic)
-    - [create your `secrets`:](#create-your-secrets)
-    - [create `.env` file following:](#create-env-file-following)
-      - [example short .env (swarm)](#example-short-env-swarm)
-      - [example short .env (bridge)](#example-short-env-bridge)
-  - [References](#references)
-
----
-
 ## basic
 
 > defined to work with traefik
@@ -23,8 +7,9 @@
 ### create your `secrets`:
 
 ```sh
-$pwgen -s 32 1 > config/secrets/mariadb_user_password.txt
-$echo "DB_PASSWORD=$(cat config/secrets/mariadb_user_password.txt)" >> .env
+pwgen -s 32 1 > config/secrets/mariadb_user_password.txt
+pwgen -s 32 1 > config/secrets/mariadb_root_password.txt
+echo "DB_PASSWORD=$(cat config/secrets/mariadb_user_password.txt)" >> .env
 ```
 
 ### create `.env` file following:
@@ -59,7 +44,7 @@ RESOURCES_RESERVATIONS_MEMORY_MARIADB=32m
 # APPLICATION version for easy update
 # ______________________________________________________________________________
 VERSION_APPT=1.5.1
-VERSION_MARIADB=11.8.2
+VERSION_MARIADB=13.0.2
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________

@@ -1,37 +1,29 @@
 # SETUP
 
-```sh
-    MVladislav
-```
-
----
-
-- [SETUP](#setup)
-  - [basic](#basic)
-    - [database setup](#database-setup)
-    - [create your `secrets`:](#create-your-secrets)
-    - [create `.env` file following:](#create-env-file-following)
-      - [example short .env](#example-short-env)
-  - [FAQ](#faq)
-  - [References](#references)
-
----
-
 ## basic
 
 > defined to work with traefik
 
 ### database setup
 
-setup mysql from [here](https://github.com/MVladislav/vm-docker-collection/tree/main/composer/db/mysql)
+This stack ships **no database**. Deploy a MariaDB stack separately (see the
+`mariadb` service in
+[`__template/docker-compose-example-services.yaml`](../../__template/docker-compose-example-services.yaml))
+and attach it to a shared external network:
 
-and add new space for nextcloud in mysql, see `MYSQL_*` below for namings.
+```sh
+docker network create --driver overlay --attachable mysql
+```
+
+Create the `nextcloud` database and user inside that MariaDB instance, then set
+the `MYSQL_*` variables below. `nextcloud/server` talks to MariaDB through the
+same `MYSQL_*` variables, so no other change is needed.
 
 ### create your `secrets`:
 
 ```sh
-$echo "swordfish" > config/secrets/nextcloud_admin_password.txt
-$echo "swordfish" > config/secrets/mysql_password.txt
+echo "swordfish" > config/secrets/nextcloud_admin_password.txt
+echo "swordfish" > config/secrets/mysql_password.txt
 ```
 
 ### create `.env` file following:

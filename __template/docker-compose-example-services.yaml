@@ -269,7 +269,7 @@ services:
   ##############################################################################
   mariadb:
     # https://hub.docker.com/_/mariadb
-    image: mariadb:${VERSION_MARIADB:-12.3.2}
+    image: mariadb:${VERSION_MARIADB:-13.0.2}
     # <<: *basic
     deploy:
       # <<: *basic-deploy
@@ -299,24 +299,38 @@ services:
       MARIADB_USER: ${MARIADB_USER:-mariadb}
       MARIADB_PASSWORD_FILE: /run/secrets/mariadb_user_password
       MARIADB_ROOT_PASSWORD_FILE: /run/secrets/mariadb_root_password
+      # The image defaults MARIADB_ROOT_HOST to `%`, which creates
+      # `root`@`%` with GRANT ALL ... WITH GRANT OPTION -- a live credential
+      # for every container on this network. `localhost` leaves only
+      # `root`@`localhost`, reachable over the socket via
+      # `docker exec mariadb mariadb -uroot`. Drop this ONLY when another
+      # service really has to authenticate as root over TCP (zabbix-server,
+      # erpnext's bench new-site).
+      MARIADB_ROOT_HOST: localhost
       # MARIADB_RANDOM_ROOT_PASSWORD: ${MARIADB_RANDOM_ROOT_PASSWORD:-true}
       # MARIADB_LOG_BIN: ${MARIADB_LOG_BIN:-0}
     volumes:
       # - /etc/timezone:/etc/timezone:ro
       # - /etc/localtime:/etc/localtime:ro
       - mariadb:/var/lib/mysql
+    # Binary log is OFF. None of these stacks replicate or do point-in-time
+    # recovery, and the binlog is written into the data volume where
+    # `binlog_expire_logs_seconds` defaults to 0 (never purge) and purge only
+    # runs on rotation -- so an enabled binlog fills /var/lib/mysql no matter
+    # which expire setting is used. Turning it on again needs BOTH
+    # --max-binlog-size (to force rotation, without which purge never runs)
+    # and --binlog-expire-logs-seconds, plus a real root secret to
+    # `PURGE BINARY LOGS` by hand.
     command:
-      - --log-bin=mysql-bin
-      - --binlog-expire-logs-seconds=604800 # 7days | 7*24*60*60
+      - --skip-log-bin
       - --max-allowed-packet=128M
-      - --innodb-log-file-size=64M
-      # - --skip-log-bin
+      - --innodb-log-file-size=128M
     # networks:
     #   default: {}
     healthcheck:
       test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       # test: ["CMD-SHELL", "/usr/local/bin/healthcheck.sh --no-defaults"]
-      start_period: 10s
+      start_period: 300s
       interval: 30s
       timeout: 5s
       retries: 3

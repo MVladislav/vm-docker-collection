@@ -1,23 +1,14 @@
 # SETUP
 
-```sh
-    MVladislav
-```
-
----
-
-- [SETUP](#setup)
-  - [basic](#basic)
-    - [create `.env` file following:](#create-env-file-following)
-      - [example short .env (swarm)](#example-short-env-swarm)
-      - [example short .env (bridge)](#example-short-env-bridge)
-  - [References](#references)
-
----
-
 ## basic
 
 > defined to work with traefik
+
+### create your `secrets`:
+
+```sh
+pwgen -s 32 1 > config/secrets/mariadb_root_password.txt
+```
 
 ### create `.env` file following:
 
@@ -56,7 +47,7 @@ RESOURCES_RESERVATIONS_MEMORY_VALKEY=32m
 # APPLICATION version for easy update
 # ______________________________________________________________________________
 VERSION_ERPNEXT=v15.70.0
-VERSION_MARIADB=11.7.2
+VERSION_MARIADB=13.0.2
 VERSION_VALKEY=9.1.2-alpine
 
 # APPLICATION general variable to adjust the apps

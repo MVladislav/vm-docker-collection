@@ -1,23 +1,5 @@
 # SETUP
 
-```sh
-    MVladislav
-```
-
----
-
-- [SETUP](#setup)
-  - [basic](#basic)
-    - [create your `secrets`:](#create-your-secrets)
-    - [create `.env` file following:](#create-env-file-following)
-      - [example short .env](#example-short-env)
-  - [Hint](#hint)
-  - [client setup](#client-setup)
-    - [snmpv3](#snmpv3)
-  - [References](#references)
-
----
-
 **find source and docker-compose on [github](https://github.com/MVladislav/vm-docker-collection/tree/develop/composer/monitoring/observium)**
 
 ---
@@ -64,7 +46,7 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 # APPLICATION version for easy update
 # ______________________________________________________________________________
 VERSION=ce-23.9
-VERSION_MARIADB:-11.3.2
+VERSION_MARIADB=13.0.2
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________

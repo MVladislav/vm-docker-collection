@@ -113,7 +113,7 @@ services:
   ##############################################################################
   mariadb:
     # https://hub.docker.com/_/mariadb
-    image: mariadb:${VERSION_MARIADB:-12.3.2}
+    image: mariadb:${VERSION_MARIADB:-13.0.2}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -137,21 +137,20 @@ services:
       MARIADB_USER: ${MARIADB_USER:-owncloud}
       MARIADB_PASSWORD_FILE: /run/secrets/mariadb_user_password
       MARIADB_ROOT_PASSWORD_FILE: /run/secrets/mariadb_root_password
+      MARIADB_ROOT_HOST: localhost
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - mariadb:/var/lib/mysql
     command:
-      - --log-bin=mysql-bin
-      - --binlog-expire-logs-seconds=604800 # 7days | 7*24*60*60
+      - --skip-log-bin
       - --max-allowed-packet=128M
-      - --innodb-log-file-size=64M
-      # - --skip-log-bin
+      - --innodb-log-file-size=128M
     networks:
       default: {}
     healthcheck:
       test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
-      start_period: 10s
+      start_period: 300s
       interval: 30s
       timeout: 5s
       retries: 3

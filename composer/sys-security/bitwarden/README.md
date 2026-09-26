@@ -1,19 +1,5 @@
 # SETUP
 
-```sh
-    MVladislav
-```
-
----
-
-- [SETUP](#setup)
-  - [basic](#basic)
-    - [create your `secrets`:](#create-your-secrets)
-    - [create `.env` file following:](#create-env-file-following)
-  - [References](#references)
-
----
-
 ## basic
 
 > defined to work with traefik
@@ -21,8 +7,8 @@
 ### create your `secrets`:
 
 ```sh
-$openssl rand -base64 18 > config/secrets/mariadb_root_password.txt
-$openssl rand -base64 18 > config/secrets/mariadb_user_password.txt
+openssl rand -base64 18 > config/secrets/mariadb_root_password.txt
+openssl rand -base64 18 > config/secrets/mariadb_user_password.txt
 ```
 
 ### create `.env` file following:
@@ -31,7 +17,7 @@ $openssl rand -base64 18 > config/secrets/mariadb_user_password.txt
 NODE_ROLE=manager
 
 VERSION_BITWARDEN=latest
-VERSION_MARIADB=10.7.8
+VERSION_MARIADB=13.0.2
 
 LB_SWARM=true
 DOMAIN=bitwarden.home.local
@@ -51,6 +37,11 @@ BW_INSTALLATION_KEY=xxxxxxxxxxxx
 TZ=Europe/Berlin
 MARIADB_DATABASE=bitwarden_vault
 MARIADB_USER=bitwarden
+
+RESOURCES_LIMITS_CPUS_MARIADB=1
+RESOURCES_LIMITS_MEMORY_MARIADB=1g
+RESOURCES_RESERVATIONS_CPUS_MARIADB=0.001
+RESOURCES_RESERVATIONS_MEMORY_MARIADB=32m
 
 # Mail
 globalSettings__mail__replyToEmail=test@example.io

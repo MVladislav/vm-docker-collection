@@ -17,6 +17,19 @@
 
 > defined to work with traefik
 
+### database setup
+
+This stack ships **no database**; it joins the external `mysql` network. Deploy
+a MariaDB stack separately (see the `mariadb` service in
+[`__template/docker-compose-example-services.yaml`](../../__template/docker-compose-example-services.yaml)),
+attach it to that network, and create the `pandora` database and user there:
+
+```sh
+docker network create --driver overlay --attachable mysql
+```
+
+`DBHOST = mysql` below is the MariaDB service name on that network.
+
 ### create `.env` file following:
 
 ```env

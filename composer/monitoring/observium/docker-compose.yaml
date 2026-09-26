@@ -135,15 +135,16 @@ services:
   ##############################################################################
   mariadb:
     # https://hub.docker.com/_/mariadb
-    image: mariadb:${VERSION_MARIADB:-11.3.2}
+    image: mariadb:${VERSION_MARIADB:-13.0.2}
     <<: *basic
     deploy:
       <<: *basic-deploy
     cap_add:
-      - SETGID
       - SETUID
+      - SETGID
       - DAC_OVERRIDE
     secrets:
+      - mariadb_root_password
       - mariadb_user_password
     environment:
       TZ: ${TZ:-Europe/Berlin}
@@ -151,19 +152,21 @@ services:
       MARIADB_DATABASE: ${MARIADB_DATABASE:-observium}
       MARIADB_USER: ${MARIADB_USER:-observium}
       MARIADB_PASSWORD_FILE: /run/secrets/mariadb_user_password
-      MARIADB_RANDOM_ROOT_PASSWORD: ${MARIADB_RANDOM_ROOT_PASSWORD:-true}
+      MARIADB_ROOT_PASSWORD_FILE: /run/secrets/mariadb_root_password
+      MARIADB_ROOT_HOST: localhost
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - db:/var/lib/mysql
     command:
-      - --log-bin=mysql-bin
-      - --expire-logs-days=7
+      - --skip-log-bin
+      - --max-allowed-packet=128M
+      - --innodb-log-file-size=128M
     networks:
       default: {}
     healthcheck:
       test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
-      start_period: 10s
+      start_period: 300s
       interval: 30s
       timeout: 5s
       retries: 3

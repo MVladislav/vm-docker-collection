@@ -117,8 +117,6 @@ services:
     environment:
       DB_HOST: mariadb
       DB_PORT: 3306
-      MYSQL_ROOT_PASSWORD: ${MARIADB_PASSWORD:-erpnext}
-      MARIADB_ROOT_PASSWORD: ${MARIADB_PASSWORD:-erpnext}
 
   ##############################################################################
   ##############################################################################
@@ -185,6 +183,8 @@ services:
       <<: *basic-deploy
       restart_policy:
         condition: none
+    secrets:
+      - mariadb_root_password
     entrypoint:
       - bash
       - -c
@@ -206,7 +206,7 @@ services:
           fi
         done;
         echo "sites/common_site_config.json found";
-        bench new-site --mariadb-user-host-login-scope='%' --admin-password=${ERPNEXT_PASSWORD?Initial admin password not set} --db-root-username=${MARIADB_USER:-root} --db-root-password=${MARIADB_PASSWORD:-erpnext} --install-app erpnext --set-default frontend;
+        bench new-site --mariadb-user-host-login-scope='%' --admin-password=${ERPNEXT_PASSWORD?Initial admin password not set} --db-root-username=root --db-root-password="$(cat /run/secrets/mariadb_root_password)" --install-app erpnext --set-default frontend;
 
   ##############################################################################
   ##############################################################################
@@ -245,7 +245,7 @@ services:
   ##############################################################################
   mariadb:
     # https://hub.docker.com/_/mariadb
-    image: mariadb:${VERSION_MARIADB:-11.7.2}
+    image: mariadb:${VERSION_MARIADB:-13.0.2}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -260,23 +260,25 @@ services:
       - SETUID
       - SETGID
       - DAC_OVERRIDE
+    secrets:
+      - mariadb_root_password
     environment:
       TZ: ${TZ:-Europe/Berlin}
       MARIADB_DATABASE: ${MARIADB_DATABASE:-erpnext}
-      MARIADB_ROOT_USER: ${MARIADB_USER:-root}
-      MARIADB_ROOT_PASSWORD: ${MARIADB_PASSWORD:-erpnext}
+      MARIADB_ROOT_PASSWORD_FILE: /run/secrets/mariadb_root_password
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - mariadb:/var/lib/mysql
     command:
-      - --log-bin=mysql-bin
-      - --expire-logs-days=90
+      - --skip-log-bin
+      - --max-allowed-packet=128M
+      - --innodb-log-file-size=128M
     networks:
       default: {}
     healthcheck:
       test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
-      start_period: 10s
+      start_period: 300s
       interval: 30s
       timeout: 5s
       retries: 3
@@ -361,3 +363,7 @@ volumes:
   logs: {}
   mariadb: {}
   valkey: {}
+
+secrets:
+  mariadb_root_password:
+    file: config/secrets/mariadb_root_password.txt
