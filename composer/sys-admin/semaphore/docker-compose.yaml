@@ -74,7 +74,7 @@ services:
   ##############################################################################
   semaphoreui:
     # https://hub.docker.com/r/semaphoreui/semaphore
-    image: semaphoreui/semaphore:${VERSION:-v2.18.23}
+    image: semaphoreui/semaphore:${VERSION:-v2.19.14}
     <<:
       - *basic
       # - *basic-deploy-labels

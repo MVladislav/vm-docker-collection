@@ -67,7 +67,7 @@ services:
   ##############################################################################
   pulse:
     # https://hub.docker.com/r/rcourtman/pulse
-    image: rcourtman/pulse:${VERSION:-4.30.0}
+    image: rcourtman/pulse:${VERSION:-4.36.2}
     <<:
       - *basic
       # - *basic-deploy-labels

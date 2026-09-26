@@ -64,7 +64,7 @@ services:
   ##############################################################################
   zabbix-web:
     # https://hub.docker.com/r/zabbix/zabbix-web-nginx-mysql
-    image: zabbix/zabbix-web-nginx-mysql:${VERSION_ZABBIX_WEB:-7.4.5-alpine}
+    image: zabbix/zabbix-web-nginx-mysql:${VERSION_ZABBIX_WEB:-7.4.14-alpine}
     <<:
       - *basic
       # - *basic-deploy-labels
@@ -91,7 +91,7 @@ services:
   ##############################################################################
   zabbix-server:
     # https://hub.docker.com/r/zabbix/zabbix-server-mysql
-    image: zabbix/zabbix-server-mysql:${VERSION_ZABBIX_SERVER:-7.4.5-alpine}
+    image: zabbix/zabbix-server-mysql:${VERSION_ZABBIX_SERVER:-7.4.14-alpine}
     <<:
       - *basic
     deploy:

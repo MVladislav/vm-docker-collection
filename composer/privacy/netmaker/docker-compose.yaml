@@ -86,7 +86,7 @@ services:
   ##############################################################################
   netmaker:
     # https://hub.docker.com/r/gravitl/netmaker
-    image: gravitl/netmaker:${VERSION_NETMAKER:-v0.18.0}
+    image: gravitl/netmaker:${VERSION_NETMAKER:-v0.99.0}
     <<: [*basic, *basic-deploy-labels-api]
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels-api]
@@ -142,7 +142,7 @@ services:
   ##############################################################################
   netmaker-ui:
     # https://hub.docker.com/r/gravitl/netmaker-ui
-    image: gravitl/netmaker-ui:${VERSION_NETMAKER_UI:-v0.18.0}
+    image: gravitl/netmaker-ui:${VERSION_NETMAKER_UI:-v0.99.0}
     <<: [*basic, *basic-deploy-labels]
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels]
@@ -166,7 +166,7 @@ services:
   ##############################################################################
   coredns:
     # https://hub.docker.com/r/coredns/coredns
-    image: coredns/coredns:${VERSION_COREDNS:-1.10.1}
+    image: coredns/coredns:${VERSION_COREDNS:-1.14.7}
     <<: *basic
     volumes:
       - /etc/timezone:/etc/timezone:ro
@@ -180,7 +180,7 @@ services:
   ##############################################################################
   mq:
     # https://hub.docker.com/_/eclipse-mosquitto
-    image: eclipse-mosquitto:${VERSION_MQTT:-2.0.15-openssl}
+    image: eclipse-mosquitto:${VERSION_MQTT:-2.0.22-openssl}
     <<: [*basic, *basic-deploy-labels-mq]
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels-mq]

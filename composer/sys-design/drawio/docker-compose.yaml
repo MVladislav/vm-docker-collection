@@ -65,7 +65,7 @@ services:
   ##############################################################################
   drawio:
     # https://hub.docker.com/r/jgraph/drawio
-    image: jgraph/drawio:${VERSION:-29.7.9}
+    image: jgraph/drawio:${VERSION:-29.7.12}
     <<:
       - *basic
       - *basic-deploy-labels

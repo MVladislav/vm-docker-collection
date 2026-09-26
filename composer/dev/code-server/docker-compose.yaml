@@ -69,7 +69,7 @@ services:
   ##############################################################################
   code-server:
     # https://hub.docker.com/r/codercom/code-server
-    image: codercom/code-server:${VERSION:-4.105.0-ubuntu}
+    image: codercom/code-server:${VERSION:-4.138.0-ubuntu}
     <<:
       - *basic
       - *basic-deploy-labels

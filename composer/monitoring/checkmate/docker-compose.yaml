@@ -160,7 +160,7 @@ services:
   ##############################################################################
   mongodb:
     # https://hub.docker.com/_/mongo
-    image: mongo:${VERSION_MONGODB:-8.0.8}
+    image: mongo:${VERSION_MONGODB:-8.3.11}
     <<: *basic
     deploy:
       <<: *basic-deploy

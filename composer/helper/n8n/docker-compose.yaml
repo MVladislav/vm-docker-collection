@@ -93,7 +93,7 @@ services:
   ##############################################################################
   n8n:
     # https://hub.docker.com/r/n8nio/n8n
-    image: n8nio/n8n:${VERSION_N8N:-2.3.2}
+    image: n8nio/n8n:${VERSION_N8N:-2.41.1}
     <<:
       - *basic
       # - *basic-deploy-labels
@@ -141,7 +141,7 @@ services:
   ##############################################################################
   n8n-worker:
     # https://hub.docker.com/r/n8nio/n8n
-    image: n8nio/n8n:${VERSION_N8N:-2.3.2}
+    image: n8nio/n8n:${VERSION_N8N:-2.41.1}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -161,7 +161,7 @@ services:
 
   n8n-runners-main:
     # https://hub.docker.com/r/n8nio/runners
-    image: n8nio/runners:${VERSION_N8N:-2.3.2}
+    image: n8nio/runners:${VERSION_N8N:-2.41.1}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -178,7 +178,7 @@ services:
 
   n8n-runners-worker:
     # https://hub.docker.com/r/n8nio/runners
-    image: n8nio/runners:${VERSION_N8N:-2.3.2}
+    image: n8nio/runners:${VERSION_N8N:-2.41.1}
     <<: *basic
     deploy:
       resources:

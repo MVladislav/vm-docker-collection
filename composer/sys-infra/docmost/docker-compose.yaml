@@ -60,7 +60,7 @@ services:
   ##############################################################################
   docmost:
     # https://hub.docker.com/r/docmost/docmost
-    image: docmost/docmost:${VERSION_DOCMOST:-0.20.1}
+    image: docmost/docmost:${VERSION_DOCMOST:-0.96.0}
     <<: [*basic, *basic-deploy-labels]
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels]
