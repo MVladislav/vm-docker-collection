@@ -1,5 +1,9 @@
 # SETUP
 
+> Plane **Commercial Edition** for Docker Swarm with Traefik and RustFS.
+> Upstream's bundled `proxy` is replaced by Traefik.
+> Plane needs a licence key, activate it in God Mode → General Settings.
+
 ## basic
 
 > defined to work with traefik
@@ -42,12 +46,12 @@ MIDDLEWARE_SECURED=default-secured@file
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_PLANE=v2.6.3
-VERSION_POSTGRESQL=18.4-alpine
+VERSION_PLANE=v3.3.0
+VERSION_POSTGRESQL=18.6-alpine
 VERSION_RABBITMQ=3.13.6-management-alpine
-VERSION_VALKEY=9.1.0-alpine
-VERSION_RUSTFS=1.0.0-beta.8
-VERSION_IFRAMELY=v1.2.0
+VERSION_VALKEY=9.1.2-alpine
+VERSION_RUSTFS=1.0.0
+VERSION_IFRAMELY=v2.5.4
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
@@ -56,11 +60,22 @@ CERT_RESOLVER=certificates
 GUNICORN_WORKERS=1
 ```
 
-#### example short .env
+#### example short .env (swarm)
 
 ```env
 DOMAIN=plane.home.local
 ```
+
+#### example short .env (bridge)
+
+```env
+NETWORK_MODE=bridge
+LB_SWARM=false
+
+DOMAIN=plane.home.local
+```
+
+---
 
 ## FAQ
 
@@ -70,6 +85,19 @@ DOMAIN=plane.home.local
 
 ```sh
 docker exec -it "$(docker ps -q -f name=plane_worker)" /bin/bash -c "python manage.py create_instance_admin <E-MAIL>"
+```
+
+### Disable telemetry
+
+There is no env var for this. God Mode → General Settings → **Telemetry** off.
+
+### Switch the uploads bucket to private storage
+
+Since Commercial v1.4.0 Plane uses **private** buckets and presigned URLs. For an
+existing public bucket:
+
+```sh
+docker exec -it "$(docker ps -q -f name=plane_api)" python manage.py update_bucket
 ```
 
 ### Postgresql Upgrade
@@ -93,7 +121,7 @@ docker run --rm \
   -e PGDATA=/var/lib/postgresql/18/data \
   -e POSTGRES_USER=${POSTGRES_USER:-plane} \
   --env-file .env \
-  postgres:18.4-alpine
+  postgres:18.6-alpine
 
 cat ./upgrade_backup.sql | docker exec -i "$(docker ps -q -f name=pg_upgrade_temp)" bash -c 'PGPASSWORD=$POSTGRES_PASSWORD psql -U ${POSTGRES_USER:-plane}'
 ```
@@ -102,9 +130,21 @@ cat ./upgrade_backup.sql | docker exec -i "$(docker ps -q -f name=pg_upgrade_tem
 
 ### Upgrade Minio to Rustfs
 
+> RustFS reads a MinIO data directory in place and converts it on first start
+> (`.minio.sys` -> `.rustfs.sys`, plus `xl.meta` objects, bucket metadata and
+> IAM config). The conversion is **one-way**: once RustFS has written
+> `.rustfs.sys`, a MinIO binary cannot read the volume again. Snapshot the
+> `uploads` volume before the first RustFS start.
+
+**MinIO stores files as uid 1000, RustFS runs as uid 10001 — fix ownership first:**
+
 ```sh
 sudo chown -R 10001:10001 /var/lib/docker/volumes/plane_uploads/_data
 ```
+
+> Only unencrypted objects migrate in the released container images. If MinIO
+> was configured with SSE / a KMS plugin, decrypt on the MinIO side first; those
+> objects fail closed on the default build.
 
 ---
 
@@ -112,12 +152,9 @@ sudo chown -R 10001:10001 /var/lib/docker/volumes/plane_uploads/_data
 
 - <https://github.com/makeplane/plane>
 - <https://developers.plane.so/self-hosting/methods/docker-swarm>
-- <https://github.com/orgs/makeplane/discussions/3432>
-- <https://github.com/makeplane/plane/issues/7310>
-- files
-  - <https://prime.plane.so/releases/v1.8.3/swarm-compose.yml>
-  - <https://prime.plane.so/releases/v1.8.3/variables.env>
-  - <https://github.com/makeplane/plane/releases/latest/download/setup.sh>
-  - <https://github.com/makeplane/plane/releases/download/v0.27.1/docker-compose.yml>
-  - <https://github.com/makeplane/plane/releases/download/v0.27.1/swarm.sh>
-  - <https://github.com/makeplane/plane/releases/download/v0.27.1/variables.env>
+- <https://developers.plane.so/self-hosting/govern/environment-variables>
+- <https://developers.plane.so/self-hosting/manage/health-checks>
+- <https://developers.plane.so/self-hosting/govern/reverse-proxy>
+- <https://prime.plane.so/releases/v3.3.0/swarm-compose.yml>
+- <https://prime.plane.so/releases/v3.3.0/variables.env>
+- <https://github.com/makeplane/commercial-deployments>

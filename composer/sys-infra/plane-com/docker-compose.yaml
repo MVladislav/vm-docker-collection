@@ -12,6 +12,7 @@ x-basic-deploy-labels-web: &basic-deploy-labels-web
     - traefik.http.routers.plane-web.service=plane-web
     - traefik.http.services.plane-web.loadbalancer.server.scheme=http
     - traefik.http.services.plane-web.loadbalancer.server.port=3000
+    - traefik.http.services.plane-web.loadbalancer.responseforwarding.flushinterval=100ms
 
 x-basic-deploy-labels-api: &basic-deploy-labels-api
   labels:
@@ -20,16 +21,17 @@ x-basic-deploy-labels-api: &basic-deploy-labels-api
     - traefik.swarm.network=proxy
     # API
     - traefik.http.routers.plane-api.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
-    - traefik.http.routers.plane-api.rule=Host(`${DOMAIN?domain variable not set}`) && PathPrefix(`/api/`) || Host(`${DOMAIN?domain variable not set}`) && PathPrefix(`/graphql/`) || Host(`${DOMAIN?domain variable not set}`) && PathPrefix(`/marketplace/`) || Host(`${DOMAIN?domain variable not set}`) && PathPrefix(`/static/`)
+    - traefik.http.routers.plane-api.rule=Host(`${DOMAIN?domain variable not set}`) && (Path(`/api`) || PathPrefix(`/api/`) || Path(`/graphql`) || PathPrefix(`/graphql/`) || Path(`/marketplace`) || PathPrefix(`/marketplace/`) || Path(`/static`) || PathPrefix(`/static/`))
     - traefik.http.routers.plane-api.tls=true
     - traefik.http.routers.plane-api.tls.certresolver=${CERT_RESOLVER:-}
     - traefik.http.routers.plane-api.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
     - traefik.http.routers.plane-api.service=plane-api
     - traefik.http.services.plane-api.loadbalancer.server.scheme=http
     - traefik.http.services.plane-api.loadbalancer.server.port=8000
+    - traefik.http.services.plane-api.loadbalancer.responseforwarding.flushinterval=100ms
     # AUTH
     - traefik.http.routers.plane-api-auth.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
-    - traefik.http.routers.plane-api-auth.rule=Host(`${DOMAIN?domain variable not set}`) && PathPrefix(`/auth/`)
+    - traefik.http.routers.plane-api-auth.rule=Host(`${DOMAIN?domain variable not set}`) && (Path(`/auth`) || PathPrefix(`/auth/`))
     - traefik.http.routers.plane-api-auth.tls=true
     - traefik.http.routers.plane-api-auth.tls.certresolver=${CERT_RESOLVER:-}
     - traefik.http.routers.plane-api-auth.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
@@ -43,7 +45,7 @@ x-basic-deploy-labels-admin: &basic-deploy-labels-admin
     - traefik.swarm.lbswarm=${LB_SWARM:-true}
     - traefik.swarm.network=proxy
     - traefik.http.routers.plane-admin.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
-    - traefik.http.routers.plane-admin.rule=Host(`${DOMAIN?domain variable not set}`) && PathPrefix(`/god-mode/`)
+    - traefik.http.routers.plane-admin.rule=Host(`${DOMAIN?domain variable not set}`) && (Path(`/god-mode`) || PathPrefix(`/god-mode/`))
     - traefik.http.routers.plane-admin.tls=true
     - traefik.http.routers.plane-admin.tls.certresolver=${CERT_RESOLVER:-}
     - traefik.http.routers.plane-admin.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
@@ -57,7 +59,7 @@ x-basic-deploy-labels-space: &basic-deploy-labels-space
     - traefik.swarm.lbswarm=${LB_SWARM:-true}
     - traefik.swarm.network=proxy
     - traefik.http.routers.plane-space.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
-    - traefik.http.routers.plane-space.rule=Host(`${DOMAIN?domain variable not set}`) && PathPrefix(`/spaces/`)
+    - traefik.http.routers.plane-space.rule=Host(`${DOMAIN?domain variable not set}`) && (Path(`/spaces`) || PathPrefix(`/spaces/`))
     - traefik.http.routers.plane-space.tls=true
     - traefik.http.routers.plane-space.tls.certresolver=${CERT_RESOLVER:-}
     - traefik.http.routers.plane-space.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
@@ -71,13 +73,14 @@ x-basic-deploy-labels-live: &basic-deploy-labels-live
     - traefik.swarm.lbswarm=${LB_SWARM:-true}
     - traefik.swarm.network=proxy
     - traefik.http.routers.plane-live.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
-    - traefik.http.routers.plane-live.rule=Host(`${DOMAIN?domain variable not set}`) && PathPrefix(`/live/`)
+    - traefik.http.routers.plane-live.rule=Host(`${DOMAIN?domain variable not set}`) && (Path(`/live`) || PathPrefix(`/live/`))
     - traefik.http.routers.plane-live.tls=true
     - traefik.http.routers.plane-live.tls.certresolver=${CERT_RESOLVER:-}
     - traefik.http.routers.plane-live.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
     - traefik.http.routers.plane-live.service=plane-live
     - traefik.http.services.plane-live.loadbalancer.server.scheme=http
     - traefik.http.services.plane-live.loadbalancer.server.port=3000
+    - traefik.http.services.plane-live.loadbalancer.responseforwarding.flushinterval=100ms
 
 x-basic-deploy-labels-rustfs: &basic-deploy-labels-rustfs
   labels:
@@ -85,13 +88,14 @@ x-basic-deploy-labels-rustfs: &basic-deploy-labels-rustfs
     - traefik.swarm.lbswarm=${LB_SWARM:-true}
     - traefik.swarm.network=proxy
     - traefik.http.routers.plane-rustfs.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
-    - traefik.http.routers.plane-rustfs.rule=Host(`${DOMAIN?domain variable not set}`) && PathPrefix(`/${AWS_S3_BUCKET_NAME:-uploads}`)
+    - traefik.http.routers.plane-rustfs.rule=Host(`${DOMAIN?domain variable not set}`) && (Path(`/${AWS_S3_BUCKET_NAME:-uploads}`) || PathPrefix(`/${AWS_S3_BUCKET_NAME:-uploads}/`))
     - traefik.http.routers.plane-rustfs.tls=true
     - traefik.http.routers.plane-rustfs.tls.certresolver=${CERT_RESOLVER:-}
     - traefik.http.routers.plane-rustfs.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
     - traefik.http.routers.plane-rustfs.service=plane-rustfs
     - traefik.http.services.plane-rustfs.loadbalancer.server.scheme=http
     - traefik.http.services.plane-rustfs.loadbalancer.server.port=9000
+    - traefik.http.services.plane-rustfs.loadbalancer.responseforwarding.flushinterval=100ms
 
     # - traefik.http.routers.plane-rustfs-cls.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
     # - traefik.http.routers.plane-rustfs-cls.rule=Host(`cli-${DOMAIN?domain variable not set}`)
@@ -108,27 +112,13 @@ x-basic-deploy-labels-silo: &basic-deploy-labels-silo
     - traefik.swarm.lbswarm=${LB_SWARM:-true}
     - traefik.swarm.network=proxy
     - traefik.http.routers.plane-silo.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
-    - traefik.http.routers.plane-silo.rule=Host(`${DOMAIN?domain variable not set}`) && PathPrefix(`/silo/`)
+    - traefik.http.routers.plane-silo.rule=Host(`${DOMAIN?domain variable not set}`) && (Path(`/silo`) || PathPrefix(`/silo/`))
     - traefik.http.routers.plane-silo.tls=true
     - traefik.http.routers.plane-silo.tls.certresolver=${CERT_RESOLVER:-}
     - traefik.http.routers.plane-silo.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
     - traefik.http.routers.plane-silo.service=plane-silo
     - traefik.http.services.plane-silo.loadbalancer.server.scheme=http
     - traefik.http.services.plane-silo.loadbalancer.server.port=3000
-
-# x-basic-deploy-labels-pi: &basic-deploy-labels-pi
-#   labels: # TODO: add later to "pi-api"
-#     - traefik.enable=true
-#     - traefik.swarm.lbswarm=${LB_SWARM:-true}
-#     - traefik.swarm.network=proxy
-#     - traefik.http.routers.plane-pi.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
-#     - traefik.http.routers.plane-pi.rule=Host(`${DOMAIN?domain variable not set}`) && PathPrefix(`/pi/`)
-#     - traefik.http.routers.plane-pi.tls=true
-#     - traefik.http.routers.plane-pi.tls.certresolver=${CERT_RESOLVER:-}
-#     - traefik.http.routers.plane-pi.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
-#     - traefik.http.routers.plane-pi.service=plane-pi
-#     - traefik.http.services.plane-pi.loadbalancer.server.scheme=http
-#     - traefik.http.services.plane-pi.loadbalancer.server.port=8000
 
 x-basic-deploy: &basic-deploy
   mode: replicated
@@ -168,6 +158,8 @@ x-basic: &basic
     default: {}
   healthcheck:
     disable: true
+  tmpfs:
+    - /tmp:rw,relatime,size=512m,nodev,nosuid,noexec
   restart: always
 
 ################################################################################
@@ -177,12 +169,18 @@ x-base-env: &base-env
   TZ: "Europe/Berlin"
 
 x-plane: &plane
-  APP_VERSION: ${VERSION_PLANE:-v2.6.3}
+  APP_VERSION: ${VERSION_PLANE:-v3.3.0}
   APP_DOMAIN: ${DOMAIN?domain variable not set}
   DEPLOY_PLATFORM: docker_compose
   MACHINE_SIGNATURE: ${MACHINE_SIGNATURE?MACHINE_SIGNATURE not set}
   PRIME_HOST: ${PRIME_HOST:-https://prime.plane.so}
   IS_AIRGAPPED: ${IS_AIRGAPPED:-0}
+
+x-otel-env: &otel-env
+  OTEL_ENABLED: ${OTEL_ENABLED:-0}
+  OTLP_ENDPOINT: ${OTLP_ENDPOINT:-}
+  OTEL_EXPORTER_OTLP_HEADERS: ${OTEL_EXPORTER_OTLP_HEADERS:-}
+  OTEL_ENVIRONMENT: ${OTEL_ENVIRONMENT:-}
 
 x-pg-env: &pg-env
   POSTGRES_DB: ${POSTGRES_DB:-plane}
@@ -192,6 +190,8 @@ x-pg-env: &pg-env
   PGDATA: /var/lib/postgresql/18/data
   PGHOST: plane-db
   PGDATABASE: ${POSTGRES_DB:-plane}
+  DATABASE_URL: postgresql://${POSTGRES_USER:-plane}:${POSTGRES_PASSWORD?Postgres password not set}@plane-db/${POSTGRES_DB:-plane}
+  FOLLOWER_POSTGRES_URI: postgresql://${POSTGRES_USER:-plane}:${POSTGRES_PASSWORD?Postgres password not set}@plane-db/${POSTGRES_DB:-plane}
 
 x-mq-env: &mq-env
   RABBITMQ_HOST: plane-mq
@@ -207,6 +207,15 @@ x-redis-env: &redis-env
   REDIS_PORT: 6379
   REDIS_URL: redis://plane-redis:6379/
 
+# external search, off by default
+x-opensearch-env: &opensearch-env
+  OPENSEARCH_ENABLED: ${OPENSEARCH_ENABLED:-0}
+  OPENSEARCH_URL: ${OPENSEARCH_URL:-}
+  OPENSEARCH_USERNAME: ${OPENSEARCH_USERNAME:-}
+  OPENSEARCH_PASSWORD: ${OPENSEARCH_PASSWORD:-}
+  OPENSEARCH_INDEX_PREFIX: ${OPENSEARCH_INDEX_PREFIX:-}
+  OPENSEARCH_ML_MODEL_ID: ${EMBEDDING_MODEL_ID:-}
+
 x-docstore-env: &docstore-env
   MINIO_ROOT_USER: ${AWS_ACCESS_KEY_ID:-access-key}
   MINIO_ROOT_PASSWORD: ${AWS_SECRET_ACCESS_KEY?rustfs root password not set}
@@ -214,11 +223,12 @@ x-docstore-env: &docstore-env
   USE_MINIO: ${USE_MINIO:-1}
   USE_STORAGE_PROXY: ${USE_STORAGE_PROXY:-0}
 
-  AWS_REGION: ${AWS_REGION:-}
+  AWS_REGION: ${AWS_REGION:-eu-central-1}
   AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-access-key}
   AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY?rustfs root password not set}
   AWS_S3_ENDPOINT_URL: http://plane-rustfs:9000
   AWS_S3_BUCKET_NAME: ${AWS_S3_BUCKET_NAME:-uploads}
+  SIGNED_URL_EXPIRATION: ${SIGNED_URL_EXPIRATION:-3600}
 
 x-rustfs-env: &rustfs-env
   RUSTFS_ACCESS_KEY: ${AWS_ACCESS_KEY_ID:-access-key}
@@ -232,38 +242,42 @@ x-rustfs-conf-env: &rustfs-conf-env
   RUSTFS_CONSOLE_ADDRESS: 0.0.0.0:9090
 
   RUSTFS_CONSOLE_ENABLE: ${RUSTFS_CONSOLE_ENABLE:-true}
-  RUSTFS_CORS_ALLOWED_ORIGINS: ${RUSTFS_CORS_ALLOWED_ORIGINS:-*}
+  RUSTFS_CORS_ALLOWED_ORIGINS: ${RUSTFS_CORS_ALLOWED_ORIGINS:-https://${DOMAIN?domain variable not set}}
   RUSTFS_CONSOLE_CORS_ALLOWED_ORIGINS: ${RUSTFS_CONSOLE_CORS_ALLOWED_ORIGINS:-*}
   RUSTFS_OBS_LOGGER_LEVEL: ${RUSTFS_OBS_LOGGER_LEVEL:-info}
+  RUSTFS_OBS_LOG_DIRECTORY: ${RUSTFS_OBS_LOG_DIRECTORY:-/logs}
+  # RUSTFS_TLS_PATH: ${RUSTFS_TLS_PATH:-/opt/tls}
 
-  # Object Cache
-  RUSTFS_OBJECT_CACHE_ENABLE: ${RUSTFS_OBJECT_CACHE_ENABLE:-true}
-  RUSTFS_OBJECT_CACHE_TTL_SECS: ${RUSTFS_OBJECT_CACHE_TTL_SECS:-300}
+  RUSTFS_CHECK_UPDATE: ${RUSTFS_CHECK_UPDATE:-false}
+  RUSTFS_ON_DEMAND_MIGRATION_ENABLED: ${RUSTFS_ON_DEMAND_MIGRATION_ENABLED:-false}
 
-  # Keep strict disk topology checks enabled by default.
-  # For local testing only, set `RUSTFS_UNSAFE_BYPASS_DISK_CHECK=true` explicitly.
+  # off upstream, it makes read patterns of one tenant visible to the others
+  RUSTFS_OBJECT_DATA_CACHE_ENABLE: ${RUSTFS_OBJECT_DATA_CACHE_ENABLE:-false}
+  RUSTFS_OBJECT_DATA_CACHE_TTL_SECS: ${RUSTFS_OBJECT_DATA_CACHE_TTL_SECS:-300}
+
+  # one named volume always fails the disk check, only `false` with real disks
   RUSTFS_UNSAFE_BYPASS_DISK_CHECK: ${RUSTFS_UNSAFE_BYPASS_DISK_CHECK:-true}
 
 x-live-env: &live-env
   API_BASE_URL: http://api:8000
   LIVE_BASE_PATH: /live
   LIVE_SERVER_SECRET_KEY: ${LIVE_SERVER_SECRET_KEY?Live secret key not set}
-  IFRAMELY_URL: ${IFRAMELY_URL:-} # http://iframely:8061
+  IFRAMELY_URL: ${IFRAMELY_URL:-http://iframely:8061}
+  EXPORT_QUEUE_NAME: ${EXPORT_QUEUE_NAME:-plane-exports}
 
 x-web-env: &web-env
   HOSTNAME: 0.0.0.0
-  WEB_URL: ${DOMAIN_PROTO:-https}://${DOMAIN?domain variable not set}
-  CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-${DOMAIN_PROTO:-https}://${DOMAIN?domain variable not set}}
+  WEB_URL: https://${DOMAIN?domain variable not set}
+  CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-https://${DOMAIN?domain variable not set}}
 
 x-monitor-env: &monitor-env
   SERVICE_HTTP_WEB: web:3000
   SERVICE_HTTP_API: api:8000
   SERVICE_HTTP_LIVE: live:3000/live/health
-  # SERVICE_HTTP_PROXY: proxy:80
-  SERVICE_HTTP_MINIO: plane-rustfs:9090/health
+  SERVICE_HTTP_MINIO: plane-rustfs:9000/health
   SERVICE_TCP_REDIS: plane-redis:6379
   SERVICE_TCP_POSTGRES: plane-db:5432
-  TRUSTED_PROXIES: ${TRUSTED_PROXIES:-0.0.0.0/0}
+  TRUSTED_PROXIES: ${TRUSTED_PROXIES:-10.0.0.0/8,172.16.0.0/12,192.168.0.0/16}
   # APP_PROTOCOL=http
   API_HOSTNAME: http://api:8000
 
@@ -287,15 +301,28 @@ x-automation-consumer-env: &automation-consumer-env
   AUTOMATION_EVENT_STREAM_PREFETCH: ${AUTOMATION_EVENT_STREAM_PREFETCH:-10}
   AUTOMATION_EXCHANGE_NAME: ${AUTOMATION_EXCHANGE_NAME:-plane.event_stream}
 
+x-webhook-consumer-env: &webhook-consumer-env
+  WEBHOOK_QUEUE_NAME: ${WEBHOOK_QUEUE_NAME:-plane.webhook}
+  WEBHOOK_PREFETCH_COUNT: ${WEBHOOK_PREFETCH_COUNT:-10}
+
+x-runner-env: &runner-env
+  NODE_ENV: production
+  PORT: 3000
+  EXECUTION_TIMEOUT_MS: ${EXECUTION_TIMEOUT_MS:-10000}
+  INIT_TIMEOUT_MS: ${INIT_TIMEOUT_MS:-5000}
+  ISOLATE_MEMORY_MB: ${ISOLATE_MEMORY_MB:-128}
+  API_BASE_URL: http://api:8000
+
 x-silo-env: &silo-env
   PORT: 3000
   # Silo App Envs
   BATCH_SIZE: ${BATCH_SIZE:-60}
   DEDUP_INTERVAL: ${DEDUP_INTERVAL:-3}
 
-  APP_BASE_URL: ${DOMAIN_PROTO:-https}://${DOMAIN?domain variable not set}
+  APP_BASE_URL: https://${DOMAIN?domain variable not set}
   API_BASE_URL: http://api:8000
-  SILO_API_BASE_URL: ${INTEGRATION_CALLBACK_BASE_URL:-${DOMAIN_PROTO:-https}://${DOMAIN?domain variable not set}}
+  API_INTERNAL_BASE_URL: http://api:8000
+  SILO_API_BASE_URL: ${INTEGRATION_CALLBACK_BASE_URL:-https://${DOMAIN?domain variable not set}}
   SILO_BASE_PATH: ${SILO_BASE_PATH:-/silo}
   WEBHOOK_SECRET: ${WEBHOOK_SECRET:-plane-silo}
   MQ_PREFETCH_COUNT: ${MQ_PREFETCH_COUNT:-10}
@@ -313,6 +340,7 @@ x-silo-env: &silo-env
   # GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID}
   # GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET}
   # GITHUB_PRIVATE_KEY: ${GITHUB_PRIVATE_KEY}
+  # GITHUB_WEBHOOK_SECRET: ${GITHUB_WEBHOOK_SECRET:-}
 
   # # Gitlab Envs
   # GITLAB_CLIENT_ID: ${GITLAB_CLIENT_ID}
@@ -322,22 +350,36 @@ x-silo-env: &silo-env
   # SLACK_BASE_URL: ${SLACK_BASE_URL:-https://slack.com}
   # SLACK_CLIENT_ID: ${SLACK_CLIENT_ID}
   # SLACK_CLIENT_SECRET: ${SLACK_CLIENT_SECRET}
+  # SLACK_SIGNING_SECRET: ${SLACK_SIGNING_SECRET:-}
+
+  # # Bitbucket Envs
+  # BITBUCKET_CLIENT_ID: ${BITBUCKET_CLIENT_ID:-}
+  # BITBUCKET_CLIENT_SECRET: ${BITBUCKET_CLIENT_SECRET:-}
+  # BITBUCKET_WEBHOOK_SECRET: ${BITBUCKET_WEBHOOK_SECRET:-}
+
+  # # HubSpot Envs
+  # HUBSPOT_CLIENT_ID: ${HUBSPOT_CLIENT_ID:-}
+  # HUBSPOT_CLIENT_SECRET: ${HUBSPOT_CLIENT_SECRET:-}
+
+  # # Jira Server (Data Center) Importer Envs
+  # JIRA_SERVER_ISSUES_PAGE_SIZE: ${JIRA_SERVER_ISSUES_PAGE_SIZE:-50}
+  # JIRA_SERVER_ISSUES_PARALLEL_PAGES: ${JIRA_SERVER_ISSUES_PARALLEL_PAGES:-1}
 
   # # Sentry Envs
-  # SENTRY_BASE_URL: ${SENTRY_BASE_URL}
-  # SENTRY_CLIENT_ID: ${SENTRY_CLIENT_ID}
-  # SENTRY_CLIENT_SECRET: ${SENTRY_CLIENT_SECRET}
-  # SENTRY_INTEGRATION_SLUG: ${SENTRY_INTEGRATION_SLUG}
+  # SENTRY_BASE_URL: ${SENTRY_BASE_URL:-}
+  # SENTRY_CLIENT_ID: ${SENTRY_CLIENT_ID:-}
+  # SENTRY_CLIENT_SECRET: ${SENTRY_CLIENT_SECRET:-}
+  # SENTRY_INTEGRATION_SLUG: ${SENTRY_INTEGRATION_SLUG:-plane}
 
 x-app-env: &app-env
   DEBUG: ${DEBUG:-0}
   GUNICORN_WORKERS: ${GUNICORN_WORKERS:-1}
+  GUNICORN_MAX_REQUESTS: ${GUNICORN_MAX_REQUESTS:-1000}
+  GUNICORN_MAX_REQUESTS_JITTER: ${GUNICORN_MAX_REQUESTS_JITTER:-150}
 
-  # Databases
-  DATABASE_URL: postgresql://${POSTGRES_USER:-plane}:${POSTGRES_PASSWORD?Postgres password not set}@plane-db/${POSTGRES_DB:-plane}
-  DB_URL: postgresql://${POSTGRES_USER:-plane}:${POSTGRES_PASSWORD?Postgres password not set}@plane-db/${POSTGRES_DB:-plane}
-  AMQP_URL: amqp://${RABBITMQ_USER:-plane}:${RABBITMQ_DEFAULT_PASS?RabbitMQ default password not set}@plane-mq:5672/plane
-  REDIS_URL: redis://plane-redis:6379/
+  # Celery
+  CELERY_TASK_PUBLISH_RETRY: ${CELERY_TASK_PUBLISH_RETRY:-1}
+  CELERY_BROKER_POOL_LIMIT: ${CELERY_BROKER_POOL_LIMIT:-10}
 
   API_BASE_URL: http://api:8000
   LIVE_BASE_URL: http://live:3000
@@ -362,10 +404,15 @@ x-app-env: &app-env
   API_KEY_RATE_LIMIT: ${API_KEY_RATE_LIMIT:-60/minute}
   FILE_SIZE_LIMIT: ${FILE_SIZE_LIMIT:-5242880} # size in bytes
 
+  WEBHOOK_ALLOWED_IPS: ${WEBHOOK_ALLOWED_IPS:-}
+  WEBHOOK_ALLOWED_HOSTS: ${WEBHOOK_ALLOWED_HOSTS:-https://${DOMAIN?domain variable not set}}
+
   # External Services Config
   SILO_HMAC_SECRET_KEY: ${SILO_HMAC_SECRET_KEY?SILO_HMAC_SECRET_KEY secret not set}
+  AES_SECRET_KEY: ${AES_SECRET_KEY?AES_SECRET_KEY secret not set}
   FEATURE_FLAG_SERVER_BASE_URL: ${FEATURE_FLAG_SERVER_BASE_URL:-http://monitor:8080}
-  PAYMENT_SERVER_BASE_URL: http://monitor:8080
+  PAYMENT_SERVER_BASE_URL: ${PAYMENT_SERVER_BASE_URL:-http://monitor:8080}
+  RUNNER_BASE_URL: http://runner:3000
 
 ################################################################################
 ################################################################################
@@ -376,7 +423,7 @@ services:
   ##############################################################################
   web:
     # https://hub.docker.com/r/makeplane/web-commercial
-    image: makeplane/web-commercial:${VERSION_PLANE:-v2.6.3}
+    image: makeplane/web-commercial:${VERSION_PLANE:-v3.3.0}
     <<:
       - *basic
       # - *basic-deploy-labels-web
@@ -397,7 +444,9 @@ services:
       - SETUID
       - SETGID
     environment:
-      <<: *web-env
+      <<:
+        - *web-env
+        - *otel-env
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
@@ -417,7 +466,7 @@ services:
 
   api:
     # https://hub.docker.com/r/makeplane/backend-commercial
-    image: makeplane/backend-commercial:${VERSION_PLANE:-v2.6.3}
+    image: makeplane/backend-commercial:${VERSION_PLANE:-v3.3.0}
     <<:
       - *basic
       # - *basic-deploy-labels-api
@@ -444,8 +493,12 @@ services:
         - *app-env
         - *pg-env
         - *redis-env
+        - *mq-env
         - *docstore-env
-        # - *rustfs-env
+        - *opensearch-env
+      FRONTEND_OTEL_ENABLED: ${FRONTEND_OTEL_ENABLED:-0}
+      FRONTEND_OTLP_ENDPOINT: ${FRONTEND_OTLP_ENDPOINT:-}
+      FRONTEND_OTLP_HEADERS: ${FRONTEND_OTLP_HEADERS:-}
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
@@ -458,16 +511,16 @@ services:
       test:
         [
           "CMD-SHELL",
-          "wget --no-verbose --tries=1 --spider --no-check-certificate http://127.0.0.1:8000 || exit 1",
+          "wget --no-verbose --tries=1 --spider --no-check-certificate http://127.0.0.1:8000/api/ready/ || exit 1",
         ]
-      start_period: 10s
+      start_period: 60s
       interval: 30s
       timeout: 5s
       retries: 3
 
   admin:
     # https://hub.docker.com/r/makeplane/admin-commercial
-    image: makeplane/admin-commercial:${VERSION_PLANE:-v2.6.3}
+    image: makeplane/admin-commercial:${VERSION_PLANE:-v3.3.0}
     <<:
       - *basic
       # - *basic-deploy-labels-admin
@@ -488,7 +541,9 @@ services:
       - SETUID
       - SETGID
     environment:
-      <<: *web-env
+      <<:
+        - *web-env
+        - *otel-env
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
@@ -508,7 +563,7 @@ services:
 
   space:
     # https://hub.docker.com/r/makeplane/space-commercial
-    image: makeplane/space-commercial:${VERSION_PLANE:-v2.6.3}
+    image: makeplane/space-commercial:${VERSION_PLANE:-v3.3.0}
     <<:
       - *basic
       # - *basic-deploy-labels-space
@@ -525,7 +580,9 @@ services:
           cpus: ${RESOURCES_RESERVATIONS_CPUS_PLANE_SPACE:-0.001}
           memory: ${RESOURCES_RESERVATIONS_MEMORY_PLANE_SPACE:-32m}
     environment:
-      <<: *web-env
+      <<:
+        - *web-env
+        - *otel-env
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
@@ -545,7 +602,7 @@ services:
 
   live:
     # https://hub.docker.com/r/makeplane/live-commercial
-    image: makeplane/live-commercial:${VERSION_PLANE:-v2.6.3}
+    image: makeplane/live-commercial:${VERSION_PLANE:-v3.3.0}
     <<:
       - *basic
       # - *basic-deploy-labels-live
@@ -566,6 +623,8 @@ services:
         - *web-env
         - *live-env
         - *redis-env
+        - *mq-env
+        - *otel-env
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
@@ -583,9 +642,34 @@ services:
       timeout: 5s
       retries: 3
 
+  # PDF/DOCX export worker, same image as `live`. Without it no export finishes.
+  live-exporter:
+    # https://hub.docker.com/r/makeplane/live-commercial
+    image: makeplane/live-commercial:${VERSION_PLANE:-v3.3.0}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+      replicas: ${LIVE_EXPORTER_REPLICAS:-1}
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_PLANE_LIVE_EXPORTER:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_PLANE_LIVE_EXPORTER:-1g}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_PLANE_LIVE_EXPORTER:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_PLANE_LIVE_EXPORTER:-32m}
+    environment:
+      <<:
+        - *live-env
+        - *redis-env
+        - *mq-env
+      LIVE_MODE: exporter
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+
   worker:
     # https://hub.docker.com/r/makeplane/backend-commercial
-    image: makeplane/backend-commercial:${VERSION_PLANE:-v2.6.3}
+    image: makeplane/backend-commercial:${VERSION_PLANE:-v3.3.0}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -607,8 +691,9 @@ services:
         - *app-env
         - *pg-env
         - *redis-env
+        - *mq-env
         - *docstore-env
-        # - *rustfs-env
+        - *opensearch-env
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
@@ -617,7 +702,7 @@ services:
 
   beat-worker:
     # https://hub.docker.com/r/makeplane/backend-commercial
-    image: makeplane/backend-commercial:${VERSION_PLANE:-v2.6.3}
+    image: makeplane/backend-commercial:${VERSION_PLANE:-v3.3.0}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -639,8 +724,9 @@ services:
         - *app-env
         - *pg-env
         - *redis-env
+        - *mq-env
         - *docstore-env
-        # - *rustfs-env
+        - *opensearch-env
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
@@ -649,7 +735,7 @@ services:
 
   monitor:
     # https://hub.docker.com/r/makeplane/monitor-commercial
-    image: makeplane/monitor-commercial:${VERSION_PLANE:-v2.6.3}
+    image: makeplane/monitor-commercial:${VERSION_PLANE:-v3.3.0}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -676,7 +762,7 @@ services:
 
   silo:
     # https://hub.docker.com/r/makeplane/silo-commercial
-    image: makeplane/silo-commercial:${VERSION_PLANE:-v2.6.3}
+    image: makeplane/silo-commercial:${VERSION_PLANE:-v3.3.0}
     <<:
       - *basic
       # - *basic-deploy-labels-silo
@@ -698,17 +784,64 @@ services:
         - *app-env
         - *pg-env
         - *redis-env
+        - *mq-env
         - *docstore-env
+        - *otel-env
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
     networks:
       default: {}
       proxy: {}
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget --no-verbose --tries=1 --spider --no-check-certificate http://127.0.0.1:3000/silo/health || exit 1",
+        ]
+      start_period: 10s
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # outbound webhook delivery, required since v3
+  webhook-consumer:
+    # https://hub.docker.com/r/makeplane/backend-commercial
+    image: makeplane/backend-commercial:${VERSION_PLANE:-v3.3.0}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+      replicas: ${WEBHOOK_CONSUMER_REPLICAS:-1}
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_PLANE_WEBHOOK_CONSUMER:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_PLANE_WEBHOOK_CONSUMER:-500m}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_PLANE_WEBHOOK_CONSUMER:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_PLANE_WEBHOOK_CONSUMER:-32m}
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+    environment:
+      <<:
+        - *plane
+        - *app-env
+        - *pg-env
+        - *redis-env
+        - *mq-env
+        - *docstore-env
+        - *opensearch-env
+        - *webhook-consumer-env
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - webhook_consumer_logs:/code/plane/logs
+    command: ./bin/docker-entrypoint-webhook-consumer.sh
 
   automation-consumer:
     # https://hub.docker.com/r/makeplane/backend-commercial
-    image: makeplane/backend-commercial:${VERSION_PLANE:-v2.6.3}
+    image: makeplane/backend-commercial:${VERSION_PLANE:-v3.3.0}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -730,6 +863,9 @@ services:
         - *app-env
         - *pg-env
         - *redis-env
+        - *mq-env
+        - *docstore-env
+        - *opensearch-env
         - *automation-consumer-env
     volumes:
       - /etc/timezone:/etc/timezone:ro
@@ -738,7 +874,7 @@ services:
 
   outbox-poller:
     # https://hub.docker.com/r/makeplane/backend-commercial
-    image: makeplane/backend-commercial:${VERSION_PLANE:-v2.6.3}
+    image: makeplane/backend-commercial:${VERSION_PLANE:-v3.3.0}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -760,18 +896,57 @@ services:
         - *app-env
         - *pg-env
         - *redis-env
+        - *mq-env
+        - *docstore-env
+        - *opensearch-env
         - *outbox-poller-env
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
     command: ./bin/docker-entrypoint-outbox-poller.sh
 
+  # automation sandbox, required since v3. Internal only, never route it.
+  runner:
+    # https://hub.docker.com/r/makeplane/node-runner-commercial
+    image: makeplane/node-runner-commercial:${VERSION_PLANE:-v3.3.0}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+      replicas: ${RUNNER_REPLICAS:-1}
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_PLANE_RUNNER:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_PLANE_RUNNER:-512m}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_PLANE_RUNNER:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_PLANE_RUNNER:-32m}
+    environment:
+      <<: *runner-env
+    # executes user supplied code, so /tmp stays exec here
+    tmpfs:
+      - /tmp:rw,relatime,size=512m,nodev,nosuid
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/health').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))",
+        ]
+      start_period: 10s
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
   ##############################################################################
   ##############################################################################
   ##############################################################################
   migrator:
     # https://hub.docker.com/r/makeplane/backend-commercial
-    image: makeplane/backend-commercial:${VERSION_PLANE:-v2.6.3}
+    image: makeplane/backend-commercial:${VERSION_PLANE:-v3.3.0}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -784,6 +959,7 @@ services:
         reservations:
           cpus: ${RESOURCES_RESERVATIONS_CPUS_PLANE_MIGRATOR:-0.001}
           memory: ${RESOURCES_RESERVATIONS_MEMORY_PLANE_MIGRATOR:-32m}
+    restart: "no"
     cap_add:
       - CHOWN
       - SETUID
@@ -794,8 +970,9 @@ services:
         - *app-env
         - *pg-env
         - *redis-env
+        - *mq-env
         - *docstore-env
-        # - *rustfs-env
+        - *opensearch-env
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
@@ -807,7 +984,7 @@ services:
   ##############################################################################
   plane-db:
     # https://hub.docker.com/_/postgres
-    image: postgres:${VERSION_POSTGRESQL:-18.4-alpine}
+    image: postgres:${VERSION_POSTGRESQL:-18.6-alpine}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -818,6 +995,8 @@ services:
         reservations:
           cpus: ${RESOURCES_RESERVATIONS_CPUS_POSTGRESQL:-0.001}
           memory: ${RESOURCES_RESERVATIONS_MEMORY_POSTGRESQL:-32m}
+    # every django/celery process opens its own pool, the default 100 is too low
+    command: postgres -c max_connections=1000
     cap_add:
       - CHOWN
       - FOWNER
@@ -868,10 +1047,16 @@ services:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "su-exec", "rabbitmq", "rabbitmq-diagnostics", "-q", "ping"]
+      start_period: 30s
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   plane-redis:
     # https://hub.docker.com/r/valkey/valkey
-    image: valkey/valkey:${VERSION_VALKEY:-9.1.0-alpine}
+    image: valkey/valkey:${VERSION_VALKEY:-9.1.2-alpine}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -903,7 +1088,7 @@ services:
 
   plane-rustfs:
     # https://hub.docker.com/r/rustfs/rustfs/tags
-    image: rustfs/rustfs:${VERSION_RUSTFS:-1.0.0-beta.8}
+    image: rustfs/rustfs:${VERSION_RUSTFS:-1.0.0}
     <<:
       - *basic
       # - *basic-deploy-labels-rustfs
@@ -927,43 +1112,43 @@ services:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - uploads:/data
-      - rustfs_logs:/app/logs
+      - rustfs_logs:/logs
     networks:
       default: {}
       proxy: {}
     healthcheck:
-      test:
-        [
-          "CMD",
-          "sh",
-          "-c",
-          "curl -f http://127.0.0.1:9000/health && curl -f http://127.0.0.1:9090/rustfs/console/health",
-        ]
-      start_period: 10s
+      test: ["CMD", "sh", "-c", "curl -f http://127.0.0.1:9000/health"]
+      start_period: 30s
       interval: 30s
       timeout: 5s
       retries: 3
 
-  # iframely:
-  #   # https://hub.docker.com/r/makeplane/iframely
-  #   image: makeplane/iframely:${VERSION_IFRAMELY:-v1.2.0}
-  #   <<:
-  #     - *basic
-  #   deploy:
-  #     <<:
-  #       - *basic-deploy
-  #     restart_policy:
-  #       condition: on-failure
-  #     resources:
-  #       limits:
-  #         cpus: ${RESOURCES_LIMITS_CPUS_IFRAMELY:-1}
-  #         memory: ${RESOURCES_LIMITS_MEMORY_IFRAMELY:-500m}
-  #       reservations:
-  #         cpus: ${RESOURCES_RESERVATIONS_CPUS_IFRAMELY:-0.001}
-  #         memory: ${RESOURCES_RESERVATIONS_MEMORY_IFRAMELY:-32m}
-  #   volumes:
-  #     - /etc/timezone:/etc/timezone:ro
-  #     - /etc/localtime:/etc/localtime:ro
+  iframely:
+    # https://hub.docker.com/r/makeplane/iframely
+    image: makeplane/iframely:${VERSION_IFRAMELY:-v2.5.4}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+      replicas: ${IFRAMELY_REPLICAS:-1}
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_IFRAMELY:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_IFRAMELY:-1g}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_IFRAMELY:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_IFRAMELY:-32m}
+      restart_policy:
+        condition: on-failure
+    restart: on-failure
+    # The image entrypoint is `exec node cluster.js`, and that cluster wrapper
+    # forks one worker per HOST cpu (os.cpus().length ignores the cpus limit).
+    # Every worker loads all 1886 domains + ~200 plugins, so on a big host the
+    # container blows past any sane memory limit and gets OOM killed. server.js
+    # is the same app without the fork wrapper, so run that instead.
+    entrypoint: ["node", "server.js"]
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
 
 ################################################################################
 ################################################################################
@@ -981,6 +1166,7 @@ volumes:
   api_logs: {}
   worker_logs: {}
   beat_worker_logs: {}
+  webhook_consumer_logs: {}
   monitor_data: {}
   migrator_logs: {}
   postgresql_v18: {}
