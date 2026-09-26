@@ -71,7 +71,7 @@ services:
   ##############################################################################
   freshrss:
     # https://hub.docker.com/r/freshrss/freshrss/tags
-    image: freshrss/freshrss:${VERSION:-1.29.1}
+    image: freshrss/freshrss:${VERSION:-1.30.0}
     <<:
       - *basic
       # - *basic-deploy-labels
@@ -80,13 +80,13 @@ services:
         - *basic-deploy
         - *basic-deploy-labels
     environment:
-      FRESHRSS_ENV: production
       TZ: ${TZ:-Europe/Berlin}
       # Cron job to refresh feeds at specified minutes
       CRON_MIN: ${CRON_MIN:-3,33}
-      # Published port if running locally
-      PUBLISHED_PORT: ${PORT:-8080}
       LISTEN: 0.0.0.0:${PORT:-8080}
+      INTERNAL_HOST_ALLOWLIST: ${INTERNAL_HOST_ALLOWLIST:-}
+      TRUSTED_PROXY: ${TRUSTED_PROXY:-172.16.0.1/12 192.168.0.1/16}
+      ENABLE_ACCESS_LOG: ${ENABLE_ACCESS_LOG:-1}
     volumes:
       # - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro

@@ -30,13 +30,17 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION=1.29.1
+VERSION=1.30.0
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
 CERT_RESOLVER=certificates
 TZ=Europe/Berlin
 CRON_MIN=3,33
+
+INTERNAL_HOST_ALLOWLIST=
+TRUSTED_PROXY=172.16.0.1/12 192.168.0.1/16
+ENABLE_ACCESS_LOG=1
 ```
 
 #### example short .env (swarm)
@@ -57,6 +61,12 @@ DOMAIN=news.home.local
 ---
 
 ## FAQ
+
+### Feeds on my LAN stopped updating after 1.30.0
+
+Not a bug. `1.30.0` denies RFC1918/loopback/link-local feed fetches by default.
+Set `INTERNAL_HOST_ALLOWLIST` in `.env` **before** bumping, otherwise those feeds
+go stale with no error in the UI.
 
 ### oauth
 
