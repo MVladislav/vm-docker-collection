@@ -28,7 +28,7 @@ x-basic-deploy: &basic-deploy
   resources:
     limits:
       cpus: ${RESOURCES_LIMITS_CPUS:-1}
-      memory: ${RESOURCES_LIMITS_MEMORY:-2g}
+      memory: ${RESOURCES_LIMITS_MEMORY:-4g}
     reservations:
       cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
       memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
@@ -47,7 +47,7 @@ x-basic: &basic
       hard: 655360
     fsize: -1
     as: -1
-  # mem_limit: ${RESOURCES_LIMITS_MEMORY:-2g}
+  # mem_limit: ${RESOURCES_LIMITS_MEMORY:-4g}
   networks:
     default: {}
   healthcheck:
@@ -65,7 +65,7 @@ services:
   ##############################################################################
   open-archiver:
     # https://hub.docker.com/r/logiclabshq/open-archiver/tags?name=v
-    image: logiclabshq/open-archiver:${VERSION_OPEN_ARCHIVER:-v0.5.1}
+    image: logiclabshq/open-archiver:${VERSION_OPEN_ARCHIVER:-v0.6.0}
     <<:
       - *basic
       # - *basic-deploy-labels
@@ -105,6 +105,9 @@ services:
 
       MEILI_HOST: http://meilisearch:7700
       TIKA_URL: http://tika:9998
+
+      MEILI_INDEXING_CHUNK: ${MEILI_INDEXING_CHUNK:-}
+      INDEXING_WORKER_MAX_OLD_SPACE_MB: ${INDEXING_WORKER_MAX_OLD_SPACE_MB:-}
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
@@ -118,7 +121,7 @@ services:
           "CMD-SHELL",
           "wget --no-verbose --tries=1 --spider --no-check-certificate http://127.0.0.1:4000 || exit 1",
         ]
-      start_period: 10s
+      start_period: 300s
       interval: 30s
       timeout: 5s
       retries: 3

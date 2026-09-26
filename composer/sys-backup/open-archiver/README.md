@@ -36,13 +36,13 @@ MIDDLEWARE_SECURED=default-secured@file
 # GENERAL sources to be used (set by default, change as needed)
 # ______________________________________________________________________________
 RESOURCES_LIMITS_CPUS=1
-RESOURCES_LIMITS_MEMORY=2g
+RESOURCES_LIMITS_MEMORY=4g
 RESOURCES_RESERVATIONS_CPUS=0.001
 RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_OPEN_ARCHIVER=v0.5.1
+VERSION_OPEN_ARCHIVER=v0.6.0
 VERSION_MEILISEARCH=v1.49
 VERSION_POSTGRESQL=18.6-alpine
 VERSION_VALKEY=9.1.2-alpine
@@ -51,6 +51,9 @@ VERSION_TIKA=3.3.1.0-full
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
 CERT_RESOLVER=certificates
+
+MEILI_INDEXING_CHUNK=
+INDEXING_WORKER_MAX_OLD_SPACE_MB=
 ```
 
 #### example short .env (swarm)
