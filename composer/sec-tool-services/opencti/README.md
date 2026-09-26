@@ -1,22 +1,5 @@
 # SETUP
 
-```sh
-    MVladislav
-```
-
----
-
-- [SETUP](#setup)
-  - [basic](#basic)
-    - [create your `secrets`:](#create-your-secrets)
-    - [create `.env` file following:](#create-env-file-following)
-      - [example short .env](#example-short-env)
-      - [extend .env for connectors run](#extend-env-for-connectors-run)
-      - [extend .env for enrichment run](#extend-env-for-enrichment-run)
-  - [References](#references)
-
----
-
 ## basic
 
 > defined to work with traefik
@@ -24,24 +7,23 @@
 ### create your `secrets`:
 
 ```sh
-$echo "APP__HEALTH_ACCESS_KEY=$(pwgen -s 23 1)" >> .env
+echo "APP__HEALTH_ACCESS_KEY=$(pwgen -s 23 1)" >> .env
 
-$pwgen -s 23 1 > config/secrets/opencti_admin_password_file.txt
-$uuidgen > config/secrets/opencti_token_file.txt
-$pwgen -s 23 1 > config/secrets/rabbitmq_default_pass_file.txt
-$pwgen -s 23 1 > config/secrets/minio_root_password_file.txt
+pwgen -s 23 1 > config/secrets/opencti_admin_password_file.txt
+uuidgen > config/secrets/opencti_token_file.txt
+pwgen -s 23 1 > config/secrets/minio_root_password_file.txt
 
-$echo "OPENCTI_ADMIN_PASSWORD=$(cat config/secrets/opencti_admin_password_file.txt)" >> .env
-$echo "OPENCTI_ADMIN_TOKEN=$(cat config/secrets/opencti_token_file.txt)" >> .env
-$echo "OPENCTI_RABBITMQ_PASSWORD=$(cat config/secrets/rabbitmq_default_pass_file.txt)" >> .env
-$echo "OPENCTI_MINIO_SECRET_KEY=$(cat config/secrets/minio_root_password_file.txt)" >> .env
+echo "OPENCTI_ADMIN_PASSWORD=$(cat config/secrets/opencti_admin_password_file.txt)" >> .env
+echo "OPENCTI_ADMIN_TOKEN=$(cat config/secrets/opencti_token_file.txt)" >> .env
+echo "OPENCTI_MINIO_SECRET_KEY=$(cat config/secrets/minio_root_password_file.txt)" >> .env
+echo "OPENCTI_RABBITMQ_PASSWORD=$(pwgen -s 23 1)" >> .env
 
-$echo "CONNECTOR_EXPORT_FILE_STIX_ID=$(uuidgen)" >> .env
-$echo "CONNECTOR_EXPORT_FILE_CSV_ID=$(uuidgen)" >> .env
-$echo "CONNECTOR_EXPORT_FILE_TXT_ID=$(uuidgen)" >> .env
-$echo "CONNECTOR_IMPORT_FILE_STIX_ID=$(uuidgen)" >> .env
-$echo "CONNECTOR_IMPORT_DOCUMENT_ID=$(uuidgen)" >> .env
-$echo "CONNECTOR_ANALYSIS_ID=$(uuidgen)" >> .env
+echo "CONNECTOR_EXPORT_FILE_STIX_ID=$(uuidgen)" >> .env
+echo "CONNECTOR_EXPORT_FILE_CSV_ID=$(uuidgen)" >> .env
+echo "CONNECTOR_EXPORT_FILE_TXT_ID=$(uuidgen)" >> .env
+echo "CONNECTOR_IMPORT_FILE_STIX_ID=$(uuidgen)" >> .env
+echo "CONNECTOR_IMPORT_DOCUMENT_ID=$(uuidgen)" >> .env
+echo "CONNECTOR_ANALYSIS_ID=$(uuidgen)" >> .env
 ```
 
 ### create `.env` file following:
@@ -72,7 +54,7 @@ RESOURCES_LIMITS_CPUS_ELASTIC=2
 RESOURCES_LIMITS_MEMORY_ELASTIC=4g
 
 RESOURCES_LIMITS_CPUS_RABBITMQ=1
-RESOURCES_LIMITS_MEMORY_RABBITMQ=500m
+RESOURCES_LIMITS_MEMORY_RABBITMQ=512m
 
 RESOURCES_LIMITS_CPUS_VALKEY=1
 RESOURCES_LIMITS_MEMORY_VALKEY=1g
@@ -85,7 +67,7 @@ RESOURCES_LIMITS_MEMORY_MINIO=1g
 VERSION_OPENCTI=6.4.1
 VERSION_CONNECTORS=6.4.1
 VERSION_ELASTIC=8.15.4
-VERSION_RABBITMQ=4.0.3-management
+VERSION_RABBITMQ=4.3.6-management-alpine
 VERSION_VALKEY=9.1.2-alpine
 VERSION_MINIO=RELEASE.2024-11-07T00-52-20Z-cpuv1
 
@@ -105,15 +87,15 @@ OPENCTI_ADMIN_EMAIL=groot@home.local
 #### extend .env for connectors run
 
 ```sh
-$echo "CONNECTORS_OPENCTI_ID=$(uuidgen)" >> .env
-$echo "CONNECTORS_MITRE_ID=$(uuidgen)" >> .env
-$echo "CONNECTORS_CVE_ID=$(uuidgen)" >> .env
-$echo "CONNECTORS_MALPEDIA_ID=$(uuidgen)" >> .env
-$echo "CONNECTORS_CISA_ID=$(uuidgen)" >> .env
-$echo "CONNECTORS_MANDIANT_ID=$(uuidgen)" >> .env
-$echo "CONNECTORS_URLHAUS_ID=$(uuidgen)" >> .env
-$echo "CONNECTORS_ALIENVAULT_ID=$(uuidgen)" >> .env
-$echo "CONNECTORS_VIRUSTOTAL_LIVEHUNT_NOTIFICATIONS_ID=$(uuidgen)" >> .env
+echo "CONNECTORS_OPENCTI_ID=$(uuidgen)" >> .env
+echo "CONNECTORS_MITRE_ID=$(uuidgen)" >> .env
+echo "CONNECTORS_CVE_ID=$(uuidgen)" >> .env
+echo "CONNECTORS_MALPEDIA_ID=$(uuidgen)" >> .env
+echo "CONNECTORS_CISA_ID=$(uuidgen)" >> .env
+echo "CONNECTORS_MANDIANT_ID=$(uuidgen)" >> .env
+echo "CONNECTORS_URLHAUS_ID=$(uuidgen)" >> .env
+echo "CONNECTORS_ALIENVAULT_ID=$(uuidgen)" >> .env
+echo "CONNECTORS_VIRUSTOTAL_LIVEHUNT_NOTIFICATIONS_ID=$(uuidgen)" >> .env
 ```
 
 ```env
@@ -128,24 +110,24 @@ ALIENVAULT_API_KEY=<CHANGEME>
 to run each connector manually once you can also run:
 
 ```sh
-$docker compose -f docker-compose-connectors.yaml up connector-opencti
-$docker compose -f docker-compose-connectors.yaml up connector-mitre
-$docker compose -f docker-compose-connectors.yaml up connector-cve
-# $docker compose -f docker-compose-connectors.yaml up connector-malpedia
-$docker compose -f docker-compose-connectors.yaml up connector-cisa-known-exploited-vulnerabilities
-# $docker compose -f docker-compose-connectors.yaml up connector-mandiant
-$docker compose -f docker-compose-connectors.yaml up connector-urlhaus
-# $docker compose -f docker-compose-connectors.yaml up connector-alienvault
-# $docker compose -f docker-compose-connectors.yaml up connector-virustotal-livehunt-notifications
+docker compose -f docker-compose-connectors.yaml up connector-opencti
+docker compose -f docker-compose-connectors.yaml up connector-mitre
+docker compose -f docker-compose-connectors.yaml up connector-cve
+# docker compose -f docker-compose-connectors.yaml up connector-malpedia
+docker compose -f docker-compose-connectors.yaml up connector-cisa-known-exploited-vulnerabilities
+# docker compose -f docker-compose-connectors.yaml up connector-mandiant
+docker compose -f docker-compose-connectors.yaml up connector-urlhaus
+# docker compose -f docker-compose-connectors.yaml up connector-alienvault
+# docker compose -f docker-compose-connectors.yaml up connector-virustotal-livehunt-notifications
 ```
 
 #### extend .env for enrichment run
 
 ```sh
-$echo "ENRICHMENT_CROWDSEC_ID=$(uuidgen)" >> .env
-$echo "ENRICHMENT_VIRUSTOTAL_ID=$(uuidgen)" >> .env
-$echo "ENRICHMENT_YARA_ID=$(uuidgen)" >> .env
-$echo "ENRICHMENT_GREYNOISE_ID=$(uuidgen)" >> .env
+echo "ENRICHMENT_CROWDSEC_ID=$(uuidgen)" >> .env
+echo "ENRICHMENT_VIRUSTOTAL_ID=$(uuidgen)" >> .env
+echo "ENRICHMENT_YARA_ID=$(uuidgen)" >> .env
+echo "ENRICHMENT_GREYNOISE_ID=$(uuidgen)" >> .env
 ```
 
 ```env
@@ -157,6 +139,37 @@ GREYNOISE_KEY=<CHANGEME>
 ```sh
 $docker compose -f docker-compose-enrichment.yaml up
 ```
+
+---
+
+## Guides & Insights
+
+### RabbitMQ upgrade
+
+RabbitMQ only moves **one minor series at a time** - a node refuses to boot when
+its data dir is more than one series behind. Coming from `4.0.x`/`4.1.x` you must
+pass through `4.2.x`, or simply recreate the volume:
+
+```sh
+# Stop service first
+docker volume rm opencti_amqpdata
+```
+
+Only the in-flight messages are lost - all data lives in PostgreSQL,
+Elasticsearch and S3/MinIO. The user is re-seeded from `OPENCTI_RABBITMQ_PASSWORD`.
+
+### RabbitMQ tuning not in this stack
+
+No `rabbitmq.conf` is mounted, so two upstream-recommended settings are **not**
+applied and large or long-running ingests will fail:
+
+```conf
+max_message_size = 536870912   # 4.3 default is 16 MiB
+consumer_timeout = 86400000    # 4.3 default is 30 min
+```
+
+Filigran ships both in [`rabbitmq.conf`](https://github.com/OpenCTI-Platform/docker/blob/master/rabbitmq.conf).
+Add them as a `configs:` entry (not a bind mount) when you need it.
 
 ---
 

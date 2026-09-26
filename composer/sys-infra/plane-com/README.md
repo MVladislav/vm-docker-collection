@@ -48,7 +48,7 @@ MIDDLEWARE_SECURED=default-secured@file
 # ______________________________________________________________________________
 VERSION_PLANE=v3.3.0
 VERSION_POSTGRESQL=18.6-alpine
-VERSION_RABBITMQ=3.13.6-management-alpine
+VERSION_RABBITMQ=3.13.7-management-alpine
 VERSION_VALKEY=9.1.2-alpine
 VERSION_RUSTFS=1.0.0
 VERSION_IFRAMELY=v2.5.4
@@ -128,6 +128,47 @@ cat ./upgrade_backup.sql | docker exec -i "$(docker ps -q -f name=pg_upgrade_tem
 
 **Stop the temp postgres container, and start plane as normal.**
 
+### RabbitMQ version
+
+> Pinned to the **3.13.x** series, same as upstream's `swarm-compose.yml`.
+> Do **not** move this to 4.x yet.
+
+RabbitMQ 4.1.0 raised the protocol minimum `frame_max` from 4096 to 8192
+(`FRAME_MIN_SIZE` in `rabbit_common/include/rabbit_framing.hrl` - a compile-time
+constant, not a `rabbitmq.conf` setting). Plane's Node services connect with
+`amqplib`, whose default is `frameMax: 0x1000` (4096), so every connection is
+refused during parameter negotiation:
+
+```
+User 'plane' authenticated successfully
+closing AMQP connection: failed to negotiate connection parameters:
+negotiated frame_max = 4096 is lower than the minimum allowed value (8192)
+```
+
+Neither side is fixable from this compose file - the server minimum cannot be
+lowered, and Plane does not expose a `frameMax` env var. Re-check when upstream
+Plane ships a newer `amqplib`.
+
+### RabbitMQ upgrade
+
+RabbitMQ only moves **one minor series at a time** - a node refuses to boot when
+its data dir is more than one series behind. Coming from `3.13.x` you must pass
+through `4.2.x`, or simply recreate the volume:
+
+```sh
+# Stop service first
+docker volume rm plane_rabbitmq_data
+```
+
+Only the in-flight Celery tasks are lost - all data lives in PostgreSQL, Redis
+and RustFS. The user/vhost are re-seeded from `RABBITMQ_USER` /
+`RABBITMQ_DEFAULT_PASS` / `RABBITMQ_VHOST`.
+
+> Upstream's compose interpolates the password straight into `AMQP_URL`.
+> `/ @ : # %` in `RABBITMQ_DEFAULT_PASS` silently produce a broken broker URL -
+> `pwgen -s 12 1` (above) is alnum-only and safe, `openssl rand -base64 18` is
+> not.
+
 ### Upgrade Minio to Rustfs
 
 > RustFS reads a MinIO data directory in place and converts it on first start
@@ -136,7 +177,7 @@ cat ./upgrade_backup.sql | docker exec -i "$(docker ps -q -f name=pg_upgrade_tem
 > `.rustfs.sys`, a MinIO binary cannot read the volume again. Snapshot the
 > `uploads` volume before the first RustFS start.
 
-**MinIO stores files as uid 1000, RustFS runs as uid 10001 — fix ownership first:**
+**MinIO stores files as uid 1000, RustFS runs as uid 10001 - fix ownership first:**
 
 ```sh
 sudo chown -R 10001:10001 /var/lib/docker/volumes/plane_uploads/_data

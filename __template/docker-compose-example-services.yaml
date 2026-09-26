@@ -612,7 +612,16 @@ services:
   ##############################################################################
   rabbitmq:
     # https://hub.docker.com/_/rabbitmq
-    image: rabbitmq:${VERSION_RABBITMQ:-4.3.1}
+    # https://www.rabbitmq.com/docs/upgrade
+    # UPGRADE: a node only moves one minor series at a time and refuses to boot
+    # when its data dir is more than one series behind (feature flags):
+    # 3.13.x -> 4.2.x -> 4.3.x and 4.0.x/4.1.x -> 4.2.x -> 4.3.x. Step through,
+    # or drop the data volume -- only in-flight messages are lost, user/vhost
+    # are re-seeded from the env below.
+    # `-management` adds the management plugin (UI/API 15672); the prometheus
+    # plugin (15692) is enabled in the image either way. Drop `-management` when
+    # nothing reads the management port.
+    image: rabbitmq:${VERSION_RABBITMQ:-4.3.6-management-alpine}
     # <<: *basic
     deploy:
       # <<: *basic-deploy
@@ -623,13 +632,43 @@ services:
         reservations:
           cpus: ${RESOURCES_RESERVATIONS_CPUS_RABBITMQ:-0.001}
           memory: ${RESOURCES_RESERVATIONS_MEMORY_RABBITMQ:-32m}
-    # networks:
-    #   default: {}
+    # SETUID/SETGID: `su-exec` in the healthcheck and the entrypoint's step-down
+    # to the `rabbitmq` user. CHOWN: the entrypoint chowns foreign-owned files
+    # in the data dir and aborts under `cap_drop: ["ALL"]` without it.
+    cap_add:
+      - SETGID # Allows setting group ID (`setgid`,`newgrp`,`chgrp`,`setregid()`)
+      - SETUID # Allows setting user ID (`setuid`,`su`,`sudo`,`passwd`)
+      - CHOWN
+    # TODO: no `rabbitmq.conf` is mounted, so everything sits at its 4.3
+    # default. Ship one via `configs:` (not a bind mount) when tuning is needed:
+    #   max_message_size = 536870912            # default 16 MiB, OpenCTI needs 512 MiB
+    #   consumer_timeout = 86400000             # default 30 min, long jobs lose their channel
+    #   vm_memory_high_watermark.relative = 0.4 # default 0.6 of the cgroup limit
+    #   disk_free_limit.absolute = 1GB          # default 50 MB, blocks publishers
+    #   loopback_users.guest = true             # image ships 10-defaults.conf
+    #                                         # with `loopback_users.guest = false`
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-rabbitmq}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS?RABBITMQ_DEFAULT_PASS is not set}
+      # `RABBITMQ_DEFAULT_PASS_FILE`/`RABBITMQ_DEFAULT_USER_FILE` are NOT an
+      # escape hatch: the 4.x entrypoint hard-exits on them ("deprecated
+      # environment variables detected"). A swarm secret can only reach the
+      # broker via a definitions import -- not worth it for a task queue.
+      # Fixed nodename: the default follows the container hostname, which changes
+      # on every swarm task restart and leaves a new mnesia dir behind.
+      RABBITMQ_NODENAME: ${RABBITMQ_NODENAME:-rabbit01@localhost}
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - rabbitmq_data:/var/lib/rabbitmq
+    # The image sets no `USER`, so the probe runs as root, and under
+    # `cap_drop: ["ALL"]` root cannot read the 0400 erlang cookie owned by
+    # `rabbitmq` -- hence the explicit step-down.
     healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "status"]
-      start_period: 10s
+      test: ["CMD", "su-exec", "rabbitmq", "rabbitmq-diagnostics", "-q", "ping"]
+      start_period: 30s
       interval: 30s
-      timeout: 5s
+      timeout: 10s
       retries: 3
 
 ################################################################################
@@ -649,6 +688,7 @@ volumes:
   influxdb3-data: {}
   influxdb3-plugins: {}
   mongodb: {}
+  rabbitmq_data: {}
 
 secrets:
   minio_root_password_file:

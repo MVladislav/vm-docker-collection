@@ -78,7 +78,6 @@ services:
     #   - opencti_admin_password_file
     #   - opencti_token_file
     #   - minio_root_password_file
-    #   - rabbitmq_default_pass_file
     environment:
       APP__ADMIN__EMAIL: ${OPENCTI_ADMIN_EMAIL:-groot@home.local}
       APP__ADMIN__PASSWORD: ${OPENCTI_ADMIN_PASSWORD}
@@ -112,7 +111,6 @@ services:
       RABBITMQ__MANAGEMENT_SSL: false
       RABBITMQ__USERNAME: ${RABBITMQ_DEFAULT_USER:-rabbitmq}
       RABBITMQ__PASSWORD: ${OPENCTI_RABBITMQ_PASSWORD}
-      # RABBITMQ__PASSWORD_FILE: /run/secrets/rabbitmq_default_pass_file
 
       SMTP__HOSTNAME: ${SMTP_HOSTNAME:-localhost}
       SMTP__PORT: ${SMTP__PORT:-25}
@@ -307,38 +305,35 @@ services:
   ##############################################################################
   rabbitmq:
     # https://hub.docker.com/_/rabbitmq
-    image: rabbitmq:${VERSION_RABBITMQ:-4.0.3-management}
+    image: rabbitmq:${VERSION_RABBITMQ:-4.3.6-management-alpine}
     <<: *basic
     deploy:
       <<: *basic-deploy
       resources:
         limits:
           cpus: ${RESOURCES_LIMITS_CPUS_RABBITMQ:-1}
-          memory: ${RESOURCES_LIMITS_MEMORY_RABBITMQ:-500m}
+          memory: ${RESOURCES_LIMITS_MEMORY_RABBITMQ:-512m}
         reservations:
           cpus: ${RESOURCES_RESERVATIONS_CPUS_RABBITMQ:-0.001}
           memory: ${RESOURCES_RESERVATIONS_MEMORY_RABBITMQ:-32m}
     cap_add:
-      - SETGID
-      - SETUID
-    # secrets:
-    #   - rabbitmq_default_pass_file
+      - SETGID # Allows setting group ID (`setgid`,`newgrp`,`chgrp`,`setregid()`)
+      - SETUID # Allows setting user ID (`setuid`,`su`,`sudo`,`passwd`)
+      - CHOWN
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-rabbitmq}
-      RABBITMQ_DEFAULT_PASS: ${OPENCTI_RABBITMQ_PASSWORD}
-      # RABBITMQ_DEFAULT_PASS_FILE: /run/secrets/rabbitmq_default_pass_file
+      RABBITMQ_DEFAULT_PASS: ${OPENCTI_RABBITMQ_PASSWORD?OPENCTI_RABBITMQ_PASSWORD is not set}
       RABBITMQ_NODENAME: ${RABBITMQ_NODENAME:-rabbit01@localhost}
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - amqpdata:/var/lib/rabbitmq
-    # healthcheck:
-    #   # test: rabbitmq-diagnostics -q ping
-    #   test: rabbitmq-diagnostics check_port_connectivity
-    #   start_period: 10s
-    #   interval: 30s
-    #   timeout: 5s
-    #   retries: 3
+    healthcheck:
+      test: ["CMD", "su-exec", "rabbitmq", "rabbitmq-diagnostics", "-q", "ping"]
+      start_period: 30s
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   ##############################################################################
   ##############################################################################
@@ -436,7 +431,5 @@ secrets:
     file: config/secrets/opencti_admin_password_file.txt
   opencti_token_file:
     file: config/secrets/opencti_token_file.txt
-  rabbitmq_default_pass_file:
-    file: config/secrets/rabbitmq_default_pass_file.txt
   minio_root_password_file:
     file: config/secrets/minio_root_password_file.txt
