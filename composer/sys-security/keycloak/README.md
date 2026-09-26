@@ -9,7 +9,7 @@
 > instead of openssl for passwords you can also use `pwgen -s 50 1`
 
 ```sh
-openssl rand -base64 18 > config/secrets/keycloak_db_password.txt
+openssl rand -base64 18 > config/secrets/postgres_password_file.txt
 openssl rand -base64 18 > config/secrets/keycloak_admin_password.txt
 ```
 

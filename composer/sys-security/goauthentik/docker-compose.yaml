@@ -78,8 +78,9 @@ x-basic: &basic
 
 x-authentik-env: &authentik-env
   AUTHENTIK_POSTGRESQL__HOST: postgresql
-  AUTHENTIK_POSTGRESQL__NAME: ${PG_DB:-authentik}
-  AUTHENTIK_POSTGRESQL__USER: ${PG_USER:-authentik}
+  AUTHENTIK_POSTGRESQL__PORT: ${POSTGRES_PORT:-5432}
+  AUTHENTIK_POSTGRESQL__NAME: ${POSTGRES_DB:-authentik}
+  AUTHENTIK_POSTGRESQL__USER: ${POSTGRES_USER:-authentik}
   AUTHENTIK_POSTGRESQL__PASSWORD: file:///run/secrets/postgres_password_file # pragma: allowlist secret
   AUTHENTIK_SECRET_KEY: file:///run/secrets/authentik_secret_key # pragma: allowlist secret
 
@@ -193,14 +194,14 @@ services:
   ##############################################################################
   postgresql:
     # https://hub.docker.com/_/postgres
-    image: postgres:${VERSION_POSTGRESQL:-18.4-alpine}
+    image: postgres:${VERSION_POSTGRESQL:-18.6-alpine}
     <<: *basic
     deploy:
       <<: *basic-deploy
       resources:
         limits:
           cpus: ${RESOURCES_LIMITS_CPUS_POSTGRESQL:-1}
-          memory: ${RESOURCES_LIMITS_MEMORY_POSTGRESQL:-512M}
+          memory: ${RESOURCES_LIMITS_MEMORY_POSTGRESQL:-512m}
         reservations:
           cpus: ${RESOURCES_RESERVATIONS_CPUS_POSTGRESQL:-0.001}
           memory: ${RESOURCES_RESERVATIONS_MEMORY_POSTGRESQL:-32m}
@@ -214,11 +215,14 @@ services:
     secrets:
       - postgres_password_file
     environment:
-      POSTGRES_DB: ${PG_DB:-authentik}
-      POSTGRES_USER: ${PG_USER:-authentik}
+      POSTGRES_DB: ${POSTGRES_DB:-authentik}
+      POSTGRES_USER: ${POSTGRES_USER:-authentik}
       POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password_file
+      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
       PGDATA: /var/lib/postgresql/18/data
     volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
       - postgresql_v18:/var/lib/postgresql/18/data
     healthcheck:
       test:

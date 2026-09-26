@@ -575,7 +575,7 @@ services:
   ##############################################################################
   plane-db:
     # https://hub.docker.com/_/postgres
-    image: postgres:${VERSION_POSTGRESQL:-18.4-alpine}
+    image: postgres:${VERSION_POSTGRESQL:-18.6-alpine}
     <<: *basic
     deploy:
       <<: *basic-deploy
