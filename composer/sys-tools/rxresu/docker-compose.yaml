@@ -277,7 +277,7 @@ services:
   ##############################################################################
   valkey:
     # https://hub.docker.com/r/valkey/valkey
-    image: valkey/valkey:${VERSION_VALKEY:-9.2-alpine}
+    image: valkey/valkey:${VERSION_VALKEY:-9.1.2-alpine}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -291,6 +291,8 @@ services:
     cap_add:
       - SETUID
       - SETGID
+    environment:
+      ALLOW_EMPTY_PASSWORD: ${ALLOW_EMPTY_PASSWORD:-true}
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro

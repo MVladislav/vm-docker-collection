@@ -55,7 +55,7 @@ RESOURCES_RESERVATIONS_MEMORY_GUACD=32m
 VERSION_PATCHMON=2.1.3
 VERSION_GUACD=1.6.0
 VERSION_POSTGRESQL=18.6-alpine
-VERSION_VALKEY=9.1.0-alpine
+VERSION_VALKEY=9.1.2-alpine
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________

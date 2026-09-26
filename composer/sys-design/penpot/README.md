@@ -56,7 +56,7 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 # ______________________________________________________________________________
 VERSION_PENPOT=2.12.1
 VERSION_POSTGRESQL=18.1-alpine
-VERSION_VALKEY=9.0.0-alpine
+VERSION_VALKEY=9.1.2-alpine
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________

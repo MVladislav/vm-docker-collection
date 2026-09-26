@@ -57,7 +57,7 @@ RESOURCES_RESERVATIONS_MEMORY_IMMICH_ML=32m
 # APPLICATION version for easy update
 # ______________________________________________________________________________
 VERSION_IMMICH=v1.120.1
-VERSION_VALKEY=7.2.5-alpine
+VERSION_VALKEY=9.1.2-alpine
 VERSION_POSTGRESQL=pg16-v0.3.0
 
 # APPLICATION general variable to adjust the apps

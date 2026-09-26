@@ -42,7 +42,7 @@ RESOURCES_RESERVATIONS_MEMORY_VALKEY=32m
 # APPLICATION version for easy update
 # ______________________________________________________________________________
 VERSION=2026.7.28-8372f5d85
-VERSION_VALKEY=9.1.0-alpine
+VERSION_VALKEY=9.1.2-alpine
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________

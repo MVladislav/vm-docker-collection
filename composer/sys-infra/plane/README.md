@@ -61,8 +61,8 @@ RESOURCES_LIMITS_MEMORY_RUSTFS=1g
 # ______________________________________________________________________________
 VERSION_PLANE=v1.3.1
 VERSION_POSTGRESQL=18.4-alpine
-VERSION_RABBITMQ=4.3.1-management-alpine
-VERSION_VALKEY=9.1.0-alpine
+VERSION_RABBITMQ=3.13.6-management-alpine
+VERSION_VALKEY=9.1.2-alpine
 VERSION_RUSTFS=1.0.0-beta.8
 
 # APPLICATION general variable to adjust the apps

@@ -203,7 +203,7 @@ services:
   ##############################################################################
   valkey:
     # https://hub.docker.com/r/valkey/valkey
-    image: valkey/valkey:${VERSION_VALKEY:-9.0.0-alpine}
+    image: valkey/valkey:${VERSION_VALKEY:-9.1.2-alpine}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -218,12 +218,12 @@ services:
       - SETUID
       - SETGID
     environment:
-      - VALKEY_EXTRA_FLAGS=--maxmemory 128mb --maxmemory-policy volatile-lfu
+      ALLOW_EMPTY_PASSWORD: ${ALLOW_EMPTY_PASSWORD:-true}
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - valkey:/data
-    command: --save 300 1 --loglevel warning
+    command: --port 6379 --save 300 1 --loglevel warning
     healthcheck:
       test: ["CMD-SHELL", "valkey-cli ping | grep PONG"]
       start_period: 10s

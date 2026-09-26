@@ -57,7 +57,7 @@ RESOURCES_RESERVATIONS_MEMORY_VALKEY=32m
 # ______________________________________________________________________________
 VERSION_ERPNEXT=v15.70.0
 VERSION_MARIADB=11.7.2
-VERSION_VALKEY=8.1.0-alpine
+VERSION_VALKEY=9.1.2-alpine
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________

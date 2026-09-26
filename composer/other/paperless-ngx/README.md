@@ -67,7 +67,7 @@ VERSION_PAPERLESS=2.14
 #VERSION_GOTENBERG=8.17
 #VERSION_TIKA=3.1.0.0
 VERSION_MARIADB=11.7.2
-VERSION_VALKEY=8.0.2-alpine
+VERSION_VALKEY=9.1.2-alpine
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________

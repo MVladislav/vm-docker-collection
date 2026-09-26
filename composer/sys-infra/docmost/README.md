@@ -55,7 +55,7 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 # ______________________________________________________________________________
 VERSION_DOCMOST=0.20.1
 VERSION_POSTGRESQL=18.6-alpine
-VERSION_VALKEY=8.1.0-alpine
+VERSION_VALKEY=9.1.2-alpine
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________

@@ -286,7 +286,7 @@ services:
   ##############################################################################
   redis-queue:
     # https://hub.docker.com/r/valkey/valkey
-    image: valkey/valkey:${VERSION_VALKEY:-8.1.0-alpine}
+    image: valkey/valkey:${VERSION_VALKEY:-9.1.2-alpine}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -300,11 +300,13 @@ services:
     cap_add:
       - SETUID
       - SETGID
+    environment:
+      ALLOW_EMPTY_PASSWORD: ${ALLOW_EMPTY_PASSWORD:-true}
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - valkey:/data
-    command: --save 300 1 --loglevel warning
+    command: --port 6379 --save 300 1 --loglevel warning
     healthcheck:
       test: ["CMD-SHELL", "valkey-cli ping | grep PONG"]
       start_period: 10s
@@ -314,7 +316,7 @@ services:
 
   redis-cache:
     # https://hub.docker.com/r/valkey/valkey
-    image: valkey/valkey:${VERSION_VALKEY:-8.1.0-alpine}
+    image: valkey/valkey:${VERSION_VALKEY:-9.1.2-alpine}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -328,10 +330,13 @@ services:
     cap_add:
       - SETUID
       - SETGID
+    environment:
+      ALLOW_EMPTY_PASSWORD: ${ALLOW_EMPTY_PASSWORD:-true}
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-    command: --save 300 1 --loglevel warning
+      - valkey:/data
+    command: --port 6379 --save 300 1 --loglevel warning
     healthcheck:
       test: ["CMD-SHELL", "valkey-cli ping | grep PONG"]
       start_period: 10s

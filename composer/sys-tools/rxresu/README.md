@@ -49,7 +49,7 @@ VERSION_RESUME=v5.3.1
 VERSION_POSTGRESQL=18.6-alpine
 VERSION_RUSTFS=1.0.0
 VERSION_AWS_CLI=2.37.4
-VERSION_VALKEY=9.2-alpine
+VERSION_VALKEY=9.1.2-alpine
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________

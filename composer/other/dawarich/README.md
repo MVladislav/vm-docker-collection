@@ -56,7 +56,7 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 # ______________________________________________________________________________
 VERSION_DAWARICH=0.23.5
 VERSION_POSTGRESQL=18.6-alpine
-VERSION_VALKEY=8.0.2-alpine
+VERSION_VALKEY=9.1.2-alpine
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
