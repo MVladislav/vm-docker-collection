@@ -30,13 +30,15 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION=v2.18.23
+VERSION=v2.19.14
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
 CERT_RESOLVER=certificates
 
 SEMAPHORE_ADMIN_PASSWORD=
+# only applied on first start, while `config` volume has no config.json
+SEMAPHORE_MAX_PARALLEL_TASKS=10
 ```
 
 #### example short .env (swarm)

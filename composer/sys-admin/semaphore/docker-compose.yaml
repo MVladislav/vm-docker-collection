@@ -74,7 +74,7 @@ services:
   ##############################################################################
   semaphoreui:
     # https://hub.docker.com/r/semaphoreui/semaphore
-    image: semaphoreui/semaphore:${VERSION:-v2.18.23}
+    image: semaphoreui/semaphore:${VERSION:-v2.19.14}
     <<:
       - *basic
       # - *basic-deploy-labels
@@ -93,6 +93,8 @@ services:
 
       SEMAPHORE_DB_DIALECT: sqlite
 
+      SEMAPHORE_MAX_PARALLEL_TASKS: ${SEMAPHORE_MAX_PARALLEL_TASKS:-10}
+
       SEMAPHORE_TOTP_ENABLED: "True"
       SEMAPHORE_TOTP_ALLOW_RECOVERY: "True"
       SEMAPHORE_TOTP_ISSUER: "SEMAPHORE"
@@ -102,21 +104,15 @@ services:
       - data:/var/lib/semaphore
       - config:/etc/semaphore
     healthcheck:
-      # test:
-      #   [
-      #     "CMD-SHELL",
-      #     "curl -kIf ${PROTOCOL:-https}://127.0.0.1:${PORT:-443} > /dev/null 2>&1 || exit 1",
-      #     # "curl -kf ${PROTOCOL:-https}://127.0.0.1:${PORT:-443} > /dev/null 2>&1 || exit 1",
-      #   ]
-      #   # [
-      #   #   "CMD-SHELL",
-      #   #   "wget --no-verbose --tries=1 --spider --no-check-certificate ${PROTOCOL:-https}://127.0.0.1:${PORT:-443} || exit 1",
-      #   # ]
-      # start_period: 10s
-      # interval: 30s
-      # timeout: 5s
-      # retries: 3
-      disable: true
+      test:
+        [
+          "CMD-SHELL",
+          "curl -fsS -o /dev/null http://127.0.0.1:${PORT:-3000}/api/ping || exit 1",
+        ]
+      start_period: 300s
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
 ################################################################################
 ################################################################################
