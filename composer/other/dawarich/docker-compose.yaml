@@ -87,7 +87,7 @@ services:
   ##############################################################################
   dawarich_app:
     # https://hub.docker.com/r/freikin/dawarich
-    image: freikin/dawarich:${VERSION_DAWARICH:-0.23.5}
+    image: freikin/dawarich:${VERSION_DAWARICH:-1.15.2}
     <<: [*basic, *basic-deploy-labels, *logging]
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels]
@@ -125,7 +125,7 @@ services:
   ##############################################################################
   dawarich_sidekiq:
     # https://hub.docker.com/r/freikin/dawarich
-    image: freikin/dawarich:${VERSION_DAWARICH:-0.23.5}
+    image: freikin/dawarich:${VERSION_DAWARICH:-1.15.2}
     <<: [*basic, *logging]
     deploy:
       <<: *basic-deploy

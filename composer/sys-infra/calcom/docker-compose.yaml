@@ -61,7 +61,7 @@ services:
   ##############################################################################
   calcom:
     # https://hub.docker.com/r/calcom/cal.com
-    image: calcom/cal.com:${VERSION_CALCOM:-v5.4.4}
+    image: calcom/cal.com:${VERSION_CALCOM:-v6.2.0}
     <<: [*basic, *basic-deploy-labels]
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels]

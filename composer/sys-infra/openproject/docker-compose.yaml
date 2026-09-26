@@ -68,7 +68,7 @@ x-basic: &basic
 ################################################################################
 ################################################################################
 x-op-image: &image # https://hub.docker.com/r/openproject/openproject
-  image: openproject/openproject:${VERSION_OPENPROJECT:-15-slim}
+  image: openproject/openproject:${VERSION_OPENPROJECT:-17-slim}
 x-op-app: &app
   <<: *image
   environment:

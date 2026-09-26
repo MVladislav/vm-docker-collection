@@ -60,7 +60,7 @@ services:
   ##############################################################################
   prometheus:
     # https://hub.docker.com/r/prom/prometheus
-    image: prom/prometheus:${VERSION:-v2.43.0-rc.0}
+    image: prom/prometheus:${VERSION:-v3.15.0-rc.0}
     <<: *basic
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels]
