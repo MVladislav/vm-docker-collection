@@ -149,10 +149,8 @@ x-base-env: &base-env
   TZ: "Europe/Berlin"
 
 x-plane: &plane
-  APP_VERSION: ${VERSION_PLANE:-v1.3.1}
+  APP_VERSION: ${VERSION_PLANE:-v1.4.2}
   APP_DOMAIN: ${DOMAIN?domain variable not set}
-  DEPLOY_PLATFORM: docker_compose
-  IS_AIRGAPPED: ${IS_AIRGAPPED:-0}
 
 x-pg-env: &pg-env
   POSTGRES_DB: ${POSTGRES_DB:-plane}
@@ -182,7 +180,6 @@ x-docstore-env: &docstore-env
   MINIO_ROOT_PASSWORD: ${AWS_SECRET_ACCESS_KEY?rustfs root password not set}
   BUCKET_NAME: ${AWS_S3_BUCKET_NAME:-uploads}
   USE_MINIO: ${USE_MINIO:-1}
-  USE_STORAGE_PROXY: ${USE_STORAGE_PROXY:-0}
 
   AWS_REGION: ${AWS_REGION:-}
   AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-access-key}
@@ -240,7 +237,6 @@ x-app-env: &app-env
 
   BUCKET_NAME: ${AWS_S3_BUCKET_NAME:-uploads}
   USE_MINIO: ${USE_MINIO:-1}
-  USE_STORAGE_PROXY: ${USE_STORAGE_PROXY:-0}
 
   # Force HTTPS for handling SSL Termination
   MINIO_ENDPOINT_SSL: ${MINIO_ENDPOINT_SSL:-0}
@@ -248,7 +244,6 @@ x-app-env: &app-env
   # Application secret
   SECRET_KEY: ${SECRET_KEY?Secret key not set}
   LIVE_SERVER_SECRET_KEY: ${LIVE_SERVER_SECRET_KEY?Live secret key not set}
-  SSL_VERIFY: ${SSL_VERIFY:-1}
 
   # API key rate limit
   API_KEY_RATE_LIMIT: ${API_KEY_RATE_LIMIT:-60/minute}
@@ -263,7 +258,7 @@ services:
   ##############################################################################
   web:
     # https://hub.docker.com/r/makeplane/plane-frontend
-    image: makeplane/plane-frontend:${VERSION_PLANE:-v1.3.1}
+    image: makeplane/plane-frontend:${VERSION_PLANE:-v1.4.2}
     <<:
       - *basic
       # - *basic-deploy-labels-web
@@ -304,7 +299,7 @@ services:
 
   api:
     # https://hub.docker.com/r/makeplane/plane-backend
-    image: makeplane/plane-backend:${VERSION_PLANE:-v1.3.1}
+    image: makeplane/plane-backend:${VERSION_PLANE:-v1.4.2}
     <<:
       - *basic
       # - *basic-deploy-labels-api
@@ -347,14 +342,14 @@ services:
           "CMD-SHELL",
           "wget --no-verbose --tries=1 --spider --no-check-certificate http://127.0.0.1:8000 || exit 1",
         ]
-      start_period: 10s
+      start_period: 300s
       interval: 30s
       timeout: 5s
       retries: 3
 
   admin:
     # https://hub.docker.com/r/makeplane/plane-admin
-    image: makeplane/plane-admin:${VERSION_PLANE:-v1.3.1}
+    image: makeplane/plane-admin:${VERSION_PLANE:-v1.4.2}
     <<:
       - *basic
       # - *basic-deploy-labels-admin
@@ -395,7 +390,7 @@ services:
 
   space:
     # https://hub.docker.com/r/makeplane/plane-space
-    image: makeplane/plane-space:${VERSION_PLANE:-v1.3.1}
+    image: makeplane/plane-space:${VERSION_PLANE:-v1.4.2}
     <<:
       - *basic
       # - *basic-deploy-labels-space
@@ -432,7 +427,7 @@ services:
 
   live:
     # https://hub.docker.com/r/makeplane/plane-live
-    image: makeplane/plane-live:${VERSION_PLANE:-v1.3.1}
+    image: makeplane/plane-live:${VERSION_PLANE:-v1.4.2}
     <<:
       - *basic
       # - *basic-deploy-labels-live
@@ -472,7 +467,7 @@ services:
 
   worker:
     # https://hub.docker.com/r/makeplane/plane-backend
-    image: makeplane/plane-backend:${VERSION_PLANE:-v1.3.1}
+    image: makeplane/plane-backend:${VERSION_PLANE:-v1.4.2}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -504,7 +499,7 @@ services:
 
   beat-worker:
     # https://hub.docker.com/r/makeplane/plane-backend
-    image: makeplane/plane-backend:${VERSION_PLANE:-v1.3.1}
+    image: makeplane/plane-backend:${VERSION_PLANE:-v1.4.2}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -539,7 +534,7 @@ services:
   ##############################################################################
   migrator:
     # https://hub.docker.com/r/makeplane/plane-backend
-    image: makeplane/plane-backend:${VERSION_PLANE:-v1.3.1}
+    image: makeplane/plane-backend:${VERSION_PLANE:-v1.4.2}
     <<: *basic
     deploy:
       <<: *basic-deploy
