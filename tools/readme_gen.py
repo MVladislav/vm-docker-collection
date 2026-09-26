@@ -193,7 +193,14 @@ EXTRA = {
 LINK_OVERRIDES = {
     "rootprint": "[rootprint](https://github.com/rootprint/rootprint)",
 }
-FEATURED = {"ittools", "omni-tools", "openspeedtest", "stirling-pdf", "InvoiceShelf"}
+FEATURED = {
+    "ittools",
+    "omni-tools",
+    "openspeedtest",
+    "stirling-pdf",
+    "InvoiceShelf",
+    "drawio",
+}
 
 # Infrastructure images to ignore in version detection
 INFRA = re.compile(
