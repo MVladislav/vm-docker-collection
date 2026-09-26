@@ -43,7 +43,7 @@ x-basic: &basic
 ################################################################################
 services:
   zeek:
-    image: zeek/zeek:${VERSION:-7.1}
+    image: zeek/zeek:${VERSION:-9.0}
     <<: *basic
     deploy:
       <<: *basic-deploy

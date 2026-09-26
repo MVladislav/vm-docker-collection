@@ -57,7 +57,7 @@ services:
   ##############################################################################
   ##############################################################################
   librenms:
-    image: librenms/librenms:${VERSION_LIBRENMS:-23.2.0}
+    image: librenms/librenms:${VERSION_LIBRENMS:-26.8.2}
     <<: *basic
     cap_add:
       - NET_ADMIN
@@ -131,7 +131,7 @@ services:
   ##############################################################################
   ##############################################################################
   dispatcher:
-    image: librenms/librenms:${VERSION_LIBRENMS:-23.2.0}
+    image: librenms/librenms:${VERSION_LIBRENMS:-26.8.2}
     <<: *basic
     cap_add:
       - NET_ADMIN

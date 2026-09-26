@@ -58,7 +58,7 @@ x-basic: &basic
 services:
   # https://hub.docker.com/r/gotify/server
   gotify:
-    image: gotify/server:${VERSION:-2.6.1}
+    image: gotify/server:${VERSION:-3.1.1}
     <<: [*basic, *basic-deploy-labels]
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels]

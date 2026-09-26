@@ -340,7 +340,7 @@ services:
   ##############################################################################
   adminer:
     # https://hub.docker.com/_/adminer
-    image: adminer:${VERSION_ADMINER:-5.4.2-standalone}
+    image: adminer:${VERSION_ADMINER:-6.0.1-standalone}
     # <<: *basic
     deploy:
       # <<: *basic-deploy

@@ -74,7 +74,7 @@ services:
   ##############################################################################
   kestra:
     # https://hub.docker.com/r/kestra/kestra
-    image: kestra/kestra:${VERSION_KESTRA:-v0.23.5}
+    image: kestra/kestra:${VERSION_KESTRA:-v2.0.3}
     <<:
       - *basic
       - *basic-deploy-labels

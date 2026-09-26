@@ -86,7 +86,7 @@ services:
   ##############################################################################
   netmaker:
     # https://hub.docker.com/r/gravitl/netmaker
-    image: gravitl/netmaker:${VERSION_NETMAKER:-v0.18.0}
+    image: gravitl/netmaker:${VERSION_NETMAKER:-v1.7.0}
     <<: [*basic, *basic-deploy-labels-api]
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels-api]
@@ -142,7 +142,7 @@ services:
   ##############################################################################
   netmaker-ui:
     # https://hub.docker.com/r/gravitl/netmaker-ui
-    image: gravitl/netmaker-ui:${VERSION_NETMAKER_UI:-v0.18.0}
+    image: gravitl/netmaker-ui:${VERSION_NETMAKER_UI:-v1.7.0}
     <<: [*basic, *basic-deploy-labels]
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels]
