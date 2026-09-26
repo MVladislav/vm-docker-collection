@@ -30,11 +30,14 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION=v1.0.36
+VERSION=v1.0.48
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
 CERT_RESOLVER=certificates
+
+SKIP_DF_COLLECTION=false
+DISABLE_WHATS_NEW=true
 ```
 
 #### example short .env (swarm)
