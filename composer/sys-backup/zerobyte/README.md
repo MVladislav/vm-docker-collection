@@ -1,31 +1,21 @@
 # SETUP
 
-```sh
-    MVladislav
-```
-
----
-
-- [SETUP](#setup)
-  - [basic](#basic)
-    - [create empty `rclone.conf`:](#create-empty-rcloneconf)
-    - [create `.env` file following:](#create-env-file-following)
-      - [example short .env (swarm)](#example-short-env-swarm)
-      - [example short .env (bridge)](#example-short-env-bridge)
-  - [References](#references)
-
----
-
 ## basic
 
 > defined to work with traefik
+
+### create your `secrets`:
+
+```sh
+echo "APP_SECRET=$(pwgen -s 32 1)" >> .env
+```
 
 ### create empty `rclone.conf`:
 
 > Setup rclone conf as you need, a short example is provided in `./config/rclone.conf.tmpl`
 
 ```sh
-$echo '# empty' > ./config/rclone.conf
+echo '# empty' > ./config/rclone.conf
 ```
 
 ### create `.env` file following:
@@ -59,6 +49,8 @@ VERSION=v0.21
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
 CERT_RESOLVER=certificates
+
+APP_SECRET=<SECRET>
 ```
 
 #### example short .env (swarm)
@@ -74,6 +66,16 @@ NETWORK_MODE=bridge
 LB_SWARM=false
 
 DOMAIN=zerobyte.home.local
+```
+
+---
+
+## FAQ
+
+### Helpful command
+
+```sh
+docker exec -it "$(docker ps -q -f name=^zerobyte-zerobyte\\.)" bun run cli change-username
 ```
 
 ---

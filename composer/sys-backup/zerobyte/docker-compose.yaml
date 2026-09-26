@@ -67,7 +67,7 @@ services:
     image: ghcr.io/nicotsx/zerobyte:${VERSION:-v0.21}
     <<:
       - *basic
-      - *basic-deploy-labels
+      # - *basic-deploy-labels
     deploy:
       <<:
         - *basic-deploy
@@ -77,6 +77,9 @@ services:
     environment:
       TZ: ${TZ:-Europe/Berlin}
       SERVER_IP: 0.0.0.0
+      BASE_URL: https://${DOMAIN?domain variable not set}
+      APP_SECRET: ${APP_SECRET:?APP_SECRET is not set}
+      LOG_LEVEL: ${LOG_LEVEL:-warn} # debug | info | warn | error
     configs:
       - source: rclone_config
         target: /root/.config/rclone/rclone.conf
