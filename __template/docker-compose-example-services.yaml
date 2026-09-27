@@ -514,6 +514,102 @@ services:
   ##############################################################################
   ##############################################################################
   # ```sh
+  # $curl -s http://127.0.0.1:9200 | jq
+  # $curl -s http://127.0.0.1:9200/_cat/indices?v
+  # $curl -s http://127.0.0.1:9200/_cat/nodes?v
+  # ```
+  opensearch:
+    # https://hub.docker.com/r/opensearchproject/opensearch
+    image: opensearchproject/opensearch:${VERSION_OPENSEARCH:-3.8.0}
+    # <<: *basic
+    deploy:
+      # <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_OPENSEARCH:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_OPENSEARCH:-2g}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_OPENSEARCH:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_OPENSEARCH:-32m}
+    cap_add:
+      - CHOWN
+      - FOWNER
+      - DAC_READ_SEARCH
+      - DAC_OVERRIDE
+      - SETUID
+      - SETGID
+    # The security plugin is off here, so the node speaks plain http on 9200 and
+    # creates no `admin` user. To turn it back on:
+    #   1. drop both `DISABLE_SECURITY_PLUGIN` and `plugins.security.disabled`
+    #   2. `OPENSEARCH_INITIAL_ADMIN_PASSWORD` is MANDATORY since 2.12 (the
+    #      entrypoint runs `install_demo_configuration.sh` and aborts without
+    #      it) and has NO `_FILE` variant -- inject it from the secret with a
+    #      `command:` wrapper that exports it before `exec docker-entrypoint.sh`
+    #   3. clients switch to `https://`, i.e. `-k`/`ssl_verificationmode: none`
+    #   4. the healthcheck below becomes `curl -kfsS https://127.0.0.1:9200/...`
+    # secrets:
+    #   - opensearch_admin_password
+    environment:
+      # Comment the next line out and add `cluster.initial_master_nodes` for a
+      # real multi-node cluster.
+      discovery.type: single-node
+      cluster.name: ${OPENSEARCH_CLUSTER_NAME:-opensearch}
+      # Needs `ulimits.memlock: -1/-1` (set in `*basic`). The matching host
+      # requirement `vm.max_map_count=262144` is NOT namespaced and therefore
+      # cannot be set through `sysctls:` here -- apply it on every node:
+      #   $sysctl -w vm.max_map_count=262144
+      bootstrap.memory_lock: "true"
+      # BOTH are needed: the entrypoint turns `DISABLE_SECURITY_PLUGIN` into
+      # `-Eplugins.security.disabled=true`, the env var below sets the same
+      # setting on the node itself. With only one of them the node still tries
+      # to install the demo config and dies on the missing admin password.
+      DISABLE_SECURITY_PLUGIN: "true"
+      plugins.security.disabled: "true"
+      # OpenCTI/graylog recommendation; a deeper search queue keeps a bulk
+      # ingest from rejecting work on a busy node.
+      thread_pool.search.queue_size: 5000
+      # Single-node clusters log a rejoin warning on every (re)start.
+      logger.org.opensearch.discovery: "ERROR"
+      # The image ships a FIXED 1g heap in `config/jvm.options` and does NOT
+      # auto-size to the cgroup limit like ES 8 does, so this must be set
+      # explicitly. Keep it at ~half of
+      # `RESOURCES_LIMITS_MEMORY_OPENSEARCH`: the rest of the limit carries the
+      # Lucene off-heap segments and the direct buffers, and going over it gets
+      # the node OOM-killed by the kernel instead of by its own breaker.
+      OPENSEARCH_JAVA_OPTS: -Xms${OPENSEARCH_HEAP_SIZE:-1g} -Xmx${OPENSEARCH_HEAP_SIZE:-1g}
+      # OPENSEARCH_INITIAL_ADMIN_PASSWORD: ${OPENSEARCH_ADMIN_PASSWORD?OPENSEARCH_ADMIN_PASSWORD is not set}
+    volumes:
+      # - /etc/timezone:/etc/timezone:ro
+      # - /etc/localtime:/etc/localtime:ro
+      # The entrypoint chowns a foreign-owned data dir on boot, which is what
+      # the `cap_add` above is for -- a `uid`/`gid` on the volume is not needed.
+      - opensearch_data:/usr/share/opensearch/data
+      # - opensearch_logs:/usr/share/opensearch/logs
+    # configs:
+    #   - source: opensearch_config
+    #     target: /usr/share/opensearch/config/opensearch.yml
+    #     mode: 0440
+    # networks:
+    #   default: {}
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -fsS 'http://127.0.0.1:9200/_cluster/health?wait_for_status=yellow&timeout=5s' > /dev/null || exit 1",
+        ]
+      # `yellow` = every primary has a shard. On a single node `red` is the
+      # normal state for any index with replicas, so never gate on `green`.
+      # The first boot on a fresh volume has to create every index, which is
+      # why the start period is generous.
+      start_period: 60s
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  # ```sh
   # $docker exec -it "$(docker ps -q -f name=mongodb_mongodb)" mongosh --port 27017 --authenticationDatabase "admin" -u "root" -p
   # ```
 
@@ -527,6 +623,13 @@ services:
   #   }
   # )
   # ```
+
+  # The `MONGO_INITDB_*` variables are consumed by the entrypoint ONLY while
+  # `/data/db` is empty, i.e. on the very first start. Rotating
+  # `mongo_initdb_root_password` later changes nothing -- the stored user keeps
+  # the old password until it is changed by hand:
+  # $docker exec -it "<mongodb>" mongosh --authenticationDatabase admin -u root -p
+  # > db.changeUserPassword("root", passwordPrompt())
   ##############################################################################
   mongodb:
     # https://hub.docker.com/_/mongo/tags
@@ -560,52 +663,90 @@ services:
       TZ: ${TZ:-Europe/Berlin}
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:-root}
       MONGO_INITDB_ROOT_PASSWORD_FILE: /run/secrets/mongo_initdb_root_password
+      # The entrypoint always creates `root` in `admin`; this only sets the
+      # default database for the `/docker-entrypoint-initdb.d/*.sh` scripts.
+      MONGO_INITDB_DATABASE: ${MONGO_INITDB_DATABASE:-admin}
     volumes:
       # - /etc/timezone:/etc/timezone:ro
       # - /etc/localtime:/etc/localtime:ro
       - mongodb:/data/db
     # networks:
     #   default: {}
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          'mongosh --quiet --port 27017 --authenticationDatabase admin -u "$${MONGO_INITDB_ROOT_USERNAME}" -p "$$(cat /run/secrets/mongo_initdb_root_password)" --eval ''quit(db.adminCommand({ping: 1}).ok ? 0 : 1)''',
+        ]
+      # A replica set only reports PRIMARY after `rs.initiate()`, so a first
+      # boot with the `command:` block above needs the longer start period.
+      start_period: 30s
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   ##############################################################################
-  ## NOTE: for mongoDB              ############################################
-  ## TODO: not complete ready       ############################################
+  ## NOTE: for mongoDB, needs the `mongodb` service above and reaches it   ###
+  ## with `mongodb_express_mongodb_url` -> ME_CONFIG_MONGODB_URL_FILE      ###
   ##############################################################################
   mongo-express:
     # https://hub.docker.com/_/mongo-express/tags
-    image: mongo-express:${VERSION_EXPRESS:-1.0.2-20}
+    image: mongo-express:${VERSION_MONGO_EXPRESS:-1.0.2-20}
     # <<: *basic
     deploy:
       # <<: *basic-deploy
       resources:
         limits:
-          cpus: ${RESOURCES_LIMITS_CPUS_EXPRESS:-0.25}
-          memory: ${RESOURCES_LIMITS_MEMORY_EXPRESS:-256m}
+          cpus: ${RESOURCES_LIMITS_CPUS_MONGO_EXPRESS:-0.25}
+          memory: ${RESOURCES_LIMITS_MEMORY_MONGO_EXPRESS:-256m}
         reservations:
-          cpus: ${RESOURCES_RESERVATIONS_CPUS_EXPRESS:-0.001}
-          memory: ${RESOURCES_RESERVATIONS_MEMORY_EXPRESS:-32m}
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_MONGO_EXPRESS:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_MONGO_EXPRESS:-32m}
     # ports:
-    #   - target: ${PORT_EXPRESS:-8081}
-    #     published: ${PORT_PUBLISH_EXPRESS:-8081}
+    #   - target: ${PORT_MONGO_EXPRESS:-8081}
+    #     published: ${PORT_MONGO_EXPRESS_PUBLISH:-8081}
     #     protocol: tcp
     #     # host_ip: 127.0.0.1
     #     mode: host
     secrets:
       - me_config_basicauth_password
-      - mongo_initdb_root_password
+      - mongo_express_mongodb_url
+      - mongo_express_cookiesecret
+      - mongo_express_sessionsecret
     environment:
+      ME_CONFIG_BASICAUTH_ENABLED: ${ME_CONFIG_BASICAUTH_ENABLED:-true}
       ME_CONFIG_BASICAUTH_USERNAME: ${ME_CONFIG_BASICAUTH_USERNAME:-admin}
       ME_CONFIG_BASICAUTH_PASSWORD_FILE: /run/secrets/me_config_basicauth_password
-      ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGO_INITDB_ROOT_USERNAME:-root}
-      ME_CONFIG_MONGODB_ADMINPASSWORD_FILE: /run/secrets/mongo_initdb_root_password
-      ME_CONFIG_MONGODB_PORT: 27017
-      ME_CONFIG_MONGODB_SERVER: mongodb
+      ME_CONFIG_SITE_COOKIESECRET_FILE: /run/secrets/mongo_express_cookiesecret
+      ME_CONFIG_SITE_SESSIONSECRET_FILE: /run/secrets/mongo_express_sessionsecret
+      # The file holds e.g.
+      #   mongodb://root:<password>@mongodb:27017/?authSource=admin
+      # `authSource=admin` is required for the root user created by the official
+      # image. With the URL in a file, the hostname, port and db name are not
+      # configurable by env any more -- edit the secret instead.
+      ME_CONFIG_MONGODB_URL_FILE: /run/secrets/mongo_express_mongodb_url
+      # Admin access lists every database instead of just the one in the URL.
+      ME_CONFIG_MONGODB_ENABLE_ADMIN: ${ME_CONFIG_MONGODB_ENABLE_ADMIN:-true}
       ME_CONFIG_OPTIONS_EDITORTHEME: midnight
+      # The UI evaluates JSON as javascript server side, so it can run arbitrary
+      # code for whoever can reach it. Never publish it beyond a dev host.
+      # ME_CONFIG_OPTIONS_READONLY: ${ME_CONFIG_OPTIONS_READONLY:-true}
+      # ME_CONFIG_HEALTH_CHECK_PATH: /status
     # volumes:
     #   - /etc/timezone:/etc/timezone:ro
     #   - /etc/localtime:/etc/localtime:ro
     # networks:
     #   default: {}
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget -qO- http://127.0.0.1:${PORT_MONGO_EXPRESS:-8081}/status > /dev/null 2>&1 || exit 1",
+        ]
+      start_period: 30s
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
   ##############################################################################
   ##############################################################################
@@ -687,6 +828,7 @@ volumes:
   influxdb-config: {}
   influxdb3-data: {}
   influxdb3-plugins: {}
+  opensearch_data: {}
   mongodb: {}
   rabbitmq_data: {}
 
@@ -707,5 +849,13 @@ secrets:
     file: config/secrets/mongo_initdb_root_password.txt
   me_config_basicauth_password:
     file: config/secrets/me_config_basicauth_password.txt
+  mongo_express_mongodb_url:
+    file: config/secrets/mongo_express_mongodb_url.txt
+  mongo_express_cookiesecret:
+    file: config/secrets/mongo_express_cookiesecret.txt
+  mongo_express_sessionsecret:
+    file: config/secrets/mongo_express_sessionsecret.txt
+  opensearch_admin_password:
+    file: config/secrets/opensearch_admin_password.txt
   influxdb_init_password:
     file: config/secrets/influxdb_init_password.txt

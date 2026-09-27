@@ -235,6 +235,9 @@ services:
 ################################################################################
 networks:
   default:
+    # NOTE: `internal: true` blocks egress, so only keep it for stacks that never
+    # need outbound traffic. Turn it on for a self-contained stack, and remember
+    # traefik reaches the services over the external `proxy` network anyway.
     internal: true
     # name: proxy${SERVICE_NAME_POST:-}
     driver: ${NETWORK_MODE:-overlay}

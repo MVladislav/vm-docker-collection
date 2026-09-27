@@ -1,10 +1,10 @@
-# Setup
+# SETUP
 
-## Basic
+## basic
 
 > designed to work with traefik
 
-### Create your `secrets`
+### create your `secrets`:
 
 > instead of openssl for passwords you can also use `pwgen -s 50 1`
 
@@ -15,7 +15,7 @@ openssl rand -hex 18 | docker secret create my_external_secret -
 openssl rand -hex 18 > config/secrets/my_file_secret.txt
 ```
 
-### Create the `.env` file
+### create `.env` file following:
 
 ```env
 # GENERAL variables (mostly by default, change as needed)
@@ -31,6 +31,7 @@ DOMAIN=<HOST>.home.local # not set in docker-compose, needs to be copied to .env
 PROTOCOL=https
 PORT=443
 # default-secured@file | public-secured@file | authentik@file
+# opt in to crowdsec bans: bouncer-crowdsec@file,default-secured@file
 MIDDLEWARE_SECURED=default-secured@file
 
 # GENERAL sources to be used (set by default, change as needed)
@@ -70,6 +71,9 @@ VERSION_INFLUXDB=2.9.1-alpine
 VERSION_INFLUXDB3=3-core
 VERSION_INFLUXDB3_EXPLORER=1.8.0
 
+# SEARCH & INDEX
+VERSION_OPENSEARCH=3.8.0
+
 # OBJECT STORAGE
 VERSION_MINIO=RELEASE.2025-09-07T16-13-09Z-cpuv1
 VERSION_RUSTFS=1.0.0
@@ -77,16 +81,16 @@ VERSION_RUSTFS=1.0.0
 # ADMIN UI
 VERSION_ADMINER=5.4.2-standalone
 VERSION_PHPMYADMIN=5.2.3-apache
-VERSION_EXPRESS=1.0.2-20
+VERSION_MONGO_EXPRESS=1.0.2-20
 ```
 
-#### Example short `.env` (swarm)
+#### example short `.env` (swarm)
 
 ```env
 DOMAIN=<HOST>.home.local
 ```
 
-#### Example short `.env` (bridge)
+#### example short `.env` (bridge)
 
 ```env
 NETWORK_MODE=bridge
@@ -98,6 +102,55 @@ DOMAIN=<HOST>.home.local
 ---
 
 ## Guides & Insights
+
+### Host requirements for the `opensearch` block
+
+`vm.max_map_count` is **not** a namespaced sysctl, so compose cannot set it for
+the container. Apply it on every node that runs the service, otherwise the node
+dies on boot with `max virtual memory areas vm.max_map_count [65530] is too low`:
+
+```sh
+sysctl -w vm.max_map_count=262144
+echo 'vm.max_map_count=262144' | sudo tee /etc/sysctl.d/99-opensearch.conf
+```
+
+`bootstrap.memory_lock: "true"` in the block pairs with the
+`ulimits.memlock: -1/-1` of `x-basic`, so no extra work is needed for that one.
+
+### OpenSearch ⇄ Elasticsearch swap
+
+The two forks are **not** wire-compatible and there is no reindex path between
+them. Keep the volume names apart (`opensearch_data` vs `elasticsearch_data`) so
+a rollback cannot silently mount a foreign data dir, and expect the index to be
+rebuilt by the application rather than migrated:
+
+```sh
+# 1. leave the old volume in place, do NOT delete it -- it is the only copy
+docker stack rm <NAME>
+
+# 2. the app re-ingests on the next start; check the index afterwards
+docker exec -it "$(docker ps -q -f name=^<NAME>_opensearch)" \
+  curl -s 'http://127.0.0.1:9200/_cat/indices?v'
+```
+
+Within OpenSearch itself, `2.x` → `3.x` drops `_type` and rewrites part of the
+internal mapping, so a `2.x` data dir is not carried forward either.
+
+### MongoDB credential rotation
+
+The `mongodb` block reads `MONGO_INITDB_ROOT_PASSWORD_FILE` **only while
+`/data/db` is empty**, i.e. on the very first start of a fresh volume. Rotating
+the secret afterwards changes nothing on the running node:
+
+```sh
+docker exec -it "$(docker ps -q -f name=^<NAME>_mongodb)" \
+  mongosh --authenticationDatabase admin -u root -p
+# > db.changeUserPassword("root", passwordPrompt())
+```
+
+The same applies to `MONGO_INITDB_ROOT_USERNAME`. A `mongodump`/`mongorestore`
+is only needed for a major-version jump; within one major series, a direct
+version bump reuses the volume.
 
 ### Verify the healthcheck
 
@@ -213,3 +266,4 @@ docker-swarm-compose <NAME>
 - <https://docs.docker.com/compose/compose-file/compose-file-v3/#configs>
 - <https://docs.docker.com/engine/swarm/secrets/>
 - <https://docs.docker.com/compose/use-secrets/>
+- <https://docs.docker.com/engine/swarm/networking/>
