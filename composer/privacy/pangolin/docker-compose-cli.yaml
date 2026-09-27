@@ -36,6 +36,8 @@ x-basic: &basic
     as: -1
   healthcheck:
     disable: true
+  tmpfs:
+    - /tmp:rw,relatime,size=512m,nodev,nosuid,noexec
   restart: always
   sysctls:
     - net.ipv6.conf.all.disable_ipv6=0
