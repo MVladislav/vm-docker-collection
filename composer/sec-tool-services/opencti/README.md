@@ -8,15 +8,15 @@
 
 ```sh
 echo "APP__HEALTH_ACCESS_KEY=$(pwgen -s 23 1)" >> .env
-
-pwgen -s 23 1 > config/secrets/opencti_admin_password_file.txt
-uuidgen > config/secrets/opencti_token_file.txt
-pwgen -s 23 1 > config/secrets/minio_root_password_file.txt
-
-echo "OPENCTI_ADMIN_PASSWORD=$(cat config/secrets/opencti_admin_password_file.txt)" >> .env
-echo "OPENCTI_ADMIN_TOKEN=$(cat config/secrets/opencti_token_file.txt)" >> .env
-echo "OPENCTI_MINIO_SECRET_KEY=$(cat config/secrets/minio_root_password_file.txt)" >> .env
+echo "OPENCTI_ADMIN_PASSWORD=$(pwgen -s 23 1)" >> .env
+echo "OPENCTI_ADMIN_TOKEN=$(uuidgen)" >> .env
 echo "OPENCTI_RABBITMQ_PASSWORD=$(pwgen -s 23 1)" >> .env
+echo "OPENCTI_ENCRYPTION_KEY=$(openssl rand -base64 32)" >> .env
+
+echo "rustfsadmin" > config/secrets/rustfs_access_key_file.txt
+pwgen -s 23 1 > config/secrets/rustfs_secret_key_file.txt
+echo "OPENCTI_RUSTFS_ACCESS_KEY=$(cat config/secrets/rustfs_access_key_file.txt)" >> .env
+echo "OPENCTI_RUSTFS_SECRET_KEY=$(cat config/secrets/rustfs_secret_key_file.txt)" >> .env
 
 echo "CONNECTOR_EXPORT_FILE_STIX_ID=$(uuidgen)" >> .env
 echo "CONNECTOR_EXPORT_FILE_CSV_ID=$(uuidgen)" >> .env
@@ -40,7 +40,8 @@ LB_SWARM=true
 DOMAIN=opencti.home.local # not set in docker-compose, needs to be copied to .env
 PROTOCOL=http
 PORT=8080
-# default-secured@file | public-whitelist@file | authentik@file
+# default-secured@file | public-secured@file | authentik@file
+# opt in to crowdsec bans: bouncer-crowdsec@file,default-secured@file
 MIDDLEWARE_SECURED=default-secured@file
 
 # GENERAL sources to be used (set by default, change as needed)
@@ -50,8 +51,11 @@ RESOURCES_LIMITS_MEMORY=1g
 RESOURCES_RESERVATIONS_CPUS=0.001
 RESOURCES_RESERVATIONS_MEMORY=32m
 
-RESOURCES_LIMITS_CPUS_ELASTIC=2
-RESOURCES_LIMITS_MEMORY_ELASTIC=4g
+RESOURCES_LIMITS_CPUS_OPENSEARCH=2
+RESOURCES_LIMITS_MEMORY_OPENSEARCH=4g
+# JVM heap, keep at ~half of RESOURCES_LIMITS_MEMORY_OPENSEARCH. The image
+# hardcodes 1g and does not auto-size to the cgroup limit.
+OPENSEARCH_HEAP_SIZE=2g
 
 RESOURCES_LIMITS_CPUS_RABBITMQ=1
 RESOURCES_LIMITS_MEMORY_RABBITMQ=512m
@@ -59,21 +63,39 @@ RESOURCES_LIMITS_MEMORY_RABBITMQ=512m
 RESOURCES_LIMITS_CPUS_VALKEY=1
 RESOURCES_LIMITS_MEMORY_VALKEY=1g
 
-RESOURCES_LIMITS_CPUS_MINIO=1
-RESOURCES_LIMITS_MEMORY_MINIO=1g
+RESOURCES_LIMITS_CPUS_RUSTFS=1
+RESOURCES_LIMITS_MEMORY_RUSTFS=1g
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_OPENCTI=6.9.29
-VERSION_CONNECTORS=6.9.29
-VERSION_ELASTIC=8.19.21
+VERSION_OPENCTI=7.260921.0
+VERSION_CONNECTORS=7.260921.0
+VERSION_OPENSEARCH=3.8.0
 VERSION_RABBITMQ=4.3.6-management-alpine
 VERSION_VALKEY=9.1.2-alpine
-VERSION_MINIO=RELEASE.2024-11-07T00-52-20Z-cpuv1
+VERSION_RUSTFS=1.0.0
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
+CERT_RESOLVER=certificates
+
 OPENCTI_ADMIN_EMAIL=<CHANGEME>
+
+# alert mail. Off by default: `smtp:hostname` defaults to localhost, which in a
+# container is the container itself. Only the keys below exist -- there is no
+# SMTP_FROM / SMTP_REPLY_TO / SMTP_SECURE / SMTP_PORT_SECURE / SMTP_AUTH_METHOD.
+# SMTP_ENABLED=true
+# SMTP_HOSTNAME=
+# SMTP_PORT=25
+# SMTP_USE_SSL=false # implicit TLS, 465
+# SMTP_REJECT_UNAUTHORIZED=false
+# SMTP_AUTH_TYPE=basic # basic | oauth2
+# SMTP_USERNAME=
+# SMTP_PASSWORD=
+# SMTP_FORCED_SENDER_EMAIL=
+
+# only if traefik fronts the platform, see the note in docker-compose.yaml
+# TRUST_PROXY_ADDRESSES=172.16.0.0/12
 ```
 
 #### example short .env
@@ -152,11 +174,28 @@ pass through `4.2.x`, or simply recreate the volume:
 
 ```sh
 # Stop service first
-docker volume rm opencti_amqpdata
+docker volume rm opencti_rabbitmq_data
 ```
 
-Only the in-flight messages are lost - all data lives in PostgreSQL,
-Elasticsearch and S3/MinIO. The user is re-seeded from `OPENCTI_RABBITMQ_PASSWORD`.
+Only the in-flight messages are lost - all data lives in PostgreSQL, OpenSearch
+and S3 storage. The user is re-seeded from `OPENCTI_RABBITMQ_PASSWORD`.
+
+### OpenSearch and RustFS
+
+Both need the same host prerequisite. `vm.max_map_count` is **not** a namespaced
+sysctl, so compose cannot set it for the container -- RustFS is an OpenSearch
+distribution, so it applies twice over. Without it the node dies on boot with
+`max virtual memory areas vm.max_map_count [65530] is too low`:
+
+```sh
+sysctl -w vm.max_map_count=262144
+echo 'vm.max_map_count=262144' | sudo tee /etc/sysctl.d/99-opensearch.conf
+```
+
+The OpenSearch security plugin is disabled, so 9200 is plain http and no `admin`
+user exists. Enabling it means `OPENSEARCH_INITIAL_ADMIN_PASSWORD` (mandatory
+since 2.12, no `_FILE` variant), https on 9200, and `ELASTICSEARCH__USERNAME` /
+`ELASTICSEARCH__PASSWORD` on the platform.
 
 ### RabbitMQ tuning not in this stack
 
@@ -178,6 +217,9 @@ Add them as a `configs:` entry (not a bind mount) when you need it.
 - <https://filigran.io/>
 - <https://github.com/OpenCTI-Platform/opencti>
 - <https://github.com/OpenCTI-Platform/docker>
+- <https://docs.opencti.io/latest/deployment/breaking-changes/>
+- <https://docs.opencti.io/latest/deployment/configuration/>
+- <https://docs.opencti.io/latest/deployment/upgrade/>
 - <https://github.com/OpenCTI-Platform/connectors/tree/master/external-import>
 - connectors
   - <https://github.com/OpenCTI-Platform/connectors/tree/master/external-import/opencti>

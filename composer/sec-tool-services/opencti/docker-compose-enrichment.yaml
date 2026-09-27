@@ -8,7 +8,7 @@ x-basic-deploy: &basic-deploy
       - "node.role==${NODE_ROLE:-manager}"
       - node.platform.os == linux
   update_config:
-    order: start-first
+    order: stop-first
   restart_policy:
     condition: any
   resources:
@@ -37,6 +37,8 @@ x-basic: &basic
     opencti: {}
   healthcheck:
     disable: true
+  tmpfs:
+    - /tmp:rw,relatime,size=512m,nodev,nosuid,noexec
   restart: always
 
 ################################################################################
@@ -56,7 +58,7 @@ services:
   ##############################################################################
   connector-crowdsec:
     # https://hub.docker.com/r/opencti/connector-crowdsec
-    image: opencti/connector-crowdsec:${VERSION_CONNECTORS:-6.9.29}
+    image: opencti/connector-crowdsec:${VERSION_CONNECTORS:-7.260921.0}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -75,7 +77,7 @@ services:
   ##############################################################################
   connector-virustotal:
     # https://hub.docker.com/r/opencti/connector-virustotal
-    image: opencti/connector-virustotal:${VERSION_CONNECTORS:-6.9.29}
+    image: opencti/connector-virustotal:${VERSION_CONNECTORS:-7.260921.0}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -117,7 +119,7 @@ services:
   ##############################################################################
   connector-yara:
     # https://hub.docker.com/r/opencti/connector-yara
-    image: opencti/connector-yara:${VERSION_CONNECTORS:-6.9.29}
+    image: opencti/connector-yara:${VERSION_CONNECTORS:-7.260921.0}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -134,7 +136,7 @@ services:
   ##############################################################################
   connector-greynoise-vuln:
     # https://hub.docker.com/r/opencti/connector-greynoise-vuln
-    image: opencti/connector-greynoise-vuln:${VERSION_CONNECTORS:-6.9.29}
+    image: opencti/connector-greynoise-vuln:${VERSION_CONNECTORS:-7.260921.0}
     <<: *basic
     deploy:
       <<: *basic-deploy

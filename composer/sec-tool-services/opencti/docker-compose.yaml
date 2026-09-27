@@ -4,13 +4,14 @@ x-basic-deploy-labels: &basic-deploy-labels
     - traefik.enable=true
     - traefik.swarm.lbswarm=${LB_SWARM:-true}
     - traefik.swarm.network=proxy
-    - traefik.http.routers.opencti${SERVICE_NAME_POST:-}.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
-    - traefik.http.routers.opencti${SERVICE_NAME_POST:-}.rule=Host(`${DOMAIN?domain variable not set}`)
-    - traefik.http.routers.opencti${SERVICE_NAME_POST:-}.tls=true
-    - traefik.http.routers.opencti${SERVICE_NAME_POST:-}.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
-    - traefik.http.routers.opencti${SERVICE_NAME_POST:-}.service=opencti${SERVICE_NAME_POST:-}
-    - traefik.http.services.opencti${SERVICE_NAME_POST:-}.loadbalancer.server.scheme=${PROTOCOL:-http}
-    - traefik.http.services.opencti${SERVICE_NAME_POST:-}.loadbalancer.server.port=${PORT:-8080}
+    - traefik.http.routers.opencti.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.opencti.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.opencti.tls=true
+    - traefik.http.routers.opencti.tls.certresolver=${CERT_RESOLVER:-}
+    - traefik.http.routers.opencti.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.opencti.service=opencti
+    - traefik.http.services.opencti.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.opencti.loadbalancer.server.port=${PORT:-8080}
 
 x-basic-deploy: &basic-deploy
   mode: replicated
@@ -50,6 +51,8 @@ x-basic: &basic
     default: {}
   healthcheck:
     disable: true
+  tmpfs:
+    - /tmp:rw,relatime,size=512m,nodev,nosuid,noexec
   restart: always
 
 ################################################################################
@@ -58,7 +61,6 @@ x-basic: &basic
 x-opencti: &opencti
   OPENCTI_URL: http://opencti:8080
   OPENCTI_TOKEN: ${OPENCTI_ADMIN_TOKEN}
-  # OPENCTI_TOKEN_FILE: /run/secrets/opencti_token_file
 
 x-opencti-connector: &opencti-connector
   CONNECTOR_TYPE: INTERNAL_EXPORT_FILE
@@ -70,20 +72,19 @@ services:
   ##############################################################################
   opencti:
     # https://hub.docker.com/r/opencti/platform
-    image: opencti/platform:${VERSION_OPENCTI:-6.9.29}
-    <<: [*basic, *basic-deploy-labels]
+    image: opencti/platform:${VERSION_OPENCTI:-7.260921.0}
+    <<:
+      - *basic
+      # -  *basic-deploy-labels
     deploy:
-      <<: [*basic-deploy, *basic-deploy-labels]
-    # secrets:
-    #   - opencti_admin_password_file
-    #   - opencti_token_file
-    #   - minio_root_password_file
+      <<:
+        - *basic-deploy
+        - *basic-deploy-labels
     environment:
       APP__ADMIN__EMAIL: ${OPENCTI_ADMIN_EMAIL:-groot@home.local}
       APP__ADMIN__PASSWORD: ${OPENCTI_ADMIN_PASSWORD}
-      # APP__ADMIN__PASSWORD_FILE: /run/secrets/opencti_admin_password_file
       APP__ADMIN__TOKEN: ${OPENCTI_ADMIN_TOKEN}
-      # APP__ADMIN__TOKEN_FILE: /run/secrets/opencti_token_file
+      APP__ENCRYPTION_KEY: ${OPENCTI_ENCRYPTION_KEY?OPENCTI_ENCRYPTION_KEY is not set}
       APP__HEALTH_ACCESS_KEY: ${APP__HEALTH_ACCESS_KEY}
 
       APP__PORT: ${PORT:-8080}
@@ -95,15 +96,23 @@ services:
       REDIS__HOSTNAME: valkey
       REDIS__PORT: 6379
 
-      ELASTICSEARCH__URL: http://elasticsearch:9200
+      ELASTICSEARCH__URL: http://opensearch:9200
       ELASTICSEARCH__NUMBER_OF_REPLICAS: 0
+      ELASTICSEARCH__ENGINE_SELECTOR: opensearch
+      # Since 7.260401.0 the graphQL `filter` option refuses custom script
+      # expressions ("Filter script is not allowed") unless this is set. Only
+      # needed if a dashboard, view or connector uses a filter script.
+      # ELASTICSEARCH__UNSECURE_SCRIPT_FILTER_ENABLED: ${ELASTICSEARCH_UNSECURE_SCRIPT_FILTER_ENABLED:-false}
+      # Only with the OpenSearch security plugin enabled (see the `opensearch`
+      # service); the plugin ignores them while it is disabled:
+      # ELASTICSEARCH__USERNAME: admin
+      # ELASTICSEARCH__PASSWORD: ${OPENSEARCH_ADMIN_PASSWORD?OPENSEARCH_ADMIN_PASSWORD is not set}
 
-      MINIO__ENDPOINT: minio
+      MINIO__ENDPOINT: rustfs
       MINIO__PORT: 9000
       MINIO__USE_SSL: false
-      MINIO__ACCESS_KEY: ${MINIO_ROOT_USER:-minio}
-      MINIO__SECRET_KEY: ${OPENCTI_MINIO_SECRET_KEY}
-      # MINIO__SECRET_KEY_FILE: /run/secrets/minio_root_password_file
+      MINIO__ACCESS_KEY: ${OPENCTI_RUSTFS_ACCESS_KEY}
+      MINIO__SECRET_KEY: ${OPENCTI_RUSTFS_SECRET_KEY}
 
       RABBITMQ__HOSTNAME: rabbitmq
       RABBITMQ__PORT: 5672
@@ -112,8 +121,17 @@ services:
       RABBITMQ__USERNAME: ${RABBITMQ_DEFAULT_USER:-rabbitmq}
       RABBITMQ__PASSWORD: ${OPENCTI_RABBITMQ_PASSWORD}
 
-      SMTP__HOSTNAME: ${SMTP_HOSTNAME:-localhost}
-      SMTP__PORT: ${SMTP__PORT:-25}
+      SMTP__ENABLED: ${SMTP_ENABLED:-false}
+      SMTP__HOSTNAME: ${SMTP_HOSTNAME:-}
+      SMTP__PORT: ${SMTP_PORT:-25}
+      # SMTP__USE_SSL: ${SMTP_USE_SSL:-false} # implicit TLS, 465
+      # SMTP__REJECT_UNAUTHORIZED: ${SMTP_REJECT_UNAUTHORIZED:-false}
+      # SMTP__AUTH_TYPE: ${SMTP_AUTH_TYPE:-basic} # basic | oauth2
+      # SMTP__USERNAME: ${SMTP_USERNAME:-}
+      # SMTP__PASSWORD: ${SMTP_PASSWORD:-}
+      # SMTP__FORCED_SENDER_EMAIL: ${SMTP_FORCED_SENDER_EMAIL:-}
+
+      TRUST_PROXY_ADDRESSES: ${TRUST_PROXY_ADDRESSES:-172.16.0.0/12}
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
@@ -128,34 +146,30 @@ services:
           "-qO-",
           "http://127.0.0.1:8080/health?health_access_key=${APP__HEALTH_ACCESS_KEY}",
         ]
-      start_period: 300s
+      start_period: 900s
       interval: 30s
       timeout: 5s
-      retries: 3
+      retries: 10
 
   ##############################################################################
   ##############################################################################
   ##############################################################################
   worker:
     # https://hub.docker.com/r/opencti/worker
-    image: opencti/worker:${VERSION_OPENCTI:-6.9.29}
+    image: opencti/worker:${VERSION_OPENCTI:-7.260921.0}
     <<: *basic
     deploy:
       <<: *basic-deploy
       replicas: 1
-    # secrets:
-    #   - opencti_token_file
     environment:
       <<: *opencti
       WORKER_LOG_LEVEL: info
   connector-export-file-stix:
     # https://hub.docker.com/r/opencti/connector-export-file-stix
-    image: opencti/connector-export-file-stix:${VERSION_OPENCTI:-6.9.29}
+    image: opencti/connector-export-file-stix:${VERSION_OPENCTI:-7.260921.0}
     <<: *basic
     deploy:
       <<: *basic-deploy
-    # secrets:
-    #   - opencti_token_file
     environment:
       <<: [*opencti, *opencti-connector]
       CONNECTOR_ID: ${CONNECTOR_EXPORT_FILE_STIX_ID} # Valid UUIDv4
@@ -163,12 +177,10 @@ services:
       CONNECTOR_SCOPE: application/json
   connector-export-file-csv:
     # https://hub.docker.com/r/opencti/connector-export-file-csv
-    image: opencti/connector-export-file-csv:${VERSION_OPENCTI:-6.9.29}
+    image: opencti/connector-export-file-csv:${VERSION_OPENCTI:-7.260921.0}
     <<: *basic
     deploy:
       <<: *basic-deploy
-    # secrets:
-    #   - opencti_token_file
     environment:
       <<: [*opencti, *opencti-connector]
       CONNECTOR_ID: ${CONNECTOR_EXPORT_FILE_CSV_ID} # Valid UUIDv4
@@ -176,12 +188,10 @@ services:
       CONNECTOR_SCOPE: text/csv
   connector-export-file-txt:
     # https://hub.docker.com/r/opencti/connector-export-file-txt
-    image: opencti/connector-export-file-txt:${VERSION_OPENCTI:-6.9.29}
+    image: opencti/connector-export-file-txt:${VERSION_OPENCTI:-7.260921.0}
     <<: *basic
     deploy:
       <<: *basic-deploy
-    # secrets:
-    #   - opencti_token_file
     environment:
       <<: [*opencti, *opencti-connector]
       CONNECTOR_ID: ${CONNECTOR_EXPORT_FILE_TXT_ID} # Valid UUIDv4
@@ -189,12 +199,10 @@ services:
       CONNECTOR_SCOPE: text/plain
   connector-import-file-stix:
     # https://hub.docker.com/r/opencti/connector-import-file-stix
-    image: opencti/connector-import-file-stix:${VERSION_OPENCTI:-6.9.29}
+    image: opencti/connector-import-file-stix:${VERSION_OPENCTI:-7.260921.0}
     <<: *basic
     deploy:
       <<: *basic-deploy
-    # secrets:
-    #   - opencti_token_file
     environment:
       <<: [*opencti, *opencti-connector]
       CONNECTOR_ID: ${CONNECTOR_IMPORT_FILE_STIX_ID} # Valid UUIDv4
@@ -205,12 +213,10 @@ services:
       CONNECTOR_AUTO: ${CONNECTOR_AUTO:-true} # Enable/disable auto-import of file
   connector-import-document:
     # https://hub.docker.com/r/opencti/connector-import-document
-    image: opencti/connector-import-document:${VERSION_OPENCTI:-6.9.29}
+    image: opencti/connector-import-document:${VERSION_OPENCTI:-7.260921.0}
     <<: *basic
     deploy:
       <<: *basic-deploy
-    # secrets:
-    #   - opencti_token_file
     environment:
       <<: [*opencti, *opencti-connector]
       CONNECTOR_ID: ${CONNECTOR_IMPORT_DOCUMENT_ID} # Valid UUIDv4
@@ -224,12 +230,10 @@ services:
       IMPORT_DOCUMENT_CREATE_INDICATOR: ${IMPORT_DOCUMENT_CREATE_INDICATOR:-true}
   connector-analysis:
     # https://hub.docker.com/r/opencti/connector-import-document
-    image: opencti/connector-import-document:${VERSION_OPENCTI:-6.9.29}
+    image: opencti/connector-import-document:${VERSION_OPENCTI:-7.260921.0}
     <<: *basic
     deploy:
       <<: *basic-deploy
-    # secrets:
-    #   - opencti_token_file
     environment:
       <<: [*opencti, *opencti-connector]
       CONNECTOR_ID: ${CONNECTOR_ANALYSIS_ID} # Valid UUIDv4
@@ -244,61 +248,48 @@ services:
   ##############################################################################
   ##############################################################################
   ##############################################################################
-  elasticsearch:
-    # https://hub.docker.com/_/elasticsearch
-    image: elasticsearch:${VERSION_ELASTIC:-8.19.21}
+  opensearch:
+    # https://hub.docker.com/r/opensearchproject/opensearch
+    image: opensearchproject/opensearch:${VERSION_OPENSEARCH:-3.8.0}
     <<: *basic
     deploy:
       <<: *basic-deploy
       resources:
         limits:
-          cpus: ${RESOURCES_LIMITS_CPUS_ELASTIC:-2}
-          memory: ${RESOURCES_LIMITS_MEMORY_ELASTIC:-4g}
+          cpus: ${RESOURCES_LIMITS_CPUS_OPENSEARCH:-2}
+          memory: ${RESOURCES_LIMITS_MEMORY_OPENSEARCH:-4g}
         reservations:
-          cpus: ${RESOURCES_RESERVATIONS_CPUS_ELASTIC:-0.001}
-          memory: ${RESOURCES_RESERVATIONS_MEMORY_ELASTIC:-32m}
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_OPENSEARCH:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_OPENSEARCH:-32m}
+    cap_add:
+      - CHOWN
+      - FOWNER
+      - DAC_READ_SEARCH
+      - DAC_OVERRIDE
+      - SETUID
+      - SETGID
     environment:
       discovery.type: single-node
-      xpack.ml.enabled: false
-      xpack.security.enabled: false
+      bootstrap.memory_lock: "true"
+      DISABLE_SECURITY_PLUGIN: "true"
+      plugins.security.disabled: "true"
       thread_pool.search.queue_size: 5000
-      logger.org.elasticsearch.discovery: "ERROR"
-      # ES_JAVA_OPTS: -Xms${ELASTIC_MEMORY_SIZE:-2g} -Xmx${ELASTIC_MEMORY_SIZE:-2g} -Dlog4j2.formatMsgNoLookups=true
+      logger.org.opensearch.discovery: "ERROR"
+      OPENSEARCH_JAVA_OPTS: -Xms${OPENSEARCH_HEAP_SIZE:-2g} -Xmx${OPENSEARCH_HEAP_SIZE:-2g}
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-      - esdata:/usr/share/elasticsearch/data
-    # healthcheck:
-    #   # test: curl -s http://elasticsearch:9200 >/dev/null || exit 1
-    #   test: ["CMD", "curl", "-f", "-k", "https://localhost:9200"]
-    #   start_period: 10s
-    #   interval: 30s
-    #   timeout: 5s
-    #   retries: 3
-
-  # elasticsearch:
-  #   # https://hub.docker.com/r/opensearchproject/opensearch
-  #   image: opensearchproject/opensearch:${VERSION_OPENSEARCH:-2.18.0}
-  #   <<: *basic
-  #   deploy:
-  #     <<: *basic-deploy
-  #     resources:
-  #       limits:
-  #         cpus: ${RESOURCES_LIMITS_CPUS_ELASTIC:-2}
-  #         memory: ${RESOURCES_LIMITS_MEMORY_ELASTIC:-4g}
-  #       reservations:
-  #         cpus: ${RESOURCES_RESERVATIONS_CPUS_ELASTIC:-0.001}
-  #         memory: ${RESOURCES_RESERVATIONS_MEMORY_ELASTIC:-32m}
-  #   environment:
-  #     discovery.type: single-node
-  #     plugins.security.disabled: true
-  #     thread_pool.search.queue_size: 5000
-  #     # OPENSEARCH_INITIAL_ADMIN_PASSWORD: ${OPENSEARCH_ADMIN_PASSWORD}
-  #     # OPENSEARCH_JAVA_OPTS: -Xms${ELASTIC_MEMORY_SIZE} -Xmx${ELASTIC_MEMORY_SIZE}
-  #   volumes:
-  #     - /etc/timezone:/etc/timezone:ro
-  #     - /etc/localtime:/etc/localtime:ro
-  #     - esdata:/usr/share/opensearch/data
+      - opensearch_data:/usr/share/opensearch/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -fsS 'http://127.0.0.1:9200/_cluster/health?wait_for_status=yellow&timeout=5s' > /dev/null || exit 1",
+        ]
+      start_period: 60s
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   ##############################################################################
   ##############################################################################
@@ -327,7 +318,7 @@ services:
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-      - amqpdata:/var/lib/rabbitmq
+      - rabbitmq_data:/var/lib/rabbitmq
     healthcheck:
       test: ["CMD", "su-exec", "rabbitmq", "rabbitmq-diagnostics", "-q", "ping"]
       start_period: 30s
@@ -371,38 +362,45 @@ services:
   ##############################################################################
   ##############################################################################
   ##############################################################################
-  minio:
-    # https://hub.docker.com/r/minio/minio
-    image: minio/minio:${VERSION_MINIO:-RELEASE.2024-11-07T00-52-20Z-cpuv1}
+  rustfs:
+    # https://hub.docker.com/r/rustfs/rustfs/tags
+    image: rustfs/rustfs:${VERSION_RUSTFS:-1.0.0}
     <<: *basic
     deploy:
       <<: *basic-deploy
       resources:
         limits:
-          cpus: ${RESOURCES_LIMITS_CPUS_MINIO:-1}
-          memory: ${RESOURCES_LIMITS_MEMORY_MINIO:-1g}
+          cpus: ${RESOURCES_LIMITS_CPUS_RUSTFS:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_RUSTFS:-1g}
         reservations:
-          cpus: ${RESOURCES_RESERVATIONS_CPUS_MINIO:-0.001}
-          memory: ${RESOURCES_RESERVATIONS_MEMORY_MINIO:-32m}
-    # ports:
-    #   - target: ${PORT_MINIO:-9001}
-    #     published: ${PORT_MINIO_PUBLISH:-9001}
-    #     protocol: tcp
-    #     mode: host
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_RUSTFS:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_RUSTFS:-32m}
     secrets:
-      - minio_root_password_file
+      - rustfs_access_key_file
+      - rustfs_secret_key_file
     environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minio}
-      MINIO_ROOT_PASSWORD_FILE: /run/secrets/minio_root_password_file
-      # MINIO_BROWSER_REDIRECT_URL: https://${DOMAIN?domain variable not set}
+      RUSTFS_ACCESS_KEY_FILE: /run/secrets/rustfs_access_key_file
+      RUSTFS_SECRET_KEY_FILE: /run/secrets/rustfs_secret_key_file
+      RUSTFS_VOLUMES: /data
+      RUSTFS_ADDRESS: 0.0.0.0:${PORT_RUSTFS_S3_API:-9000}
+      RUSTFS_CONSOLE_ADDRESS: 0.0.0.0:${PORT_RUSTFS_CONSOLE:-9001}
+      RUSTFS_CONSOLE_ENABLE: ${RUSTFS_CONSOLE_ENABLE:-true}
+      RUSTFS_OBS_LOGGER_LEVEL: ${RUSTFS_OBS_LOGGER_LEVEL:-info}
+      RUSTFS_OBS_LOG_DIRECTORY: ${RUSTFS_OBS_LOG_DIRECTORY:-/logs}
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-      - minio:/data
-    command: server /data --console-address ":9001"
+      - rustfs_data:/data
+      - rustfs_logs:/logs
     healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
-      start_period: 10s
+      test:
+        [
+          "CMD",
+          "sh",
+          "-c",
+          "curl -f http://127.0.0.1:${PORT_RUSTFS_S3_API:-9000}/health",
+        ]
+      start_period: 30s
       interval: 30s
       timeout: 5s
       retries: 3
@@ -421,15 +419,18 @@ networks:
     external: true
 
 volumes:
-  esdata: {}
-  amqpdata: {}
+  opensearch_data: {}
+  rabbitmq_data: {}
   valkey: {}
-  minio: {}
+  rustfs_data: {}
+  rustfs_logs: {}
 
 secrets:
   opencti_admin_password_file:
     file: config/secrets/opencti_admin_password_file.txt
   opencti_token_file:
     file: config/secrets/opencti_token_file.txt
-  minio_root_password_file:
-    file: config/secrets/minio_root_password_file.txt
+  rustfs_access_key_file:
+    file: config/secrets/rustfs_access_key_file.txt
+  rustfs_secret_key_file:
+    file: config/secrets/rustfs_secret_key_file.txt

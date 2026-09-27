@@ -8,7 +8,7 @@ x-basic-deploy: &basic-deploy
       - "node.role==${NODE_ROLE:-manager}"
       - node.platform.os == linux
   update_config:
-    order: start-first
+    order: stop-first
   restart_policy:
     condition: any
   resources:
@@ -37,6 +37,8 @@ x-basic: &basic
     opencti: {}
   healthcheck:
     disable: true
+  tmpfs:
+    - /tmp:rw,relatime,size=512m,nodev,nosuid,noexec
   restart: always
 
 ################################################################################
@@ -56,7 +58,7 @@ services:
   ##############################################################################
   connector-opencti:
     # https://hub.docker.com/r/opencti/connector-opencti
-    image: opencti/connector-opencti:${VERSION_CONNECTORS:-6.9.29}
+    image: opencti/connector-opencti:${VERSION_CONNECTORS:-7.260921.0}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -79,7 +81,7 @@ services:
   ##############################################################################
   connector-mitre:
     # https://hub.docker.com/r/opencti/connector-mitre
-    image: opencti/connector-mitre:${VERSION_CONNECTORS:-6.9.29}
+    image: opencti/connector-mitre:${VERSION_CONNECTORS:-7.260921.0}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -97,7 +99,7 @@ services:
   ##############################################################################
   connector-cve:
     # https://hub.docker.com/r/opencti/connector-cve
-    image: opencti/connector-cve:${VERSION_CONNECTORS:-6.9.29}
+    image: opencti/connector-cve:${VERSION_CONNECTORS:-7.260921.0}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -120,7 +122,7 @@ services:
   ##############################################################################
   connector-malpedia:
     # https://hub.docker.com/r/opencti/connector-malpedia
-    image: opencti/connector-malpedia:${VERSION_CONNECTORS:-6.9.29}
+    image: opencti/connector-malpedia:${VERSION_CONNECTORS:-7.260921.0}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -142,7 +144,7 @@ services:
   ##############################################################################
   connector-cisa-known-exploited-vulnerabilities:
     # https://hub.docker.com/r/opencti/connector-cisa-known-exploited-vulnerabilities
-    image: opencti/connector-cisa-known-exploited-vulnerabilities:${VERSION_CONNECTORS:-6.9.29}
+    image: opencti/connector-cisa-known-exploited-vulnerabilities:${VERSION_CONNECTORS:-7.260921.0}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -162,7 +164,7 @@ services:
   ##############################################################################
   connector-mandiant:
     # https://hub.docker.com/r/opencti/connector-mandiant
-    image: opencti/connector-mandiant:${VERSION_CONNECTORS:-6.9.29}
+    image: opencti/connector-mandiant:${VERSION_CONNECTORS:-7.260921.0}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -172,13 +174,15 @@ services:
       CONNECTOR_NAME: Mandiant
       CONNECTOR_SCOPE: mandiant
       CONNECTOR_DURATION_PERIOD: PT5M # In ISO8601 Format starting with "P" for Period ex: "PT5M" = Period time of 5 minutes
+      # MANDIANT_API_V4_KEY_ID:
+      # MANDIANT_API_V4_KEY_SECRET:
 
   ##############################################################################
   ##############################################################################
   ##############################################################################
   connector-urlhaus:
     # https://hub.docker.com/r/opencti/connector-urlhaus
-    image: opencti/connector-urlhaus:${VERSION_CONNECTORS:-6.9.29}
+    image: opencti/connector-urlhaus:${VERSION_CONNECTORS:-7.260921.0}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -199,7 +203,7 @@ services:
   ##############################################################################
   connector-alienvault:
     # https://hub.docker.com/r/opencti/connector-alienvault
-    image: opencti/connector-alienvault:${VERSION_CONNECTORS:-6.9.29}
+    image: opencti/connector-alienvault:${VERSION_CONNECTORS:-7.260921.0}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -238,7 +242,7 @@ services:
   ##############################################################################
   connector-virustotal-livehunt-notifications:
     # https://hub.docker.com/r/opencti/connector-virustotal-livehunt-notifications
-    image: opencti/connector-virustotal-livehunt-notifications:${VERSION_CONNECTORS:-6.9.29}
+    image: opencti/connector-virustotal-livehunt-notifications:${VERSION_CONNECTORS:-7.260921.0}
     <<: *basic
     deploy:
       <<: *basic-deploy
