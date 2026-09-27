@@ -3,12 +3,13 @@ type: http # Don't change
 name: http_telegram # Must match the registered plugin in the profile
 
 # One of "trace", "debug", "info", "warn", "error", "off"
-log_level: debug
+# `debug` logs the request URL, which carries the bot token below.
+log_level: info
 
 # group_wait:         # Time to wait collecting alerts before relaying a message to this plugin, eg "30s"
 # group_threshold:    # Amount of alerts that triggers a message before <group_wait> has expired, eg "10"
 # max_retry:          # Number of attempts to relay messages to plugins in case of error
-# timeout:            # Time to wait for response from the plugin before considering the attempt a failure, eg "10s"
+# timeout:            # Time to wait for response from the plugin before considering the attempt a failure, eg "10"
 
 # -------------------------
 # plugin-specific options
@@ -16,10 +17,11 @@ log_level: debug
 # The following template receives a list of models.Alert objects
 # The output goes in the http request body
 
-# Replace with your Telegram chat ID
+# `format` is a go template, so a plain `${VAR}` is NOT expanded here -- sprig's
+# `env` is the only way in. Every other key in this file uses `${VAR}`.
 format: |
   {
-   "chat_id": 21349331,
+   "chat_id": {{ env "TELEGRAM_CHAT_ID" }},
    "text": "
      {{range . -}}
      {{$alert := . -}}
@@ -30,7 +32,9 @@ format: |
    "
   }
 
-url: https://api.telegram.org/<TELEGRAM_APY_KEY>/sendMessage # Replace <TELEGRAM_APY_KEY> with your APi key
+# Bot token from `TELEGRAM_BOT_TOKEN` in `.env`. Keep it out of this file, the
+# notification configs are committed.
+url: https://api.telegram.org/${TELEGRAM_BOT_TOKEN}/sendMessage
 
 method: POST
 headers:

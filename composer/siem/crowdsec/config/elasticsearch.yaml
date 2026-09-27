@@ -2,7 +2,8 @@
 type: http
 
 name: http_elasticsearch # this must match with the registered plugin in the profile
-log_level: debug # Options include: trace, debug, info, warn, error, off
+# `debug` prints every request header, including the Authorization value below.
+log_level: info # Options include: trace, debug, info, warn, error, off
 
 format: |-
   {{ range .}}
@@ -10,9 +11,16 @@ format: |-
    {{.|toJson}}
   {{ end }}
 
-url: http://elasticsearch:9200/_bulk
+# Bulk API, identical on OpenSearch. No search/index service runs in this
+# stack, so this only resolves once one is attached to the same overlay
+# network and the name matches.
+url: http://opensearch:9200/_bulk
 
 method: POST
 headers:
   Content-Type: "application/json"
-  Authorization: "Basic ZWxhc3RpYzp9bU9SQHd1Yjwxbi4wLmNDZFZCeg=="
+  # Expanded by crowdsec from the container environment, so the credential
+  # stays out of git. Notification configs have no `_FILE` indirection, and
+  # `cscli notifications inspect` shows this raw value, not the result.
+  #   $printf '%s' "USER:PASSWORD" | base64 -w0
+  Authorization: "Basic ${ELASTIC_AUTH}"

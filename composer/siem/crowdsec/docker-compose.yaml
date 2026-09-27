@@ -1,10 +1,26 @@
 ---
+x-basic-deploy: &basic-deploy
+  mode: replicated
+  # mode: global
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      # - "node.id==${NODE_ID}"
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  update_config:
+    order: stop-first
+  restart_policy:
+    condition: any
+
 services:
   ##############################################################################
   ##############################################################################
   ##############################################################################
   crowdsec:
-    image: crowdsecurity/crowdsec:${VERSION:-latest}
+    # https://hub.docker.com/r/crowdsecurity/crowdsec
+    image: crowdsecurity/crowdsec:${VERSION_CROWDEC:-v1.8.1}
     ulimits:
       memlock:
         soft: -1
@@ -15,17 +31,14 @@ services:
       fsize: -1
       as: -1
     deploy:
-      mode: replicated
-      # mode: global
-      replicas: 1
-      placement:
-        max_replicas_per_node: 1
-        constraints:
-          # - "node.id==${NODE_ID}"
-          - "node.role==${NODE_ROLE:-manager}"
-          - node.platform.os == linux
-      restart_policy:
-        condition: on-failure
+      <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_CROWDEC:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_CROWDEC:-1g}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_CROWDEC:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_CROWDEC:-32m}
     environment:
       GID: "${GID-1000}"
       # this is the list of collections we want to install
@@ -35,9 +48,18 @@ services:
       DISABLE_LOCAL_API: ${DISABLE_LOCAL_API:-false}
       AGENT_USERNAME: ${AGENT_USERNAME:-}
       AGENT_PASSWORD: ${AGENT_PASSWORD:-}
-      LOCAL_API_URL: ${LOCAL_API_URL:-"http://192.168.5.1:8080}
+      LOCAL_API_URL: ${LOCAL_API_URL:-http://crowdsec:8080}
 
       BOUNCER_KEY_TRAEFIK: ${CROWDSEC_BOUNCER_API_KEY_TRAEFIK}
+      # Credential for the http_elasticsearch notification, expanded from
+      # config/elasticsearch.yaml. Notification configs have no `_FILE`
+      # indirection, so the environment is the only secret channel here.
+      ELASTIC_AUTH: ${ELASTIC_AUTH:-}
+      # Bot token and chat id for the http_telegram notification. The token is
+      # interpolated into `url` by crowdsec, the chat id by the go template in
+      # `format`, which needs sprig's `env` instead of `${VAR}`.
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
     configs:
       - source: acquis_config
         target: /etc/crowdsec/acquis.yaml
@@ -68,12 +90,19 @@ services:
     networks:
       proxy: {}
     restart: always
+    healthcheck:
+      test: ["CMD", "cscli", "version"]
+      start_period: 30s
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
   #############################################################################
   #############################################################################
   #############################################################################
   bouncer-traefik:
-    image: fbonalair/traefik-crowdsec-bouncer:${VERSION:-latest}
+    # https://hub.docker.com/r/fbonalair/traefik-crowdsec-bouncer
+    image: fbonalair/traefik-crowdsec-bouncer:${VERSION_BOUNCER_TRAEFIK:-0.5.0}
     ulimits:
       memlock:
         soft: -1
@@ -84,17 +113,14 @@ services:
       fsize: -1
       as: -1
     deploy:
-      mode: replicated
-      # mode: global
-      replicas: 1
-      placement:
-        max_replicas_per_node: 1
-        constraints:
-          # - "node.id==${NODE_ID}"
-          - "node.role==${NODE_ROLE:-manager}"
-          - node.platform.os == linux
-      restart_policy:
-        condition: on-failure
+      <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_BOUNCER_TRAEFIK:-0.25}
+          memory: ${RESOURCES_LIMITS_MEMORY_BOUNCER_TRAEFIK:-128m}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_BOUNCER_TRAEFIK:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_BOUNCER_TRAEFIK:-32m}
     environment:
       GIN_MODE: release
       CROWDSEC_BOUNCER_API_KEY: ${CROWDSEC_BOUNCER_API_KEY_TRAEFIK}
@@ -105,6 +131,12 @@ services:
     networks:
       proxy: {}
     restart: always
+    healthcheck:
+      test: ["CMD", "/healthchecker"]
+      start_period: 10s
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
 ################################################################################
 ################################################################################
