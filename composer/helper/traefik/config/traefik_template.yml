@@ -32,7 +32,6 @@ entryPoints:
     http:
       # middlewares:
       #   - default-secured@file
-      #   # - bouncer-crowdsec
       redirections:
         entryPoint:
           to: https
@@ -56,7 +55,10 @@ entryPoints:
         allowEncodedHash: false
       # middlewares:
       #   - default-secured@file
-      #   # - bouncer-crowdsec
+      # NOTE: middlewares listed here would have to come from THIS provider.
+      # The reusable ones live in config.yml (file provider) and are therefore
+      # only referenceable from a router label, e.g.
+      #   MIDDLEWARE_SECURED=bouncer-crowdsec@file,default-secured@file
 #   # -------------------------------------
 #   mysql:
 #     address: :3306
@@ -103,7 +105,7 @@ log:
   # Optional
   # Default: "ERROR"
   #
-  level: INFO # TRACE, DEBUG, PANIC, FATAL, ERROR, WARN, INFO
+  level: WARN # TRACE, DEBUG, PANIC, FATAL, ERROR, WARN, INFO
 
   # Sets the filepath for the traefik log. If not specified, stdout will be used.
   # Intermediate directories are created if necessary.
@@ -111,7 +113,9 @@ log:
   # Optional
   # Default: os.Stdout
   #
-  # filePath: /var/log/traefik/traefik.log
+  # NOTE: the crowdsec stack acquires the access log from the `traefik_logs`
+  # volume, see `accesslog.filePath`. This error log is for `docker logs` only.
+  filePath: /var/log/traefik/traefik.log
 
   # Format is either "json" or "common".
   #
@@ -137,25 +141,32 @@ accesslog:
   # Optional
   # Default: os.Stdout
   #
-  # filePath: /var/log/traefik/access.log
+  # The crowdsec stack acquires this single file (`acquis.yaml`), so keep the
+  # path in sync with `accesslog.filePath` here.
+  filePath: /var/log/traefik/access.log
 
   # Format is either "json" or "common".
   #
   # Optional
   # Default: "common"
   #
-  format: common
+  # json on purpose: the `crowdsecurity/traefik-logs` parser reads both, but
+  # only the json branch yields `RequestHost` (-> `target_fqdn`) and splits
+  # `ClientHost` on commas, so host-scoped scenarios and clients behind another
+  # proxy only work here. Costs bigger log files.
+  format: json
 
   fields:
     defaultMode: keep
     names:
       ClientUsername: drop
     headers:
-      defaultMode: keep
+      # `drop`, not `keep`: every request header would otherwise be written to
+      # the access log and then archived by crowdsec. The parser needs
+      # User-Agent, the rest is cookies and bearer tokens.
+      defaultMode: drop
       names:
         User-Agent: keep
-        Authorization: drop
-        Content-Type: keep
 
 ################################################################
 # Metric logs configuration

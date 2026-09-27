@@ -61,6 +61,20 @@ http:
     #       - X-authentik-meta-version
 
     # --------------------------------------------------------------------------
+    # Bans decided by crowdsec, answered by the `bouncer-traefik` service of the
+    # composer/siem/crowdsec stack. That service carries no traefik labels on
+    # purpose: it is only an internal target of this middleware, and
+    # `providers.swarm.exposedByDefault: false` keeps it unrouted.
+    # Not part of any chain below -- opt in per stack instead, so a crowdsec
+    # outage cannot lock every other stack out of its routers:
+    #   MIDDLEWARE_SECURED=bouncer-crowdsec@file,default-secured@file
+    # The client IP is taken from `X-Forwarded-For`, which traefik sets to the
+    # real client, so no `authRequestHeaders` is needed.
+    bouncer-crowdsec:
+      forwardAuth:
+        address: "http://bouncer-traefik:8080/api/v1/forwardAuth"
+
+    # --------------------------------------------------------------------------
     default-whitelist:
       IPAllowList:
         sourceRange:
@@ -80,6 +94,7 @@ http:
         middlewares:
           - default-whitelist
           - default-headers
+          # - bouncer-crowdsec
 
     public-secured:
       chain:
@@ -87,6 +102,8 @@ http:
           # - default-whitelist
           - public-whitelist
           - default-headers
+          # - bouncer-crowdsec
+
 tcp:
   # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # routers:
