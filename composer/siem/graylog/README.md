@@ -1,24 +1,5 @@
 # SETUP
 
-```sh
-    MVladislav
-```
-
----
-
-- [SETUP](#setup)
-  - [basic](#basic)
-    - [create your `secrets`:](#create-your-secrets)
-    - [get/update plugins](#getupdate-plugins)
-    - [create `.env` file following:](#create-env-file-following)
-      - [example short .env](#example-short-env)
-  - [Optional: add TLS for syslog](#optional-add-tls-for-syslog)
-  - [Graylog setup example](#graylog-setup-example)
-    - [syslog](#syslog)
-  - [References](#references)
-
----
-
 ## basic
 
 > defined to work with traefik
@@ -26,10 +7,9 @@
 ### create your `secrets`:
 
 ```sh
-#: 'must be at least 16 characters!'
-$pwgen -s 24 1 > config/secrets/graylog_password_secret.txt
-$pwgen -s 24 1 > config/secrets/graylog_root_password_plain.txt
-$cat config/secrets/graylog_root_password_plain.txt | tr -d '\n' | sha256sum | awk '{ print $1 }' > config/secrets/graylog_root_password_sha2.txt
+pwgen -s 24 1 > config/secrets/graylog_password_secret.txt
+pwgen -s 24 1 > config/secrets/graylog_root_password_plain.txt
+tr -d '\n' < config/secrets/graylog_root_password_plain.txt | sha256sum | awk '{ print $1 }' > config/secrets/graylog_root_password_sha2.txt
 ```
 
 ### get/update plugins
@@ -53,11 +33,8 @@ DOMAIN=graylog.home.local # not set in docker-compose, needs to be copied to .en
 PROTOCOL=http
 PORT=9000
 # default-secured@file | public-whitelist@file | authentik@file
+# opt in to crowdsec bans: bouncer-crowdsec@file,default-secured@file
 MIDDLEWARE_SECURED=default-secured@file
-
-SYSLOG_ENTRYPOINT=syslog-tls
-SYSLOG_DOMAIN_TLS=*
-SYSLOG_PORT_TLS=1514
 
 # GENERAL sources to be used (set by default, change as needed)
 # ______________________________________________________________________________
@@ -78,31 +55,28 @@ RESOURCES_RESERVATIONS_MEMORY_MONGODB=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_GRAYLOG=6.2
+VERSION_GRAYLOG=7.1
 VERSION_MONGODB=8.0.8
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
-GRAYLOG_HTTP_EXTERNAL_URI=http://127.0.0.1:9000/
+CERT_RESOLVER=certificates
 
-GRAYLOG_TRANSPORT_EMAIL_ENABLED=true
-GRAYLOG_TRANSPORT_EMAIL_HOSTNAME=smtp
-GRAYLOG_TRANSPORT_EMAIL_PORT=465
-GRAYLOG_TRANSPORT_EMAIL_USE_AUTH=true
-GRAYLOG_TRANSPORT_EMAIL_USE_TLS=true
-GRAYLOG_TRANSPORT_EMAIL_USE_SSL=false
+GRAYLOG_TRANSPORT_EMAIL_ENABLED=false
+# GRAYLOG_TRANSPORT_EMAIL_HOSTNAME=<RELAY>
+# GRAYLOG_TRANSPORT_EMAIL_PORT=587
+# GRAYLOG_TRANSPORT_EMAIL_USE_AUTH=true
+# GRAYLOG_TRANSPORT_EMAIL_AUTH_USERNAME=<USERNAME>
+# GRAYLOG_TRANSPORT_EMAIL_AUTH_PASSWORD=<PASSWORD>
+# GRAYLOG_TRANSPORT_EMAIL_USE_TLS=true
+# GRAYLOG_TRANSPORT_EMAIL_USE_SSL=false
 ```
 
 #### example short .env
 
 ```env
 DOMAIN=graylog.home.local
-SYSLOG_DOMAIN_TLS=*
 ```
-
-## Optional: add TLS for syslog
-
-add **pub-cert** file into folder `./config/secrets/tls`
 
 ## Graylog setup example
 
@@ -148,12 +122,14 @@ under page `streams`, do not forget to activate the stream by click on **start s
 - <https://www.graylog.org/>
 - <https://hub.docker.com/r/graylog/graylog>
   - <https://hub.docker.com/r/graylog/graylog-datanode>
+- source + `UPGRADING.md` (the authoritative release notes, there is no CHANGELOG)
+  - <https://github.com/Graylog2/graylog2-server>
+  - <https://github.com/Graylog2/graylog2-server/blob/7.1.9/UPGRADING.md>
 - <https://github.com/Graylog2/docker-compose>
 - <https://github.com/Graylog2/graylog-docker>
 - <https://docs.graylog.org/docs/docker>
+- <https://go2docs.graylog.org/current/setting_up_graylog/graylog_upgrade.html>
 - <https://www.youtube.com/watch?v=rtfj6W5X0YA>
-- <https://github.com/Graylog2/graylog-docker/blob/261b48d65b48a7c35f8934e6a6b4a13a67ab6fbe/test/docker-compose.tpl>
-- <https://go2docs.graylog.org/current/downloading_and_installing_graylog/docker_installation.htm>
 - <https://go2docs.graylog.org/current/setting_up_graylog/server.conf.html>
 - opensearch
   - <https://hub.docker.com/r/opensearchproject/opensearch>

@@ -7,16 +7,18 @@ x-basic-deploy-labels: &basic-deploy-labels
     - traefik.http.routers.graylog.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
     - traefik.http.routers.graylog.rule=Host(`${DOMAIN?domain variable not set}`)
     - traefik.http.routers.graylog.tls=true
+    - traefik.http.routers.graylog.tls.certresolver=${CERT_RESOLVER:-}
     - traefik.http.routers.graylog.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
     - traefik.http.routers.graylog.service=graylog
     - traefik.http.services.graylog.loadbalancer.server.scheme=${PROTOCOL:-http}
     - traefik.http.services.graylog.loadbalancer.server.port=${PORT:-9000}
 
-    - traefik.tcp.routers.graylog-syslog.entrypoints=${SYSLOG_ENTRYPOINT:-syslog-tls}
-    - traefik.tcp.routers.graylog-syslog.rule=HostSNI(`${SYSLOG_DOMAIN_TLS?domain variable not set}`)
-    - traefik.tcp.routers.graylog-syslog.tls=true
-    - traefik.tcp.routers.graylog-syslog.tls.passthrough=false
-    - traefik.tcp.services.graylog-syslog.loadbalancer.server.port=${SYSLOG_PORT_TLS:-5140}
+    # - traefik.tcp.routers.graylog-syslog.entrypoints=${SYSLOG_ENTRYPOINT:-syslog-tls}
+    # - traefik.tcp.routers.graylog-syslog.rule=HostSNI(`${SYSLOG_DOMAIN_TLS?domain variable not set}`)
+    # - traefik.tcp.routers.graylog-syslog.tls=true
+    # - traefik.tcp.routers.graylog-syslog.tls.certresolver=${CERT_RESOLVER:-}
+    # - traefik.tcp.routers.graylog-syslog.service=graylog-syslog
+    # - traefik.tcp.services.graylog-syslog.loadbalancer.server.port=${SYSLOG_PORT_TLS:-5140}
 
 x-basic-deploy: &basic-deploy
   mode: replicated
@@ -60,13 +62,9 @@ x-basic-deploy-resources-mongodb: &basic-deploy-resources-mongodb
 
 x-basic: &basic
   env_file: ${ENV_FILE:-.env}
-  # cap_add:
-  #   - CHOWN
-  #   - SETGID
-  #   - SETUID
-  # cap_drop: [ "ALL" ]
-  # security_opt:
-  #   - no-new-privileges:true
+  cap_drop: ["ALL"]
+  security_opt:
+    - no-new-privileges:true
   ulimits:
     memlock:
       soft: -1
@@ -81,9 +79,7 @@ x-basic: &basic
   healthcheck:
     disable: true
   tmpfs:
-    - /tmp
-    - /run
-    - /run/lock
+    - /tmp:rw,relatime,size=512m,nodev,nosuid,noexec
   restart: always
 
 ################################################################################
@@ -96,10 +92,13 @@ services:
   graylog1:
     hostname: "graylog1"
     # https://hub.docker.com/r/graylog/graylog
-    image: graylog/graylog:${VERSION_GRAYLOG:-6.2}
+    image: graylog/graylog:${VERSION_GRAYLOG:-7.1}
     <<: *basic
     deploy:
-      <<: [*basic-deploy, *basic-deploy-resources-graylog, *basic-deploy-labels]
+      <<:
+        - *basic-deploy
+        - *basic-deploy-resources-graylog
+        - *basic-deploy-labels
     ports:
       # # Graylog web interface and REST API
       # - target: 9000
@@ -172,22 +171,34 @@ services:
     environment:
       GRAYLOG_PASSWORD_SECRET__FILE: /run/secrets/graylog_password_secret
       GRAYLOG_ROOT_PASSWORD_SHA2__FILE: /run/secrets/graylog_root_password_sha2
-      GRAYLOG_HTTP_EXTERNAL_URI: ${GRAYLOG_HTTP_EXTERNAL_URI:-http://127.0.0.1:9000/}
+
+      GRAYLOG_HTTP_EXTERNAL_URI: ${GRAYLOG_HTTP_EXTERNAL_URI:-https://${DOMAIN?domain variable not set}}
       # GRAYLOG_HTTP_PUBLISH_URI: ${GRAYLOG_HTTP_PUBLISH_URI}
       GRAYLOG_MONGODB_URI: mongodb://mongodb1:27017/graylog
       GRAYLOG_HTTP_BIND_ADDRESS: 0.0.0.0:9000
       GRAYLOG_NODE_ID_FILE: /usr/share/graylog/data/config/node-id
-      GRAYLOG_REPORT_DISABLE_SANDBOX: ${GRAYLOG_REPORT_DISABLE_SANDBOX:-true}
+      GRAYLOG_TRUSTED_PROXIES: ${GRAYLOG_TRUSTED_PROXIES:-127.0.0.1/32, 10.0.0.0/8, 172.16.0.0/12}
+
+      GRAYLOG_TELEMETRY_ENABLED: ${GRAYLOG_TELEMETRY_ENABLED:-false}
+      GRAYLOG_VERSIONCHECKS: ${GRAYLOG_VERSIONCHECKS:-false}
+
+      # Default is 0 = UNBOUNDED. Cap it so a burst cannot exhaust the heap.
+      GRAYLOG_SEARCH_QUERY_ENGINE_INDEXER_JOBS_QUEUE_SIZE: ${GRAYLOG_SEARCH_QUERY_ENGINE_INDEXER_JOBS_QUEUE_SIZE:-1000}
+      # Default is 12h; Graylog's install guide asks for 72h so a restart
+      # replays a full day. Keep the journal volume at least this big.
+      GRAYLOG_MESSAGE_JOURNAL_MAX_AGE: ${GRAYLOG_MESSAGE_JOURNAL_MAX_AGE:-72h}
 
       # # minimum and maximum Java heap size, recommend setting both to 50% of system RAM
       # GRAYLOG_SERVER_JAVA_OPTS: -Xms${RESOURCES_LIMITS_MEMORY:-2g} -Xmx${RESOURCES_LIMITS_MEMORY:-2g} -XX:NewRatio=1 -server -XX:+ResizeTLAB -XX:-OmitStackTraceInFastThrow
 
-      GRAYLOG_TRANSPORT_EMAIL_ENABLED: ${GRAYLOG_TRANSPORT_EMAIL_ENABLED:-true}
-      GRAYLOG_TRANSPORT_EMAIL_HOSTNAME: ${GRAYLOG_TRANSPORT_EMAIL_HOSTNAME:-smtp}
-      GRAYLOG_TRANSPORT_EMAIL_PORT: ${GRAYLOG_TRANSPORT_EMAIL_PORT:-465}
-      GRAYLOG_TRANSPORT_EMAIL_USE_AUTH: ${GRAYLOG_TRANSPORT_EMAIL_USE_AUTH:-true}
-      GRAYLOG_TRANSPORT_EMAIL_USE_TLS: ${GRAYLOG_TRANSPORT_EMAIL_USE_TLS:-true}
-      GRAYLOG_TRANSPORT_EMAIL_USE_SSL: ${GRAYLOG_TRANSPORT_EMAIL_USE_SSL:-false}
+      GRAYLOG_TRANSPORT_EMAIL_ENABLED: ${GRAYLOG_TRANSPORT_EMAIL_ENABLED:-false}
+      # GRAYLOG_TRANSPORT_EMAIL_HOSTNAME: ${SMTP_HOSTNAME?SMTP_HOSTNAME is not set}
+      # GRAYLOG_TRANSPORT_EMAIL_PORT: ${SMTP_PORT:-587}
+      # GRAYLOG_TRANSPORT_EMAIL_USE_AUTH: ${SMTP_USE_AUTH:-true}
+      # GRAYLOG_TRANSPORT_EMAIL_AUTH_USERNAME: ${SMTP_USERNAME?SMTP_USERNAME is not set}
+      # GRAYLOG_TRANSPORT_EMAIL_AUTH_PASSWORD: ${SMTP_PASSWORD?SMTP_PASSWORD is not set}
+      # GRAYLOG_TRANSPORT_EMAIL_USE_TLS: ${SMTP_USE_TLS:-true} # STARTTLS, plain 587
+      # GRAYLOG_TRANSPORT_EMAIL_USE_SSL: ${SMTP_USE_SSL:-false} # implicit TLS, plain 465
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
@@ -206,21 +217,27 @@ services:
   datanode1:
     hostname: "datanode1"
     # https://hub.docker.com/r/graylog/graylog-datanode
-    image: graylog/graylog-datanode:${VERSION_GRAYLOG:-6.2}
+    image: graylog/graylog-datanode:${VERSION_GRAYLOG:-7.1}
     <<: *basic
     deploy:
-      <<: [*basic-deploy, *basic-deploy-resources-datanode]
+      <<:
+        - *basic-deploy
+        - *basic-deploy-resources-datanode
+    cap_add:
+      - CHOWN # for `install -d -o graylog -g graylog` + `chown -R $DATA_DIR`
+      - SETGID # for the `setpriv --reuid/--regid` privilege drop
+      - SETUID # for the `setpriv --reuid/--regid` privilege drop
+      # - FOWNER # bind/NFS data dir with foreign ownership
+      # - DAC_OVERRIDE # bind/NFS data dir with foreign ownership
     secrets:
       - graylog_password_secret
     environment:
       GRAYLOG_DATANODE_ROOT_USERNAME: admin
+      GRAYLOG_DATANODE_HOSTNAME: datanode1
       GRAYLOG_DATANODE_PASSWORD_SECRET__FILE: /run/secrets/graylog_password_secret
       GRAYLOG_DATANODE_MONGODB_URI: mongodb://mongodb1:27017/graylog
       GRAYLOG_DATANODE_DATA_DIR: /var/lib/graylog-datanode
       GRAYLOG_DATANODE_NODE_ID_FILE: /var/lib/graylog-datanode/node-id
-      opensearch.bootstrap.system_call_filter: "false"
-      OPENSEARCH_BOOTSTRAP_SYSTEM_CALL_FILTER: "false"
-      GRAYLOG_DATANODE_OPENSEARCH_BOOTSTRAP_SYSTEM_CALL_FILTER: "false"
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
@@ -229,21 +246,27 @@ services:
   datanode2:
     hostname: "datanode2"
     # https://hub.docker.com/r/graylog/graylog-datanode
-    image: graylog/graylog-datanode:${VERSION_GRAYLOG:-6.2}
+    image: graylog/graylog-datanode:${VERSION_GRAYLOG:-7.1}
     <<: *basic
     deploy:
-      <<: [*basic-deploy, *basic-deploy-resources-datanode]
+      <<:
+        - *basic-deploy
+        - *basic-deploy-resources-datanode
+    cap_add:
+      - CHOWN # for `install -d -o graylog -g graylog` + `chown -R $DATA_DIR`
+      - SETGID # for the `setpriv --reuid/--regid` privilege drop
+      - SETUID # for the `setpriv --reuid/--regid` privilege drop
+      # - FOWNER # bind/NFS data dir with foreign ownership
+      # - DAC_OVERRIDE # bind/NFS data dir with foreign ownership
     secrets:
       - graylog_password_secret
     environment:
       GRAYLOG_DATANODE_ROOT_USERNAME: admin
+      GRAYLOG_DATANODE_HOSTNAME: datanode2
       GRAYLOG_DATANODE_PASSWORD_SECRET__FILE: /run/secrets/graylog_password_secret
       GRAYLOG_DATANODE_MONGODB_URI: mongodb://mongodb1:27017/graylog
       GRAYLOG_DATANODE_DATA_DIR: /var/lib/graylog-datanode
       GRAYLOG_DATANODE_NODE_ID_FILE: /var/lib/graylog-datanode/node-id
-      opensearch.bootstrap.system_call_filter: "false"
-      OPENSEARCH_BOOTSTRAP_SYSTEM_CALL_FILTER: "false"
-      GRAYLOG_DATANODE_OPENSEARCH_BOOTSTRAP_SYSTEM_CALL_FILTER: "false"
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
@@ -252,21 +275,27 @@ services:
   datanode3:
     hostname: "datanode3"
     # https://hub.docker.com/r/graylog/graylog-datanode
-    image: graylog/graylog-datanode:${VERSION_GRAYLOG:-6.2}
+    image: graylog/graylog-datanode:${VERSION_GRAYLOG:-7.1}
     <<: *basic
     deploy:
-      <<: [*basic-deploy, *basic-deploy-resources-datanode]
+      <<:
+        - *basic-deploy
+        - *basic-deploy-resources-datanode
+    cap_add:
+      - CHOWN # for `install -d -o graylog -g graylog` + `chown -R $DATA_DIR`
+      - SETGID # for the `setpriv --reuid/--regid` privilege drop
+      - SETUID # for the `setpriv --reuid/--regid` privilege drop
+      # - FOWNER # bind/NFS data dir with foreign ownership
+      # - DAC_OVERRIDE # bind/NFS data dir with foreign ownership
     secrets:
       - graylog_password_secret
     environment:
       GRAYLOG_DATANODE_ROOT_USERNAME: admin
+      GRAYLOG_DATANODE_HOSTNAME: datanode3
       GRAYLOG_DATANODE_PASSWORD_SECRET__FILE: /run/secrets/graylog_password_secret
       GRAYLOG_DATANODE_MONGODB_URI: mongodb://mongodb1:27017/graylog
       GRAYLOG_DATANODE_DATA_DIR: /var/lib/graylog-datanode
       GRAYLOG_DATANODE_NODE_ID_FILE: /var/lib/graylog-datanode/node-id
-      opensearch.bootstrap.system_call_filter: "false"
-      OPENSEARCH_BOOTSTRAP_SYSTEM_CALL_FILTER: "false"
-      GRAYLOG_DATANODE_OPENSEARCH_BOOTSTRAP_SYSTEM_CALL_FILTER: "false"
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
@@ -286,12 +315,25 @@ services:
       - SETUID
       - SETGID
       - CHOWN
+      - FOWNER
+      - DAC_READ_SEARCH
+      - DAC_OVERRIDE
     # command: ["mongod", "--bind_ip_all", "--replSet", "rs0"]
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - mongodb_data_01:/data/db
       - mongodb_config_01:/data/configdb
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "mongosh --quiet --port 27017 --eval 'quit(db.adminCommand({ping: 1}).ok ? 0 : 1)'",
+        ]
+      start_period: 30s
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 ################################################################################
 ################################################################################

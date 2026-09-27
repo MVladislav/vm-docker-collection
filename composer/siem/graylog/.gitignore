@@ -10,18 +10,8 @@
 !LICENCE
 !README.md
 
-!config/
-config/*
 
-!config/configs/
-!config/configs/*
-!config/plugins/
-!config/plugins/*
+!config/
 !config/secrets/
 config/secrets/*
 !config/secrets/.gitempty
-!config/secrets/tls/
-config/secrets/tls/*
-!config/secrets/tls/.gitempty
-!config/maxmind/
-config/maxmind/*
