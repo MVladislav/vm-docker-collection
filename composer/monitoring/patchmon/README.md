@@ -1,10 +1,10 @@
-# Setup
+# SETUP
 
-## Basic
+## basic
 
 > designed to work with traefik
 
-### Create your `secrets`
+### create your `secrets`:
 
 ```sh
 pwgen -s 32 1 > config/secrets/postgres_password_file.txt
@@ -14,7 +14,7 @@ echo "AI_ENCRYPTION_KEY=$(pwgen -s 64 1)" >> .env
 echo "SESSION_SECRET=$(pwgen -s 64 1)" >> .env
 ```
 
-### Create the `.env` file
+### create `.env` file following:
 
 ```env
 # GENERAL variables (mostly by default, change as needed)
@@ -62,13 +62,13 @@ VERSION_VALKEY=9.1.2-alpine
 CERT_RESOLVER=certificates
 ```
 
-#### Example short `.env` (swarm)
+#### example short `.env` (swarm)
 
 ```env
 DOMAIN=patchmon.home.local
 ```
 
-#### Example short `.env` (bridge)
+#### example short `.env` (bridge)
 
 ```env
 NETWORK_MODE=bridge
