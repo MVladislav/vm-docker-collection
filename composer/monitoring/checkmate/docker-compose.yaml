@@ -105,22 +105,42 @@ services:
       <<:
         - *basic-deploy
         - *basic-deploy-server-labels
-    ports:
-      - 52345:52345
+    # ports:
+    #   - target: ${PORT_SERVER:-52345}
+    #     published: ${PORT_SERVER:-52345}
+    #     protocol: tcp
+    #     # host_ip: 127.0.0.1
+    #     mode: host
     environment:
+      # encrypts the monitor credentials (capture agent secret) in mongodb
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY?ENCRYPTION_KEY is not set}
       CLIENT_HOST: https://${DOMAIN?domain variable not set}
       DB_CONNECTION_STRING: mongodb://mongodb:27017/uptime_db?replicaSet=rs0
       REDIS_HOST: valkey
       REDIS_PORT: 6379
       REDIS_URL: redis://valkey:6379
-      ORIGIN: ${DOMAIN?domain variable not set}
+      ORIGIN: https://${DOMAIN?domain variable not set}
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+    #   - /var/run/docker.sock:/var/run/docker.sock:ro
+    # group_add:
+    #   - "${DOCKER_GID:?DOCKER_GID is not set, run: stat -c %g /var/run/docker.sock}"
     networks:
       default: {}
       proxy: {}
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:${PORT_SERVER:-52345}/api/v1/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      start_period: 30s
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
   ##############################################################################
   ##############################################################################
@@ -167,7 +187,7 @@ services:
       resources:
         limits:
           cpus: ${RESOURCES_LIMITS_CPUS_MONGODB:-1}
-          memory: ${RESOURCES_LIMITS_MEMORY_MONGODB:-2G}
+          memory: ${RESOURCES_LIMITS_MEMORY_MONGODB:-2g}
         reservations:
           cpus: ${RESOURCES_RESERVATIONS_CPUS_MONGODB:-0.001}
           memory: ${RESOURCES_RESERVATIONS_MEMORY_MONGODB:-32m}

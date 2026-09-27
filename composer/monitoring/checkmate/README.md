@@ -1,22 +1,5 @@
 # SETUP
 
-```sh
-    MVladislav
-```
-
----
-
-- [SETUP](#setup)
-  - [basic](#basic)
-    - [create your `secrets`:](#create-your-secrets)
-    - [create `.env` file following:](#create-env-file-following)
-      - [example short .env](#example-short-env)
-  - [References](#references)
-
----
-
-> **⚠️ NOT WORKING!**
-
 ## basic
 
 > defined to work with traefik
@@ -24,7 +7,8 @@
 ### create your `secrets`:
 
 ```sh
-$echo "JWT_SECRET=$(openssl rand -base64 64 | tr -d '\n')" >> .env
+echo "JWT_SECRET=$(openssl rand -base64 64 | tr -d '\n')" >> .env
+echo "ENCRYPTION_KEY=$(pwgen -s 32 1)" >> .env
 ```
 
 ### create `.env` file following:
@@ -44,22 +28,23 @@ PORT=80
 PROTOCOL_SERVER=http
 PORT_SERVER=52345
 # default-secured@file | public-secured@file | authentik@file
+# opt in to crowdsec bans: bouncer-crowdsec@file,default-secured@file
 MIDDLEWARE_SECURED=default-secured@file
 
 # GENERAL sources to be used (set by default, change as needed)
 # ______________________________________________________________________________
-RESOURCES_LIMITS_CPUS=1
-RESOURCES_LIMITS_MEMORY=1g
+RESOURCES_LIMITS_CPUS=2
+RESOURCES_LIMITS_MEMORY=2g
 RESOURCES_RESERVATIONS_CPUS=0.001
 RESOURCES_RESERVATIONS_MEMORY=32m
 
 RESOURCES_LIMITS_CPUS_VALKEY=1
-RESOURCES_LIMITS_MEMORY_VALKEY=512M
+RESOURCES_LIMITS_MEMORY_VALKEY=128m
 RESOURCES_RESERVATIONS_CPUS_VALKEY=0.001
 RESOURCES_RESERVATIONS_MEMORY_VALKEY=32m
 
 RESOURCES_LIMITS_CPUS_MONGODB=1
-RESOURCES_LIMITS_MEMORY_MONGODB=512M
+RESOURCES_LIMITS_MEMORY_MONGODB=2g
 RESOURCES_RESERVATIONS_CPUS_MONGODB=0.001
 RESOURCES_RESERVATIONS_MEMORY_MONGODB=32m
 
@@ -72,7 +57,7 @@ VERSION_MONGODB=8.0.8
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
 JWT_SECRET=<SECRET>
-PAGESPEED_API_KEY=<https://developers.google.com/speed/docs/insights/v5/get-started>
+ENCRYPTION_KEY=<SECRET>
 ```
 
 #### example short .env
@@ -88,5 +73,6 @@ DOMAIN=check.home.local
 - <https://checkmate.so/>
 - <https://github.com/bluewave-labs/Checkmate>
   - <https://github.com/bluewave-labs/Checkmate/tree/develop/docker/dist>
+- <https://github.com/bluewave-labs/capture>
 - <https://docs.checkmate.so/users-guide/quickstart>
   - <https://docs.checkmate.so/users-guide/quickstart#env-vars-server>
