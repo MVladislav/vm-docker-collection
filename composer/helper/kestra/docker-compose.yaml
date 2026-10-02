@@ -74,7 +74,7 @@ services:
   ##############################################################################
   kestra:
     # https://hub.docker.com/r/kestra/kestra
-    image: kestra/kestra:${VERSION_KESTRA:-v0.23.5}
+    image: kestra/kestra:${VERSION_KESTRA:-v0.24.20}
     <<:
       - *basic
       - *basic-deploy-labels
@@ -92,20 +92,23 @@ services:
             password: ""
         kestra:
           server:
-            basicAuth:
-              enabled: ${KESTRA_AUTH_ENABLED:-false}
-              username: ${KESTRA_USERNAME:-groot@home.local}
-              password: ${KESTRA_PASSWORD:-kestra}
+            basic-auth:
+              username: ${KESTRA_USERNAME:?KESTRA_USERNAME is not set}
+              password: ${KESTRA_PASSWORD:?KESTRA_PASSWORD is not set}
+          anonymous-usage-report:
+            enabled: ${KESTRA_ANONYMOUS_USAGE_REPORT:-false}
+          ui-anonymous-usage-report:
+            enabled: ${KESTRA_UI_ANONYMOUS_USAGE_REPORT:-false}
           repository:
             type: postgres
           storage:
             type: local
             local:
-              basePath: "/app/storage"
+              base-path: "/app/storage"
           queue:
             type: postgres
           tasks:
-            tmpDir:
+            tmp-dir:
               path: /tmp/kestra-wd/tmp
           url: https://${DOMAIN?domain variable not set}/
     volumes:
@@ -119,7 +122,7 @@ services:
     command: server standalone --worker-thread=128
     healthcheck:
       test: ["CMD", "curl", "-f", "http://127.0.0.1:8081/health"]
-      start_period: 10s
+      start_period: 300s
       interval: 30s
       timeout: 5s
       retries: 3

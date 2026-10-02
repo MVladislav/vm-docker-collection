@@ -1,21 +1,5 @@
 # SETUP
 
-```sh
-    MVladislav
-```
-
----
-
-- [SETUP](#setup)
-  - [basic](#basic)
-    - [create your `secrets`:](#create-your-secrets)
-    - [create `.env` file following:](#create-env-file-following)
-      - [example short .env (swarm)](#example-short-env-swarm)
-      - [example short .env (bridge)](#example-short-env-bridge)
-  - [References](#references)
-
----
-
 ## basic
 
 > defined to work with traefik
@@ -23,7 +7,8 @@
 ### create your `secrets`:
 
 ```sh
-$cp config/secrets.yaml.tmpl config/secrets.yaml
+cp config/secrets.yaml.tmpl config/secrets.yaml
+echo "KESTRA_PASSWORD=$(tr -dc 'A-Za-z0-9' </dev/urandom | head -c 20; echo '')" >> .env
 ```
 
 ### create `.env` file following:
@@ -52,14 +37,16 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_KESTRA=v0.23.5
+VERSION_KESTRA=v0.24.20
 VERSION_POSTGRESQL=18.6-alpine
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
-KESTRA_AUTH_ENABLED=false
-KESTRA_USERNAME=groot@home.local
-KESTRA_PASSWORD=kestra
+KESTRA_USERNAME=kestra@home.local
+
+
+KESTRA_ANONYMOUS_USAGE_REPORT=false
+KESTRA_UI_ANONYMOUS_USAGE_REPORT=false
 ```
 
 #### example short .env (swarm)
