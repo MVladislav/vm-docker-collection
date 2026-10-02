@@ -76,8 +76,6 @@ x-n8n-base-worker: &n8n-base-worker
   QUEUE_BULL_REDIS_PORT: 6379
   QUEUE_HEALTH_CHECK_ACTIVE: "true"
   OFFLOAD_MANUAL_EXECUTIONS_TO_WORKERS: "true"
-  # Task runners (2.0)
-  N8N_RUNNERS_ENABLED: "true"
   N8N_RUNNERS_MODE: "external"
   N8N_RUNNERS_BROKER_LISTEN_ADDRESS: "0.0.0.0"
 
@@ -93,7 +91,7 @@ services:
   ##############################################################################
   n8n:
     # https://hub.docker.com/r/n8nio/n8n
-    image: n8nio/n8n:${VERSION_N8N:-2.3.2}
+    image: n8nio/n8n:${VERSION_N8N:-2.41.2}
     <<:
       - *basic
       # - *basic-deploy-labels
@@ -106,14 +104,14 @@ services:
       N8N_PROTOCOL: https
       N8N_HOST: ${DOMAIN?domain variable not set}
       N8N_PORT: ${PORT:-5678}
-      WEBHOOK_URL: https://${DOMAIN?domain variable not set}/
+      N8N_WEBHOOK_URL: https://${DOMAIN?domain variable not set}/
 
       N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS: ${N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS:-true}
-      N8N_RUNNERS_ENABLED: ${N8N_RUNNERS_ENABLED:-true}
       N8N_DIAGNOSTICS_ENABLED: ${N8N_DIAGNOSTICS_ENABLED:-false}
       N8N_VERSION_NOTIFICATIONS_ENABLED: ${N8N_VERSION_NOTIFICATIONS_ENABLED:-false}
+      N8N_TEMPLATES_ENABLED: ${N8N_TEMPLATES_ENABLED:-false}
       N8N_PROXY_HOPS: 1
-      N8N_DISABLE_PRODUCTION_MAIN_PROCESS: ${N8N_DISABLE_PRODUCTION_MAIN_PROCESS:-false} # TODO
+      N8N_DISABLE_PRODUCTION_MAIN_PROCESS: ${N8N_DISABLE_PRODUCTION_MAIN_PROCESS:-false}
 
       GENERIC_TIMEZONE: ${GENERIC_TIMEZONE:-Europe/Berlin}
       TZ: ${GENERIC_TIMEZONE:-Europe/Berlin}
@@ -129,9 +127,9 @@ services:
       test:
         [
           "CMD-SHELL",
-          "wget --no-verbose --tries=1 --spider --no-check-certificate ${PROTOCOL:-http}://127.0.0.1:${PORT:-5678} || exit 1",
+          "wget --no-verbose --tries=1 --spider --no-check-certificate https://127.0.0.1:${PORT:-5678}/healthz/readiness || exit 1",
         ]
-      start_period: 10s
+      start_period: 300s
       interval: 30s
       timeout: 5s
       retries: 3
@@ -141,7 +139,7 @@ services:
   ##############################################################################
   n8n-worker:
     # https://hub.docker.com/r/n8nio/n8n
-    image: n8nio/n8n:${VERSION_N8N:-2.3.2}
+    image: n8nio/n8n:${VERSION_N8N:-2.41.2}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -161,7 +159,7 @@ services:
 
   n8n-runners-main:
     # https://hub.docker.com/r/n8nio/runners
-    image: n8nio/runners:${VERSION_N8N:-2.3.2}
+    image: n8nio/runners:${VERSION_N8N:-2.41.2}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -178,7 +176,7 @@ services:
 
   n8n-runners-worker:
     # https://hub.docker.com/r/n8nio/runners
-    image: n8nio/runners:${VERSION_N8N:-2.3.2}
+    image: n8nio/runners:${VERSION_N8N:-2.41.2}
     <<: *basic
     deploy:
       resources:

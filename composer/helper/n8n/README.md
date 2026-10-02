@@ -66,13 +66,16 @@ RESOURCES_RESERVATIONS_MEMORY_N8N_RUNNER=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_N8N=2.3.2
+VERSION_N8N=2.41.2
 VERSION_VALKEY=9.1.2-alpine
 VERSION_POSTGRESQL=18.6-alpine
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
 CERT_RESOLVER=certificates
+N8N_DIAGNOSTICS_ENABLED=false
+N8N_VERSION_NOTIFICATIONS_ENABLED=false
+N8N_TEMPLATES_ENABLED=false
 ```
 
 #### example short .env (swarm)
