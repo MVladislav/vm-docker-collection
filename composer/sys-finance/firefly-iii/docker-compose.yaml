@@ -192,7 +192,7 @@ services:
   ##############################################################################
   fireflyiii_cron:
     # https://hub.docker.com/_/alpine
-    image: alpine:${VERSION_ALPINE:-3.21.2}
+    image: alpine:${VERSION_ALPINE:-3.24.2}
     <<: *basic
     deploy:
       <<: *basic-deploy

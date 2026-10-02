@@ -61,7 +61,7 @@ services:
   ##############################################################################
   portainer:
     # https://hub.docker.com/r/portainer/portainer-ce
-    image: portainer/portainer-ce:${VERSION_PORTAINER:-2.16.2-alpine}
+    image: portainer/portainer-ce:${VERSION_PORTAINER:-2.45.1-alpine}
     <<: *basic
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels]
@@ -104,7 +104,7 @@ services:
   ##############################################################################
   agent:
     # https://hub.docker.com/r/portainer/agent
-    image: portainer/agent:${VERSION_AGENT:-2.16.2-alpine}
+    image: portainer/agent:${VERSION_AGENT:-2.45.1-alpine}
     <<: *basic
     deploy:
       mode: global

@@ -64,7 +64,7 @@ services:
   ##############################################################################
   syncthing:
     # https://hub.docker.com/r/syncthing/syncthing
-    image: syncthing/syncthing:${VERSION:-1.27}
+    image: syncthing/syncthing:${VERSION:-1.30}
     <<: [*basic, *basic-deploy-labels]
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels]

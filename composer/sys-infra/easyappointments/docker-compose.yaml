@@ -61,7 +61,7 @@ services:
   ##############################################################################
   easyappointments:
     # https://hub.docker.com/r/alextselegidis/easyappointments
-    image: alextselegidis/easyappointments:${VERSION_APPT:-1.5.1}
+    image: alextselegidis/easyappointments:${VERSION_APPT:-1.6.0}
     <<:
       - *basic
       - *basic-deploy-labels

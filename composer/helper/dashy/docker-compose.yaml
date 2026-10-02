@@ -58,7 +58,7 @@ services:
   ##############################################################################
   dashy:
     # https://hub.docker.com/r/lissy93/dashy
-    image: lissy93/dashy:${VERSION:-2.1.1}
+    image: lissy93/dashy:${VERSION:-2.1.2}
     <<: *basic
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels]
