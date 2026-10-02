@@ -89,15 +89,15 @@ x-indexer-env: &indexer-env
   bootstrap.memory_lock: ${MEM_LOCK:-false}
   OPENSEARCH_JAVA_OPTS: -Xms${WAZUH_INDEXER_JAVA:-1g} -Xmx${WAZUH_INDEXER_JAVA:-1g}
 
-  # # OPENSEARCH_PATH_CONF: /usr/share/wazuh-indexer
+  # # OPENSEARCH_PATH_CONF: /usr/share/wazuh-indexer/config
   # CLUSTER_NAME: "wazuh-cluster"
   # CLUSTER_INITIAL_MASTER_NODES: '["wazuh1.indexer", "wazuh2.indexer", "wazuh3.indexer"]'
   # DISCOVERY_SEED_HOSTS: '["wazuh1.indexer", "wazuh2.indexer", "wazuh3.indexer"]'
   # NODE_MAX_LOCAL_STORAGE_NODES: "3"
   # PATH_DATA: /var/lib/wazuh-indexer
   # PATH_LOGS: /var/log/wazuh-indexer
-  # PLUGINS_SECURITY_SSL_HTTP_PEMTRUSTEDCAS_FILEPATH: /usr/share/wazuh-indexer/certs/root-ca.pem
-  # PLUGINS_SECURITY_SSL_TRANSPORT_PEMTRUSTEDCAS_FILEPATH: /usr/share/wazuh-indexer/certs/root-ca.pem
+  # PLUGINS_SECURITY_SSL_HTTP_PEMTRUSTEDCAS_FILEPATH: /usr/share/wazuh-indexer/config/certs/root-ca.pem
+  # PLUGINS_SECURITY_SSL_TRANSPORT_PEMTRUSTEDCAS_FILEPATH: /usr/share/wazuh-indexer/config/certs/root-ca.pem
   # PLUGINS_SECURITY_SSL_HTTP_ENABLED: "true"
   # PLUGINS_SECURITY_SSL_TRANSPORT_ENFORCE_HOSTNAME_VERIFICATION: "false"
   # PLUGINS_SECURITY_SSL_TRANSPORT_RESOLVE_HOSTNAME: "false"
@@ -118,7 +118,7 @@ services:
   ##############################################################################
   wazuh-dashboard:
     # https://hub.docker.com/r/wazuh/wazuh-dashboard
-    image: wazuh/wazuh-dashboard:${VERSION:-4.12.0}
+    image: wazuh/wazuh-dashboard:${VERSION:-4.14.8}
     hostname: wazuh.dashboard
     <<: [*basic, *basic-deploy-labels]
     deploy:
@@ -210,17 +210,12 @@ services:
 
       - wazuh-dashboard-config:/usr/share/wazuh-dashboard/data/wazuh/config
       - wazuh-dashboard-custom:/usr/share/wazuh-dashboard/plugins/wazuh/public/assets/custom
-      - wazuh-dashboard-plugins:/usr/share/wazuh-dashboard/plugins
     networks:
       default: {}
       proxy: {}
     healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "curl -kI https://127.0.0.1:5601/app/login > /dev/null 2>&1 || exit 1",
-        ]
-      start_period: 10s
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/127.0.0.1/5601' || exit 1"]
+      start_period: 300s
       interval: 30s
       timeout: 5s
       retries: 3
@@ -230,7 +225,7 @@ services:
   ##############################################################################
   wazuh-master:
     # https://hub.docker.com/r/wazuh/wazuh-manager
-    image: wazuh/wazuh-manager:${VERSION:-4.12.0}
+    image: wazuh/wazuh-manager:${VERSION:-4.14.8}
     hostname: wazuh.master
     <<: [*basic, *basic-deploy-master-labels]
     deploy:
@@ -314,7 +309,7 @@ services:
           "CMD-SHELL",
           "curl -kI https://127.0.0.1:55000 > /dev/null 2>&1 || exit 1",
         ]
-      start_period: 10s
+      start_period: 300s
       interval: 30s
       timeout: 5s
       retries: 3
@@ -324,7 +319,7 @@ services:
   ##############################################################################
   wazuh-worker:
     # https://hub.docker.com/r/wazuh/wazuh-manager
-    image: wazuh/wazuh-manager:${VERSION:-4.12.0}
+    image: wazuh/wazuh-manager:${VERSION:-4.14.8}
     hostname: wazuh.worker
     <<: *basic
     deploy:
@@ -387,7 +382,7 @@ services:
           "CMD-SHELL",
           "curl -kI https://127.0.0.1:55000 > /dev/null 2>&1 || exit 1",
         ]
-      start_period: 10s
+      start_period: 300s
       interval: 30s
       timeout: 5s
       retries: 3
@@ -397,7 +392,7 @@ services:
   ##############################################################################
   wazuh1-indexer:
     # https://hub.docker.com/r/wazuh/wazuh-indexer
-    image: wazuh/wazuh-indexer:${VERSION:-4.12.0}
+    image: wazuh/wazuh-indexer:${VERSION:-4.14.8}
     hostname: wazuh1.indexer
     <<: [*basic, *basic-deploy-indexer-labels]
     deploy:
@@ -414,49 +409,49 @@ services:
       WAZUH_INDEXER_ID: "1"
       NETWORK_HOST: wazuh1.indexer
       NODE_NAME: wazuh1.indexer
-      # PLUGINS_SECURITY_SSL_HTTP_PEMCERT_FILEPATH: /usr/share/wazuh-indexer/certs/wazuh1.indexer.pem
-      # PLUGINS_SECURITY_SSL_HTTP_PEMKEY_FILEPATH: /usr/share/wazuh-indexer/certs/wazuh1.indexer.key
-      # PLUGINS_SECURITY_SSL_TRANSPORT_PEMCERT_FILEPATH: /usr/share/wazuh-indexer/certs/wazuh1.indexer.pem
-      # PLUGINS_SECURITY_SSL_TRANSPORT_PEMKEY_FILEPATH: /usr/share/wazuh-indexer/certs/wazuh1.indexer.key
+      # PLUGINS_SECURITY_SSL_HTTP_PEMCERT_FILEPATH: /usr/share/wazuh-indexer/config/certs/wazuh1.indexer.pem
+      # PLUGINS_SECURITY_SSL_HTTP_PEMKEY_FILEPATH: /usr/share/wazuh-indexer/config/certs/wazuh1.indexer.key
+      # PLUGINS_SECURITY_SSL_TRANSPORT_PEMCERT_FILEPATH: /usr/share/wazuh-indexer/config/certs/wazuh1.indexer.pem
+      # PLUGINS_SECURITY_SSL_TRANSPORT_PEMKEY_FILEPATH: /usr/share/wazuh-indexer/config/certs/wazuh1.indexer.key
     configs:
       - source: internal_users_config
-        target: /usr/share/wazuh-indexer/opensearch-security/internal_users.yml
+        target: /usr/share/wazuh-indexer/config/opensearch-security/internal_users.yml
         mode: 0660
         uid: "1000"
         gid: "1000"
       - source: wazuh1_indexer_config
-        target: /usr/share/wazuh-indexer/opensearch.yml
+        target: /usr/share/wazuh-indexer/config/opensearch.yml
         mode: 0660
         uid: "1000"
         gid: "1000"
       - source: root_ca_cert
-        target: /usr/share/wazuh-indexer/certs/root-ca.pem
+        target: /usr/share/wazuh-indexer/config/certs/root-ca.pem
         mode: 0600
         uid: "1000"
         gid: "1000"
       - source: admin_cert
-        target: /usr/share/wazuh-indexer/certs/admin.pem
+        target: /usr/share/wazuh-indexer/config/certs/admin.pem
         mode: 0600
         uid: "1000"
         gid: "1000"
       - source: admin_cert_key
-        target: /usr/share/wazuh-indexer/certs/admin-key.pem
+        target: /usr/share/wazuh-indexer/config/certs/admin-key.pem
         mode: 0600
         uid: "1000"
         gid: "1000"
       - source: wazuh1_indexer_cert
-        target: /usr/share/wazuh-indexer/certs/wazuh1.indexer.pem
+        target: /usr/share/wazuh-indexer/config/certs/wazuh1.indexer.pem
         mode: 0600
         uid: "1000"
         gid: "1000"
       - source: wazuh1_indexer_cert_key
-        target: /usr/share/wazuh-indexer/certs/wazuh1.indexer.key
+        target: /usr/share/wazuh-indexer/config/certs/wazuh1.indexer.key
         mode: 0600
         uid: "1000"
         gid: "1000"
     volumes:
-      # - $PWD/config/wazuh_indexer/internal_users.yml:/usr/share/wazuh-indexer/opensearch-security/internal_users.yml
-      # - $PWD/config/wazuh_indexer/wazuh.indexer.yml:/usr/share/wazuh-indexer/opensearch.yml
+      # - $PWD/config/wazuh_indexer/internal_users.yml:/usr/share/wazuh-indexer/config/opensearch-security/internal_users.yml
+      # - $PWD/config/wazuh_indexer/wazuh.indexer.yml:/usr/share/wazuh-indexer/config/opensearch.yml
 
       - wazuh-indexer-data-1:/var/lib/wazuh-indexer
     healthcheck:
@@ -465,7 +460,7 @@ services:
           "CMD-SHELL",
           "curl -kI https://wazuh1.indexer:9200 > /dev/null 2>&1 || exit 1",
         ]
-      start_period: 10s
+      start_period: 300s
       interval: 30s
       timeout: 5s
       retries: 3
@@ -475,7 +470,7 @@ services:
   ##############################################################################
   wazuh2-indexer:
     # https://hub.docker.com/r/wazuh/wazuh-indexer
-    image: wazuh/wazuh-indexer:${VERSION:-4.12.0}
+    image: wazuh/wazuh-indexer:${VERSION:-4.14.8}
     hostname: wazuh2.indexer
     <<: *basic
     deploy:
@@ -492,39 +487,39 @@ services:
       WAZUH_INDEXER_ID: "2"
       NETWORK_HOST: wazuh2.indexer
       NODE_NAME: wazuh2.indexer
-      # PLUGINS_SECURITY_SSL_HTTP_PEMCERT_FILEPATH: /usr/share/wazuh-indexer/certs/wazuh2.indexer.pem
-      # PLUGINS_SECURITY_SSL_HTTP_PEMKEY_FILEPATH: /usr/share/wazuh-indexer/certs/wazuh2.indexer.key
-      # PLUGINS_SECURITY_SSL_TRANSPORT_PEMCERT_FILEPATH: /usr/share/wazuh-indexer/certs/wazuh2.indexer.pem
-      # PLUGINS_SECURITY_SSL_TRANSPORT_PEMKEY_FILEPATH: /usr/share/wazuh-indexer/certs/wazuh2.indexer.key
+      # PLUGINS_SECURITY_SSL_HTTP_PEMCERT_FILEPATH: /usr/share/wazuh-indexer/config/certs/wazuh2.indexer.pem
+      # PLUGINS_SECURITY_SSL_HTTP_PEMKEY_FILEPATH: /usr/share/wazuh-indexer/config/certs/wazuh2.indexer.key
+      # PLUGINS_SECURITY_SSL_TRANSPORT_PEMCERT_FILEPATH: /usr/share/wazuh-indexer/config/certs/wazuh2.indexer.pem
+      # PLUGINS_SECURITY_SSL_TRANSPORT_PEMKEY_FILEPATH: /usr/share/wazuh-indexer/config/certs/wazuh2.indexer.key
     configs:
       - source: internal_users_config
-        target: /usr/share/wazuh-indexer/opensearch-security/internal_users.yml
+        target: /usr/share/wazuh-indexer/config/opensearch-security/internal_users.yml
         mode: 0660
         uid: "1000"
         gid: "1000"
       - source: wazuh2_indexer_config
-        target: /usr/share/wazuh-indexer/opensearch.yml
+        target: /usr/share/wazuh-indexer/config/opensearch.yml
         mode: 0660
         uid: "1000"
         gid: "1000"
       - source: root_ca_cert
-        target: /usr/share/wazuh-indexer/certs/root-ca.pem
+        target: /usr/share/wazuh-indexer/config/certs/root-ca.pem
         mode: 0600
         uid: "1000"
         gid: "1000"
       - source: wazuh2_indexer_cert
-        target: /usr/share/wazuh-indexer/certs/wazuh2.indexer.pem
+        target: /usr/share/wazuh-indexer/config/certs/wazuh2.indexer.pem
         mode: 0600
         uid: "1000"
         gid: "1000"
       - source: wazuh2_indexer_cert_key
-        target: /usr/share/wazuh-indexer/certs/wazuh2.indexer.key
+        target: /usr/share/wazuh-indexer/config/certs/wazuh2.indexer.key
         mode: 0600
         uid: "1000"
         gid: "1000"
     volumes:
-      # - $PWD/config/wazuh_indexer/internal_users.yml:/usr/share/wazuh-indexer/opensearch-security/internal_users.yml
-      # - $PWD/config/wazuh_indexer/wazuh.indexer.yml:/usr/share/wazuh-indexer/opensearch.yml
+      # - $PWD/config/wazuh_indexer/internal_users.yml:/usr/share/wazuh-indexer/config/opensearch-security/internal_users.yml
+      # - $PWD/config/wazuh_indexer/wazuh.indexer.yml:/usr/share/wazuh-indexer/config/opensearch.yml
 
       - wazuh-indexer-data-2:/var/lib/wazuh-indexer
     healthcheck:
@@ -533,7 +528,7 @@ services:
           "CMD-SHELL",
           "curl -kI https://wazuh2.indexer:9200 > /dev/null 2>&1 || exit 1",
         ]
-      start_period: 10s
+      start_period: 300s
       interval: 30s
       timeout: 5s
       retries: 3
@@ -543,7 +538,7 @@ services:
   ##############################################################################
   wazuh3-indexer:
     # https://hub.docker.com/r/wazuh/wazuh-indexer
-    image: wazuh/wazuh-indexer:${VERSION:-4.12.0}
+    image: wazuh/wazuh-indexer:${VERSION:-4.14.8}
     hostname: wazuh3.indexer
     <<: *basic
     deploy:
@@ -560,39 +555,39 @@ services:
       WAZUH_INDEXER_ID: "3"
       NETWORK_HOST: wazuh3.indexer
       NODE_NAME: wazuh3.indexer
-      # PLUGINS_SECURITY_SSL_HTTP_PEMCERT_FILEPATH: /usr/share/wazuh-indexer/certs/wazuh3.indexer.pem
-      # PLUGINS_SECURITY_SSL_HTTP_PEMKEY_FILEPATH: /usr/share/wazuh-indexer/certs/wazuh3.indexer.key
-      # PLUGINS_SECURITY_SSL_TRANSPORT_PEMCERT_FILEPATH: /usr/share/wazuh-indexer/certs/wazuh3.indexer.pem
-      # PLUGINS_SECURITY_SSL_TRANSPORT_PEMKEY_FILEPATH: /usr/share/wazuh-indexer/certs/wazuh3.indexer.key
+      # PLUGINS_SECURITY_SSL_HTTP_PEMCERT_FILEPATH: /usr/share/wazuh-indexer/config/certs/wazuh3.indexer.pem
+      # PLUGINS_SECURITY_SSL_HTTP_PEMKEY_FILEPATH: /usr/share/wazuh-indexer/config/certs/wazuh3.indexer.key
+      # PLUGINS_SECURITY_SSL_TRANSPORT_PEMCERT_FILEPATH: /usr/share/wazuh-indexer/config/certs/wazuh3.indexer.pem
+      # PLUGINS_SECURITY_SSL_TRANSPORT_PEMKEY_FILEPATH: /usr/share/wazuh-indexer/config/certs/wazuh3.indexer.key
     configs:
       - source: internal_users_config
-        target: /usr/share/wazuh-indexer/opensearch-security/internal_users.yml
+        target: /usr/share/wazuh-indexer/config/opensearch-security/internal_users.yml
         mode: 0660
         uid: "1000"
         gid: "1000"
       - source: wazuh3_indexer_config
-        target: /usr/share/wazuh-indexer/opensearch.yml
+        target: /usr/share/wazuh-indexer/config/opensearch.yml
         mode: 0660
         uid: "1000"
         gid: "1000"
       - source: root_ca_cert
-        target: /usr/share/wazuh-indexer/certs/root-ca.pem
+        target: /usr/share/wazuh-indexer/config/certs/root-ca.pem
         mode: 0600
         uid: "1000"
         gid: "1000"
       - source: wazuh3_indexer_cert
-        target: /usr/share/wazuh-indexer/certs/wazuh3.indexer.pem
+        target: /usr/share/wazuh-indexer/config/certs/wazuh3.indexer.pem
         mode: 0600
         uid: "1000"
         gid: "1000"
       - source: wazuh3_indexer_cert_key
-        target: /usr/share/wazuh-indexer/certs/wazuh3.indexer.key
+        target: /usr/share/wazuh-indexer/config/certs/wazuh3.indexer.key
         mode: 0600
         uid: "1000"
         gid: "1000"
     volumes:
-      # - $PWD/config/wazuh_indexer/internal_users.yml:/usr/share/wazuh-indexer/opensearch-security/internal_users.yml
-      # - $PWD/config/wazuh_indexer/wazuh.indexer.yml:/usr/share/wazuh-indexer/opensearch.yml
+      # - $PWD/config/wazuh_indexer/internal_users.yml:/usr/share/wazuh-indexer/config/opensearch-security/internal_users.yml
+      # - $PWD/config/wazuh_indexer/wazuh.indexer.yml:/usr/share/wazuh-indexer/config/opensearch.yml
 
       - wazuh-indexer-data-3:/var/lib/wazuh-indexer
     healthcheck:
@@ -601,7 +596,7 @@ services:
           "CMD-SHELL",
           "curl -kI https://wazuh3.indexer:9200 > /dev/null 2>&1 || exit 1",
         ]
-      start_period: 10s
+      start_period: 300s
       interval: 30s
       timeout: 5s
       retries: 3
@@ -623,8 +618,6 @@ volumes:
     name: wazuh-dashboard-config
   wazuh-dashboard-custom:
     name: wazuh-dashboard-custom
-  wazuh-dashboard-plugins:
-    name: wazuh-dashboard-plugins
   master-wazuh-api-configuration:
     name: master-wazuh-api-configuration
   master-wazuh-etc:
