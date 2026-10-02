@@ -43,8 +43,8 @@ $openssl rand -base64 18 > config/secrets/db_password_file_secret.txt
 ```env
 NODE_ROLE=manager
 
-VERSION=3.9.0-2-ce
-# VERSION=3.9.0-2-ce-non-root
+VERSION=3.12.2-1-ce
+# VERSION=3.12.2-1-ce-non-root
 
 LB_SWARM=true
 DOMAIN=passbolt.home.local

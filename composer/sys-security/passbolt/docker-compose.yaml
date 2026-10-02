@@ -64,8 +64,8 @@ services:
   ##############################################################################
   passbolt:
     # https://hub.docker.com/r/passbolt/passbolt
-    image: passbolt/passbolt:${VERSION:-3.9.0-2-ce}
-    # image: passbolt/passbolt:${VERSION:-3.9.0-2-ce-non-root}
+    image: passbolt/passbolt:${VERSION:-3.12.2-1-ce}
+    # image: passbolt/passbolt:${VERSION:-3.12.2-1-ce-non-root}
     <<: *basic
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels]
@@ -78,6 +78,8 @@ services:
       - db_password_file_secret
     environment:
       APP_FULL_BASE_URL: https://${DOMAIN?domain variable not set}
+      PASSBOLT_SECURITY_PROXIES_ACTIVE: ${PASSBOLT_SECURITY_PROXIES_ACTIVE:-true}
+      PASSBOLT_PLUGINS_SELF_REGISTRATION_ENABLED: ${PASSBOLT_PLUGINS_SELF_REGISTRATION_ENABLED:-false}
       DATASOURCES_DEFAULT_HOST: ${DB_HOST:-mysql}
       DATASOURCES_DEFAULT_DATABASE: ${DB_DATABASE:-passbolt}
       DATASOURCES_DEFAULT_USERNAME: ${DB_USERNAME:-passbolt}
@@ -95,8 +97,12 @@ services:
       - gpg:/etc/passbolt/gpg
       - jwt:/etc/passbolt/jwt
     # healthcheck:
-    #   test: [ "CMD", "bin/cake", "passbolt", "healthcheck" ]
-    #   start_period: 10s
+    #   test:
+    #     [
+    #       "CMD-SHELL",
+    #       "su -s /bin/bash -c '/usr/share/php/passbolt/bin/cake passbolt healthcheck' www-data | grep -q 'No error found'",
+    #     ]
+    #   start_period: 300s
     #   interval: 30s
     #   timeout: 5s
     #   retries: 3
