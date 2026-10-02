@@ -61,7 +61,7 @@ services:
   ##############################################################################
   calcom:
     # https://hub.docker.com/r/calcom/cal.com
-    image: calcom/cal.com:${VERSION_CALCOM:-v5.4.4}
+    image: calcom/cal.com:${VERSION_CALCOM:-v5.9.14}
     <<: [*basic, *basic-deploy-labels]
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels]
@@ -69,11 +69,13 @@ services:
       NODE_ENV: production
       DATABASE_URL: postgresql://${POSTGRES_USER:-calcom}:${POSTGRES_PW?POSTGRES_PW is not set}@postgresql:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-calcom}
       DATABASE_DIRECT_URL: postgresql://${POSTGRES_USER:-calcom}:${POSTGRES_PW?POSTGRES_PW is not set}@postgresql:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-calcom}
+      DATABASE_HOST: postgresql:5432
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET?NEXTAUTH_SECRET is not set}
+      CALENDSO_ENCRYPTION_KEY: ${CALENDSO_ENCRYPTION_KEY?CALENDSO_ENCRYPTION_KEY is not set}
       CALCOM_TELEMETRY_DISABLED: 1
       EMAIL_FROM: ${EMAIL_FROM:-no-reply@${DOMAIN?domain variable not set}}
       NEXT_PUBLIC_WEBAPP_URL: https://${DOMAIN?domain variable not set}
       NEXTAUTH_URL: https://${DOMAIN?domain variable not set}/api/auth
-      NEXT_PUBLIC_API_V2_URL: http://0.0.0.0:5555/api/v2
       ALLOWED_HOSTNAMES: '"${DOMAIN?domain variable not set}"'
     volumes:
       - /etc/timezone:/etc/timezone:ro

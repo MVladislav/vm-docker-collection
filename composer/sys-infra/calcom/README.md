@@ -1,20 +1,5 @@
 # SETUP
 
-```sh
-    MVladislav
-```
-
----
-
-- [SETUP](#setup)
-  - [basic](#basic)
-    - [create your `secrets`:](#create-your-secrets)
-    - [create `.env` file following:](#create-env-file-following)
-      - [example short .env](#example-short-env)
-  - [References](#references)
-
----
-
 ## basic
 
 > defined to work with traefik
@@ -22,11 +7,11 @@
 ### create your `secrets`:
 
 ```sh
-$pwgen -s 32 1 > config/secrets/postgres_password_file.txt
-$echo "POSTGRES_PW=$(cat config/secrets/postgres_password_file.txt)" >> .env
+pwgen -s 32 1 > config/secrets/postgres_password_file.txt
+echo "POSTGRES_PW=$(cat config/secrets/postgres_password_file.txt)" >> .env
 
-$echo "NEXTAUTH_SECRET=$(pwgen -s 32 1)" >> .env
-$echo "CALENDSO_ENCRYPTION_KEY=$(pwgen -s 32 1)" >> .env
+echo "NEXTAUTH_SECRET=$(pwgen -s 32 1)" >> .env
+echo "CALENDSO_ENCRYPTION_KEY=$(pwgen -s 32 1)" >> .env
 ```
 
 ### create `.env` file following:
@@ -55,7 +40,7 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_CALCOM=v5.4.4
+VERSION_CALCOM=v5.9.14
 VERSION_POSTGRESQL=18.6-alpine
 
 # APPLICATION general variable to adjust the apps
@@ -68,6 +53,9 @@ EMAIL_SERVER_HOST=smtp.example.com
 EMAIL_SERVER_PORT=587
 EMAIL_SERVER_USER=email_user
 EMAIL_SERVER_PASSWORD=email_password
+
+NEXTAUTH_SECRET=<SECRET>
+CALENDSO_ENCRYPTION_KEY=<32_CHARS>
 ```
 
 #### example short .env
