@@ -1,87 +1,96 @@
 # SETUP
 
-```sh
-    MVladislav
-```
-
----
-
-- [SETUP](#setup)
-  - [basic](#basic)
-    - [create your `secrets`:](#create-your-secrets)
-    - [create `.env` file following:](#create-env-file-following)
-  - [on first start](#on-first-start)
-  - [References](#references)
-
----
-
 ## basic
 
 > defined to work with traefik
 
-### database setup
-
-This stack ships **no database**; it joins the external `mysql` network. Deploy
-a MariaDB stack separately (see the `mariadb` service in
-[`__template/docker-compose-example-services.yaml`](../../__template/docker-compose-example-services.yaml)),
-attach it to that network, and create the `passbolt` database and user there:
-
-```sh
-docker network create --driver overlay --attachable mysql
-```
-
-`DB_HOST=mysql` below is the MariaDB service name on that network.
-
 ### create your `secrets`:
 
 ```sh
-$openssl rand -base64 18 > config/secrets/db_password_file_secret.txt
+pwgen -s 32 1 > config/secrets/db_password_file_secret.txt
+pwgen -s 32 1 > config/secrets/mariadb_root_password.txt
+
+# smtp is a documented system requirement; leave it empty for an open relay
+printf '%s' '<your-smtp-password>' > config/secrets/smtp_password_file_secret.txt
 ```
 
 ### create `.env` file following:
 
 ```env
+# GENERAL variables (mostly by default, change as needed)
+# ______________________________________________________________________________
 NODE_ROLE=manager
+NETWORK_MODE=overlay # overlay | bridge
 
-VERSION=3.12.2-1-ce
-# VERSION=3.12.2-1-ce-non-root
-
+# GENERAL traefik variables (set by default, change as needed)
+# ______________________________________________________________________________
 LB_SWARM=true
-DOMAIN=passbolt.home.local
+DOMAIN=passbolt.home.local # not set in docker-compose, needs to be copied to .env
 PROTOCOL=http
 PORT=80
-# default-secured@file | public-whitelist@file | authentik@file
+# default-secured@file | public-secured@file | authentik@file
 MIDDLEWARE_SECURED=default-secured@file
 
-DB_HOST=mysql
-DB_DATABASE=passbolt
-DB_USERNAME=passbolt
+# GENERAL sources to be used (set by default, change as needed)
+# ______________________________________________________________________________
+RESOURCES_LIMITS_CPUS=1
+RESOURCES_LIMITS_MEMORY=2g
+RESOURCES_RESERVATIONS_CPUS=0.001
+RESOURCES_RESERVATIONS_MEMORY=32m
+
+RESOURCES_LIMITS_CPUS_MARIADB=1
+RESOURCES_LIMITS_MEMORY_MARIADB=512m
+RESOURCES_RESERVATIONS_CPUS_MARIADB=0.001
+RESOURCES_RESERVATIONS_MEMORY_MARIADB=32m
+
+# APPLICATION version for easy update
+# ______________________________________________________________________________
+VERSION=5.16.0-1-ce
+# VERSION=5.16.0-1-ce-non-root # rootless, then PORT=8080
+VERSION_MARIADB=13.0.2
+
+# APPLICATION general variable to adjust the apps
+# ______________________________________________________________________________
+CERT_RESOLVER=certificates
 
 EMAIL_DEFAULT_FROM=
 EMAIL_TRANSPORT_DEFAULT_HOST=
 EMAIL_TRANSPORT_DEFAULT_PORT=587
 EMAIL_TRANSPORT_DEFAULT_USERNAME=
-EMAIL_TRANSPORT_DEFAULT_PASSWORD=
 EMAIL_TRANSPORT_DEFAULT_TLS=true
+```
+
+#### example short .env (swarm)
+
+```env
+DOMAIN=passbolt.home.local
+```
+
+#### example short .env (bridge)
+
+```env
+NETWORK_MODE=bridge
+LB_SWARM=false
+
+DOMAIN=passbolt.home.local
 ```
 
 ---
 
-## on first start
+## Guides & Insights
 
-create admin user:
+### initial admin user
 
-> registration command will return a single use url required to continue the web browser setup
+> the command returns a single use url, open it in the browser to finish the setup
 
 ```sh
-$docker exec -it $(docker container ls -f=name=passbolt -q) su -m -c \
-'DATASOURCES_DEFAULT_PASSWORD=$(cat $DATASOURCES_DEFAULT_PASSWORD_FILE) \
-/usr/share/php/passbolt/bin/cake \
-passbolt register_user \
+docker exec -it "$(docker ps -q -f name=passbolt)" su -m -s /bin/bash -c \
+'source /etc/environment && \
+/usr/share/php/passbolt/bin/cake passbolt register_user \
 -u <your@email.com> \
 -f <yourname> \
 -l <surname> \
--r admin' -s /bin/sh www-data
+-r admin' www-data
 ```
 
 ---
@@ -90,5 +99,8 @@ passbolt register_user \
 
 - <https://www.passbolt.com/>
 - <https://www.passbolt.com/ce/docker>
-- <https://help.passbolt.com/hosting/install/ce/docker.html>
+- <https://www.passbolt.com/docs/hosting/>
 - <https://hub.docker.com/r/passbolt/passbolt>
+- <https://github.com/passbolt/passbolt_api>
+  - <https://github.com/passbolt/passbolt_api/blob/master/CHANGELOG.md>
+  - <https://github.com/passbolt/passbolt_api/blob/master/RELEASE_NOTES.md>

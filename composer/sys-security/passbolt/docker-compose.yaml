@@ -4,13 +4,14 @@ x-basic-deploy-labels: &basic-deploy-labels
     - traefik.enable=true
     - traefik.swarm.lbswarm=${LB_SWARM:-true}
     - traefik.swarm.network=proxy
-    - traefik.http.routers.passbolt.entrypoints=https
+    - traefik.http.routers.passbolt.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
     - traefik.http.routers.passbolt.rule=Host(`${DOMAIN?domain variable not set}`)
     - traefik.http.routers.passbolt.tls=true
+    - traefik.http.routers.passbolt.tls.certresolver=${CERT_RESOLVER:-}
+    - traefik.http.routers.passbolt.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
     - traefik.http.routers.passbolt.service=passbolt
     - traefik.http.services.passbolt.loadbalancer.server.scheme=${PROTOCOL:-http}
     - traefik.http.services.passbolt.loadbalancer.server.port=${PORT:-80}
-    - traefik.http.routers.passbolt.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
 
 x-basic-deploy: &basic-deploy
   mode: replicated
@@ -20,23 +21,20 @@ x-basic-deploy: &basic-deploy
     constraints:
       - "node.role==${NODE_ROLE:-manager}"
       - node.platform.os == linux
+  update_config:
+    order: stop-first
   restart_policy:
-    condition: on-failure
+    condition: any
   resources:
     limits:
-      # cpus: "1.5"
-      memory: 1g
+      cpus: ${RESOURCES_LIMITS_CPUS:-1}
+      memory: ${RESOURCES_LIMITS_MEMORY:-2g}
     reservations:
-      # cpus: "0.001"
-      memory: 32M
+      cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
+      memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
 
 x-basic: &basic
   env_file: ${ENV_FILE:-.env}
-  cap_add:
-    - CHOWN
-    - DAC_OVERRIDE
-    - SETGID
-    - SETUID
   cap_drop: ["ALL"]
   security_opt:
     - no-new-privileges:true
@@ -45,14 +43,17 @@ x-basic: &basic
       soft: -1
       hard: -1
     nofile:
-      soft: 65535
-      hard: 65535
+      soft: 655360
+      hard: 655360
     fsize: -1
     as: -1
   networks:
-    proxy: {}
-    mysql: {}
-  restart: unless-stopped
+    default: {}
+  healthcheck:
+    disable: true
+  tmpfs:
+    - /tmp:rw,relatime,size=512m,nodev,nosuid,noexec
+  restart: always
 
 ################################################################################
 ################################################################################
@@ -64,23 +65,36 @@ services:
   ##############################################################################
   passbolt:
     # https://hub.docker.com/r/passbolt/passbolt
-    image: passbolt/passbolt:${VERSION:-3.12.2-1-ce}
-    # image: passbolt/passbolt:${VERSION:-3.12.2-1-ce-non-root}
-    <<: *basic
+    image: passbolt/passbolt:${VERSION:-5.16.0-1-ce}
+    # rootless variant, needs PORT=8080 and no cap_add:
+    # image: passbolt/passbolt:${VERSION:-5.16.0-1-ce-non-root}
+    <<:
+      - *basic
+      - *basic-deploy-labels
     deploy:
-      <<: [*basic-deploy, *basic-deploy-labels]
-    # ports:
-    #   - target: ${PORT:-80}
-    #     published: ${PORT_PUBLISH:-80}
-    #     protocol: tcp
-    #     mode: host
+      <<:
+        - *basic-deploy
+        - *basic-deploy-labels
+    cap_add:
+      - CHOWN # Allows changing file ownership (`chown`,`chgrp`)
+      - FOWNER # Overrides file ownership checks (`chmod`,`kill`)
+      - DAC_OVERRIDE # Bypasses file read/write/execute permission checks (`cat`,`touch`,`rm`)
+      - SETGID # Allows setting group ID (`setgid`,`newgrp`,`chgrp`,`setregid()`)
+      - SETUID # Allows setting user ID (`setuid`,`su`,`sudo`,`passwd`)
+      - NET_BIND_SERVICE # Bind to ports <1024 (nginx :80/:443, no setcap in the image)
     secrets:
       - db_password_file_secret
+      - smtp_password_file_secret
     environment:
       APP_FULL_BASE_URL: https://${DOMAIN?domain variable not set}
       PASSBOLT_SECURITY_PROXIES_ACTIVE: ${PASSBOLT_SECURITY_PROXIES_ACTIVE:-true}
+      PASSBOLT_SECURITY_FULLBASEURL_ENFORCE: ${PASSBOLT_SECURITY_FULLBASEURL_ENFORCE:-true}
+      PASSBOLT_SECURITY_SMTP_SETTINGS_ENDPOINTS_DISABLED: ${PASSBOLT_SECURITY_SMTP_SETTINGS_ENDPOINTS_DISABLED:-true}
       PASSBOLT_PLUGINS_SELF_REGISTRATION_ENABLED: ${PASSBOLT_PLUGINS_SELF_REGISTRATION_ENABLED:-false}
-      DATASOURCES_DEFAULT_HOST: ${DB_HOST:-mysql}
+      APP_DEFAULT_TIMEZONE: ${APP_DEFAULT_TIMEZONE:-Europe/Berlin}
+
+      DATASOURCES_DEFAULT_HOST: mariadb
+      DATASOURCES_DEFAULT_PORT: 3306
       DATASOURCES_DEFAULT_DATABASE: ${DB_DATABASE:-passbolt}
       DATASOURCES_DEFAULT_USERNAME: ${DB_USERNAME:-passbolt}
       DATASOURCES_DEFAULT_PASSWORD_FILE: /run/secrets/db_password_file_secret
@@ -89,45 +103,110 @@ services:
       EMAIL_TRANSPORT_DEFAULT_HOST: ${EMAIL_TRANSPORT_DEFAULT_HOST}
       EMAIL_TRANSPORT_DEFAULT_PORT: ${EMAIL_TRANSPORT_DEFAULT_PORT:-587}
       EMAIL_TRANSPORT_DEFAULT_USERNAME: ${EMAIL_TRANSPORT_DEFAULT_USERNAME}
-      # EMAIL_TRANSPORT_DEFAULT_PASSWORD: ${EMAIL_TRANSPORT_DEFAULT_PASSWORD}
+      EMAIL_TRANSPORT_DEFAULT_PASSWORD_FILE: /run/secrets/smtp_password_file_secret
       EMAIL_TRANSPORT_DEFAULT_TLS: ${EMAIL_TRANSPORT_DEFAULT_TLS:-true}
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - gpg:/etc/passbolt/gpg
       - jwt:/etc/passbolt/jwt
-    # healthcheck:
-    #   test:
-    #     [
-    #       "CMD-SHELL",
-    #       "su -s /bin/bash -c '/usr/share/php/passbolt/bin/cake passbolt healthcheck' www-data | grep -q 'No error found'",
-    #     ]
-    #   start_period: 300s
-    #   interval: 30s
-    #   timeout: 5s
-    #   retries: 3
+      - gnupg:/var/lib/passbolt/.gnupg
+      - tmp:/var/lib/passbolt/tmp
+    networks:
+      default: {}
+      proxy: {}
     command:
       - "/usr/bin/wait-for.sh"
       - "-t"
-      - "0"
-      - "${DB_HOST:-mysql}:3306"
+      - "${DB_WAIT_TIMEOUT:-180}"
+      - "-s"
+      - "mariadb:3306"
       - "--"
       - "/docker-entrypoint.sh"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "curl",
+          "-fsS",
+          "http://127.0.0.1:${PORT:-80}/healthcheck/status",
+        ]
+      start_period: 600s
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  mariadb:
+    # https://hub.docker.com/_/mariadb
+    image: mariadb:${VERSION_MARIADB:-13.0.2}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_MARIADB:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_MARIADB:-512m}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_MARIADB:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_MARIADB:-32m}
+    cap_add:
+      - CHOWN # Allows changing file ownership (`chown`,`chgrp`)
+      - SETUID # Allows setting user ID (`setuid`,`su`,`sudo`,`passwd`)
+      - SETGID # Allows setting group ID (`setgid`,`newgrp`,`chgrp`,`setregid()`)
+      - DAC_OVERRIDE # Bypasses file read/write/execute permission checks (`cat`,`touch`,`rm`)
+    secrets:
+      - db_password_file_secret
+      - mariadb_root_password
+    environment:
+      TZ: ${APP_DEFAULT_TIMEZONE:-Europe/Berlin}
+      MARIADB_DATABASE: ${DB_DATABASE:-passbolt}
+      MARIADB_USER: ${DB_USERNAME:-passbolt}
+      MARIADB_PASSWORD_FILE: /run/secrets/db_password_file_secret
+      MARIADB_ROOT_PASSWORD_FILE: /run/secrets/mariadb_root_password
+      MARIADB_ROOT_HOST: localhost
+      MARIADB_AUTO_UPGRADE: ${MARIADB_AUTO_UPGRADE:-1}
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - mariadb:/var/lib/mysql
+    command:
+      - --skip-log-bin
+      - --max-allowed-packet=128M
+      - --innodb-log-file-size=128M
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      start_period: 300s
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
 ################################################################################
 ################################################################################
 ################################################################################
-
 networks:
-  mysql:
-    external: true
+  default:
+    driver: ${NETWORK_MODE:-overlay}
+    internal: true
+    attachable: true
+    driver_opts:
+      encrypted: "true"
   proxy:
     external: true
 
 volumes:
   gpg: {}
   jwt: {}
+  gnupg: {}
+  tmp: {}
+  mariadb: {}
 
 secrets:
   db_password_file_secret:
     file: config/secrets/db_password_file_secret.txt
+  smtp_password_file_secret:
+    file: config/secrets/smtp_password_file_secret.txt
+  mariadb_root_password:
+    file: config/secrets/mariadb_root_password.txt
