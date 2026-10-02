@@ -35,9 +35,10 @@ x-basic-deploy-labels-mq: &basic-deploy-labels-mq
     - traefik.enable=true
     - traefik.swarm.lbswarm=${LB_SWARM:-true}
     - traefik.swarm.network=proxy
-    - traefik.tcp.routers.mqtt.entrypoints=https
+    - traefik.tcp.routers.mqtt.entrypoints=${TRAEFIK_ENTRYPOINT_MQTT:-mqtt}
     - traefik.tcp.routers.mqtt.rule=HostSNI(`broker.${DOMAIN?domain variable not set}`)
-    - traefik.tcp.services.mqtt.loadbalancer.server.scheme=${PROTOCOL_MQTT:-http}
+    - traefik.tcp.routers.mqtt.tls=true
+    - traefik.tcp.routers.mqtt.tls.certresolver=${CERT_RESOLVER:-}
     - traefik.tcp.services.mqtt.loadbalancer.server.port=${PORT_MQTT:-8883}
 
 x-basic-deploy: &basic-deploy
@@ -86,10 +87,14 @@ services:
   ##############################################################################
   netmaker:
     # https://hub.docker.com/r/gravitl/netmaker
-    image: gravitl/netmaker:${VERSION_NETMAKER:-v0.18.0}
-    <<: [*basic, *basic-deploy-labels-api]
+    image: gravitl/netmaker:${VERSION_NETMAKER:-v0.99.0}
+    <<:
+      - *basic
+      - *basic-deploy-labels-api
     deploy:
-      <<: [*basic-deploy, *basic-deploy-labels-api]
+      <<:
+        - *basic-deploy
+        - *basic-deploy-labels-api
     cap_add:
       - NET_ADMIN
       - NET_RAW
@@ -97,37 +102,36 @@ services:
     ports:
       - "51821-51830:51821-51830/udp"
     environment:
-      SERVER_NAME: "broker.${DOMAIN}"
+      NM_DOMAIN: "${DOMAIN}"
+      FRONTEND_URL: "https://dashboard.${DOMAIN}"
+      SERVER_NAME: "${DOMAIN}"
       SERVER_HOST: "${SERVER_PUBLIC_IP}"
       SERVER_API_CONN_STRING: "api.${DOMAIN}:443"
       COREDNS_ADDR: "${SERVER_PUBLIC_IP}"
       DNS_MODE: "on"
       SERVER_HTTP_HOST: "api.${DOMAIN}"
       API_PORT: "8081"
-      CLIENT_MODE: "on"
+      SERVER_BROKER_ENDPOINT: "ws://mq:1883"
+      BROKER_ENDPOINT: "wss://broker.${DOMAIN}"
+      STUN_SERVERS: "${STUN_SERVERS:-stun1.l.google.com:19302,stun2.l.google.com:19302,stun3.l.google.com:19302,stun4.l.google.com:19302}"
+      MQ_USERNAME: "${MQ_USERNAME}"
+      MQ_PASSWORD: "${MQ_PASSWORD}"
       MASTER_KEY: "${MASTER_KEY}"
       CORS_ALLOWED_ORIGIN: "*"
       DISPLAY_KEYS: "on"
       DATABASE: "sqlite"
       NODE_ID: "netmaker-server-1"
-      MQ_HOST: "mq"
-      MQ_PORT: "443"
-      MQ_SERVER_PORT: "1883"
-      HOST_NETWORK: "off"
       VERBOSITY: "1"
-      MANAGE_IPTABLES: "on"
-      PORT_FORWARD_SERVICES: "dns"
-      MQ_ADMIN_PASSWORD: "${MQ_ADMIN_PASSWORD}"
       TELEMETRY: "off"
-      AUTH_PROVIDER: "github"
+      # AUTH_PROVIDER: "github"
       # CLIENT_ID: "${AUTH_PROVIDER_CLIENT_ID}"
       # CLIENT_SECRET: "${AUTH_PROVIDER_CLIENT_SECRET}"
+      # SAAS_OWNER_EMAIL: "${SAAS_OWNER_EMAIL}"
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - dnsconfig:/root/config/dnsconfig
       - sqldata:/root/data
-      - mosquitto_data:/etc/netmaker
     sysctls:
       - net.ipv4.ip_forward=1
       - net.ipv4.conf.all.src_valid_mark=1
@@ -142,10 +146,14 @@ services:
   ##############################################################################
   netmaker-ui:
     # https://hub.docker.com/r/gravitl/netmaker-ui
-    image: gravitl/netmaker-ui:${VERSION_NETMAKER_UI:-v0.18.0}
-    <<: [*basic, *basic-deploy-labels]
+    image: gravitl/netmaker-ui:${VERSION_NETMAKER_UI:-v0.99.0}
+    <<:
+      - *basic
+      - *basic-deploy-labels
     deploy:
-      <<: [*basic-deploy, *basic-deploy-labels]
+      <<:
+        - *basic-deploy
+        - *basic-deploy-labels
     cap_add:
       - CHOWN
       - DAC_OVERRIDE
@@ -166,7 +174,7 @@ services:
   ##############################################################################
   coredns:
     # https://hub.docker.com/r/coredns/coredns
-    image: coredns/coredns:${VERSION_COREDNS:-1.10.1}
+    image: coredns/coredns:${VERSION_COREDNS:-1.14.7}
     <<: *basic
     volumes:
       - /etc/timezone:/etc/timezone:ro
@@ -180,16 +188,23 @@ services:
   ##############################################################################
   mq:
     # https://hub.docker.com/_/eclipse-mosquitto
-    image: eclipse-mosquitto:${VERSION_MQTT:-2.0.15-openssl}
-    <<: [*basic, *basic-deploy-labels-mq]
+    image: eclipse-mosquitto:${VERSION_MQTT:-2.0.22-openssl}
+    <<:
+      - *basic
+      - *basic-deploy-labels-mq
     deploy:
-      <<: [*basic-deploy, *basic-deploy-labels-mq]
+      <<:
+        - *basic-deploy
+        - *basic-deploy-labels-mq
     cap_add:
       - CHOWN
       - SETGID
       - SETUID
     environment:
       NETMAKER_SERVER_HOST: "https://api.${DOMAIN}"
+      # wait.sh turns these into /mosquitto/password.txt (mosquitto_passwd -U)
+      MQ_USERNAME: "${MQ_USERNAME}"
+      MQ_PASSWORD: "${MQ_PASSWORD}"
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
@@ -216,7 +231,6 @@ networks:
     external: true
 
 volumes:
-  traefik_certs: {}
   sqldata: {}
   dnsconfig: {}
   mosquitto_data: {}

@@ -1,19 +1,5 @@
 # SETUP
 
-```sh
-    MVladislav
-```
-
----
-
-- [SETUP](#setup)
-  - [basic](#basic)
-    - [pre setup host:](#pre-setup-host)
-    - [create `.env` file following:](#create-env-file-following)
-  - [References](#references)
-
----
-
 ## basic
 
 > defined to work with traefik
@@ -24,9 +10,9 @@
 ### pre setup host:
 
 ```sh
-$sudo ufw allow proto tcp from any to any port 443
-$sudo ufw allow 51821:51830/udp
-$sudo iptables --policy FORWARD ACCEPT
+sudo ufw allow proto tcp from any to any port 443
+sudo ufw allow 51821:51830/udp
+sudo iptables --policy FORWARD ACCEPT
 ```
 
 ### create `.env` file following:
@@ -34,10 +20,10 @@ $sudo iptables --policy FORWARD ACCEPT
 ```env
 NODE_ROLE=manager
 
-VERSION_NETMAKER=v0.18.0
-VERSION_NETMAKER_UI=v0.18.0
-VERSION_COREDNS=1.10.1
-VERSION_MQTT=2.0.15-openssl
+VERSION_NETMAKER=v0.99.0
+VERSION_NETMAKER_UI=v0.99.0
+VERSION_COREDNS=1.14.7
+VERSION_MQTT=2.0.22-openssl
 
 LB_SWARM=true
 DOMAIN=netmaker.home.local
@@ -46,7 +32,7 @@ PROTOCOL_NETMAKER_API=http
 PORT_NETMAKER_API=8081
 PROTOCOL_NETMAKER_UI=http
 PORT_NETMAKER_UI=80
-PROTOCOL_MQTT=http
+TRAEFIK_ENTRYPOINT_MQTT=mqtt
 PORT_MQTT=8883
 
 # default-secured@file | public-whitelist@file | authentik@file
@@ -59,7 +45,12 @@ ACME_MAIL=<EMAIL>
 # tr -dc A-Za-z0-9 </dev/urandom | head -c 30 ; echo ''
 MASTER_KEY=<KEY>
 
-MQ_ADMIN_PASSWORD=<PASSWORD>
+MQ_USERNAME=netmaker
+# tr -dc A-Za-z0-9 </dev/urandom | head -c 30 ; echo ''
+MQ_PASSWORD=<PASSWORD>
+
+# optional, netclient hole punching
+STUN_SERVERS=stun1.l.google.com:19302,stun2.l.google.com:19302,stun3.l.google.com:19302,stun4.l.google.com:19302
 ```
 
 ---
