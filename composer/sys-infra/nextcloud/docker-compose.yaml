@@ -126,7 +126,7 @@ services:
   ##############################################################################
   nextcloud:
     # https://hub.docker.com/_/nextcloud
-    image: nextcloud:${VERSION_NEXTCLOUD:-27.1.3-apache}
+    image: nextcloud:${VERSION_NEXTCLOUD:-27.1.11-apache}
     <<: [*basic, *basic-deploy-labels]
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels]
@@ -188,7 +188,7 @@ services:
   ##############################################################################
   cron:
     # https://hub.docker.com/_/nextcloud
-    image: nextcloud:${VERSION_NEXTCLOUD_CRON:-27.1.3-fpm}
+    image: nextcloud:${VERSION_NEXTCLOUD_CRON:-27.1.11-fpm}
     <<: [*basic, *basic-deploy-labels]
     deploy:
       <<: *basic-deploy

@@ -67,7 +67,7 @@ services:
   ##############################################################################
   owncloud:
     # https://hub.docker.com/r/owncloud/server
-    image: owncloud/server:${VERSION_OWNCLOUD:-10.16.3}
+    image: owncloud/server:${VERSION_OWNCLOUD:-10.16.4}
     <<:
       - *basic
       # - *basic-deploy-labels
