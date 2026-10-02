@@ -1,22 +1,5 @@
 # SETUP
 
-```sh
-    MVladislav
-```
-
----
-
-- [SETUP](#setup)
-  - [basic](#basic)
-    - [create your `secrets`:](#create-your-secrets)
-    - [create `.env` file following:](#create-env-file-following)
-      - [example short .env](#example-short-env)
-  - [Helper](#helper)
-    - [Default Credentials](#default-credentials)
-  - [References](#references)
-
----
-
 ## basic
 
 > defined to work with traefik
@@ -24,8 +7,8 @@
 ### create your `secrets`:
 
 ```sh
-$pwgen -s 32 1 > config/secrets/postgres_password_file.txt
-$echo "DATABASE_PASSWORD=$(cat config/secrets/postgres_password_file.txt)" >> .env
+pwgen -s 32 1 > config/secrets/postgres_password_file.txt
+echo "DATABASE_PASSWORD=$(cat config/secrets/postgres_password_file.txt)" >> .env
 ```
 
 ### create `.env` file following:
@@ -54,8 +37,8 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_DAWARICH=0.23.5
-VERSION_POSTGRESQL=18.6-alpine
+VERSION_DAWARICH=0.37.3
+VERSION_POSTGRESQL_POSTGIS=18-3.6-alpine
 VERSION_VALKEY=9.1.2-alpine
 
 # APPLICATION general variable to adjust the apps
@@ -74,8 +57,7 @@ APPLICATION_PROTOCOL=http
 DISTANCE_UNIT=km
 PROMETHEUS_EXPORTER_ENABLED=false
 PROMETHEUS_EXPORTER_PORT=9394
-ENABLE_TELEMETRY=false
-SECRET_KEY_BASE=1234567890
+SECRET_KEY_BASE=<KEY>
 RAILS_LOG_TO_STDOUT=true
 ```
 
