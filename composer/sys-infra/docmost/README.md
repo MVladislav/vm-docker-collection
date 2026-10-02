@@ -1,20 +1,5 @@
 # SETUP
 
-```sh
-    MVladislav
-```
-
----
-
-- [SETUP](#setup)
-  - [basic](#basic)
-    - [create your `secrets`:](#create-your-secrets)
-    - [create `.env` file following:](#create-env-file-following)
-      - [example short .env](#example-short-env)
-  - [References](#references)
-
----
-
 ## basic
 
 > defined to work with traefik
@@ -22,9 +7,9 @@
 ### create your `secrets`:
 
 ```sh
-$pwgen -s 32 1 > config/secrets/postgres_password_file.txt
-$echo "POSTGRES_PW=$(cat config/secrets/postgres_password_file.txt)" >> .env
-$echo "APP_SECRET=$(pwgen -s 32 1)" >> .env
+pwgen -s 32 1 > config/secrets/postgres_password_file.txt
+echo "POSTGRES_PW=$(cat config/secrets/postgres_password_file.txt)" >> .env
+echo "APP_SECRET=$(pwgen -s 32 1)" >> .env
 ```
 
 ### create `.env` file following:
@@ -53,7 +38,7 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_DOCMOST=0.20.1
+VERSION_DOCMOST=0.96.0
 VERSION_POSTGRESQL=18.6-alpine
 VERSION_VALKEY=9.1.2-alpine
 

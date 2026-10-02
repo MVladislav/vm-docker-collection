@@ -60,12 +60,13 @@ services:
   ##############################################################################
   docmost:
     # https://hub.docker.com/r/docmost/docmost
-    image: docmost/docmost:${VERSION_DOCMOST:-0.20.1}
+    image: docmost/docmost:${VERSION_DOCMOST:-0.96.0}
     <<: [*basic, *basic-deploy-labels]
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels]
     environment:
       APP_URL: "https://${DOMAIN?domain variable not set}"
+      APP_SECRET: ${APP_SECRET?APP_SECRET is not set}
       DATABASE_URL: postgresql://${POSTGRES_USER:-docmost}:${POSTGRES_PW?POSTGRES_PW is not set}@postgresql:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-docmost}?schema=public
       REDIS_URL: "redis://valkey:6379"
     volumes:
@@ -79,9 +80,9 @@ services:
       test:
         [
           "CMD-SHELL",
-          "curl -kIf ${PROTOCOL:-http}://127.0.0.1:${PORT:-3000} > /dev/null 2>&1 || exit 1",
+          "curl -fsS ${PROTOCOL:-http}://127.0.0.1:${PORT:-3000}/api/health > /dev/null 2>&1 || exit 1",
         ]
-      start_period: 10s
+      start_period: 300s
       interval: 30s
       timeout: 5s
       retries: 3
