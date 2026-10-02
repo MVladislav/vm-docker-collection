@@ -54,8 +54,8 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_NEXTCLOUD=27.1.3-apache
-VERSION_NEXTCLOUD_CRON=27.1.3-fpm
+VERSION_NEXTCLOUD=27.1.11-apache
+VERSION_NEXTCLOUD_CRON=27.1.11-fpm
 VERSION_VALKEY=9.1.2-alpine
 
 # APPLICATION general variable to adjust the apps

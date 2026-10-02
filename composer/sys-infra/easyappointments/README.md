@@ -43,7 +43,7 @@ RESOURCES_RESERVATIONS_MEMORY_MARIADB=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_APPT=1.5.1
+VERSION_APPT=1.6.0
 VERSION_MARIADB=13.0.2
 
 # APPLICATION general variable to adjust the apps

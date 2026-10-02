@@ -52,7 +52,7 @@ RESOURCES_RESERVATIONS_MEMORY_MONGODB=32m
 # ______________________________________________________________________________
 VERSION_CHECKMATE=v2.3.1
 VERSION_VALKEY=9.1.2-alpine
-VERSION_MONGODB=8.0.8
+VERSION_MONGODB=8.3.9
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________

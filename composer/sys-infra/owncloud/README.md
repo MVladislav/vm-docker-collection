@@ -48,7 +48,7 @@ RESOURCES_RESERVATIONS_MEMORY_VALKEY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_OWNCLOUD=10.16.3
+VERSION_OWNCLOUD=10.16.4
 VERSION_MARIADB=13.0.2
 VERSION_VALKEY=9.1.2-alpine
 

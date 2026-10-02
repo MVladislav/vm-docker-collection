@@ -36,7 +36,7 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION=3.1.2
+VERSION=3.1.6
 ```
 
 #### CA Server

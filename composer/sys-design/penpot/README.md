@@ -54,7 +54,7 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_PENPOT=2.12.1
+VERSION_PENPOT=2.18.0
 VERSION_POSTGRESQL=18.6-alpine
 VERSION_VALKEY=9.1.2-alpine
 

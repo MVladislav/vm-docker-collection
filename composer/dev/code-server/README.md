@@ -53,7 +53,7 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION=4.105.0-ubuntu
+VERSION=4.139.1-ubuntu
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________

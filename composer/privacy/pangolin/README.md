@@ -83,7 +83,7 @@ RESOURCES_LIMITS_MEMORY_GEOIPUPDATE=64m
 # APPLICATION version for easy update
 # ______________________________________________________________________________
 VERSION_PANGOLIN=1.23.0
-VERSION_GERBIL=1.5.1
+VERSION_GERBIL=1.5.2
 VERSION_TRAEFIK=v3.7.13
 VERSION_BADGER=v1.7.0
 VERSION_CROWDSEC_PLUGIN=v1.7.1

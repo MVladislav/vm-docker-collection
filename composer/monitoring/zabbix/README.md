@@ -55,8 +55,8 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_ZABBIX_WEB=7.4.5-alpine
-VERSION_ZABBIX_SERVER=7.4.5-alpine
+VERSION_ZABBIX_WEB=7.4.15-alpine
+VERSION_ZABBIX_SERVER=7.4.15-alpine
 # NOTE: Zabbix 7.4 documents MariaDB support as 10.5.00-12.3.X, so this pin is
 # ahead of the vendor's stated range. It tracks the newest upstream release
 # rather than the newest one Zabbix has certified; drop back to 12.3 if the

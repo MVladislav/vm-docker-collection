@@ -20,8 +20,8 @@
 ### create `.env` file following:
 
 ```env
-VERSION_PORTAINER=2.16.2-alpine
-VERSION_AGENT=2.16.2-alpine
+VERSION_PORTAINER=2.45.1-alpine
+VERSION_AGENT=2.45.1-alpine
 
 LB_SWARM=true
 DOMAIN=portainer.home.local

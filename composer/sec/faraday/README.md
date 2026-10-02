@@ -65,7 +65,7 @@ RESOURCES_RESERVATIONS_MEMORY_VALKEY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_FARADAY=5.1.1
+VERSION_FARADAY=5.24.2
 VERSION_POSTGRESQL=18.6-alpine
 VERSION_VALKEY=9.1.2-alpine
 ```

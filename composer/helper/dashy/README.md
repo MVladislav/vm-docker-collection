@@ -21,7 +21,7 @@
 
 ```env
 NODE_ROLE=manager
-VERSION=2.1.1
+VERSION=2.1.2
 
 LB_SWARM=true
 DOMAIN=services.home.local

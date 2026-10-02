@@ -68,8 +68,8 @@ RESOURCES_LIMITS_MEMORY_RUSTFS=1g
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_OPENCTI=7.260921.0
-VERSION_CONNECTORS=7.260921.0
+VERSION_OPENCTI=7.260928.1
+VERSION_CONNECTORS=7.260928.1
 VERSION_OPENSEARCH=3.8.0
 VERSION_RABBITMQ=4.3.6-management-alpine
 VERSION_VALKEY=9.1.2-alpine

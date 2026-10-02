@@ -43,7 +43,7 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 # APPLICATION version for easy update
 # ______________________________________________________________________________
 VERSION_OPEN_ARCHIVER=v0.6.0
-VERSION_MEILISEARCH=v1.49
+VERSION_MEILISEARCH=v1.51
 VERSION_POSTGRESQL=18.6-alpine
 VERSION_VALKEY=9.1.2-alpine
 VERSION_TIKA=3.3.1.0-full

@@ -53,7 +53,7 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_INFLUXDB=2.7.11-alpine
+VERSION_INFLUXDB=2.9.0-alpine
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________

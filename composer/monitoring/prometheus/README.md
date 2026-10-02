@@ -51,7 +51,7 @@ $cp ./config/web_template.yml ./config/web.yml
 ```env
 NODE_ROLE=manager
 
-VERSION=v2.43.0-rc.0
+VERSION=v2.55.0-rc.0
 
 LB_SWARM=true
 DOMAIN=prometheus.home.local

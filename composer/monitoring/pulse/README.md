@@ -48,7 +48,7 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION=4.30.0
+VERSION=4.36.2
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________

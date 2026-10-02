@@ -32,7 +32,7 @@ $openssl rand -base64 18 > config/secrets/mariadb_root_password.txt
 ```env
 NODE_ROLE=manager
 
-VERSION_LIBRENMS=23.2.0
+VERSION_LIBRENMS=23.11.0
 VERSION_MARIADB=13.0.2
 VERSION_VALKEY=9.1.2-alpine
 
