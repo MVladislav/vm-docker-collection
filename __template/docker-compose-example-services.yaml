@@ -340,7 +340,7 @@ services:
   ##############################################################################
   adminer:
     # https://hub.docker.com/_/adminer
-    image: adminer:${VERSION_ADMINER:-5.5.0-standalone}
+    image: adminer:${VERSION_ADMINER:-5.5.1-standalone}
     # <<: *basic
     deploy:
       # <<: *basic-deploy
@@ -520,7 +520,7 @@ services:
   # ```
   opensearch:
     # https://hub.docker.com/r/opensearchproject/opensearch
-    image: opensearchproject/opensearch:${VERSION_OPENSEARCH:-3.8.0}
+    image: opensearchproject/opensearch:${VERSION_OPENSEARCH:-3.9.0}
     # <<: *basic
     deploy:
       # <<: *basic-deploy

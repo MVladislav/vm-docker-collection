@@ -72,7 +72,7 @@ services:
   ##############################################################################
   opencti:
     # https://hub.docker.com/r/opencti/platform
-    image: opencti/platform:${VERSION_OPENCTI:-7.260928.1}
+    image: opencti/platform:${VERSION_OPENCTI:-7.260930.0}
     <<:
       - *basic
       # -  *basic-deploy-labels
@@ -156,7 +156,7 @@ services:
   ##############################################################################
   worker:
     # https://hub.docker.com/r/opencti/worker
-    image: opencti/worker:${VERSION_OPENCTI:-7.260928.1}
+    image: opencti/worker:${VERSION_OPENCTI:-7.260930.0}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -166,7 +166,7 @@ services:
       WORKER_LOG_LEVEL: info
   connector-export-file-stix:
     # https://hub.docker.com/r/opencti/connector-export-file-stix
-    image: opencti/connector-export-file-stix:${VERSION_OPENCTI:-7.260928.1}
+    image: opencti/connector-export-file-stix:${VERSION_OPENCTI:-7.260930.0}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -177,7 +177,7 @@ services:
       CONNECTOR_SCOPE: application/json
   connector-export-file-csv:
     # https://hub.docker.com/r/opencti/connector-export-file-csv
-    image: opencti/connector-export-file-csv:${VERSION_OPENCTI:-7.260928.1}
+    image: opencti/connector-export-file-csv:${VERSION_OPENCTI:-7.260930.0}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -188,7 +188,7 @@ services:
       CONNECTOR_SCOPE: text/csv
   connector-export-file-txt:
     # https://hub.docker.com/r/opencti/connector-export-file-txt
-    image: opencti/connector-export-file-txt:${VERSION_OPENCTI:-7.260928.1}
+    image: opencti/connector-export-file-txt:${VERSION_OPENCTI:-7.260930.0}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -199,7 +199,7 @@ services:
       CONNECTOR_SCOPE: text/plain
   connector-import-file-stix:
     # https://hub.docker.com/r/opencti/connector-import-file-stix
-    image: opencti/connector-import-file-stix:${VERSION_OPENCTI:-7.260928.1}
+    image: opencti/connector-import-file-stix:${VERSION_OPENCTI:-7.260930.0}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -213,7 +213,7 @@ services:
       CONNECTOR_AUTO: ${CONNECTOR_AUTO:-true} # Enable/disable auto-import of file
   connector-import-document:
     # https://hub.docker.com/r/opencti/connector-import-document
-    image: opencti/connector-import-document:${VERSION_OPENCTI:-7.260928.1}
+    image: opencti/connector-import-document:${VERSION_OPENCTI:-7.260930.0}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -230,7 +230,7 @@ services:
       IMPORT_DOCUMENT_CREATE_INDICATOR: ${IMPORT_DOCUMENT_CREATE_INDICATOR:-true}
   connector-analysis:
     # https://hub.docker.com/r/opencti/connector-import-document
-    image: opencti/connector-import-document:${VERSION_OPENCTI:-7.260928.1}
+    image: opencti/connector-import-document:${VERSION_OPENCTI:-7.260930.0}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -250,7 +250,7 @@ services:
   ##############################################################################
   opensearch:
     # https://hub.docker.com/r/opensearchproject/opensearch
-    image: opensearchproject/opensearch:${VERSION_OPENSEARCH:-3.8.0}
+    image: opensearchproject/opensearch:${VERSION_OPENSEARCH:-3.9.0}
     <<: *basic
     deploy:
       <<: *basic-deploy
