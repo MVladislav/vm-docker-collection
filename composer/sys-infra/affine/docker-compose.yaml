@@ -4,13 +4,14 @@ x-basic-deploy-labels: &basic-deploy-labels
     - traefik.enable=true
     - traefik.swarm.lbswarm=${LB_SWARM:-true}
     - traefik.swarm.network=proxy
-    - traefik.http.routers.affine${SERVICE_NAME_POST:-}.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
-    - traefik.http.routers.affine${SERVICE_NAME_POST:-}.rule=Host(`${DOMAIN?domain variable not set}`)
-    - traefik.http.routers.affine${SERVICE_NAME_POST:-}.tls=true
-    - traefik.http.routers.affine${SERVICE_NAME_POST:-}.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
-    - traefik.http.routers.affine${SERVICE_NAME_POST:-}.service=affine${SERVICE_NAME_POST:-}
-    - traefik.http.services.affine${SERVICE_NAME_POST:-}.loadbalancer.server.scheme=${PROTOCOL:-http}
-    - traefik.http.services.affine${SERVICE_NAME_POST:-}.loadbalancer.server.port=${PORT:-3010}
+    - traefik.http.routers.affine.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.affine.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.affine.tls=true
+    - traefik.http.routers.affine.tls.certresolver=${CERT_RESOLVER:-}
+    - traefik.http.routers.affine.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.affine.service=affine
+    - traefik.http.services.affine.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.affine.loadbalancer.server.port=${PORT:-3010}
 
 x-basic-deploy: &basic-deploy
   mode: replicated
@@ -20,28 +21,21 @@ x-basic-deploy: &basic-deploy
     constraints:
       - "node.role==${NODE_ROLE:-manager}"
       - node.platform.os == linux
+  update_config:
+    order: stop-first
   restart_policy:
-    condition: on-failure
+    condition: any
   resources:
     limits:
       cpus: ${RESOURCES_LIMITS_CPUS:-2}
-      memory: ${RESOURCES_LIMITS_MEMORY:-2g}
+      memory: ${RESOURCES_LIMITS_MEMORY:-3g}
     reservations:
       cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
       memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
 
 x-basic: &basic
   env_file: ${ENV_FILE:-.env}
-  cap_add: ["ALL"]
-  # cap_add:
-  #   - CHOWN
-  #   - DAC_OVERRIDE
-  #   - DAC_READ_SEARCH
-  #   - SETGID
-  #   - SETUID
-  #   - FOWNER
-  #   - FSETID
-  # cap_drop: ["ALL"]
+  cap_drop: ["ALL"]
   security_opt:
     - no-new-privileges:true
   ulimits:
@@ -57,6 +51,8 @@ x-basic: &basic
     default: {}
   healthcheck:
     disable: true
+  tmpfs:
+    - /tmp:rw,relatime,size=512m,nodev,nosuid,noexec
   restart: always
 
 ################################################################################
@@ -67,36 +63,85 @@ services:
   ##############################################################################
   ##############################################################################
   affine:
-    # https://github.com/toeverything/AFFiNE/pkgs/container/affine-graphql
-    image: ghcr.io/toeverything/affine-graphql:${VERSION_AFFINE:-stable-129ccea}
-    <<: [*basic, *basic-deploy-labels]
+    # https://github.com/toeverything/AFFiNE/pkgs/container/affine
+    image: ghcr.io/toeverything/affine:${VERSION_AFFINE:-0.27.4}
+    <<:
+      - *basic
+      - *basic-deploy-labels
     deploy:
-      <<: [*basic-deploy, *basic-deploy-labels]
+      <<:
+        - *basic-deploy
+        - *basic-deploy-labels
+    cap_add:
+      - CHOWN
+      - FOWNER
+      - DAC_OVERRIDE
     environment:
-      # AFFINE_ADMIN_EMAIL: ${AFFINE_ADMIN_EMAIL}
-      # AFFINE_ADMIN_PASSWORD: ${AFFINE_ADMIN_PASSWORD}
-
-      AFFINE_SERVER_HOST: ${DOMAIN?domain variable not set}
-      AFFINE_SERVER_HTTPS: ${AFFINE_SERVER_HTTPS:-false}
-
+      TZ: ${TIMEZONE:-Europe/Berlin}
       NODE_ENV: production
-      NODE_OPTIONS: "--import=./scripts/register.js"
-      AFFINE_CONFIG_PATH: /root/.affine/config
+      AFFINE_SERVER_PORT: ${PORT:-3010}
+      AFFINE_SERVER_HOST: ${DOMAIN?domain variable not set}
+      AFFINE_SERVER_HTTPS: ${AFFINE_SERVER_HTTPS:-true}
+      # AFFINE_SERVER_EXTERNAL_URL: ${AFFINE_SERVER_EXTERNAL_URL}
 
       REDIS_SERVER_HOST: valkey
       DATABASE_URL: postgresql://${POSTGRES_USER:-affine}:${POSTGRES_PW?POSTGRES_PW is not set}@postgresql:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-affine}
 
-      TELEMETRY_ENABLE: ${TELEMETRY_ENABLE:-false}
+      AFFINE_INDEXER_ENABLED: ${AFFINE_INDEXER_ENABLED:-false}
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-      - config:/root/.affine/config # custom configurations
-      - storage:/root/.affine/storage # blob storage
-    command:
-      ["sh", "-c", "node ./scripts/self-host-predeploy && node ./dist/index.js"]
+      - config:/root/.affine/config # private.key + optional config.json
+      - storage:/root/.affine/storage # blob + avatar storage
     networks:
       default: {}
       proxy: {}
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "timeout 3 bash -c '</dev/tcp/127.0.0.1/${PORT:-3010}' || exit 1",
+        ]
+      start_period: 60s
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  affine-migration:
+    # https://github.com/toeverything/AFFiNE/blob/canary/packages/backend/server/scripts/self-host-predeploy.js
+    image: ghcr.io/toeverything/affine:${VERSION_AFFINE:-0.27.4}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+      restart_policy:
+        condition: on-failure
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_MIGRATION:-2}
+          memory: ${RESOURCES_LIMITS_MEMORY_MIGRATION:-2g}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_MIGRATION:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_MIGRATION:-32m}
+    restart: on-failure
+    cap_add:
+      - CHOWN
+      - FOWNER
+      - DAC_OVERRIDE
+    environment:
+      TZ: ${TIMEZONE:-Europe/Berlin}
+      NODE_ENV: production
+      REDIS_SERVER_HOST: valkey
+      DATABASE_URL: postgresql://${POSTGRES_USER:-affine}:${POSTGRES_PW?POSTGRES_PW is not set}@postgresql:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-affine}
+      AFFINE_INDEXER_ENABLED: "false"
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - config:/root/.affine/config # shares private.key with `affine`
+      - storage:/root/.affine/storage
+    command: ["sh", "-c", "node ./scripts/self-host-predeploy.js"]
 
   ##############################################################################
   ##############################################################################
@@ -117,8 +162,6 @@ services:
     cap_add:
       - SETUID
       - SETGID
-    environment:
-      ALLOW_EMPTY_PASSWORD: ${ALLOW_EMPTY_PASSWORD:-true}
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
@@ -162,6 +205,7 @@ services:
       POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password_file
       POSTGRES_PORT: ${POSTGRES_PORT:-5432}
       PGDATA: /var/lib/postgresql/18/data
+      POSTGRES_INITDB_ARGS: --data-checksums
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
@@ -183,7 +227,6 @@ services:
 networks:
   default:
     internal: true
-    name: affine${SERVICE_NAME_POST:-}
     driver: ${NETWORK_MODE:-overlay}
     attachable: true
     driver_opts:
@@ -192,14 +235,10 @@ networks:
     external: true
 
 volumes:
-  config:
-    name: affine_config${SERVICE_NAME_POST:-}
-  storage:
-    name: affine_storage${SERVICE_NAME_POST:-}
-  valkey:
-    name: affine_valkey${SERVICE_NAME_POST:-}
-  postgresql_v18:
-    name: affine_postgresql${SERVICE_NAME_POST:-}
+  config: {}
+  storage: {}
+  valkey: {}
+  postgresql_v18: {}
 
 secrets:
   postgres_password_file:

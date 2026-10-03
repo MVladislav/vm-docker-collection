@@ -227,6 +227,7 @@ UNFEATURED = {
     "checkmate",
     "dawarich",
     "netmaker",
+    "nessus",
     "opencti",
     "crowdsec",
     "graylog",
