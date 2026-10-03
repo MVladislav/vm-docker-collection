@@ -5,7 +5,7 @@ services:
   ##############################################################################
   checkmk:
     # https://hub.docker.com/r/checkmk
-    image: checkmk/check-mk-raw:${VERSION:-2.1.0}
+    image: checkmk/check-mk-raw:${VERSION:-2.4.0}
     # image: checkmk/check-mk-free:${VERSION:-2.1.0}
     env_file: ${ENV_FILE:-.env}
     stdin_open: true # docker run -i
