@@ -97,6 +97,7 @@ WAZUH_INDEXER_JAVA=1g
 # APPLICATION version for easy update
 # ______________________________________________________________________________
 VERSION=4.14.8
+VERSION_CERTS_GENERATOR=0.0.4
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________

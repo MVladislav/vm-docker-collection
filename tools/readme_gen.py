@@ -234,6 +234,7 @@ UNFEATURED = {
     "wazuh",
     "netbox",
     "zerobyte",
+    "affine",
     "calcom",
     "docmost",
 }
