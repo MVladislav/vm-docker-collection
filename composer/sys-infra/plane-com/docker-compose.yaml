@@ -1025,7 +1025,7 @@ services:
 
   plane-mq:
     # https://hub.docker.com/_/rabbitmq
-    image: rabbitmq:${VERSION_RABBITMQ:-3.13.7-management-alpine}
+    image: rabbitmq:${VERSION_RABBITMQ:-4.3.6-management-alpine}
     <<: *basic
     deploy:
       <<: *basic-deploy

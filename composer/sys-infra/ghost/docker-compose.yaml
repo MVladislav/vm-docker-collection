@@ -62,7 +62,7 @@ services:
   ##############################################################################
   ghost:
     # https://hub.docker.com/_/ghost
-    image: ghost:${VERSION_GHOST:-5-alpine}
+    image: ghost:${VERSION_GHOST:-6-alpine}
     <<: [*basic, *basic-deploy-labels]
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels]

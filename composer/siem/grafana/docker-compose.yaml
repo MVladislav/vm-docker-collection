@@ -61,7 +61,7 @@ services:
   ##############################################################################
   grafana:
     # https://hub.docker.com/r/grafana/grafana
-    image: grafana/grafana:${VERSION:-11.6.16}
+    image: grafana/grafana:${VERSION:-13.2.3}
     <<: [*basic, *basic-deploy-labels]
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels]

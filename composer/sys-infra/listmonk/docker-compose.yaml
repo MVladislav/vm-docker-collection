@@ -69,7 +69,7 @@ services:
   ##############################################################################
   listmonk:
     # https://hub.docker.com/r/listmonk/listmonk
-    image: listmonk/listmonk:${VERSION_LISTMONK:-v4.1.0}
+    image: listmonk/listmonk:${VERSION_LISTMONK:-v6.2.0}
     <<: [*basic, *basic-deploy-labels]
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels]
