@@ -57,7 +57,7 @@ services:
   ##############################################################################
   ##############################################################################
   librenms:
-    image: librenms/librenms:${VERSION_LIBRENMS:-23.11.0}
+    image: librenms/librenms:${VERSION_LIBRENMS:-26.8.2}
     <<: *basic
     cap_add:
       - NET_ADMIN
@@ -95,6 +95,7 @@ services:
       CACHE_DRIVER: ${CACHE_DRIVER:-redis}
       SESSION_DRIVER: ${SESSION_DRIVER:-redis}
       REDIS_HOST: valkey
+      APP_TRUSTED_PROXIES: ${APP_TRUSTED_PROXIES:-127.0.0.1/32, 10.0.0.0/8, 172.16.0.0/12}
 
       LIBRENMS_WEATHERMAP: ${LIBRENMS_WEATHERMAP:-false}
       LIBRENMS_WEATHERMAP_SCHEDULE: ${LIBRENMS_WEATHERMAP_SCHEDULE:-*/5 * * * *}
@@ -131,7 +132,7 @@ services:
   ##############################################################################
   ##############################################################################
   dispatcher:
-    image: librenms/librenms:${VERSION_LIBRENMS:-23.11.0}
+    image: librenms/librenms:${VERSION_LIBRENMS:-26.8.2}
     <<: *basic
     cap_add:
       - NET_ADMIN
@@ -164,6 +165,7 @@ services:
       CACHE_DRIVER: ${CACHE_DRIVER:-redis}
       SESSION_DRIVER: ${SESSION_DRIVER:-redis}
       REDIS_HOST: valkey
+      APP_TRUSTED_PROXIES: ${APP_TRUSTED_PROXIES:-127.0.0.1/32, 10.0.0.0/8, 172.16.0.0/12}
 
       LIBRENMS_WEATHERMAP: ${LIBRENMS_WEATHERMAP:-false}
       LIBRENMS_WEATHERMAP_SCHEDULE: ${LIBRENMS_WEATHERMAP_SCHEDULE:-*/5 * * * *}

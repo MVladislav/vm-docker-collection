@@ -87,7 +87,7 @@ services:
   ##############################################################################
   netmaker:
     # https://hub.docker.com/r/gravitl/netmaker
-    image: gravitl/netmaker:${VERSION_NETMAKER:-v0.99.0}
+    image: gravitl/netmaker:${VERSION_NETMAKER:-v1.6.0}
     <<:
       - *basic
       - *basic-deploy-labels-api
@@ -119,8 +119,15 @@ services:
       MASTER_KEY: "${MASTER_KEY}"
       CORS_ALLOWED_ORIGIN: "*"
       DISPLAY_KEYS: "on"
-      DATABASE: "sqlite"
-      NODE_ID: "netmaker-server-1"
+      DATABASE: "postgres"
+      SQL_CONN: "postgres"
+      SQL_HOST: "postgresql"
+      SQL_PORT: "5432"
+      SQL_DB: "${SQL_DB:-netmaker}"
+      SQL_USER: "${SQL_USER:-netmaker}"
+      SQL_PASS: "${SQL_PASS:?SQL_PASS is not set}"
+      SQL_SSL_MODE: "${SQL_SSL_MODE:-disable}"
+      HOST_NAME: "netmaker-server-1"
       VERBOSITY: "1"
       TELEMETRY: "off"
       # AUTH_PROVIDER: "github"
@@ -131,14 +138,16 @@ services:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - dnsconfig:/root/config/dnsconfig
-      - sqldata:/root/data
     sysctls:
       - net.ipv4.ip_forward=1
       - net.ipv4.conf.all.src_valid_mark=1
       - net.ipv6.conf.all.disable_ipv6=0
       - net.ipv6.conf.all.forwarding=1
     networks:
-      default: {}
+      default:
+        aliases:
+          # swarm-safe replacement for the upstream `links: ["netmaker:api"]`
+          - api
       proxy: {}
 
   ##############################################################################
@@ -146,7 +155,7 @@ services:
   ##############################################################################
   netmaker-ui:
     # https://hub.docker.com/r/gravitl/netmaker-ui
-    image: gravitl/netmaker-ui:${VERSION_NETMAKER_UI:-v0.99.0}
+    image: gravitl/netmaker-ui:${VERSION_NETMAKER_UI:-v1.6.0}
     <<:
       - *basic
       - *basic-deploy-labels
@@ -217,6 +226,44 @@ services:
       default: {}
       proxy: {}
 
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  postgresql:
+    # https://hub.docker.com/_/postgres
+    image: postgres:${VERSION_POSTGRESQL:-18.6-alpine}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_POSTGRESQL:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_POSTGRESQL:-1g}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_POSTGRESQL:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_POSTGRESQL:-32m}
+    environment:
+      POSTGRES_DB: ${SQL_DB:-netmaker}
+      POSTGRES_USER: ${SQL_USER:-netmaker}
+      POSTGRES_PASSWORD: ${SQL_PASS:?SQL_PASS is not set}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - postgresql_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${SQL_USER:-netmaker} -d ${SQL_DB:-netmaker}",
+        ]
+      start_period: 30s
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      default: {}
+
 ################################################################################
 ################################################################################
 ################################################################################
@@ -231,7 +278,7 @@ networks:
     external: true
 
 volumes:
-  sqldata: {}
   dnsconfig: {}
   mosquitto_data: {}
+  postgresql_data: {}
   mosquitto_logs: {}

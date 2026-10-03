@@ -60,13 +60,12 @@ services:
   ##############################################################################
   cloudflared:
     # https://hub.docker.com/r/cloudflare/cloudflared
-    image: cloudflare/cloudflared:${VERSION:-2022.12.1}
+    image: cloudflare/cloudflared:${VERSION:-2026.9.3}
     <<: *basic
     deploy:
       <<: *basic-deploy
     environment:
       TUNNEL_TOKEN: ${TOKEN}
-      NO_AUTOUPDATE: ${NO_AUTOUPDATE:-true}
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro

@@ -342,7 +342,7 @@ services:
   ##############################################################################
   adminer:
     # https://hub.docker.com/_/adminer
-    image: adminer:${VERSION_ADMINER:-5.5.1-standalone}
+    image: adminer:${VERSION_ADMINER:-6.1.1-standalone}
     # <<: *basic
     deploy:
       # <<: *basic-deploy
@@ -359,10 +359,6 @@ services:
     #     protocol: tcp
     #     # host_ip: 127.0.0.1
     #     mode: host
-    environment:
-      ADMINER_DEFAULT_SERVER: mysql # mysql | postgresql
-      ADMINER_PLUGINS: "tables-filter tinymce file-upload"
-      ADMINER_DESIGN: "hydra"
     # volumes:
     #   - /etc/timezone:/etc/timezone:ro
     #   - /etc/localtime:/etc/localtime:ro

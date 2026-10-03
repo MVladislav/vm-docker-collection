@@ -9,7 +9,7 @@ x-basic-deploy-labels: &basic-deploy-labels
     - traefik.http.routers.dashy.tls=true
     - traefik.http.routers.dashy.service=dashy
     - traefik.http.services.dashy.loadbalancer.server.scheme=${PROTOCOL:-http}
-    - traefik.http.services.dashy.loadbalancer.server.port=${PORT:-80}
+    - traefik.http.services.dashy.loadbalancer.server.port=${PORT:-8080}
     - traefik.http.routers.dashy.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
 
 x-basic-deploy: &basic-deploy
@@ -58,24 +58,19 @@ services:
   ##############################################################################
   dashy:
     # https://hub.docker.com/r/lissy93/dashy
-    image: lissy93/dashy:${VERSION:-2.1.2}
+    image: lissy93/dashy:${VERSION:-4.7.11}
     <<: *basic
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels]
-    # ports:
-    #   - target: ${PORT:-80}
-    #     published: ${PORT_PUBLISH:-80}
-    #     protocol: tcp
-    #     mode: host
     environment:
       - NODE_ENV=production
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-      - conf:/app/public
+      - conf:/app/user-data
     healthcheck:
-      test: ["CMD", "node", "/app/services/healthcheck"]
-      start_period: 10s
+      test: ["CMD", "node", "/app/services/healthcheck.js"]
+      start_period: 30s
       interval: 30s
       timeout: 5s
       retries: 3

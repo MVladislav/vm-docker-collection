@@ -37,7 +37,7 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_DAWARICH=0.37.3
+VERSION_DAWARICH=1.15.2
 VERSION_POSTGRESQL_POSTGIS=18-3.6-alpine
 VERSION_VALKEY=9.1.2-alpine
 

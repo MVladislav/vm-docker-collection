@@ -68,7 +68,7 @@ x-basic: &basic
 ################################################################################
 ################################################################################
 x-op-image: &image # https://hub.docker.com/r/openproject/openproject
-  image: openproject/openproject:${VERSION_OPENPROJECT:-15-slim}
+  image: openproject/openproject:${VERSION_OPENPROJECT:-16-slim}
 x-op-app: &app
   <<: *image
   environment:
@@ -76,7 +76,7 @@ x-op-app: &app
     OPENPROJECT_HOST__NAME: "${DOMAIN?domain variable not set}"
     OPENPROJECT_HSTS: "${OPENPROJECT_HSTS:-true}"
     OPENPROJECT_DEFAULT__LANGUAGE: ${OPENPROJECT_DEFAULT__LANGUAGE:-en}
-    RAILS_CACHE_STORE: "memcache"
+    OPENPROJECT_RAILS__CACHE__STORE: "memcache"
     OPENPROJECT_CACHE__MEMCACHE__SERVER: "cache:11211"
     OPENPROJECT_RAILS__RELATIVE__URL__ROOT: "${OPENPROJECT_RAILS__RELATIVE__URL__ROOT:-}"
     DATABASE_URL: postgresql://${POSTGRES_USER:-openproject}:${POSTGRES_PW?POSTGRES_PW is not set}@postgresql:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-openproject}?pool=20&encoding=unicode&reconnect=true}
@@ -100,9 +100,6 @@ x-op-app: &app
     - /etc/timezone:/etc/timezone:ro
     - /etc/localtime:/etc/localtime:ro
     - "${OPDATA:-opdata}:/var/openproject/assets"
-  links:
-    - postgresql
-    - cache
 
 ################################################################################
 ################################################################################
@@ -129,7 +126,7 @@ services:
           "-f",
           "http://localhost:8080${OPENPROJECT_RAILS__RELATIVE__URL__ROOT:-}/health_checks/default",
         ]
-      start_period: 10s
+      start_period: 300s
       interval: 30s
       timeout: 5s
       retries: 3

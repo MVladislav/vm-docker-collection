@@ -168,7 +168,7 @@ x-mq-env: &mq-env
   RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS?RabbitMQ default password not set}
   RABBITMQ_DEFAULT_VHOST: ${RABBITMQ_VHOST:-plane}
   RABBITMQ_VHOST: ${RABBITMQ_VHOST:-plane}
-  AMQP_URL: amqp://${RABBITMQ_USER:-plane}:${RABBITMQ_DEFAULT_PASS?RabbitMQ default password not set}@plane-mq:5672/plane
+  AMQP_URL: amqp://${RABBITMQ_USER:-plane}:${RABBITMQ_DEFAULT_PASS?RabbitMQ default password not set}@plane-mq:5672/${RABBITMQ_VHOST:-plane}
 
 x-redis-env: &redis-env
   REDIS_HOST: plane-redis
@@ -228,7 +228,7 @@ x-app-env: &app-env
   # Databases
   DATABASE_URL: postgresql://${POSTGRES_USER:-plane}:${POSTGRES_PASSWORD?Postgres password not set}@plane-db/${POSTGRES_DB:-plane}
   DB_URL: postgresql://${POSTGRES_USER:-plane}:${POSTGRES_PASSWORD?Postgres password not set}@plane-db/${POSTGRES_DB:-plane}
-  AMQP_URL: amqp://${RABBITMQ_USER:-plane}:${RABBITMQ_DEFAULT_PASS?RabbitMQ default password not set}@plane-mq:5672/plane
+  AMQP_URL: amqp://${RABBITMQ_USER:-plane}:${RABBITMQ_DEFAULT_PASS?RabbitMQ default password not set}@plane-mq:5672/${RABBITMQ_VHOST:-plane}
   REDIS_URL: redis://plane-redis:6379/
 
   API_BASE_URL: http://api:8000
@@ -609,7 +609,7 @@ services:
 
   plane-mq:
     # https://hub.docker.com/_/rabbitmq
-    image: rabbitmq:${VERSION_RABBITMQ:-3.13.7-management-alpine}
+    image: rabbitmq:${VERSION_RABBITMQ:-4.3.6-management-alpine}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -623,10 +623,12 @@ services:
     cap_add:
       - SETGID # Allows setting group ID (`setgid`,`newgrp`,`chgrp`,`setregid()`)
       - SETUID # Allows setting user ID (`setuid`,`su`,`sudo`,`passwd`)
+      - CHOWN # entrypoint
     environment:
       <<:
         - *mq-env
         - *base-env
+      RABBITMQ_NODENAME: ${RABBITMQ_NODENAME:-rabbit01@localhost}
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro

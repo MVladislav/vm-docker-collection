@@ -8,6 +8,11 @@ global:
 rule_files:
   - "alert.rules"
 
+storage:
+  tsdb:
+    retention:
+      time: 30d
+
 # alerting:
 #   alertmanagers:
 #     - static_configs:

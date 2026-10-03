@@ -33,7 +33,7 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION=7.2.2
+VERSION=9.0.0
 ```
 
 ---

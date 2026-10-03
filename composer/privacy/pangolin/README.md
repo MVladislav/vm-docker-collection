@@ -90,9 +90,9 @@ VERSION_CROWDSEC_PLUGIN=v1.7.1
 VERSION_CROWDSEC=v1.8.1-debian
 VERSION_MAXMIND=v8.0.0
 
-VERSION_NEWT=1.17.0
-VERSION_CLI=0.17.0
-VERSION_OLM=1.9.1
+VERSION_NEWT=1.18.0
+VERSION_CLI=0.18.0
+VERSION_OLM=1.10.0
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________

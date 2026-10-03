@@ -40,7 +40,7 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_CALCOM=v5.9.14
+VERSION_CALCOM=v6.2.0
 VERSION_POSTGRESQL=18.6-alpine
 
 # APPLICATION general variable to adjust the apps

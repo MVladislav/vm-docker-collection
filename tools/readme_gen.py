@@ -161,7 +161,6 @@ TPL_CLS = {
     "immich": "template",
     "kimai": "template",
     "listmonk": "template",
-    "nextcloud": "template",
     "nextcloud-aio": "semi",
     "odoo": "template",
     "openproject": "template",
@@ -225,6 +224,7 @@ UNFEATURED = {
     "kestra",
     "n8n",
     "checkmate",
+    "checkmk",
     "dawarich",
     "netmaker",
     "nessus",
@@ -773,7 +773,7 @@ def generate_maintenance(apps):
     M.append("## Ideas / candidate bundles")
     M.append("")
     M.append(
-        "- **Small-company base** (from existing stacks): pangolin (remote access) + goauthentik (SSO/2FA) + forgejo (git) + vaultwarden/bitwarden (passwords) + n8n (automation) + kestra/semaphore (CI) + beszel (monitoring) + paperless-ngx/nextcloud (docs) + freshrss/searxng (info)."
+        "- **Small-company base** (from existing stacks): pangolin (remote access) + goauthentik (SSO/2FA) + forgejo (git) + vaultwarden/bitwarden (passwords) + n8n (automation) + kestra/semaphore (CI) + beszel (monitoring) + paperless-ngx/nextcloud-aio (docs) + freshrss/searxng (info)."
     )
     M.append("")
     M.append("## Regeneration")

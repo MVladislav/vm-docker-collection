@@ -20,10 +20,11 @@ sudo iptables --policy FORWARD ACCEPT
 ```env
 NODE_ROLE=manager
 
-VERSION_NETMAKER=v0.99.0
-VERSION_NETMAKER_UI=v0.99.0
+VERSION_NETMAKER=v1.6.0
+VERSION_NETMAKER_UI=v1.6.0
 VERSION_COREDNS=1.14.7
 VERSION_MQTT=2.0.22-openssl
+VERSION_POSTGRESQL=18.6-alpine
 
 LB_SWARM=true
 DOMAIN=netmaker.home.local
@@ -48,6 +49,8 @@ MASTER_KEY=<KEY>
 MQ_USERNAME=netmaker
 # tr -dc A-Za-z0-9 </dev/urandom | head -c 30 ; echo ''
 MQ_PASSWORD=<PASSWORD>
+
+SQL_PASS=<PASSWORD>
 
 # optional, netclient hole punching
 STUN_SERVERS=stun1.l.google.com:19302,stun2.l.google.com:19302,stun3.l.google.com:19302,stun4.l.google.com:19302

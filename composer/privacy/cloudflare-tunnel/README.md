@@ -20,7 +20,7 @@
 ```env
 NODE_ROLE=manager
 
-VERSION=2022.12.1
+VERSION=2026.9.3
 TOKEN=<TOKEN>
 ```
 

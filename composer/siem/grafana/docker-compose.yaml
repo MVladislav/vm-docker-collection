@@ -61,7 +61,7 @@ services:
   ##############################################################################
   grafana:
     # https://hub.docker.com/r/grafana/grafana
-    image: grafana/grafana:${VERSION:-11.6.16}
+    image: grafana/grafana:${VERSION:-13.2.3}
     <<: [*basic, *basic-deploy-labels]
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels]
@@ -77,8 +77,8 @@ services:
       GF_SMTP_USER: ${GF_SMTP_USER:-}
       # GF_SMTP_PASSWORD__FILE: /run/secrets/gf_smtp_password_file_secret
       GF_SMTP_FROM_ADDRESS: ${GF_SMTP_FROM_ADDRESS:-}
-      GF_INSTALL_PLUGINS: grafana-clock-panel,magnesium-wordcloud-panel,flant-statusmap-panel,grafana-piechart-panel,grafana-worldmap-panel,mxswat-separator-panel
-      # "GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource"
+      GF_PLUGINS_PREINSTALL_SYNC: grafana-clock-panel,magnesium-wordcloud-panel,flant-statusmap-panel,grafana-piechart-panel,mxswat-separator-panel
+      # "GF_PLUGINS_PREINSTALL_SYNC=grafana-clock-panel,grafana-simple-json-datasource"
       GF_AUTH_ANONYMOUS_ENABLED: ${GF_AUTH_ANONYMOUS_ENABLED:-true}
       GF_AUTH_ANONYMOUS_ORG_NAME: ${GF_AUTH_ANONYMOUS_ORG_NAME:-VM}
       GF_AUTH_ANONYMOUS_ORG_ROLE: ${GF_AUTH_ANONYMOUS_ORG_ROLE:-Viewer}
@@ -87,7 +87,6 @@ services:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - grafana-storage:/var/lib/grafana
-      - grafana-plugins:/usr/share/grafana/plugins-bundled
     healthcheck:
       test:
         [
@@ -99,7 +98,7 @@ services:
           "--no-check-certificate",
           "${PROTOCOL:-http}://127.0.0.1:${PORT:-3000}/api/health",
         ]
-      start_period: 10s
+      start_period: 300s
       interval: 30s
       timeout: 5s
       retries: 3
@@ -113,7 +112,6 @@ networks:
 
 volumes:
   grafana-storage: {}
-  grafana-plugins: {}
 
 secrets:
   admin_password_file_secret:

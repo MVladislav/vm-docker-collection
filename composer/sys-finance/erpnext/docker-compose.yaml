@@ -79,7 +79,7 @@ services:
   ##############################################################################
   frontend:
     # https://hub.docker.com/r/frappe/erpnext
-    image: frappe/erpnext:${VERSION_ERPNEXT:-v15.121.5}
+    image: frappe/erpnext:${VERSION_ERPNEXT:-v16.36.1}
     <<:
       - *basic
       - *basic-deploy-labels
@@ -108,7 +108,7 @@ services:
   ##############################################################################
   backend:
     # https://hub.docker.com/r/frappe/erpnext
-    image: frappe/erpnext:${VERSION_ERPNEXT:-v15.121.5}
+    image: frappe/erpnext:${VERSION_ERPNEXT:-v16.36.1}
     <<:
       - *basic
       - *volume-default
@@ -123,7 +123,7 @@ services:
   ##############################################################################
   queue-long:
     # https://hub.docker.com/r/frappe/erpnext
-    image: frappe/erpnext:${VERSION_ERPNEXT:-v15.121.5}
+    image: frappe/erpnext:${VERSION_ERPNEXT:-v16.36.1}
     <<:
       - *basic
       - *volume-default
@@ -136,7 +136,7 @@ services:
       - long,default,short
   queue-short:
     # https://hub.docker.com/r/frappe/erpnext
-    image: frappe/erpnext:${VERSION_ERPNEXT:-v15.121.5}
+    image: frappe/erpnext:${VERSION_ERPNEXT:-v16.36.1}
     <<:
       - *basic
       - *volume-default
@@ -149,7 +149,7 @@ services:
       - short,default
   scheduler:
     # https://hub.docker.com/r/frappe/erpnext
-    image: frappe/erpnext:${VERSION_ERPNEXT:-v15.121.5}
+    image: frappe/erpnext:${VERSION_ERPNEXT:-v16.36.1}
     <<:
       - *basic
       - *volume-default
@@ -160,7 +160,7 @@ services:
       - schedule
   websocket:
     # https://hub.docker.com/r/frappe/erpnext
-    image: frappe/erpnext:${VERSION_ERPNEXT:-v15.121.5}
+    image: frappe/erpnext:${VERSION_ERPNEXT:-v16.36.1}
     <<:
       - *basic
       - *volume-default
@@ -175,7 +175,7 @@ services:
   ##############################################################################
   create-site:
     # https://hub.docker.com/r/frappe/erpnext
-    image: frappe/erpnext:${VERSION_ERPNEXT:-v15.121.5}
+    image: frappe/erpnext:${VERSION_ERPNEXT:-v16.36.1}
     <<:
       - *basic
       - *volume-default
@@ -213,7 +213,7 @@ services:
   ##############################################################################
   configurator:
     # https://hub.docker.com/r/frappe/erpnext
-    image: frappe/erpnext:${VERSION_ERPNEXT:-v15.121.5}
+    image: frappe/erpnext:${VERSION_ERPNEXT:-v16.36.1}
     <<:
       - *basic
       - *volume-default
@@ -239,6 +239,43 @@ services:
         bench set-config -g redis_queue "redis://$$REDIS_QUEUE";
         bench set-config -g redis_socketio "redis://$$REDIS_QUEUE";
         bench set-config -gp socketio_port $$SOCKETIO_PORT;
+        bench set-config -g chromium_path /usr/bin/chromium-headless-shell;
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  migrate:
+    # https://hub.docker.com/r/frappe/erpnext
+    image: frappe/erpnext:${VERSION_ERPNEXT:-v16.36.1}
+    <<:
+      - *basic
+      - *volume-default
+    deploy:
+      <<: *basic-deploy
+      restart_policy:
+        condition: none
+    environment:
+      DB_HOST: mariadb
+      DB_PORT: 3306
+      REDIS_CACHE: redis-cache:6379
+      REDIS_QUEUE: redis-queue:6379
+      SOCKETIO_PORT: 9000
+    entrypoint:
+      - bash
+      - -c
+    command:
+      # The image's boot path only links assets and execs gunicorn - it never
+      # runs `bench migrate`, so without this job a version bump boots new code
+      # against an old schema. Run it to completion before rolling the services.
+      - >
+        wait-for-it -t 120 mariadb:3306;
+        wait-for-it -t 120 redis-cache:6379;
+        wait-for-it -t 120 redis-queue:6379;
+        bench set-config -g db_host $$DB_HOST;
+        bench set-config -g redis_cache "redis://$$REDIS_CACHE";
+        bench set-config -g redis_queue "redis://$$REDIS_QUEUE";
+        bench set-config -g redis_socketio "redis://$$REDIS_QUEUE";
+        bench --site all migrate;
 
   ##############################################################################
   ##############################################################################
@@ -266,6 +303,7 @@ services:
       TZ: ${TZ:-Europe/Berlin}
       MARIADB_DATABASE: ${MARIADB_DATABASE:-erpnext}
       MARIADB_ROOT_PASSWORD_FILE: /run/secrets/mariadb_root_password
+      MARIADB_AUTO_UPGRADE: "1"
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
@@ -274,6 +312,9 @@ services:
       - --skip-log-bin
       - --max-allowed-packet=128M
       - --innodb-log-file-size=128M
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --skip-character-set-client-handshake
     networks:
       default: {}
     healthcheck:
@@ -302,12 +343,10 @@ services:
     cap_add:
       - SETUID
       - SETGID
-    environment:
-      ALLOW_EMPTY_PASSWORD: ${ALLOW_EMPTY_PASSWORD:-true}
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-      - valkey:/data
+      - valkey-queue:/data
     command: --port 6379 --save 300 1 --loglevel warning
     healthcheck:
       test: ["CMD-SHELL", "valkey-cli ping | grep PONG"]
@@ -332,12 +371,10 @@ services:
     cap_add:
       - SETUID
       - SETGID
-    environment:
-      ALLOW_EMPTY_PASSWORD: ${ALLOW_EMPTY_PASSWORD:-true}
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-      - valkey:/data
+      - valkey-cache:/data
     command: --port 6379 --save 300 1 --loglevel warning
     healthcheck:
       test: ["CMD-SHELL", "valkey-cli ping | grep PONG"]
@@ -362,7 +399,8 @@ volumes:
   sites: {}
   logs: {}
   mariadb: {}
-  valkey: {}
+  valkey-queue: {}
+  valkey-cache: {}
 
 secrets:
   mariadb_root_password:

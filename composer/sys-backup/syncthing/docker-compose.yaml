@@ -64,7 +64,7 @@ services:
   ##############################################################################
   syncthing:
     # https://hub.docker.com/r/syncthing/syncthing
-    image: syncthing/syncthing:${VERSION:-1.30.0}
+    image: syncthing/syncthing:${VERSION:-2.1.5}
     <<: [*basic, *basic-deploy-labels]
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels]
@@ -88,6 +88,17 @@ services:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - nas-data:/var/syncthing
+      - syncthing-local:/var/syncthing/config
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -fkLsS -m 2 http://127.0.0.1:8384/rest/noauth/health | grep -q OK",
+        ]
+      start_period: 300s
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
 ################################################################################
 ################################################################################
@@ -97,6 +108,7 @@ networks:
     external: true
 
 volumes:
+  syncthing-local: {}
   ## sudo apt install nfs-common
   nas-data:
     driver: local

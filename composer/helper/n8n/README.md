@@ -66,7 +66,7 @@ RESOURCES_RESERVATIONS_MEMORY_N8N_RUNNER=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_N8N=2.42.0
+VERSION_N8N=2.42.1
 VERSION_VALKEY=9.1.2-alpine
 VERSION_POSTGRESQL=18.6-alpine
 

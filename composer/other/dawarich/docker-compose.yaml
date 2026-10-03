@@ -85,7 +85,7 @@ services:
   ##############################################################################
   dawarich_app:
     # https://hub.docker.com/r/freikin/dawarich
-    image: freikin/dawarich:${VERSION_DAWARICH:-0.37.3}
+    image: freikin/dawarich:${VERSION_DAWARICH:-1.15.2}
     <<: [*basic, *basic-deploy-labels, *logging]
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels]
@@ -96,7 +96,7 @@ services:
     environment:
       <<: *base-env
       MIN_MINUTES_SPENT_IN_CITY: ${MIN_MINUTES_SPENT_IN_CITY:-60}
-      PROMETHEUS_EXPORTER_HOST: 0.0.0.0
+      SELF_HOSTED: ${SELF_HOSTED:-true}
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
@@ -124,7 +124,7 @@ services:
   ##############################################################################
   dawarich_sidekiq:
     # https://hub.docker.com/r/freikin/dawarich
-    image: freikin/dawarich:${VERSION_DAWARICH:-0.37.3}
+    image: freikin/dawarich:${VERSION_DAWARICH:-1.15.2}
     <<: [*basic, *logging]
     deploy:
       <<: *basic-deploy
@@ -135,7 +135,7 @@ services:
     environment:
       <<: *base-env
       BACKGROUND_PROCESSING_CONCURRENCY: ${BACKGROUND_PROCESSING_CONCURRENCY:-10}
-      PROMETHEUS_EXPORTER_HOST: dawarich_app
+      SELF_HOSTED: ${SELF_HOSTED:-true}
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro

@@ -29,7 +29,9 @@ $openssl rand -base64 18 > config/secrets/my_file_secret.txt
 
 ```env
 NODE_ROLE=manager
-VERSION=8.2.12
+VERSION=10.4.3
+
+SPLUNK_GENERAL_TERMS=--accept-sgt-current-at-splunk-com
 
 LB_SWARM=true
 DOMAIN=splunk.home.local

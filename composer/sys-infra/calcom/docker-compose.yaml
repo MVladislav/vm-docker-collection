@@ -27,7 +27,7 @@ x-basic-deploy: &basic-deploy
   resources:
     limits:
       cpus: ${RESOURCES_LIMITS_CPUS:-1}
-      memory: ${RESOURCES_LIMITS_MEMORY:-1g}
+      memory: ${RESOURCES_LIMITS_MEMORY:-8g}
     reservations:
       cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
       memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
@@ -61,7 +61,7 @@ services:
   ##############################################################################
   calcom:
     # https://hub.docker.com/r/calcom/cal.com
-    image: calcom/cal.com:${VERSION_CALCOM:-v5.9.14}
+    image: calcom/cal.com:${VERSION_CALCOM:-v6.2.0}
     <<: [*basic, *basic-deploy-labels]
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels]

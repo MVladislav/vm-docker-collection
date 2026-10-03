@@ -27,7 +27,7 @@ A tool for Infrastructure & Application Monitoring. It is a software developed f
 ```env
 NODE_ROLE=manager
 
-VERSION=2.1.0
+VERSION=2.4.0
 
 LB_SWARM=true
 DOMAIN=checkmk.home.local
@@ -56,7 +56,7 @@ $docker load -i check-mk-free-docker-2.0.0p12.tar.gz
 > HINT: **check `VERSION` from your downloaded version**
 
 ```env
-VERSION=2.1.0
+VERSION=2.4.0
 ```
 
 ## info

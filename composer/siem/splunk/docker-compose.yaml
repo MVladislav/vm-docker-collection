@@ -64,7 +64,7 @@ services:
   ##############################################################################
   splunk:
     # https://hub.docker.com/r/splunk/splunk/
-    image: splunk/splunk:${VERSION:-8.2.12}
+    image: splunk/splunk:${VERSION:-10.4.3}
     <<: *basic
     deploy:
       <<: [*basic-deploy, *basic-deploy-labels]
@@ -80,11 +80,11 @@ services:
     # secrets:
     #   - splunk_password_secret
     environment:
-      # SPLUNK_PASSWORD_FILE: /run/secrets/splunk_password_secret
       SPLUNK_LICENSE_URI: ${SPLUNK_LICENSE_URI:-Free}
       SPLUNK_START_ARGS: ${SPLUNK_START_ARGS:---accept-license}
+      # SPLUNK_GENERAL_TERMS: --accept-sgt-current-at-splunk-com
       SPLUNK_PASSWORD: ${SPLUNK_PASSWORD:-swordfish}
-      SPLUNK_UPGRADE: ${SPLUNK_UPGRADE:-true}
+      SPLUNK_ALLOW_UPGRADE: ${SPLUNK_ALLOW_UPGRADE:-true}
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
@@ -92,7 +92,7 @@ services:
       - so1-etc:/opt/splunk/etc
     healthcheck:
       test: ["CMD", "curl", "-f", "${PROTOCOL:-http}://localhost:${PORT:-8000}"]
-      start_period: 10s
+      start_period: 180s
       interval: 30s
       timeout: 5s
       retries: 3

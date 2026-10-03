@@ -37,7 +37,7 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_LISTMONK=v4.1.0
+VERSION_LISTMONK=v6.2.0
 VERSION_POSTGRESQL=18.6-alpine
 
 # APPLICATION general variable to adjust the apps
