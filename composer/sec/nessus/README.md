@@ -44,7 +44,7 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION=10.7.1-ubuntu
+VERSION=10.12.4-ubuntu
 ```
 
 #### example short .env

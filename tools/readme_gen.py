@@ -879,13 +879,13 @@ def generate(apps, old_readme_path=None):
         "| `status` | \U0001f7e2 focused \u2264 ~4 months \u00b7 \U0001f7e1 older ~4\u201312 months \u00b7 \U0001f534 stale > ~1 year \u00b7 \U0001f7e0 bulk-only \u00b7 \u26ab archived \u00b7 \U0001f195 new |",
         "| `tpl`    | matches `__template/`: `yes` \u00b7 `\u00b1` partial \u00b7 `no` hand-rolled \u00b7 `custom` |",
         "",
-        f"> {PIN_MARK} **unfeatured** - listed in the second table on purpose. A `chore(deps): update <app> to version <X>` commit counts as a focused change, so a pure version bump promotes a stack even though nothing was re-verified. Add the stack to `UNFEATURED` in [`tools/readme_gen.py`](./tools/readme_gen.py) to hold it back until the configs, anchors, probe and README were re-checked; remove the entry after that review.",
+        # f"> {PIN_MARK} **unfeatured** - listed in the second table on purpose. A `chore(deps): update <app> to version <X>` commit counts as a focused change, so a pure version bump promotes a stack even though nothing was re-verified. Add the stack to `UNFEATURED` in [`tools/readme_gen.py`](./tools/readme_gen.py) to hold it back until the configs, anchors, probe and README were re-checked; remove the entry after that review.",
         "",
         "> \U0001f534 `stale` does **not** mean broken - many of these still run fine. It flags stacks without a focused commit for over a year that deserve a review/version bump before (re)use.",
         "",
         "## Guides & Runbooks",
         "",
-        "- **Pangolin + Authentik SSO** - [`docs/RUNBOOK-pangolin.md`](./docs/RUNBOOK-pangolin.md): full zero-trust remote-access infra (Pangolin on Hetzner, Authentik + Newt in the company).",
+        # "- **Pangolin + Authentik SSO** - [`docs/RUNBOOK-pangolin.md`](./docs/RUNBOOK-pangolin.md): full zero-trust remote-access infra (Pangolin on Hetzner, Authentik + Newt in the company).",
         "- **Base template** - [`__template/`](./__template/README.md) is the canonical skeleton for new stacks (anchors `basic-deploy-labels`, `basic-deploy`, `basic`).",
     ]
 
