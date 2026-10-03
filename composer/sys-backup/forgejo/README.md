@@ -33,7 +33,7 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION=16
+VERSION=16.0.5
 VERSION_RUNNER=13.2.0
 VERSION_DIND=29.8.1
 
@@ -152,8 +152,6 @@ docker compose -f docker-compose.runner-dind.yaml up -d
   reach the auto-detected host
 - labels: `ubuntu-latest:docker://node:24-bookworm` (job pulls that image);
   tune `capacity`/`force_pull`/labels in the rendered config
-- verify runner tags before bumping `VERSION_RUNNER`:
-  `curl -s https://data.forgejo.org/v2/forgejo/runner/tags/list` (latest `13.2.0`, no `14`)
 
 ## Guides & Insights
 

@@ -74,7 +74,7 @@ services:
   ##############################################################################
   forgejo:
     # https://codeberg.org/forgejo/-/packages/container/forgejo
-    image: codeberg.org/forgejo/forgejo:${VERSION:-16}
+    image: data.forgejo.org/forgejo/forgejo:${VERSION:-16.0.5}
     <<:
       - *basic
       # - *basic-deploy-labels
