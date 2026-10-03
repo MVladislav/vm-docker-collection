@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM docker.io/library/golang:1.21 AS builder
+FROM --platform=$BUILDPLATFORM docker.io/library/golang:1.27 AS builder
 
 # Set the io.containers.autoupdate label. This label will instruct podman to
 # reach out to the corres corresponding registry to check if the image has been

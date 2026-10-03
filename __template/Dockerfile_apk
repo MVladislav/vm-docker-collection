@@ -1,5 +1,5 @@
 # Use specific Alpine version as base image
-ARG VERSION_ALPINE=3.24.1
+ARG VERSION_ALPINE=3.24.2
 FROM alpine:${VERSION_ALPINE}
 
 # ------------------------------------------------------------------------------

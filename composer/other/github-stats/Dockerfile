@@ -1,7 +1,7 @@
 # ===============================
 # Stage 1: Node build for github-readme-stats
 # ===============================
-FROM node:24.19.0-alpine AS stats-builder
+FROM node:24.21.0-alpine AS stats-builder
 
 # Workdir
 WORKDIR /app/stats
@@ -18,7 +18,7 @@ RUN npm pkg set dependencies.express="latest" && npm install
 # ===============================
 # Final image: PHP+Apache + Node runtime + Deno + apps
 # ===============================
-FROM php:8.3-apache@sha256:6be4ef702b2dd05352f7e5fe14667696a4ad091c9d2ad9083becbee4300dc3b1
+FROM php:8.5-apache@sha256:70d80539dcacae817d9a1320518b95c86bb9568835ef3a7a024d57a4898c90e4
 
 # System deps + node/npm + supervisor + utilities
 RUN apt-get update && \

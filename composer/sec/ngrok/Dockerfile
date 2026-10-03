@@ -1,4 +1,4 @@
-ARG VERSION_ALPINE=3.24.1
+ARG VERSION_ALPINE=3.24.2
 FROM alpine:${VERSION_ALPINE}
 
 # https://github.com/sgerrand/alpine-pkg-glibc
