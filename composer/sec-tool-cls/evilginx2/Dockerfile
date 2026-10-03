@@ -1,5 +1,5 @@
 # https://hub.docker.com/_/golang
-ARG VERSION_GO=1.19-alpine
+ARG VERSION_GO=1.27-alpine
 # https://hub.docker.com/_/alpine
 ARG VERSION_ALPINE=3.24
 
