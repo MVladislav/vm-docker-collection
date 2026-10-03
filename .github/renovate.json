@@ -5,7 +5,6 @@
   "extends": ["config:recommended"],
   "rebaseWhen": "behind-base-branch",
   "enabledManagers": [
-    "docker-compose",
     "dockerfile",
     "github-actions",
     "pre-commit",
@@ -35,19 +34,11 @@
     },
     {
       "addLabels": ["docker"],
-      "matchManagers": ["docker-compose"],
+      "matchManagers": ["custom.regex"],
       "groupName": "Docker Compose images",
       "minimumReleaseAge": "3 days",
       "rangeStrategy": "replace",
       "commitMessageTopic": "{{{depName}}} compose image"
-    },
-    {
-      "addLabels": ["docker"],
-      "matchManagers": ["custom.regex"],
-      "groupName": "Docker Compose variable image tags",
-      "minimumReleaseAge": "3 days",
-      "rangeStrategy": "replace",
-      "commitMessageTopic": "{{{depName}}} compose variable image"
     },
     {
       "matchManagers": ["custom.regex"],
@@ -61,8 +52,10 @@
       "customType": "regex",
       "managerFilePatterns": ["/(^|/)(?:docker-)?compose[^/]*\\.ya?ml$/"],
       "matchStrings": [
-        "(?m)^[ \\t]*image:\\s*[\"']?(?<depName>[^\\s\"'$]+):\\$\\{[A-Za-z_][A-Za-z0-9_]*:-\\s*(?<currentValue>[^}\\s\"']+)\\}[\"']?[ \\t]*$"
+        "(?m)^[ \\t]*image:\\s*[\"']?(?<depName>[^\\s\"'$]+):\\$\\{[A-Za-z_][A-Za-z0-9_]*:-\\s*(?<currentValue>[^}\\s\"']+)\\}[\"']?[ \\t]*$",
+        "(?m)^[ \\t]*image:\\s*[\"']?(?<depName>[^\\s\"'$]+):\\$\\{[A-Za-z_][A-Za-z0-9_]*:-\\s*(?<currentValue>[^}\\s\"']+)\\}(?<currentValueSuffix>[-\\w.]+)[\"']?[ \\t]*$"
       ],
+      "currentValueTemplate": "{{currentValue}}{{currentValueSuffix}}",
       "datasourceTemplate": "docker",
       "versioningTemplate": "docker"
     }
