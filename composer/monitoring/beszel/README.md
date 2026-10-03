@@ -43,7 +43,8 @@ MFA_OTP=true # you need first setup SMTP inside PocketBase
 KEY=ssh-ed25519 AAAAC3Nza... user@host
 
 # Agent GPU variants
-AGENT_TYPE= # empty | -nvidia | -intel  (must match HWACCEL)
+# uncomment one `image:` line in the compose file instead of setting a variable:
+#   ghcr.io/henrygd/beszel/beszel-agent-nvidia / beszel-agent-intel
 HWACCEL=none # none|gpu-amd|gpu-nvidia|gpu-intel
 
 # Optional hub settings (add/change as needed)
