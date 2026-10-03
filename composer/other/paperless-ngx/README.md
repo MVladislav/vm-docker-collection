@@ -50,7 +50,7 @@ RESOURCES_RESERVATIONS_MEMORY_VALKEY=32m
 # APPLICATION version for easy update
 # ______________________________________________________________________________
 VERSION_PAPERLESS=2.14
-#VERSION_GOTENBERG=8.37
+#VERSION_GOTENBERG=8.37.0
 #VERSION_TIKA=3.3.1.0
 VERSION_MARIADB=13.0.2
 VERSION_VALKEY=9.1.2-alpine

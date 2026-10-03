@@ -68,7 +68,7 @@ services:
   ##############################################################################
   omni-tools:
     # https://hub.docker.com/r/iib0011/omni-tools
-    image: iib0011/omni-tools:${VERSION:-0.6}
+    image: iib0011/omni-tools:${VERSION:-0.6.0}
     <<:
       - *basic
       # - *basic-deploy-labels

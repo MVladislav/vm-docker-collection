@@ -55,7 +55,7 @@ RESOURCES_RESERVATIONS_MEMORY_MONGODB=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_GRAYLOG=7.1
+VERSION_GRAYLOG=7.1.9
 VERSION_MONGODB=8.3.9
 
 # APPLICATION general variable to adjust the apps
