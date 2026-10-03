@@ -67,7 +67,7 @@ services:
   ##############################################################################
   owncloud:
     # https://hub.docker.com/r/owncloud/server
-    image: owncloud/server:${VERSION_OWNCLOUD:-10.16.4}
+    image: owncloud/server:${VERSION_OWNCLOUD:-11.0.0}
     <<:
       - *basic
       # - *basic-deploy-labels
@@ -81,9 +81,17 @@ services:
       - SETUID
       - DAC_OVERRIDE
     environment:
-      HTTP_PORT: ${PORT:-8080}
+      APACHE_LISTEN: ${PORT:-8080}
       OWNCLOUD_DOMAIN: ${DOMAIN?domain variable not set}
       OWNCLOUD_TRUSTED_DOMAINS: ${OWNCLOUD_TRUSTED_DOMAINS:-localhost,${DOMAIN?domain variable not set}}
+
+      OWNCLOUD_TRUSTED_PROXIES: ${OWNCLOUD_TRUSTED_PROXIES:-127.0.0.1/32, 10.0.0.0/8, 172.16.0.0/12}
+      OWNCLOUD_OVERWRITE_PROTOCOL: ${OWNCLOUD_OVERWRITE_PROTOCOL:-https}
+      OWNCLOUD_OVERWRITE_HOST: ${OWNCLOUD_OVERWRITE_HOST:-${DOMAIN?domain variable not set}}
+
+      OWNCLOUD_TELEMETRY_ENABLED: ${OWNCLOUD_TELEMETRY_ENABLED:-false}
+      OWNCLOUD_INTERNET_CONNECTIVITY_DETECT_URL: ${OWNCLOUD_INTERNET_CONNECTIVITY_DETECT_URL:-https://detectportal.firefox.com/success.txt}
+      OWNCLOUD_ALLOW_SUBADMINS: ${OWNCLOUD_ALLOW_SUBADMINS:-false}
 
       OWNCLOUD_ADMIN_USERNAME: ${OWNCLOUD_ADMIN_USERNAME:-root}
 
@@ -103,7 +111,7 @@ services:
       - data:/mnt/data
     healthcheck:
       test: ["CMD", "/usr/bin/healthcheck"]
-      start_period: 10s
+      start_period: 300s
       interval: 30s
       timeout: 5s
       retries: 3
@@ -174,8 +182,6 @@ services:
     cap_add:
       - SETUID
       - SETGID
-    environment:
-      ALLOW_EMPTY_PASSWORD: ${ALLOW_EMPTY_PASSWORD:-true}
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro

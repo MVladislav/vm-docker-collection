@@ -48,23 +48,19 @@ RESOURCES_RESERVATIONS_MEMORY_VALKEY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_OWNCLOUD=10.16.4
+VERSION_OWNCLOUD=11.0.0
 VERSION_MARIADB=13.0.2
 VERSION_VALKEY=9.1.2-alpine
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
 CERT_RESOLVER=certificates
-
-OWNCLOUD_ADMIN_USERNAME=root
-OWNCLOUD_ADMIN_PASSWORD=<PASSWORD>
 ```
 
 #### example short .env (swarm)
 
 ```env
 DOMAIN=owncloud.home.local
-OWNCLOUD_ADMIN_PASSWORD=<PASSWORD>
 ```
 
 #### example short .env (bridge)
@@ -74,7 +70,6 @@ NETWORK_MODE=bridge
 LB_SWARM=false
 
 DOMAIN=owncloud.home.local
-OWNCLOUD_ADMIN_PASSWORD=<PASSWORD>
 ```
 
 ---
@@ -82,4 +77,4 @@ OWNCLOUD_ADMIN_PASSWORD=<PASSWORD>
 ## References
 
 - <https://hub.docker.com/r/owncloud/server>
-- <https://doc.owncloud.com/server/10.11/admin_manual/installation/docker/>
+- <https://doc.owncloud.com/server/11.0/admin_manual/installation/docker.html>
