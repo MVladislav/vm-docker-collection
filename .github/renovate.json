@@ -48,6 +48,12 @@
       "minimumReleaseAge": "3 days",
       "rangeStrategy": "replace",
       "commitMessageTopic": "{{{depName}}} compose variable image"
+    },
+    {
+      "matchManagers": ["custom.regex"],
+      "matchPackageNames": ["rabbitmq"],
+      "matchFileNames": ["composer/sys-infra/plane-com/**"],
+      "allowedVersions": "3.13.x"
     }
   ],
   "customManagers": [
