@@ -84,7 +84,7 @@ services:
       APP_KEY_FILE: /run/secrets/app_key_file_password
 
       APP_URL: "https://${DOMAIN?domain variable not set}"
-      TRUSTED_PROXIES: ${TRUSTED_PROXIES:-**}
+      TRUSTED_PROXIES: ${TRUSTED_PROXIES:-127.0.0.1/32,10.0.0.0/8,172.16.0.0/12}
 
       DEFAULT_LANGUAGE: ${DEFAULT_LANGUAGE:-de_DE}
       DEFAULT_LOCALE: ${DEFAULT_LOCALE:-equal}

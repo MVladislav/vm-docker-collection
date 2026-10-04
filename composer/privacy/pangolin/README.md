@@ -270,9 +270,11 @@ sudo loginctl enable-linger $USER
 
 > [`Free for individuals and small businesses`](https://docs.pangolin.net/self-host/enterprise-edition#licensing-overview)
 
-```env
-VERSION_PANGOLIN=ee-<VERSION>
-```
+The Enterprise Edition ships from the **same repository** with an `ee-` tag prefix, so
+switching edition needs no compose edit: prefix the pinned version in `.env`. For the
+`1.23.0` pinned above that means `ee-1.23.0`. The other published prefixes are
+`postgresql-<version>` and `ee-postgresql-<version>`. Note the prefix always carries a
+trailing `-` — `ee-1.23.0` is a published tag, `ee1.23.0` is not.
 
 When Pangolin is started you need navigate to `/admin/license` and enter the [license key](https://app.pangolin.net/).
 

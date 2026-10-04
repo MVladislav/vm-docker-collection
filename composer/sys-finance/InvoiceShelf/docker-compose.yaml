@@ -78,7 +78,7 @@ services:
       APP_URL: https://${DOMAIN?domain variable not set}
       SESSION_DOMAIN: ${DOMAIN?domain variable not set}
       SANCTUM_STATEFUL_DOMAINS: ${DOMAIN?domain variable not set}
-      TRUSTED_PROXIES: "*"
+      TRUSTED_PROXIES: ${TRUSTED_PROXIES:-127.0.0.1/32,10.0.0.0/8,172.16.0.0/12}
 
       APP_NAME: ${APP_NAME:-InvoiceShelf}
       APP_LOCALE: en
