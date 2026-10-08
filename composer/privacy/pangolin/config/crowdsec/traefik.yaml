@@ -1,4 +1,7 @@
 ---
+# `labels.type` MUST stay `traefik` - crowdsecurity/traefik-logs filters on
+# `evt.Parsed.program startsWith 'traefik'` and takes `program` from this label.
+# Keep the path in sync with traefik's accesslog filePath.
 poll_without_inotify: false
 filenames:
   - /var/log-traefik/*.log

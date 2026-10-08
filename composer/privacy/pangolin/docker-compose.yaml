@@ -368,7 +368,7 @@ services:
       resources:
         limits:
           cpus: ${RESOURCES_LIMITS_CPUS_CROWDSEC:-1}
-          memory: ${RESOURCES_LIMITS_MEMORY_CROWDSEC:-512m}
+          memory: ${RESOURCES_LIMITS_MEMORY_CROWDSEC:-1g}
         reservations:
           cpus: ${RESOURCES_RESERVATIONS_CPUS_CROWDSEC:-0.001}
           memory: ${RESOURCES_RESERVATIONS_MEMORY_CROWDSEC:-32m}
@@ -395,19 +395,17 @@ services:
         mode: 0440
         uid: "0"
         gid: "0"
-      - source: crowdsec_journalctl_config
-        target: /etc/crowdsec/acquis.d/journalctl.yaml
-        mode: 0440
-        uid: "0"
-        gid: "0"
     environment:
       BOUNCER_KEY_traefik: ${BOUNCER_KEY_traefik?BOUNCER_KEY_traefik is not set}
       CUSTOM_HOSTNAME: crowdsec
-      COLLECTIONS: crowdsecurity/traefik crowdsecurity/appsec-virtual-patching crowdsecurity/appsec-generic-rules crowdsecurity/linux crowdsecurity/iptables
-      ENROLL_INSTANCE_NAME: pangolin-crowdsec
-      ENROLL_TAGS: docker
+      COLLECTIONS: crowdsecurity/traefik crowdsecurity/appsec-virtual-patching crowdsecurity/appsec-generic-rules crowdsecurity/appsec-crs crowdsecurity/linux crowdsecurity/iptables
+      DISABLE_ONLINE_API: ${DISABLE_ONLINE_API:-true}
+      ENROLL_INSTANCE_NAME: ${ENROLL_INSTANCE_NAME:-pangolin-crowdsec}
+      ENROLL_TAGS: ${ENROLL_TAGS:-docker}
       # GID: "1000"
       PARSERS: crowdsecurity/whitelists
+    group_add:
+      - adm
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
@@ -417,13 +415,38 @@ services:
       - traefik_logs:/var/log-traefik:ro
       - /var/log:/var/log:ro
     healthcheck:
-      test: [CMD, cscli, version]
-      # test: [CMD, cscli, capi, status]
-      # test: [CMD, cscli, lapi, status]
-      start_period: 30s
+      test: [CMD, cscli, lapi, status]
+      start_period: 60s
       interval: 30s
       retries: 3
       timeout: 5s
+    networks:
+      proxy: {}
+
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  logrotate:
+    image: alpine:${VERSION_ALPINE:-3.24.1}
+    <<: *basic
+    deploy:
+      <<: *basic-deploy
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_LOGROTATE:-0.1}
+          memory: ${RESOURCES_LIMITS_MEMORY_LOGROTATE:-32m}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_LOGROTATE:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_LOGROTATE:-8m}
+    configs:
+      - source: logrotate_script
+        target: /rotate-accesslog.sh
+        mode: 0555
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - traefik_logs:/var/log-traefik
+    command: ["/bin/sh", "/rotate-accesslog.sh"]
     networks:
       proxy: {}
 
@@ -556,8 +579,8 @@ configs:
     file: ${FILE_PATH:-$PWD}/config/crowdsec/traefik.yaml
   crowdsec_syslog_config:
     file: ${FILE_PATH:-$PWD}/config/crowdsec/syslog.yaml
-  crowdsec_journalctl_config:
-    file: ${FILE_PATH:-$PWD}/config/crowdsec/journalctl.yaml
+  logrotate_script:
+    file: ${FILE_PATH:-$PWD}/config/logrotate/rotate-accesslog.sh
 
 secrets:
   server_secret:

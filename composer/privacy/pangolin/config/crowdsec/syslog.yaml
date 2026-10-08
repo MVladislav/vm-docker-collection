@@ -1,4 +1,7 @@
 ---
+# Host syslog: sshd brute force / failed logins (crowdsecurity/linux) and
+# anything logged with `iptables -j LOG --log-prefix "iptables: "`. Ubuntu/Debian
+# paths; elsewhere it only logs a "no matching files" warning.
 filenames:
   - /var/log/auth.log
   - /var/log/syslog

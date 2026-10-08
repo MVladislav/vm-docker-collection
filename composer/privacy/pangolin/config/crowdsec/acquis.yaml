@@ -1,1 +1,3 @@
 ---
+# Intentionally empty: overrides the image placeholder that points at
+# /does/not/exist. Every datasource this stack needs lives in acquis.d/.

@@ -32,3 +32,7 @@ config/traefik/*
 !config/crowdsec/
 config/crowdsec/*
 !config/crowdsec/*.yaml
+
+!config/logrotate/
+config/logrotate/*
+!config/logrotate/rotate-accesslog.sh

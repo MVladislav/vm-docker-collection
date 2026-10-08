@@ -1,6 +1,0 @@
----
-source: journalctl
-journalctl_filter:
-  - "--directory=/var/log/journal/"
-labels:
-  type: syslog

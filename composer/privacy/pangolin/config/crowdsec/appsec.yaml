@@ -1,6 +1,12 @@
 ---
+# 0.0.0.0 because the component is a separate container; nothing publishes 7422.
+#
+# crowdsecurity/appsec-default (in-band virtual patching, blocks immediately) +
+# crowdsecurity/crs (OWASP CRS, out-of-band: alerts, then a ban after 5 hits in 30s).
 listen_addr: 0.0.0.0:7422
-appsec_config: crowdsecurity/appsec-default
+appsec_configs:
+  - crowdsecurity/appsec-default
+  - crowdsecurity/crs
 name: myAppSecComponent
 source: appsec
 labels:
