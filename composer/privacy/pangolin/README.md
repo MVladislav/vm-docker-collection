@@ -7,6 +7,10 @@
 ```sh
 echo "$(htpasswd -nB traefik)" > config/secrets/traefik_basicauth_secret.txt
 
+# REQUIRED, not optional: pangolin opens /app/geo/GeoLite2-*.mmdb at startup with
+# no existsSync guard, and docker-compose.yaml holds it until geoipupdate reports
+# healthy. Invalid or missing credentials -> "dependency failed to start:
+# container ...-geoipupdate-1 is unhealthy".
 echo '<GEO_IP_ACCOUNT_ID>' > config/secrets/geoipupdate_account_id.txt
 echo '<GEO_IP_LICENSE_KEY>' > config/secrets/geoipupdate_license_key.txt
 
@@ -74,7 +78,7 @@ RESOURCES_LIMITS_CPUS_TRAEFIK=1
 RESOURCES_LIMITS_MEMORY_TRAEFIK=512m
 
 RESOURCES_LIMITS_CPUS_CROWDSEC=1
-RESOURCES_LIMITS_MEMORY_CROWDSEC=512m
+RESOURCES_LIMITS_MEMORY_CROWDSEC=1g
 
 RESOURCES_LIMITS_CPUS_GEOIPUPDATE=1
 RESOURCES_LIMITS_MEMORY_GEOIPUPDATE=64m
@@ -82,9 +86,9 @@ RESOURCES_LIMITS_MEMORY_GEOIPUPDATE=64m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_PANGOLIN=1.23.0
+VERSION_PANGOLIN=1.24.0
 VERSION_GERBIL=1.5.2
-VERSION_TRAEFIK=v3.7.13
+VERSION_TRAEFIK=v3.7.14
 VERSION_BADGER=v1.7.0
 VERSION_CROWDSEC_PLUGIN=v1.7.1
 VERSION_CROWDSEC=v1.8.1-debian
@@ -93,6 +97,7 @@ VERSION_MAXMIND=v8.0.0
 VERSION_NEWT=1.18.0
 VERSION_CLI=0.18.0
 VERSION_OLM=1.10.0
+VERSION_ALPINE=3.24.1
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
@@ -115,6 +120,23 @@ TRAEFIK_API_DASHBOARD=false
 CERTIFICATES_ACME_CASERVER=https://acme-v02.api.letsencrypt.org/directory
 ```
 
+### start & first login
+
+```sh
+docker compose up -d
+docker compose ps                                   # pangolin, traefik, gerbil: running
+docker compose logs pangolin | grep -A1 'Token:'   # one-time, first boot only
+```
+
+Then register the first admin with that token:
+
+```text
+https://<dashboard-domain>/auth/initial-setup
+```
+
+> The first ACME request can take a minute, so a browser warning on the first load
+> is normal - reload once the certificate is issued.
+
 ## NEWT setup
 
 ### create `.env` file following:
@@ -135,97 +157,152 @@ extend `networks` sections with your network names where `newt` should have acce
 
 ---
 
-## FAQ
+## Guides & Insights
 
 ### Crowdsec
 
-#### Test block
+What: the Traefik bouncer + AppSec WAF are bound to the `websecure` entrypoint, so
+they cover the dashboard **and** every resource router Pangolin generates. Three
+layers: access-log IP/behaviour bans, in-band virtual patching (403 on the spot),
+OWASP CRS (alert, then ban after 5 hits / 30 s).
 
 ```sh
-# List decisions
-docker exec -it "$(docker ps -q -f name=crowdsec)" cscli decisions list
-# Manually creating a decision against a public IP of one of your devices
-docker exec -it "$(docker ps -q -f name=crowdsec)" \
-cscli decisions add --ip <your-public-ip> --duration 1m --type ban --reason "CrowdSec remediation test"
+cs() { docker exec -it "$(docker ps -q -f name=crowdsec)" "$@"; }
+
+cs cscli decisions list        # active bans, [] means none
+cs cscli alerts list           # why someone was banned
+cs cscli metrics               # WAF processed / blocked
+cs cscli appsec-configs list   # loaded rule sets
 ```
 
-#### Helpful information's
+A new decision needs up to 60 s to take effect (the bouncer caches the ban list).
+
+#### Test the WAF
+
+Virtual patching is immediate - one request answers 403:
 
 ```sh
-docker exec -it "$(docker ps -q -f name=crowdsec)" cscli metrics
+curl -sk -o /dev/null -w '%{http_code}\n' \
+  https://<domain>/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php   # 403
 ```
 
-### CLI
+Behaviour bans need a burst, not a single hit (leaky buckets, and repeated identical
+paths do not count):
+
+```sh
+for p in /.env /.git/config /.aws/credentials /.ssh/id_rsa /.DS_Store; do
+  curl -sk -o /dev/null "https://<domain>$p"
+done
+cs cscli decisions list
+```
+
+Ban yourself for a minute:
+
+```sh
+cs cscli decisions add --ip <your-public-ip> --duration 1m --type ban --reason test
+```
+
+#### Web UI (opt-in)
+
+Default is `DISABLE_ONLINE_API=true`: no `api.crowdsec.net` contact, no telemetry,
+no community blocklist. `cscli` is the source of truth until you opt in.
+
+| UI                   | needs                                                                 | trade-off                                              |
+| -------------------- | --------------------------------------------------------------------- | ------------------------------------------------------ |
+| **Metabase** (local) | uncomment `crowdsec-dashboard` + a router with `default-secured@file` | reads `crowdsec_db` read-only, nothing leaves the host |
+| **Console** (cloud)  | account at <https://app.crowdsec.net> + `DISABLE_ONLINE_API=false`    | third party in the data path                           |
+
+Console, three steps:
+
+```sh
+docker exec -it $(docker ps -q -f name=crowdsec) \
+  cscli console enroll --quick --name pangolin-crowdsec --tags docker
+# open the printed https://app.crowdsec.net/quick-enroll?token=... URL (16 min),
+# approve it, then:
+docker compose restart crowdsec
+```
+
+`--name` / `--tags` are the same values as `ENROLL_INSTANCE_NAME` /
+`ENROLL_TAGS` in `docker-compose.yaml`; cscli reads the flags, not the env.
+
+```sh
+cs cscli machines list
+cs cscli capi status
+```
+
+Enabling the console also re-enables the community blocklist - the only detection
+content you get back. `cscli hub update` (collections + CRS rules) runs daily either
+way and has no switch.
+
+#### SSH / host: firewall bouncer
+
+CrowdSec remediates the HTTP layer only. SSH, WireGuard and RawTCP need the bouncer
+**on the host**: <https://docs.crowdsec.net/u/bouncers/firewall/>
+
+```sh
+sudo apt install crowdsec-firewall-bouncer-iptables
+docker exec crowdsec cscli bouncers add vps-firewall
+# paste the printed key into /etc/crowdsec/bouncers/crowdsec-firewall-bouncer.yaml
+sudo systemctl restart crowdsec-firewall-bouncer
+```
+
+It needs the LAPI on `crowdsec:8080`, which is stack-internal. Publish it, then lock
+it down - docker publishes on every interface:
+
+```yaml
+crowdsec:
+  ports:
+    - target: 8080
+      published: 8080
+      mode: host
+```
+
+```sh
+sudo ufw allow from 127.0.0.1 to any port 8080 proto tcp
+sudo ufw deny 8080/tcp
+```
+
+Port-scan detection: log dropped packets, `config/crowdsec/syslog.yaml` already reads
+`/var/log/syslog`.
+
+```sh
+sudo iptables -A INPUT -j LOG --log-prefix "iptables: "
+```
+
+#### Multi-node only
+
+Single node: `:443` goes straight to Traefik, so the real client IP is already visible.
+Multi-node: gerbil forwards to a peer, so publish `443:8443` (its SNI proxy) and tell
+Traefik to read the PROXY header.
+
+```yaml
+traefik:
+  ports:
+    - target: 8443
+      published: 443
+  environment:
+    TRAEFIK_ENTRYPOINTS_WEBSECURE_PROXYPROTOCOL_TRUSTEDIPS: 127.0.0.1/32,::1/128
+```
+
+> Never on a single node - Traefik would then require the header on every connection.
+
+### Pangolin CLI
 
 > <https://docs.pangolin.net/manage/clients/configure-client>
 
-Personal recommended configs:
-
-```sh
-pangolin config set up.prefer_local_routes true
-```
-
-### NEWT as binary with user scope
-
-```sh
-curl -fsSL https://static.pangolin.net/get-newt.sh | bash -s -- --path "$HOME/.local/bin"
-```
-
-#### Systemd-Service
-
-```sh
-install -d -m 0750 "$HOME/.config/newt"
- tee "$HOME/.config/newt/newt.env" > /dev/null << 'EOF'
-NEWT_ID=<TODO>
-NEWT_SECRET=<TODO>
-PANGOLIN_ENDPOINT=<TODO>
-EOF
-chmod 600 "$HOME/.config/newt/newt.env"
-```
-
-```sh
-tee "$HOME/.config/systemd/user/newt.service" >/dev/null <<EOF
-[Unit]
-Description=Newt
-After=network-online.target
-Wants=network-online.target
-
-[Service]
-Type=simple
-EnvironmentFile="$HOME/.config/newt/newt.env"
-ExecStart="$HOME/.local/bin/newt" -log-level WARN
-Restart=always
-RestartSec=5
-UMask=0077
-
-NoNewPrivileges=true
-PrivateTmp=true
-
-[Install]
-WantedBy=default.target
-
-EOF
-
-systemctl --user daemon-reload
-systemctl --user enable --now newt
-sudo loginctl enable-linger $USER
-```
-
-### CLI as binary with user scope
-
 ```sh
 curl -fsSL https://static.pangolin.net/get-cli.sh | bash -s -- --path "$HOME/.local/bin"
-#sudo setcap 'cap_net_admin=ep cap_net_bind_service=ep' "$HOME/.local/bin/pangolin"
 
 pangolin login
+pangolin config set up.prefer_local_routes true   # personal recommendation
 pangolin up
 ```
 
-#### Systemd-Service
+#### systemd user unit
 
 ```sh
 install -d -m 0750 "$HOME/.config/pangolin"
- tee "$HOME/.config/pangolin/cli.env" > /dev/null << 'EOF'
+ tee "$HOME/.config/pangolin/cli.env" >/dev/null <<'EOF'
 CLIENT_ID=<TODO>
 CLIENT_SECRET=<TODO>
 PANGOLIN_ENDPOINT=<TODO>
@@ -266,21 +343,66 @@ systemctl --user enable --now pangolin
 sudo loginctl enable-linger $USER
 ```
 
-### Enterprise-Edition
+### Newt as binary
+
+```sh
+curl -fsSL https://static.pangolin.net/get-newt.sh | bash -s -- --path "$HOME/.local/bin"
+```
+
+#### systemd user unit
+
+```sh
+install -d -m 0750 "$HOME/.config/newt"
+tee "$HOME/.config/newt/newt.env" >/dev/null <<'EOF'
+NEWT_ID=<TODO>
+NEWT_SECRET=<TODO>
+PANGOLIN_ENDPOINT=<TODO>
+EOF
+chmod 600 "$HOME/.config/newt/newt.env"
+```
+
+```sh
+tee "$HOME/.config/systemd/user/newt.service" >/dev/null <<EOF
+[Unit]
+Description=Newt
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+EnvironmentFile="$HOME/.config/newt/newt.env"
+ExecStart="$HOME/.local/bin/newt" -log-level WARN
+Restart=always
+RestartSec=5
+UMask=0077
+
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=default.target
+
+EOF
+
+systemctl --user daemon-reload
+systemctl --user enable --now newt
+sudo loginctl enable-linger $USER
+```
+
+### Enterprise Edition
 
 > [`Free for individuals and small businesses`](https://docs.pangolin.net/self-host/enterprise-edition#licensing-overview)
 
-The Enterprise Edition ships from the **same repository** with an `ee-` tag prefix, so
-switching edition needs no compose edit: prefix the pinned version in `.env`. For the
-`1.23.0` pinned above that means `ee-1.23.0`. The other published prefixes are
-`postgresql-<version>` and `ee-postgresql-<version>`. Note the prefix always carries a
-trailing `-` — `ee-1.23.0` is a published tag, `ee1.23.0` is not.
+Same repository, only the tag differs - no compose edit. Set the pinned version in
+`.env` to the `ee-` prefixed tag of the version above (for `1.24.0` that is
+`ee-1.24.0`).
 
-When Pangolin is started you need navigate to `/admin/license` and enter the [license key](https://app.pangolin.net/).
+Other prefixes: `postgresql-<version>`, `ee-postgresql-<version>`. The trailing `-`
+matters: `ee-1.24.0` is published, `ee1.24.0` is not.
 
----
+After start: `/admin/license` → paste the key from <https://app.pangolin.net/>.
 
-## Future notes
+### WireGuard kernel module
 
 ```sh
 echo "wireguard" | sudo tee -a /etc/modules-load.d/modules.conf
@@ -304,4 +426,7 @@ echo "wireguard" | sudo tee -a /etc/modules-load.d/modules.conf
 - other
   - [acme](https://go-acme.github.io/lego/dns/ionos/)
   - [crowdsec](https://docs.pangolin.net/self-host/community-guides/crowdsec#crowdsec)
+  - [crowdsec appsec](https://docs.crowdsec.net/docs/appsec/quickstart/general_setup/)
+  - [owasp crs](https://docs.crowdsec.net/docs/appsec/crs/intro/)
+  - [crowdsec bouncer plugin](https://plugins.traefik.io/plugins/6335346ca4caa9ddeffda116/crowdsec-bouncer-traefik-plugin)
   - [maxmind](https://github.com/maxmind/geoipupdate/blob/main/doc/docker.md)
