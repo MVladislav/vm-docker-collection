@@ -48,7 +48,10 @@ services:
   ##############################################################################
   pangolin:
     # https://hub.docker.com/r/fosrl/pangolin/tags
-    image: fosrl/pangolin:${VERSION_PANGOLIN:-1.23.0}
+    image: fosrl/pangolin:${VERSION_PANGOLIN:-1.24.0}
+    depends_on:
+      geoipupdate:
+        condition: service_healthy
     <<: *basic
     deploy:
       <<: *basic-deploy
