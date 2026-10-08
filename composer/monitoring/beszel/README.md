@@ -30,8 +30,8 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION=0.20.0
-VERSION_AGENT=0.20.0
+VERSION=0.21.0
+VERSION_AGENT=0.21.0
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
@@ -43,8 +43,9 @@ MFA_OTP=true # you need first setup SMTP inside PocketBase
 KEY=ssh-ed25519 AAAAC3Nza... user@host
 
 # Agent GPU variants
-# uncomment one `image:` line in the compose file instead of setting a variable:
-#   ghcr.io/henrygd/beszel/beszel-agent-nvidia / beszel-agent-intel
+# GPU agents need TWO matching changes: uncomment one `image:` line in the
+# compose file AND set HWACCEL to the matching override (see docker-compose-agent.override.yaml):
+#   image: ghcr.io/henrygd/beszel/beszel-agent-nvidia / beszel-agent-intel
 HWACCEL=none # none|gpu-amd|gpu-nvidia|gpu-intel
 
 # Optional hub settings (add/change as needed)
@@ -57,6 +58,8 @@ HWACCEL=none # none|gpu-amd|gpu-nvidia|gpu-intel
 # TRUSTED_AUTH_HEADER=Cf-Access-Authenticated-User-Email  # forwarded auth SSO
 # TRUSTED_PROXY_IPS=10.0.0.0/8,192.168.0.0/16  # allowlist for TRUSTED_AUTH_HEADER (v0.20+)
 # OAUTH_DISABLE_POPUP=false
+# SYNC_SYSTEM_NAMES=true                 # sync display names with agent hostnames (0.21+)
+# DO NOT set DISABLE_SSH=true here - the same-system agent connects over the socket
 
 # If you setup with SSO
 MFA_OTP=false

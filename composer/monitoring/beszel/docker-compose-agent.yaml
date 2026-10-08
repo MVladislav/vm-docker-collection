@@ -48,9 +48,9 @@ services:
   ##############################################################################
   beszel-agent:
     # https://github.com/henrygd/beszel/pkgs/container/beszel%2Fbeszel-agent
-    image: ghcr.io/henrygd/beszel/beszel-agent:${VERSION_AGENT:-0.20.0}
-    # image: ghcr.io/henrygd/beszel/beszel-agent-nvidia:${VERSION_AGENT:-0.20.0}
-    # image: ghcr.io/henrygd/beszel/beszel-agent-intel:${VERSION_AGENT:-0.20.0}
+    image: ghcr.io/henrygd/beszel/beszel-agent:${VERSION_AGENT:-0.21.0}
+    # image: ghcr.io/henrygd/beszel/beszel-agent-nvidia:${VERSION_AGENT:-0.21.0}
+    # image: ghcr.io/henrygd/beszel/beszel-agent-intel:${VERSION_AGENT:-0.21.0}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -73,14 +73,19 @@ services:
       # TOKEN: ${TOKEN?TOKEN for agent is not set}
 
       ### optional monitoring coverage ###
-      # additional disks (see README "Agent"): EXTRA_FILESYSTEMS=${EXTRA_FILESYSTEMS:-}
-      # systemd service patterns:  SERVICE_PATTERNS=${SERVICE_PATTERNS:-}
-      # S.M.A.R.T. tuning:         EXCLUDE_SMART=${EXCLUDE_SMART:-}, SMART_INTERVAL=${SMART_INTERVAL:-1h}
-      # ZFS pool refresh:          ZFS_INTERVAL=${ZFS_INTERVAL:-1h}
-      # default memory calc:       MEM_CALC=${MEM_CALC:-}
-      # network interface filter:  NICS=${NICS:-}
-      # GPU collector override:    GPU_COLLECTOR=${GPU_COLLECTOR:-}
-      # docker container tuning:   EXCLUDE_CONTAINERS=${EXCLUDE_CONTAINERS:-}, DOCKER_TIMEOUT=${DOCKER_TIMEOUT:-2100ms}
+      # EXTRA_FILESYSTEMS: ${EXTRA_FILESYSTEMS:-} # additional disks (see README)
+      # SERVICE_PATTERNS: ${SERVICE_PATTERNS:-} # systemd service patterns
+      # EXCLUDE_SMART: ${EXCLUDE_SMART:-} # S.M.A.R.T. tuning
+      # SMART_INTERVAL: ${SMART_INTERVAL:-1h} # S.M.A.R.T. tuning
+      # ZFS_INTERVAL: ${ZFS_INTERVAL:-1h} # ZFS pool refresh
+      # MEM_CALC: ${MEM_CALC:-} # default memory calc
+      # NICS: ${NICS:-} # network interface filter
+      # GPU_COLLECTOR: ${GPU_COLLECTOR:-} # GPU collector override
+      # EXCLUDE_CONTAINERS: ${EXCLUDE_CONTAINERS:-} # docker container tuning
+      # DOCKER_TIMEOUT: ${DOCKER_TIMEOUT:-2100ms} # docker container tuning
+      # DOCKER_IMAGE_CHECK: ${DOCKER_IMAGE_CHECK:-true} # container image update checks (0.21+; set false to disable registry requests)
+      # SKIP_WIFI: ${SKIP_WIFI:-false} # Wi-Fi signal monitoring (0.21+)
+      # SKIP_SYSTEMD_LOGS: ${SKIP_SYSTEMD_LOGS:-false} # systemd service logs (0.21+)
     extends:
       file: docker-compose-agent.override.yaml
       service: ${HWACCEL:-none} # none|gpu-amd|gpu-nvidia|gpu-intel
