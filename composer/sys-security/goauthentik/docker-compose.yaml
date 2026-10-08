@@ -12,8 +12,8 @@ x-basic-deploy-labels: &basic-deploy-labels
     - traefik.http.routers.authentik.service=authentik
     - traefik.http.services.authentik.loadbalancer.server.scheme=${PROTOCOL:-http}
     - traefik.http.services.authentik.loadbalancer.server.port=${PORT:-9000}
-    # - traefik.http.services.authentik.loadbalancer.healthcheck.port=9300
-    # - traefik.http.services.authentik.loadbalancer.healthcheck.path=/outpost.goauthentik.io/ping
+    - traefik.http.services.authentik.loadbalancer.healthcheck.port=9300
+    - traefik.http.services.authentik.loadbalancer.healthcheck.path=/outpost.goauthentik.io/ping
 
 # x-ldap-deploy-labels: &ldap-deploy-labels
 #   labels:
@@ -96,12 +96,12 @@ x-authentik-extend-env: &authentik-extend-env
   AUTHENTIK_AVATARS: ${AUTHENTIK_AVATARS:-initials}
   # reverse proxy: only the listed networks can set forwarded headers (default covers private ranges)
   # https://docs.goauthentik.io/install-config/reverse-proxy/
-  # AUTHENTIK_LISTEN__TRUSTED_PROXY_CIDRS: ${AUTHENTIK_LISTEN__TRUSTED_PROXY_CIDRS:-127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,::1/128}
+  AUTHENTIK_LISTEN__TRUSTED_PROXY_CIDRS: ${AUTHENTIK_LISTEN__TRUSTED_PROXY_CIDRS:-127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,fe80::/10,::1/128}
   # AUTHENTIK_LISTEN__HTTP: '[::]:${PORT:-9000}'
   # AUTHENTIK_LISTEN__HTTPS: '[::]:${COMPOSE_PORT_HTTPS:-9443}'
   # AUTHENTIK_LISTEN__LDAP: ${AUTHENTIK_LISTEN__LDAP:-3389}
   # AUTHENTIK_LISTEN__LDAPS: ${AUTHENTIK_LISTEN__LDAPS:-6636}
-  # AUTHENTIK_LISTEN__METRICS: ${AUTHENTIK_LISTEN__METRICS:-9300}
+  AUTHENTIK_LISTEN__METRICS: ${AUTHENTIK_LISTEN__METRICS:-0.0.0.0:9300}
   # AUTHENTIK_LISTEN__DEBUG: ${AUTHENTIK_LISTEN__DEBUG:-9900}
 
 ################################################################################
@@ -113,7 +113,7 @@ services:
   ##############################################################################
   goauthentik-server:
     # https://github.com/goauthentik/authentik/pkgs/container/server
-    image: ghcr.io/goauthentik/server:${VERSION_GOAUTHENTIK:-2026.8.2}
+    image: ghcr.io/goauthentik/server:${VERSION_GOAUTHENTIK:-2026.8.3}
     <<:
       - *basic
       # - *basic-deploy-labels
@@ -126,11 +126,14 @@ services:
       - postgres_password_file
       - authentik_secret_key
     environment:
-      <<: [*authentik-env, *authentik-extend-env]
+      <<:
+        - *authentik-env
+        - *authentik-extend-env
       COMPOSE_PORT_HTTP: ${PORT:-9000}
       COMPOSE_PORT_HTTPS: ${COMPOSE_PORT_HTTPS:-9443}
     volumes:
       - data:/data
+      - media:/media
       - custom-templates:/templates
     command: server
     networks:
@@ -142,19 +145,11 @@ services:
   ##############################################################################
   goauthentik-worker:
     # https://github.com/goauthentik/authentik/pkgs/container/server
-    image: ghcr.io/goauthentik/server:${VERSION_GOAUTHENTIK:-2026.8.2}
+    image: ghcr.io/goauthentik/server:${VERSION_GOAUTHENTIK:-2026.8.3}
     <<: *basic
     deploy:
       <<: *basic-deploy
     shm_size: 512mb
-    user: root
-    cap_add:
-      - CHOWN
-      - DAC_OVERRIDE
-      - SETGID
-      - SETUID
-      - FOWNER
-      - FSETID
     secrets:
       - postgres_password_file
       - authentik_secret_key
@@ -163,8 +158,8 @@ services:
         - *authentik-env
         - *authentik-extend-env
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
       - data:/data
+      - media:/media
       - custom-templates:/templates
       - certs:/certs
     command: worker
@@ -174,7 +169,7 @@ services:
   ##############################################################################
   # goauthentik-ldap:
   #   # https://github.com/goauthentik/authentik/pkgs/container/ldap
-  #   image: ghcr.io/goauthentik/ldap:${VERSION_GOAUTHENTIK:-2026.8.2}
+  #   image: ghcr.io/goauthentik/ldap:${VERSION_GOAUTHENTIK:-2026.8.3}
   #   <<:
   #     - *basic
   #     # - *ldap-deploy-labels
@@ -250,6 +245,7 @@ networks:
 
 volumes:
   data: {}
+  media: {}
   custom-templates: {}
   certs: {}
   postgresql_v18: {}

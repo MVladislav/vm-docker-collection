@@ -6,11 +6,9 @@
 
 ### create your `secrets`:
 
-> instead of openssl for passwords you can also use `pwgen -s 50 1`
-
 ```sh
-openssl rand -base64 18 > config/secrets/postgres_password_file.txt
-openssl rand -base64 66 > config/secrets/authentik_secret_key.txt
+pwgen -s 32 1 > config/secrets/postgres_password_file.txt
+pwgen -s 64 1 > config/secrets/authentik_secret_key.txt
 ```
 
 ### create `.env` file following:
@@ -39,7 +37,7 @@ RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_GOAUTHENTIK=2026.8.2
+VERSION_GOAUTHENTIK=2026.8.3
 VERSION_POSTGRESQL=18.6-alpine
 
 # APPLICATION general variable to adjust the apps (OPTIONAL)
@@ -81,12 +79,6 @@ DOMAIN=authentik.home.local
 ---
 
 ## Guides & Insights
-
-### Verify the healthcheck
-
-```sh
-docker inspect --format "{{json .State.Health }}" "$(docker ps -q -f name=goauthentik)" | jq
-```
 
 ### Initial setup
 
