@@ -127,7 +127,7 @@ x-basic: &basic
   restart: always # always | on-failure
   # stop_grace_period: 60s
 
-x-logging: &logging
+x-logging-json: &logging-json
   logging:
     # https://docs.docker.com/config/containers/logging/configure/#supported-logging-drivers
     driver: json-file # none|local|json-file|syslog|journald|gelf|fluentd|awslogs|splunk|etwlogs|gcplogs|logentries
@@ -145,6 +145,13 @@ x-logging: &logging
       # tls-ca-cert: /path/to/ca-cert.pem  # Path to CA certificate file
       # tls-cert: /path/to/client-cert.pem  # Path to client certificate file
       # tls-key: /path/to/client-key.pem  # Path to client private key file
+
+x-logging-syslog: &logging-syslog
+  logging:
+    driver: syslog
+    options:
+      tag: "syslog"
+      syslog-address: "udp://<>:514"
 
 ################################################################################
 ################################################################################
@@ -173,7 +180,7 @@ services:
     <<:
       - *basic
       - *basic-deploy-labels
-      - *logging
+      - *logging-json
     deploy:
       <<:
         - *basic-deploy
