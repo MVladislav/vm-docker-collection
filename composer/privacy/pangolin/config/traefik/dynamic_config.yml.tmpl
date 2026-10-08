@@ -16,24 +16,24 @@ http:
         crowdsec:
           enabled: true
           logLevel: INFO
+          crowdsecMode: stream
           updateIntervalSeconds: 60
-          defaultDecisionSeconds: 60
-          httpTimeoutSeconds: 10
-          crowdsecMode: live
-          crowdsecAppsecEnabled: false
+          updateMaxFailure: -1
+          streamStartupBlock: true
+          metricsUpdateIntervalSeconds: 600
+          crowdsecAppsecEnabled: true
           crowdsecAppsecHost: crowdsec:7422
-          crowdsecAppsecFailureBlock: true
-          crowdsecAppsecUnreachableBlock: true
-          crowdsecLapiKey: <REPLACE_LAPI_KEY> # must match BOUNCER_KEY_traefik in docker-compose.yaml
+          crowdsecAppsecScheme: http
+          crowdsecAppsecBodyLimit: 10485760
+          crowdsecAppsecUnreadableBodyBlock: false
+          crowdsecAppsecUnreachableBlock: false
+          crowdsecAppsecFailureBlock: false
+          remediationHeadersCustomName: cs-remediation
+          crowdsecLapiKey: <REPLACE_LAPI_KEY>
           crowdsecLapiHost: crowdsec:8080
           crowdsecLapiScheme: http
+          httpTimeoutSeconds: 10
           banHTMLFilePath: /etc/traefik/ban.html
-          # forwardedHeadersTrustedIPs:
-          #   - 127.0.0.0/8
-          #   - 10.0.0.0/8
-          # clientTrustedIPs:
-          #   - 127.0.0.0/8
-          #   - 10.0.0.0/8
     # --------------------------------------------------------------------------
     # badger:
     #   plugin:
@@ -63,6 +63,9 @@ http:
         stsSeconds: 15552000
         # contentSecurityPolicy: "default-src 'self'"
         customFrameOptionsValue: SAMEORIGIN
+        customResponseHeaders:
+          X-Permitted-Cross-Domain-Policies: "none"
+          Permissions-Policy: "camera=(), geolocation=(), microphone=(), payment=(), usb=()"
         customRequestHeaders:
           X-Forwarded-Proto: https
 
@@ -72,11 +75,6 @@ http:
         sourceRange:
           - 0.0.0.0/0
           - ::/0
-          - 127.0.0.0/8
-          - ::1/128
-          - 10.0.0.0/8
-          - 192.168.0.0/16
-          - 172.16.0.0/12
 
     # --------------------------------------------------------------------------
     public-secured:

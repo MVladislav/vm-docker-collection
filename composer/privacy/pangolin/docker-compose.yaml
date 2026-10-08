@@ -172,10 +172,10 @@ services:
         published: 80
         protocol: tcp
         mode: host
-      - target: 4443 # RawTCP
-        published: 4443
-        protocol: tcp
-        mode: host
+      # - target: 4443 # RawTCP
+      #   published: 4443
+      #   protocol: tcp
+      #   mode: host
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
@@ -186,8 +186,8 @@ services:
       # REACHABLE_AT: http://gerbil:3004
       # GENERATE_AND_SAVE_KEY_TO: /var/config/key
       # REMOTE_CONFIG: http://pangolin:3001/api/v1/
-      # PROXY_PROTOCOL: ${PROXY_PROTOCOL:-8443}
-      # SNI_PORT: ${SNI_PORT:-false}
+      # PROXY_PROTOCOL: ${PROXY_PROTOCOL:-true}
+      # SNI_PORT: ${SNI_PORT:-8443}
       LOG_LEVEL: ${LOG_LEVEL:-WARN} # DEBUG | INFO | WARN | ERROR | FATAL
       # MTU: ${MTU:-1280}
     command:
@@ -212,7 +212,7 @@ services:
   ##############################################################################
   traefik:
     # https://hub.docker.com/_/traefik
-    image: traefik:${VERSION_TRAEFIK:-v3.7.13}
+    image: traefik:${VERSION_TRAEFIK:-v3.7.14}
     depends_on:
       pangolin:
         condition: service_healthy
@@ -255,10 +255,12 @@ services:
       # --- Global configuration ---
       TRAEFIK_GLOBAL_CHECKNEWVERSION: ${TRAEFIK_GLOBAL_CHECKNEWVERSION:-false}
       TRAEFIK_GLOBAL_SENDANONYMOUSUSAGE: ${TRAEFIK_GLOBAL_SENDANONYMOUSUSAGE:-false}
+      TRAEFIK_CORE_STRICTTLSOPTIONS: "true"
       # --- EntryPoints configuration ---
       TRAEFIK_ENTRYPOINTS_WEB: "true"
       TRAEFIK_ENTRYPOINTS_WEB_ADDRESS: ":80"
       TRAEFIK_ENTRYPOINTS_WEB_HTTP_REDIRECTIONS_ENTRYPOINT_TO: websecure
+      TRAEFIK_ENTRYPOINTS_WEB_HTTP_ALIASHEADERSSTRATEGY: delete
       TRAEFIK_ENTRYPOINTS_WEB_HTTP_REDIRECTIONS_ENTRYPOINT_SCHEME: https
       TRAEFIK_ENTRYPOINTS_WEB_HTTP_REDIRECTIONS_ENTRYPOINT_PERMANENT: "true"
       TRAEFIK_ENTRYPOINTS_WEBSECURE: "true"
@@ -271,6 +273,7 @@ services:
       TRAEFIK_ENTRYPOINTS_WEBSECURE_HTTP3: ${TRAEFIK_ENTRYPOINTS_WEBSECURE_HTTP3:-true}
       TRAEFIK_ENTRYPOINTS_WEBSECURE_HTTP3_ADVERTISEDPORT: 443
       TRAEFIK_ENTRYPOINTS_WEBSECURE_HTTP_TLS_CERTRESOLVER: certificates
+      TRAEFIK_ENTRYPOINTS_WEBSECURE_HTTP_ALIASHEADERSSTRATEGY: delete
       TRAEFIK_ENTRYPOINTS_WEBSECURE_HTTP_MIDDLEWARES: crowdsec@file,public-whitelist@file,default-headers@file
       TRAEFIK_ENTRYPOINTS_WEBSECURE_HTTP_ENCODEDCHARACTERS_ALLOWENCODEDSLASH: ${ALLOWENCODEDSLASH:-true}
       TRAEFIK_ENTRYPOINTS_WEBSECURE_HTTP_ENCODEDCHARACTERS_ALLOWENCODEDQUESTIONMARK: ${ALLOWENCODEDQUESTIONMARK:-true}
@@ -279,9 +282,9 @@ services:
       TRAEFIK_ENTRYPOINTS_WEBSECURE_HTTP_ENCODEDCHARACTERS_ALLOWENCODEDSEMICOLON: ${ALLOWENCODEDSEMICOLON:-false}
       TRAEFIK_ENTRYPOINTS_WEBSECURE_HTTP_ENCODEDCHARACTERS_ALLOWENCODEDPERCENT: ${ALLOWENCODEDPERCENT:-false}
       TRAEFIK_ENTRYPOINTS_WEBSECURE_HTTP_ENCODEDCHARACTERS_ALLOWENCODEDHASH: ${ALLOWENCODEDHASH:-false}
-      TRAEFIK_ENTRYPOINTS_TCP-4443: "true"
-      TRAEFIK_ENTRYPOINTS_TCP-4443_ADDRESS: ":4443/tcp"
-      TRAEFIK_ENTRYPOINTS_TCP-4443_TRANSPORT_RESPONDINGTIMEOUTS_READTIMEOUT: 30m
+      # TRAEFIK_ENTRYPOINTS_TCP-4443: "true"
+      # TRAEFIK_ENTRYPOINTS_TCP-4443_ADDRESS: ":4443/tcp"
+      # TRAEFIK_ENTRYPOINTS_TCP-4443_TRANSPORT_RESPONDINGTIMEOUTS_READTIMEOUT: 30m
       # --- Traefik logs configuration ---
       TRAEFIK_LOG: ${TRAEFIK_LOG:-true}
       # TRAEFIK_LOG_FILEPATH: /var/log/traefik/traefik.log
@@ -294,19 +297,19 @@ services:
       # --- Access logs configuration ---
       TRAEFIK_ACCESSLOG: ${TRAEFIK_ACCESSLOG:-true}
       TRAEFIK_ACCESSLOG_FILEPATH: /var/log/traefik/access.log
-      TRAEFIK_ACCESSLOG_FORMAT: common
+      TRAEFIK_ACCESSLOG_FORMAT: json
       TRAEFIK_ACCESSLOG_FIELDS_DEFAULTMODE: keep
       TRAEFIK_ACCESSLOG_FIELDS_NAMES_ClientUsername: drop
-      TRAEFIK_ACCESSLOG_FIELDS_HEADERS_DEFAULTMODE: keep
+      TRAEFIK_ACCESSLOG_FIELDS_HEADERS_DEFAULTMODE: drop
       TRAEFIK_ACCESSLOG_FIELDS_HEADERS_NAMES_User-Agent: keep
-      TRAEFIK_ACCESSLOG_FIELDS_HEADERS_NAMES_Authorization: drop
-      TRAEFIK_ACCESSLOG_FIELDS_HEADERS_NAMES_Content-Type: keep
       # --- API and dashboard configuration ---
-      TRAEFIK_API: ${TRAEFIK_API:-true}
+      TRAEFIK_API: ${TRAEFIK_API:-false}
       TRAEFIK_API_DASHBOARD: ${TRAEFIK_API_DASHBOARD:-false}
       TRAEFIK_API_INSECURE: "false"
       TRAEFIK_API_DEBUG: ${TRAEFIK_API_DEBUG:-false}
       # --- Ping configuration ---
+      TRAEFIK_ENTRYPOINTS_TRAEFIK_ADDRESS: ":8080"
+      TRAEFIK_ENTRYPOINTS_TRAEFIK_HTTP_ALIASHEADERSSTRATEGY: delete
       TRAEFIK_PING: "true"
       # TRAEFIK_PING_ENTRYPOINT: "web"
       # --- Docker provider ---
