@@ -1,9 +1,9 @@
 ---
-# yaml-language-server: $schema=https://www.schemastore.org/traefik-v3.json
 ################################################################
 #
 # Configuration sample for Traefik v3.
 # Schema: https://json.schemastore.org/traefik-v3.json
+# Reference: https://github.com/traefik/traefik/blob/v3.7/traefik.sample.yml
 #
 # For Traefik v3: https://github.com/traefik/traefik/blob/v3.0/traefik.sample.yml
 #
@@ -13,8 +13,14 @@
 # Global configuration
 ################################################################
 global:
-  checkNewVersion: true
+  checkNewVersion: false
   sendAnonymousUsage: false # true by default
+
+# Refuse to build a router whose host has a TLS-option conflict instead of
+# silently falling back to the `default` TLS options (which may be less strict
+# than what the router asked for). Upstream recommends enabling this.
+core:
+  strictTLSOptions: true
 
 ################################################################
 # EntryPoints configuration
@@ -25,6 +31,12 @@ global:
 # Optional
 #
 entryPoints:
+  # `ping: {}` (below) makes Traefik create this :8080 entrypoint implicitly, and
+  # aliasHeadersStrategy cannot be set on an implicit entrypoint - so declare it.
+  traefik:
+    address: :8080
+    http:
+      aliasHeadersStrategy: delete
   http:
     address: :80
     # (Optional) Redirect to HTTPS
@@ -32,6 +44,15 @@ entryPoints:
     http:
       # middlewares:
       #   - default-secured@file
+      aliasHeadersStrategy: delete
+      encodedCharacters:
+        allowEncodedSlash: false
+        allowEncodedBackSlash: false
+        allowEncodedNullCharacter: false
+        allowEncodedSemicolon: false
+        allowEncodedPercent: false
+        allowEncodedQuestionMark: false
+        allowEncodedHash: false
       redirections:
         entryPoint:
           to: https
@@ -45,6 +66,7 @@ entryPoints:
     http3:
       advertisedPort: 443
     http:
+      aliasHeadersStrategy: delete
       encodedCharacters:
         allowEncodedSlash: false
         allowEncodedBackSlash: false
@@ -167,6 +189,8 @@ accesslog:
       defaultMode: drop
       names:
         User-Agent: keep
+        Authorization: drop
+        Content-Type: keep
 
 ################################################################
 # Metric logs configuration
@@ -205,7 +229,7 @@ api:
   # Optional
   # Default: true
   #
-  dashboard: true
+  dashboard: false
 
   # Enable the API in insecure mode
   #
