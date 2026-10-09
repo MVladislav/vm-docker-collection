@@ -131,7 +131,7 @@ services:
   ##############################################################################
   meilisearch:
     # https://hub.docker.com/r/getmeili/meilisearch/tags?name=v
-    image: getmeili/meilisearch:${VERSION_MEILISEARCH:-v1.51}
+    image: getmeili/meilisearch:${VERSION_MEILISEARCH:-v1.54}
     <<:
       - *basic
     deploy:

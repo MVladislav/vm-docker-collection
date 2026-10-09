@@ -74,7 +74,7 @@ services:
   ##############################################################################
   infisical:
     # https://hub.docker.com/r/infisical/infisical/tags?name=v
-    image: infisical/infisical:${VERSION:-v0.165.16}
+    image: infisical/infisical:${VERSION:-v0.165.17}
     <<:
       - *basic
       # - *basic-deploy-labels

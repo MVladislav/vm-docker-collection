@@ -58,7 +58,7 @@ x-basic: &basic
 x-netbox:
   # https://hub.docker.com/r/netboxcommunity/netbox
   &netbox
-  image: netboxcommunity/netbox:${VERSION:-v4.7.1}
+  image: netboxcommunity/netbox:${VERSION:-v4.7.2}
   # uid 999, gid 0, chowns media/reports/scripts in the image
   user: "netbox:root"
   # netbox reads a fixed name from /run/secrets, not <VAR>_FILE
