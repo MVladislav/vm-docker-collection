@@ -127,7 +127,7 @@ services:
     # https://github.com/rustfs/rustfs/releases
     # Alpine (musl) is the default build; use `<version>-glibc` (e.g. 1.0.0-glibc)
     # when the host cannot run musl binaries.
-    image: rustfs/rustfs:${VERSION_RUSTFS:-1.0.0}
+    image: rustfs/rustfs:${VERSION_RUSTFS:-1.0.1}
     # <<: *basic
     deploy:
       # <<: *basic-deploy
@@ -485,7 +485,7 @@ services:
   influxdb3-explorer:
     # https://hub.docker.com/r/influxdata/influxdb3-ui/tags
     # TOKEN: docker exec -it "TODO" influxdb3 create token --admin
-    image: influxdata/influxdb3-ui:${VERSION_INFLUXDB3_EXPLORER:-1.9.0}
+    image: influxdata/influxdb3-ui:${VERSION_INFLUXDB3_EXPLORER:-1.11.0}
     # <<: *basic
     deploy:
       # <<: *basic-deploy
@@ -631,7 +631,7 @@ services:
   ##############################################################################
   mongodb:
     # https://hub.docker.com/_/mongo/tags
-    image: mongo:${VERSION_MONGODB:-8.3.9}
+    image: mongo:${VERSION_MONGODB:-8.3.11}
     # <<: *basic
     deploy:
       # <<: *basic-deploy

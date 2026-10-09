@@ -64,7 +64,7 @@ services:
   ##############################################################################
   evcc:
     # https://hub.docker.com/r/evcc/evcc
-    image: evcc/evcc:${VERSION:-0.316.1}
+    image: evcc/evcc:${VERSION:-0.316.2}
     <<:
       - *basic
       # - *basic-deploy-labels

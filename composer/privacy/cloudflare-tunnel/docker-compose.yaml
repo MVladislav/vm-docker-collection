@@ -60,7 +60,7 @@ services:
   ##############################################################################
   cloudflared:
     # https://hub.docker.com/r/cloudflare/cloudflared
-    image: cloudflare/cloudflared:${VERSION:-2026.9.3}
+    image: cloudflare/cloudflared:${VERSION:-2026.10.0}
     <<: *basic
     deploy:
       <<: *basic-deploy

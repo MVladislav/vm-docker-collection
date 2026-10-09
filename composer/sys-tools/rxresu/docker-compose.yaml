@@ -177,7 +177,7 @@ services:
   ##############################################################################
   rustfs:
     # https://hub.docker.com/r/rustfs/rustfs/tags
-    image: rustfs/rustfs:${VERSION_RUSTFS:-1.0.0}
+    image: rustfs/rustfs:${VERSION_RUSTFS:-1.0.1}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -240,7 +240,7 @@ services:
     # https://hub.docker.com/r/amazon/aws-cli
     # Reactive Resume never creates the bucket itself, its /api/health does a
     # PutObject into it, so the app stays unhealthy until the bucket exists.
-    image: amazon/aws-cli:${VERSION_AWS_CLI:-2.37.6}
+    image: amazon/aws-cli:${VERSION_AWS_CLI:-2.37.9}
     <<: *basic
     deploy:
       <<: *basic-deploy
