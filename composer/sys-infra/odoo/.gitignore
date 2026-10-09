@@ -6,9 +6,18 @@
 
 !README.md
 
+!migration.sh
+
 !config/
 config/*
+!config/*.tmpl
+!config/anonymize.sql
 
 !config/secrets/
 config/secrets/*
 !config/secrets/.gitempty
+
+!patches/
+!patches/*.py
+!docs/
+!docs/*.md

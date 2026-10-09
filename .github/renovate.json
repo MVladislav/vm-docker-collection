@@ -45,6 +45,12 @@
       "matchPackageNames": ["rabbitmq"],
       "matchFileNames": ["composer/sys-infra/plane-com/**"],
       "allowedVersions": "3.13.x"
+    },
+    {
+      "matchManagers": ["custom.regex"],
+      "matchPackageNames": ["odoo"],
+      "matchFileNames": ["composer/sys-infra/odoo/**"],
+      "allowedVersions": "<20"
     }
   ],
   "customManagers": [

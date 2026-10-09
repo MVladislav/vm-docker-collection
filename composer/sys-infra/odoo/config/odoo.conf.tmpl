@@ -1,0 +1,58 @@
+# Odoo server configuration. TEMPLATE - render to config/odoo.conf before
+# deploying; see the "Setup" section of README.md for the sed command and for
+# how config/secrets/admin_passwd.txt is generated.
+#
+# `docker stack deploy` fails outright when config/odoo.conf is missing, so
+# render it first. (`docker compose config` does not need it - it never reads
+# the content - but the real deploy does.)
+#
+# DELIBERATELY ABSENT: db_host / db_port / db_user / db_password / db_name.
+# The image entrypoint only forwards those on the command line when the key is
+# NOT already in the config file (entrypoint.sh -> check_config), so they have
+# to keep arriving as HOST/USER/PASSWORD_FILE and must never end up here or in
+# the swarm service spec in cleartext.
+[options]
+# Both values match the ones the image ships in its own odoo.conf; repeating
+# them makes the stack independent of that file. Core addons are found through
+# the installed odoo python package, not through addons_path.
+addons_path = /mnt/extra-addons
+data_dir = /var/lib/odoo
+
+# Master password of the database manager (/web/database/*, auth="none").
+# Left unset, Odoo's own default is the well-known "admin", which makes
+# /web/database/drop and /web/database/duplicate a one-guess attack.
+# Rendered in plaintext on purpose: odoo's crypt_context accepts the
+# `plaintext` scheme and only upgrades it to pbkdf2_sha512 in memory. Odoo also
+# tries to write the rehashed value back; that fails harmlessly here ("couldn't
+# write the config file") because the swarm config mount is read-only.
+admin_passwd = @@ODOO_ADMIN_PASSWD@@
+
+# DO NOT set dbfilter while a migrated backup still has to be restored.
+# The OpenUpgrade result keeps the ORIGINAL database name (odoo-migrated-
+# 19.0.zip -> database "odoo"), and dbfilter is enforced in two places that
+# both break that:
+#   odoo/http.py:389 db_filter()  -> the selector hides any name the regex misses
+#   odoo/http.py:1829             -> "Logged into database 'odoo', but
+#                                     dbfilter rejects it; logging session out."
+# i.e. pinning it to the POSTGRES_DB name (usually "odoo") makes the restored
+# database invisible AND refuses every login to it. Add it back only on a
+# single-database production instance, AFTER the restore, and set it to the
+# migrated database's real name.
+#
+# list_db is what actually gates the database manager
+# (odoo/service/db.py:47 check_db_management_enabled -> AccessDenied when False).
+# It must stay True for the /web/database/manager restore described in README.md;
+# the destructive endpoints (drop/duplicate/restore) are gated by admin_passwd
+# above, and the whole app sits behind the Traefik secured middleware.
+list_db = True
+
+# Trust X-Forwarded-* from the single Traefik hop. Without it Odoo logs the
+# proxy address as the client and rewrites report/web download URLs to the
+# container address, which is what the old "report.url" system-parameter
+# workaround in the README used to paper over.
+proxy_mode = True
+
+# Odoo applies its own limit_memory_hard (2560 MiB by default, as RLIMIT_AS in
+# odoo/service/server.py) on top of the cgroup limit, so the container limit
+# (RESOURCES_LIMITS_MEMORY, 3g by default) has to stay above it - otherwise the
+# cgroup OOM-killer reaps the request before Odoo can.
