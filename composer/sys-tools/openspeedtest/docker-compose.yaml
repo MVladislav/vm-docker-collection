@@ -67,9 +67,13 @@ services:
   openspeedtest:
     # https://hub.docker.com/r/openspeedtest/latest
     image: openspeedtest/latest:${VERSION:-v2.0.6}
-    <<: [*basic, *basic-deploy-labels]
+    <<:
+      - *basic
+      - *basic-deploy-labels
     deploy:
-      <<: [*basic-deploy, *basic-deploy-labels]
+      <<:
+        - *basic-deploy
+        - *basic-deploy-labels
     ports:
       - target: ${PORT:-3000}
         published: ${PORT_PUBLISH:-3000}

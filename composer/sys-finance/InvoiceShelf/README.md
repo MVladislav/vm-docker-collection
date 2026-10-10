@@ -48,7 +48,7 @@ PDF_DRIVER=gotenberg # gotenberg | dompdf
 GOTENBERG_HOST=http://gotenberg:3000
 GOTENBERG_ALLOWED_PRIVATE_HOST=http://gotenberg:3000
 
-# honoured since 2.4.2 — schedules follow it, previously they stayed on UTC
+# honoured since 2.4.2 - schedules follow it, previously they stayed on UTC
 APP_TIMEZONE=Europe/Berlin
 ```
 

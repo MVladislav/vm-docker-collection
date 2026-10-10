@@ -72,6 +72,7 @@ services:
       UPSTREAM_DNS: ${UPSTREAM_DNS:-1.1.1.1:53}
       OVERRIDE_DNS: ${OVERRIDE_DNS:-true}
       TUNNEL_DNS: ${TUNNEL_DNS:-true}
+      PANGOLIN_CLI_DISABLE_UPDATE_CHECK: ${PANGOLIN_CLI_DISABLE_UPDATE_CHECK:-true}
     networks:
       default: {}
 

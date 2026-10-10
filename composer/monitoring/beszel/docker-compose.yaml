@@ -91,7 +91,7 @@ services:
       # CSP: ${CSP:-}
       # OAUTH_DISABLE_POPUP: ${OAUTH_DISABLE_POPUP:-false}
       # TRUSTED_AUTH_HEADER: ${TRUSTED_AUTH_HEADER:-}
-      # TRUSTED_PROXY_IPS: ${TRUSTED_PROXY_IPS:-}
+      # TRUSTED_PROXY_IPS: ${TRUSTED_PROXY_IPS:-127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,fe80::/10,::1/128}
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro

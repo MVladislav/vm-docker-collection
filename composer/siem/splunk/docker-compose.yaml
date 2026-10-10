@@ -82,7 +82,7 @@ services:
     environment:
       SPLUNK_LICENSE_URI: ${SPLUNK_LICENSE_URI:-Free}
       SPLUNK_START_ARGS: ${SPLUNK_START_ARGS:---accept-license}
-      # SPLUNK_GENERAL_TERMS: --accept-sgt-current-at-splunk-com
+      SPLUNK_GENERAL_TERMS: ${SPLUNK_GENERAL_TERMS:---accept-sgt-current-at-splunk-com}
       SPLUNK_PASSWORD: ${SPLUNK_PASSWORD:-swordfish}
       SPLUNK_ALLOW_UPGRADE: ${SPLUNK_ALLOW_UPGRADE:-true}
     volumes:

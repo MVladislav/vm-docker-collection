@@ -97,7 +97,7 @@ services:
       TELEMETRY_ENABLED: ${TELEMETRY_ENABLED:-false}
       DISABLE_UPDATE_CHECK: ${DISABLE_UPDATE_CHECK:-true} # weekly github api call
 
-      TRUSTED_PROXY_CIDRS: ${TRUSTED_PROXY_CIDRS:-10.0.0.0/8,172.16.0.0/12,192.168.0.0/16}
+      TRUSTED_PROXY_CIDRS: ${TRUSTED_PROXY_CIDRS:-127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,fe80::/10,::1/128}
 
       # unset = api + workers + cronjobs in one container
       # INFISICAL_RUN_MODES: ${INFISICAL_RUN_MODES:-} # api, general-worker, secret-scanning

@@ -131,7 +131,7 @@ services:
   ##############################################################################
   meilisearch:
     # https://hub.docker.com/r/getmeili/meilisearch/tags?name=v
-    image: getmeili/meilisearch:${VERSION_MEILISEARCH:-v1.54}
+    image: getmeili/meilisearch:${VERSION_MEILISEARCH:-v1.54.3}
     <<:
       - *basic
     deploy:
@@ -156,7 +156,7 @@ services:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
       - meili:/meili_data
-    command: /bin/meilisearch --experimental-dumpless-upgrade
+    command: /bin/meilisearch --upgrade-db
     healthcheck:
       test:
         [

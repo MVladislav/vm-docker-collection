@@ -21,6 +21,14 @@ x-basic-deploy-labels: &basic-deploy-labels
     - traefik.http.services.nextcloud-aio-admin.loadbalancer.server.scheme=${PROTOCOL_AIO_ADMIN:-https}
     - traefik.http.services.nextcloud-aio-admin.loadbalancer.server.port=${PORT_AIO_ADMIN:-8080}
 
+    # - traefik.http.routers.nextcloud-aio-collabora.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    # - traefik.http.routers.nextcloud-aio-collabora.rule=Host(`collabora.${DOMAIN?domain variable not set}`)
+    # - traefik.http.routers.nextcloud-aio-collabora.tls=true
+    # - traefik.http.routers.nextcloud-aio-collabora.tls.certresolver=${CERT_RESOLVER:-}
+    # - traefik.http.routers.nextcloud-aio-collabora.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    # - traefik.http.routers.nextcloud-aio-collabora.service=nextcloud-aio-collabora
+    # - traefik.http.services.nextcloud-aio-collabora.loadbalancer.server.url=http://nextcloud-aio-collabora:9980
+
 x-basic-deploy: &basic-deploy
   mode: replicated
   replicas: 1

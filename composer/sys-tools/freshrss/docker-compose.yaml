@@ -85,7 +85,7 @@ services:
       CRON_MIN: ${CRON_MIN:-3,33}
       LISTEN: 0.0.0.0:${PORT:-8080}
       INTERNAL_HOST_ALLOWLIST: ${INTERNAL_HOST_ALLOWLIST:-}
-      TRUSTED_PROXY: ${TRUSTED_PROXY:-172.16.0.1/12 192.168.0.1/16}
+      TRUSTED_PROXY: ${TRUSTED_PROXY:-127.0.0.0/8 10.0.0.0/8 172.16.0.0/12 fe80::/10 ::1/128}
       ENABLE_ACCESS_LOG: ${ENABLE_ACCESS_LOG:-1}
     volumes:
       # - /etc/timezone:/etc/timezone:ro
