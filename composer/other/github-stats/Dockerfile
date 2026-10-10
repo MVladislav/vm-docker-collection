@@ -18,7 +18,7 @@ RUN npm pkg set dependencies.express="latest" && npm install
 # ===============================
 # Final image: PHP+Apache + Node runtime + Deno + apps
 # ===============================
-FROM php:8.5-apache@sha256:70d80539dcacae817d9a1320518b95c86bb9568835ef3a7a024d57a4898c90e4
+FROM php:8.5-apache@sha256:974e3a920309308e1690ed607e6cc3061d6906f90cc8d30fe519daa48bccf101
 
 # System deps + node/npm + supervisor + utilities
 RUN apt-get update && \
