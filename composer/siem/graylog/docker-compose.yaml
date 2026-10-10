@@ -307,7 +307,7 @@ services:
   mongodb1:
     hostname: "mongodb1"
     # https://hub.docker.com/_/mongo
-    image: mongo:${VERSION_MONGODB:-8.3.11}
+    image: mongo:${VERSION_MONGODB:-9.0.2}
     <<: *basic
     deploy:
       <<: [*basic-deploy, *basic-deploy-resources-mongodb]
