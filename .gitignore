@@ -25,5 +25,7 @@
 !composer/**
 
 !tools/
+!tools/image_pin_audit.py
 !tools/readme_gen.py
+!tools/sync_env_versions.py
 !tools/sync_readme_versions.py
