@@ -14,8 +14,7 @@ x-basic-deploy-labels: &basic-deploy-labels
     - traefik.http.services.<router_name>${SERVICE_NAME_POST:-}.loadbalancer.server.port=${PORT:-443}
 
 x-basic-deploy: &basic-deploy
-  mode: replicated
-  # mode: global
+  mode: replicated # replicated | global
   replicas: 1
   placement:
     max_replicas_per_node: 1
@@ -28,6 +27,9 @@ x-basic-deploy: &basic-deploy
     order: stop-first # start-first | stop-first
   restart_policy:
     condition: any # any | on-failure | none
+    delay: 5s
+    max_attempts: 3
+    window: 120s
   resources:
     limits:
       cpus: ${RESOURCES_LIMITS_CPUS:-1}

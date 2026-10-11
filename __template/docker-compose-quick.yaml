@@ -25,6 +25,9 @@ x-basic-deploy: &basic-deploy
     order: stop-first
   restart_policy:
     condition: any
+    delay: 5s
+    max_attempts: 3
+    window: 120s
   resources:
     limits:
       cpus: ${RESOURCES_LIMITS_CPUS:-1}
@@ -59,7 +62,7 @@ x-basic: &basic
       hard: 655360
     fsize: -1
     as: -1
-  mem_limit: ${RESOURCES_LIMITS_MEMORY:-1g}
+  # mem_limit: ${RESOURCES_LIMITS_MEMORY:-1g}
   networks:
     default: {}
     proxy: {}
