@@ -423,7 +423,7 @@ services:
   ##############################################################################
   web:
     # https://hub.docker.com/r/makeplane/web-commercial
-    image: makeplane/web-commercial:${VERSION_PLANE:-v3.3.1}
+    image: makeplane/web-commercial:${VERSION_PLANE:-v3.3.2}
     <<:
       - *basic
       # - *basic-deploy-labels-web
@@ -466,7 +466,7 @@ services:
 
   api:
     # https://hub.docker.com/r/makeplane/backend-commercial
-    image: makeplane/backend-commercial:${VERSION_PLANE:-v3.3.1}
+    image: makeplane/backend-commercial:${VERSION_PLANE:-v3.3.2}
     <<:
       - *basic
       # - *basic-deploy-labels-api
@@ -520,7 +520,7 @@ services:
 
   admin:
     # https://hub.docker.com/r/makeplane/admin-commercial
-    image: makeplane/admin-commercial:${VERSION_PLANE:-v3.3.1}
+    image: makeplane/admin-commercial:${VERSION_PLANE:-v3.3.2}
     <<:
       - *basic
       # - *basic-deploy-labels-admin
@@ -563,7 +563,7 @@ services:
 
   space:
     # https://hub.docker.com/r/makeplane/space-commercial
-    image: makeplane/space-commercial:${VERSION_PLANE:-v3.3.1}
+    image: makeplane/space-commercial:${VERSION_PLANE:-v3.3.2}
     <<:
       - *basic
       # - *basic-deploy-labels-space
@@ -602,7 +602,7 @@ services:
 
   live:
     # https://hub.docker.com/r/makeplane/live-commercial
-    image: makeplane/live-commercial:${VERSION_PLANE:-v3.3.1}
+    image: makeplane/live-commercial:${VERSION_PLANE:-v3.3.2}
     <<:
       - *basic
       # - *basic-deploy-labels-live
@@ -645,7 +645,7 @@ services:
   # PDF/DOCX export worker, same image as `live`. Without it no export finishes.
   live-exporter:
     # https://hub.docker.com/r/makeplane/live-commercial
-    image: makeplane/live-commercial:${VERSION_PLANE:-v3.3.1}
+    image: makeplane/live-commercial:${VERSION_PLANE:-v3.3.2}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -669,7 +669,7 @@ services:
 
   worker:
     # https://hub.docker.com/r/makeplane/backend-commercial
-    image: makeplane/backend-commercial:${VERSION_PLANE:-v3.3.1}
+    image: makeplane/backend-commercial:${VERSION_PLANE:-v3.3.2}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -702,7 +702,7 @@ services:
 
   beat-worker:
     # https://hub.docker.com/r/makeplane/backend-commercial
-    image: makeplane/backend-commercial:${VERSION_PLANE:-v3.3.1}
+    image: makeplane/backend-commercial:${VERSION_PLANE:-v3.3.2}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -735,7 +735,7 @@ services:
 
   monitor:
     # https://hub.docker.com/r/makeplane/monitor-commercial
-    image: makeplane/monitor-commercial:${VERSION_PLANE:-v3.3.1}
+    image: makeplane/monitor-commercial:${VERSION_PLANE:-v3.3.2}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -762,7 +762,7 @@ services:
 
   silo:
     # https://hub.docker.com/r/makeplane/silo-commercial
-    image: makeplane/silo-commercial:${VERSION_PLANE:-v3.3.1}
+    image: makeplane/silo-commercial:${VERSION_PLANE:-v3.3.2}
     <<:
       - *basic
       # - *basic-deploy-labels-silo
@@ -807,7 +807,7 @@ services:
   # outbound webhook delivery, required since v3
   webhook-consumer:
     # https://hub.docker.com/r/makeplane/backend-commercial
-    image: makeplane/backend-commercial:${VERSION_PLANE:-v3.3.1}
+    image: makeplane/backend-commercial:${VERSION_PLANE:-v3.3.2}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -841,7 +841,7 @@ services:
 
   automation-consumer:
     # https://hub.docker.com/r/makeplane/backend-commercial
-    image: makeplane/backend-commercial:${VERSION_PLANE:-v3.3.1}
+    image: makeplane/backend-commercial:${VERSION_PLANE:-v3.3.2}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -874,7 +874,7 @@ services:
 
   outbox-poller:
     # https://hub.docker.com/r/makeplane/backend-commercial
-    image: makeplane/backend-commercial:${VERSION_PLANE:-v3.3.1}
+    image: makeplane/backend-commercial:${VERSION_PLANE:-v3.3.2}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -908,7 +908,7 @@ services:
   # automation sandbox, required since v3. Internal only, never route it.
   runner:
     # https://hub.docker.com/r/makeplane/node-runner-commercial
-    image: makeplane/node-runner-commercial:${VERSION_PLANE:-v3.3.1}
+    image: makeplane/node-runner-commercial:${VERSION_PLANE:-v3.3.2}
     <<: *basic
     deploy:
       <<: *basic-deploy
@@ -946,7 +946,7 @@ services:
   ##############################################################################
   migrator:
     # https://hub.docker.com/r/makeplane/backend-commercial
-    image: makeplane/backend-commercial:${VERSION_PLANE:-v3.3.1}
+    image: makeplane/backend-commercial:${VERSION_PLANE:-v3.3.2}
     <<: *basic
     deploy:
       <<: *basic-deploy
