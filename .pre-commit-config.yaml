@@ -74,6 +74,8 @@ repos:
     rev: v2.15.1
     hooks:
       - id: hadolint-docker
+        files: (^|/)(Dockerfile|Dockerfile[._-][^/]*)$
+        types: [file]
         args:
           # WARN
           - "--ignore"
