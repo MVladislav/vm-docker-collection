@@ -10,17 +10,9 @@
 !config/
 config/*
 
-!config/entrypoint.sh
-!config/install-ext.sh
-!config/keybindings.json
 !config/settings.json
+!config/keybindings.json
 
-!config/config/
-config/config/*
-!config/config/.gitempty
-!config/local/
-config/local/*
-!config/local/.gitempty
-!config/project/
-config/project/*
-!config/project/.gitempty
+!config/entrypoint.d/
+config/entrypoint.d/*
+!config/entrypoint.d/50-provision-user-data.sh

@@ -1,31 +1,31 @@
 # SETUP
 
-```sh
-    MVladislav
-```
-
----
-
-- [SETUP](#setup)
-  - [basic](#basic)
-    - [additional changes](#additional-changes)
-    - [create `.env` file following:](#create-env-file-following)
-      - [example short .env (swarm)](#example-short-env-swarm)
-      - [example short .env (bridge)](#example-short-env-bridge)
-  - [Helper](#helper)
-    - [Print password](#print-password)
-  - [References](#references)
-
----
-
 ## basic
 
-> defined to work with traefik
+> designed to work with traefik
 
-### additional changes
+### create your `secrets`:
 
-When you will run this in **swarm mode** you need to proof if under
-`/etc/docker/daemon.json` the property `no-new-privileges` is set to **false**
+```sh
+sudo apt install pwgen argon2
+
+# pick ONE of the following, they are alternatives:
+
+# 1) plain - readable in cleartext by `docker service inspect`
+pwgen -s 24 1 | sed 's/^/PASSWORD=/' >> .env
+
+# 2) hashed - what `docker service inspect` cannot leak
+PASS=$(pwgen -s 24 1)
+printf '%s' "$PASS" | argon2 'code-server' -e \
+  | sed 's/\$/$$/g' | sed 's/^/HASHED_PASSWORD=/' >> .env
+echo "your password: $PASS"
+
+# 3) hash a password you already picked instead (input stays hidden)
+read -rs -p 'password: ' PW && echo
+printf '%s' "$PW" | argon2 'code-server' -e \
+  | sed 's/\$/$$/g' | sed 's/^/HASHED_PASSWORD=/' >> .env
+unset PW
+```
 
 ### create `.env` file following:
 
@@ -38,63 +38,63 @@ NETWORK_MODE=overlay # overlay | bridge
 # GENERAL traefik variables (set by default, change as needed)
 # ______________________________________________________________________________
 LB_SWARM=true
-DOMAIN=code.home.local # not set in docker-compose, needs to be copied to .env
+DOMAIN=code.home.local
 PROTOCOL=http
 PORT=8080
 # default-secured@file | public-secured@file | authentik@file
 MIDDLEWARE_SECURED=default-secured@file
+CERT_RESOLVER=certificates
 
 # GENERAL sources to be used (set by default, change as needed)
 # ______________________________________________________________________________
-RESOURCES_LIMITS_CPUS=2
-RESOURCES_LIMITS_MEMORY=2g
+RESOURCES_LIMITS_CPUS=4
+RESOURCES_LIMITS_MEMORY=4g
 RESOURCES_RESERVATIONS_CPUS=0.001
 RESOURCES_RESERVATIONS_MEMORY=32m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION=4.139.1-ubuntu
+VERSION=4.141.0-ubuntu
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
-GID=1000
-UID=1000
-DOCKER_USER=<$USER>
-CONFIG=config # $PWD/config/config
-LOCAL=local # $PWD/config/local
+# folder the explorer opens on start
+WORKSPACE=/home/coder/projects
+# shut down after N idle seconds (>60); empty/omitted = never idle out
+IDLE_TIMEOUT_SECONDS=
+KEYBOARD_LAYOUT=de
 ```
 
-#### example short .env (swarm)
+#### example short `.env` (swarm)
 
 ```env
 DOMAIN=code.home.local
-DOCKER_USER=<$USER>
 ```
 
-#### example short .env (bridge)
+#### example short `.env` (bridge)
 
 ```env
 NETWORK_MODE=bridge
 LB_SWARM=false
 
 DOMAIN=code.home.local
-DOCKER_USER=<$USER>
 ```
 
----
-
-## Helper
-
-### Print password
+### deploy
 
 ```sh
-$docker exec -it "$(docker ps -q -f name=code-server)" cat /home/coder/.config/code-server/config.yaml
+# swarm
+docker-swarm-compose code-server -f docker-compose.yaml
+
+# with remote storage, name the volumes file too
+docker-swarm-compose code-server -f docker-compose.yaml -f docker-compose.volumes.yaml
 ```
 
 ---
 
 ## References
 
-- <https://coder.com/>
-- <https://github.com/coder/code-server/blob/main/docs/install.md#docker>
+- <https://coder.com/docs/code-server/install#docker>
 - <https://hub.docker.com/r/codercom/code-server>
+- image build recipe: <https://github.com/coder/code-server/blob/main/ci/release-image/Dockerfile>
+- image entrypoint: <https://github.com/coder/code-server/blob/main/ci/release-image/entrypoint.sh>

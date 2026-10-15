@@ -7,6 +7,7 @@ x-basic-deploy-labels: &basic-deploy-labels
     - traefik.http.routers.code-server.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
     - traefik.http.routers.code-server.rule=Host(`${DOMAIN?domain variable not set}`)
     - traefik.http.routers.code-server.tls=true
+    - traefik.http.routers.code-server.tls.certresolver=${CERT_RESOLVER:-}
     - traefik.http.routers.code-server.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
     - traefik.http.routers.code-server.service=code-server
     - traefik.http.services.code-server.loadbalancer.server.scheme=${PROTOCOL:-http}
@@ -23,23 +24,29 @@ x-basic-deploy: &basic-deploy
   update_config:
     order: stop-first
   restart_policy:
-    condition: any
+    condition: on-failure
+    delay: 5s
+    max_attempts: 3
+    window: 120s
   resources:
     limits:
-      cpus: ${RESOURCES_LIMITS_CPUS:-2}
-      memory: ${RESOURCES_LIMITS_MEMORY:-2g}
+      cpus: ${RESOURCES_LIMITS_CPUS:-4}
+      memory: ${RESOURCES_LIMITS_MEMORY:-4g}
     reservations:
       cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
       memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
 
 x-basic: &basic
   env_file: ${ENV_FILE:-.env}
-  cap_add:
-    - CHOWN # Allows changing file ownership (`chown`,`chgrp`)
-    - SETGID # Allows setting group ID (`setgid`,`newgrp`,`chgrp`,`setregid()`)
-    - SETUID # Allows setting user ID (`setuid`,`su`,`sudo`,`passwd`)
-    - FOWNER # Overrides file ownership checks (`chmod`,`kill`)
-    - AUDIT_WRITE
+  # cap_add:
+  #   # https://dockerlabs.collabnix.com/advanced/security/capabilities/
+  #   - CHOWN # Allows changing file ownership (`chown`,`chgrp`)
+  #   - FOWNER # Overrides file ownership checks (`chmod`,`kill`)
+  #   - DAC_READ_SEARCH # Bypasses file read and directory execute permissions (`ls`,`cat`,`find`)
+  #   - DAC_OVERRIDE # Bypasses file read/write/execute permission checks (`cat`,`touch`,`rm`)
+  #   - SETGID # Allows setting group ID (`setgid`,`newgrp`,`chgrp`,`setregid()`)
+  #   - SETUID # Allows setting user ID (`setuid`,`su`,`sudo`,`passwd`)
+  #   - FSETID # Allows setting file SUID/SGID bits (`chmod u+s`,`chmod g+s`)
   cap_drop: ["ALL"]
   security_opt:
     - no-new-privileges:true
@@ -57,8 +64,8 @@ x-basic: &basic
   healthcheck:
     disable: true
   tmpfs:
-    - /tmp
-  restart: always
+    - /tmp:rw,relatime,size=512m,nodev,nosuid,noexec
+  restart: on-failure
 
 ################################################################################
 ################################################################################
@@ -69,7 +76,7 @@ services:
   ##############################################################################
   code-server:
     # https://hub.docker.com/r/codercom/code-server
-    image: codercom/code-server:${VERSION:-4.140.0-ubuntu}
+    image: codercom/code-server:${VERSION:-4.141.0-ubuntu}
     <<:
       - *basic
       - *basic-deploy-labels
@@ -77,31 +84,62 @@ services:
       <<:
         - *basic-deploy
         - *basic-deploy-labels
-    user: "${GID:-1000}:${UID:-1000}"
     environment:
-      DOCKER_USER: ${DOCKER_USER:-coder}
+      PASSWORD: ${PASSWORD:-}
+      HASHED_PASSWORD: ${HASHED_PASSWORD:-}
+      WORKSPACE: ${WORKSPACE:-/home/coder/projects}
+      KEYBOARD_LAYOUT: ${KEYBOARD_LAYOUT:-de}
+      CODE_SERVER_IDLE_TIMEOUT_SECONDS: ${IDLE_TIMEOUT_SECONDS:-}
     configs:
-      - source: entrypoint
-        target: /usr/bin/entrypoint.sh
-        mode: 0777
-      # - source: installer_ext
-      #   target: /entrypoint.d/install-ext.sh
-      #   mode: 0777
+      # settings/keybindings are staged under /etc/code-server/provision and
+      # copied into place by the ENTRYPOINTD script below. Mounting them
+      # directly into ~/.local/share/code-server/User makes the daemon create
+      # the (not yet existing) parent dirs root-owned, and code-server then dies
       - source: settings_config
-        target: /home/coder/.local/share/code-server/User/settings.json
-        mode: 0644
-        uid: "${UID:-1000}"
-        gid: "${GID:-1000}"
+        target: /etc/code-server/provision/settings.json
+        mode: 0440
+        uid: "1000"
+        gid: "1000"
       - source: keybindings_config
-        target: /home/coder/.local/share/code-server/User/keybindings.json
-        mode: 0644
-        uid: "${UID:-1000}"
-        gid: "${GID:-1000}"
+        target: /etc/code-server/provision/keybindings.json
+        mode: 0440
+        uid: "1000"
+        gid: "1000"
+      # ENTRYPOINTD is baked as the literal /entrypoint.d, NOT
+      # $HOME/entrypoint.d - the Dockerfile expands it at build time, when
+      # $HOME is not set yet.
+      # `mode` is honoured in swarm only; plain compose uses the host file mode,
+      # so the script has to stay executable on the host (chmod 0755).
+      - source: provision_user_data
+        target: /entrypoint.d/50-provision-user-data.sh
+        mode: 0555
+        uid: "1000"
+        gid: "1000"
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-      - coder:/home/coder
-    entrypoint: ["/usr/bin/entrypoint.sh", "--bind-addr", "0.0.0.0:8080", "."]
+      - coder_home:/home/coder
+      # - coder_local:/home/coder/.local
+      # - coder_config:/home/coder/.config
+    entrypoint: ["/usr/bin/entrypoint.sh"]
+    command:
+      - --bind-addr=0.0.0.0:8080
+      - --disable-telemetry
+      - --disable-update-check
+      - --disable-getting-started-override
+      - --enable-remote-storage
+      - --disable-proxy
+      - ${WORKSPACE:-/home/coder/projects}
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -fsS http://127.0.0.1:8080/healthz > /dev/null 2>&1 || exit 1",
+        ]
+      start_period: 300s
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
 ################################################################################
 ################################################################################
@@ -111,14 +149,14 @@ networks:
     external: true
 
 volumes:
-  coder: {}
+  coder_home: {}
+  # coder_local: {}
+  # coder_config: {}
 
 configs:
-  entrypoint:
-    file: $PWD/config/entrypoint.sh
-  installer_ext:
-    file: $PWD/config/install-ext.sh
   settings_config:
     file: $PWD/config/settings.json
   keybindings_config:
     file: $PWD/config/keybindings.json
+  provision_user_data:
+    file: $PWD/config/entrypoint.d/50-provision-user-data.sh

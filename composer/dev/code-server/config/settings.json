@@ -1,11 +1,12 @@
 {
   "extensions.ignoreRecommendations": true,
-  "extensions.autoCheckUpdates": true,
+  "extensions.autoCheckUpdates": false,
   "search.followSymlinks": false,
   "window.titleBarStyle": "custom",
   "window.title": "${activeEditorLong}",
   "window.customTitleBarVisibility": "auto",
   "window.commandCenter": true,
+  "window.autoDetectColorScheme": false,
   "keyboard.layout": "de",
   "workbench.activityBar.location": "top",
   "workbench.colorTheme": "Hack The Box",
@@ -92,8 +93,75 @@
   "files.watcherExclude": {
     "**/.git/objects/**": true,
     "**/.git/subtree-cache/**": true,
-    "**/node_modules/*/**": true
+    "**/.git/lfs/**": true,
+    "**/.hg/store/**": true,
+    "**/.svn/**": true,
+    "**/node_modules/**": true,
+    "**/node_modules": true,
+    "**/bower_components/**": true,
+    "**/bower_components": true,
+    "**/vendor/**": true,
+    "**/vendor": true,
+    "**/dist/**": true,
+    "**/dist": true,
+    "**/build/**": true,
+    "**/build": true,
+    "**/.next/**": true,
+    "**/.next": true,
+    "**/.nuxt/**": true,
+    "**/.nuxt": true,
+    "**/target/**": true,
+    "**/target": true,
+    "**/.venv/**": true,
+    "**/.venv": true,
+    "**/venv/**": true,
+    "**/venv": true,
+    "**/__pycache__/**": true,
+    "**/__pycache__": true,
+    "**/.cache/**": true,
+    "**/.cache": true,
+    "**/.mypy_cache/**": true,
+    "**/.mypy_cache": true,
+    "**/.pytest_cache/**": true,
+    "**/.pytest_cache": true,
+    "**/*.code-search": true
   },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/bower_components": true,
+    "**/*.code-search": true,
+    "**/.git/objects/**": true,
+    "**/.git/subtree-cache/**": true,
+    "**/.hg/store/**": true,
+    "**/.svn/**": true,
+    "**/dist/**": true,
+    "**/dist": true,
+    "**/build/**": true,
+    "**/build": true,
+    "**/.next/**": true,
+    "**/.next": true,
+    "**/.nuxt/**": true,
+    "**/.nuxt": true,
+    "**/target/**": true,
+    "**/target": true,
+    "**/.venv/**": true,
+    "**/.venv": true,
+    "**/venv/**": true,
+    "**/venv": true,
+    "**/__pycache__/**": true,
+    "**/__pycache__": true,
+    "**/.cache/**": true,
+    "**/.cache": true
+  },
+  "search.useIgnoreFiles": true,
+  "search.useGlobalIgnoreFiles": true,
+  "search.useParentIgnoreFiles": true,
+  "git.autofetch": false,
+  "scm.defaultViewMode": "tree",
+  "files.enableTrash": false,
+  "files.restoreUndoStack": false,
+  "files.hotExit": "off",
+  // "explorer.excludeGitIgnore": true,
   "files.associations": {
     "**/defaults/**/*": "ansible",
     "**/tasks/**/*.yml": "ansible",
@@ -151,6 +219,7 @@
   // "remote.SSH.configFile": "df",
   "remote.SSH.useLocalServer": true,
   "remote.SSH.connectTimeout": 30,
+  "remote.autoForwardPorts": false,
   // "thunder-client.saveToWorkspace": true,
   // "thunder-client.customLocation": "thunder",
   "snyk.advanced.advancedMode": true,
@@ -163,7 +232,6 @@
   "codesnap.boxShadow": "rgba(0, 0, 0, 0.55) 0px 20px 68px",
   "codesnap.containerPadding": "1em",
   "codesnap.shutterAction": "copy",
-  "git.autofetch": true,
   "git.autoRepositoryDetection": "openEditors",
   "git.confirmSync": false,
   "git.detectSubmodules": false,
@@ -442,7 +510,8 @@
     "editor.codeActionsOnSave": {
       "source.organizeImports": "explicit"
     },
-    "editor.formatOnType": true
+    "editor.formatOnType": true,
+    "diffEditor.ignoreTrimWhitespace": true
   },
   // "python.languageServer": "None",
   "python.analysis.ignore": ["*"],
@@ -474,7 +543,6 @@
     "files.eol": "\n"
   },
   "shellcheck.run": "onSave",
-  "shellcheck.executablePath": "/snap/bin/shellcheck",
   // "shellcheck.useWorkspaceRootAsCwd": true,
   "[c]": {
     // "editor.defaultFormatter": "ms-vscode.cpptools"
@@ -660,5 +728,11 @@
     "yaml": false
   },
   "redhat.telemetry.enabled": false,
-  "telemetry.telemetryLevel": "off"
+  "telemetry.telemetryLevel": "off",
+  "update.mode": "none",
+  "github.copilot.enable": {
+    "*": false
+  },
+  "github.copilot.nextEditSuggestions.enabled": false,
+  "chat.disableAIFeatures": true
 }
