@@ -1,0 +1,54 @@
+# Official Excalidraw collaboration room server, built from source. Upstream
+# publishes no reproducible image (its own Dockerfile is node:12-alpine, EOL, and
+# its publish workflow only runs on pushes to master), so we build it from a
+# pinned commit - which is also auditable: the whole server is `src/index.ts`.
+ARG VERSION_NODE=22.22.2
+FROM node:$VERSION_NODE-alpine
+
+# Zero tags, zero releases (GitHub API, 2026-10-15), so a commit SHA is the only
+# immutable reference. HEAD then was 03ff4358 "Barnabasmolnar/follow mode
+# (#361)", 2023-12-15.
+ARG VERSION_EXCALIDRAW_ROOM=03ff435860b508d7cd9e005cfc90f7977ae2a593
+
+WORKDIR /excalidraw-room
+
+RUN set -eu; \
+    apk add --no-cache git; \
+    git clone https://github.com/excalidraw/excalidraw-room.git .; \
+    git checkout --detach "$VERSION_EXCALIDRAW_ROOM"; \
+    test "$(git rev-parse HEAD)" = "$VERSION_EXCALIDRAW_ROOM"
+
+# Raise socket.io's 1 MB `maxHttpBufferSize` (the whole encrypted scene is
+# rebroadcast on every join). Guarded like the client build: apply only if it
+# still applies, then assert the symbol landed.
+COPY patches/room-max-payload.patch /tmp/room-max-payload.patch
+RUN set -eu; \
+  git apply --check /tmp/room-max-payload.patch; \
+  git apply /tmp/room-max-payload.patch; \
+  grep -q 'maxHttpBufferSize: Number(process.env.MAX_HTTP_BUFFER_SIZE)' src/index.ts
+
+# `yarn.lock` IS committed upstream (yarn v1, pinning socket.io 4.6.1 / express
+# 4.17.1), so `--frozen-lockfile` is reproducible. There is deliberately NO
+# `--production` install: upstream has no `devDependencies` block at all (eslint,
+# prettier and typescript are ordinary `dependencies`), so pruning would be a
+# no-op - the image therefore carries the full toolchain.
+RUN set -eu; \
+  yarn install --frozen-lockfile --network-timeout 600000; \
+  yarn build; \
+  rm -rf .git /tmp/room-max-payload.patch
+
+ENV NODE_ENV=production \
+    PORT=8080
+
+EXPOSE 8080
+
+# 8080 is unprivileged and nothing here needs a capability, so running
+# unprivileged costs nothing.
+USER node
+
+# dist/index.js is produced by `yarn build` as root, so it is not exposed to the
+# build-context file-mode trap the storage image has - but the entrypoint is the
+# one file the runtime cannot recover from not being able to read.
+RUN node -e "require('node:fs').accessSync('dist/index.js', require('node:fs').constants.R_OK)"
+
+CMD ["node", "dist/index.js"]

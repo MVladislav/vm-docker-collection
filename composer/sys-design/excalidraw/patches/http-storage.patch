@@ -1,0 +1,494 @@
+diff --git a/excalidraw-app/App.tsx b/excalidraw-app/App.tsx
+index 2cb6e77..6b9a8bb 100644
+--- a/excalidraw-app/App.tsx
++++ b/excalidraw-app/App.tsx
+@@ -75,7 +75,7 @@ import {
+ import { updateStaleImageStatuses } from "./data/FileManager";
+ import { newElementWith } from "@excalidraw/excalidraw/element/mutateElement";
+ import { isInitializedImageElement } from "@excalidraw/excalidraw/element/typeChecks";
+-import { loadFilesFromFirebase } from "./data/firebase";
++import { loadFilesFromHttpStorage } from "./data/httpStorage";
+ import {
+   LibraryIndexedDBAdapter,
+   LibraryLocalStorageMigrationAdapter,
+@@ -429,7 +429,7 @@ const ExcalidrawWrapper = () => {
+           }, [] as FileId[]) || [];
+ 
+         if (data.isExternalScene) {
+-          loadFilesFromFirebase(
++          loadFilesFromHttpStorage(
+             `${FIREBASE_STORAGE_PREFIXES.shareLinkFiles}/${data.id}`,
+             data.key,
+             fileIds,
+diff --git a/excalidraw-app/collab/Collab.tsx b/excalidraw-app/collab/Collab.tsx
+index 9a16e05..bec6a40 100644
+--- a/excalidraw-app/collab/Collab.tsx
++++ b/excalidraw-app/collab/Collab.tsx
+@@ -49,12 +49,12 @@ import {
+   getSyncableElements,
+ } from "../data";
+ import {
+-  isSavedToFirebase,
+-  loadFilesFromFirebase,
+-  loadFromFirebase,
+-  saveFilesToFirebase,
+-  saveToFirebase,
+-} from "../data/firebase";
++  isSavedToHttpStorage,
++  loadFilesFromHttpStorage,
++  loadFromHttpStorage,
++  saveFilesToHttpStorage,
++  saveToHttpStorage,
++} from "../data/httpStorage";
+ import {
+   importUsernameFromLocalStorage,
+   saveUsernameToLocalStorage,
+@@ -151,36 +151,40 @@ class Collab extends PureComponent<CollabProps, CollabState> {
+           throw new AbortError();
+         }
+ 
+-        return loadFilesFromFirebase(`files/rooms/${roomId}`, roomKey, fileIds);
++        return loadFilesFromHttpStorage(
++          `files/rooms/${roomId}`,
++          roomKey,
++          fileIds,
++        );
+       },
+       saveFiles: async ({ addedFiles }) => {
+         const { roomId, roomKey } = this.portal;
+         if (!roomId || !roomKey) {
+           throw new AbortError();
+         }
+ 
+-        const { savedFiles, erroredFiles } = await saveFilesToFirebase({
++        const { savedFiles, erroredFiles } = await saveFilesToHttpStorage({
+           prefix: `${FIREBASE_STORAGE_PREFIXES.collabFiles}/${roomId}`,
+           files: await encodeFilesForUpload({
+             files: addedFiles,
+             encryptionKey: roomKey,
+             maxBytes: FILE_UPLOAD_MAX_BYTES,
+           }),
+         });
+ 
+         return {
+           savedFiles: savedFiles.reduce(
+-            (acc: Map<FileId, BinaryFileData>, id) => {
++            (acc: Map<FileId, BinaryFileData>, id: FileId) => {
+               const fileData = addedFiles.get(id);
+               if (fileData) {
+                 acc.set(id, fileData);
+               }
+               return acc;
+             },
+             new Map(),
+           ),
+           erroredFiles: erroredFiles.reduce(
+-            (acc: Map<FileId, BinaryFileData>, id) => {
++            (acc: Map<FileId, BinaryFileData>, id: FileId) => {
+               const fileData = addedFiles.get(id);
+               if (fileData) {
+                 acc.set(id, fileData);
+@@ -290,21 +294,21 @@ class Collab extends PureComponent<CollabProps, CollabState> {
+     if (
+       this.isCollaborating() &&
+       (this.fileManager.shouldPreventUnload(syncableElements) ||
+-        !isSavedToFirebase(this.portal, syncableElements))
++        !isSavedToHttpStorage(this.portal, syncableElements))
+     ) {
+       // this won't run in time if user decides to leave the site, but
+       //  the purpose is to run in immediately after user decides to stay
+       this.saveCollabRoomToFirebase(syncableElements);
+ 
+       preventUnload(event);
+     }
+   });
+ 
+   saveCollabRoomToFirebase = async (
+     syncableElements: readonly SyncableExcalidrawElement[],
+   ) => {
+     try {
+-      const storedElements = await saveToFirebase(
++      const storedElements = await saveToHttpStorage(
+         this.portal,
+         syncableElements,
+         this.excalidrawAPI.getAppState(),
+@@ -703,7 +707,7 @@ class Collab extends PureComponent<CollabProps, CollabState> {
+       this.excalidrawAPI.resetScene();
+ 
+       try {
+-        const elements = await loadFromFirebase(
++        const elements = await loadFromHttpStorage(
+           roomLinkData.roomId,
+           roomLinkData.roomKey,
+           this.portal.socket,
+diff --git a/excalidraw-app/data/httpStorage.ts b/excalidraw-app/data/httpStorage.ts
+new file mode 100644
+index 0000000..17f3012
+--- /dev/null
++++ b/excalidraw-app/data/httpStorage.ts
+@@ -0,0 +1,308 @@
++// HTTP storage backend for the self-hosted Excalidraw build.
++//
++// Shape follows upstream's own Firestore backend (`excalidraw-app/data/
++// firebase.ts`) call for call, with Firestore's document model replaced by flat
++// opaque blobs. The end-to-end flow upstream asked for is issue #6426
++// ("Generalise storage and collaboration backends"); the unmerged attempt at it
++// upstream is PR #8293, and this file is a trimmed version of that work with the
++// firebase adapter and the Excalidraw+ migration path removed.
++//
++// Nothing here parses a payload. Scenes and files arrive already deflated and
++// AES-GCM encrypted by the browser (`packages/excalidraw/data/encode.ts`,
++// `.../data/encryption.ts`) with the key in the URL fragment, so the server only
++// ever moves bytes.
++
++import type { SyncableExcalidrawElement } from ".";
++import { getSyncableElements } from ".";
++import { MIME_TYPES } from "@excalidraw/excalidraw/constants";
++import { decompressData } from "@excalidraw/excalidraw/data/encode";
++import {
++  encryptData,
++  decryptData,
++  IV_LENGTH_BYTES,
++} from "@excalidraw/excalidraw/data/encryption";
++import { restoreElements } from "@excalidraw/excalidraw/data/restore";
++import { getSceneVersion } from "@excalidraw/excalidraw/element";
++import type {
++  ExcalidrawElement,
++  FileId,
++  OrderedExcalidrawElement,
++} from "@excalidraw/excalidraw/element/types";
++import type {
++  AppState,
++  BinaryFileData,
++  BinaryFileMetadata,
++  DataURL,
++} from "@excalidraw/excalidraw/types";
++import type Portal from "../collab/Portal";
++import { reconcileElements } from "@excalidraw/excalidraw";
++import type { RemoteExcalidrawElement } from "@excalidraw/excalidraw/data/reconcile";
++import type { Socket } from "socket.io-client";
++
++const HTTP_STORAGE_BACKEND_URL = import.meta.env
++  .VITE_APP_HTTP_STORAGE_BACKEND_URL;
++const SCENE_VERSION_LENGTH_BYTES = 4;
++
++type StoredScene = {
++  sceneVersion: number;
++  iv: Uint8Array;
++  ciphertext: ArrayBuffer;
++};
++
++const httpStorageSceneVersionCache = new WeakMap<Socket, number>();
++
++export const isSavedToHttpStorage = (
++  portal: Portal,
++  elements: readonly ExcalidrawElement[],
++): boolean => {
++  if (portal.socket && portal.roomId && portal.roomKey) {
++    const sceneVersion = getSceneVersion(elements);
++
++    return httpStorageSceneVersionCache.get(portal.socket) === sceneVersion;
++  }
++  // if no room exists, consider the room saved so that we don't unnecessarily
++  // prevent unload (there's nothing we could do at that point anyway)
++  return true;
++};
++
++export const saveToHttpStorage = async (
++  portal: Portal,
++  elements: readonly SyncableExcalidrawElement[],
++  appState: AppState,
++): Promise<readonly SyncableExcalidrawElement[] | false> => {
++  const { roomId, roomKey, socket } = portal;
++  if (
++    // if no room exists, consider the room saved because there's nothing we can
++    // do at this point
++    !roomId ||
++    !roomKey ||
++    !socket ||
++    isSavedToHttpStorage(portal, elements)
++  ) {
++    return false;
++  }
++
++  const sceneVersion = getSceneVersion(elements);
++  const getResponse = await fetch(`${HTTP_STORAGE_BACKEND_URL}/rooms/${roomId}`);
++
++  if (!getResponse.ok && getResponse.status !== 404) {
++    return false;
++  }
++  if (getResponse.status === 404) {
++    const result: boolean = await saveElementsToBackend(
++      roomKey,
++      roomId,
++      [...elements],
++      sceneVersion,
++    );
++    if (result) {
++      httpStorageSceneVersionCache.set(socket, sceneVersion);
++      return elements; // saved new room, return elements as stored
++    }
++    return false;
++  }
++  // If room already exist, we compare scene versions to check
++  // if we're up to date before saving our scene
++  const buffer = await getResponse.arrayBuffer();
++  const sceneVersionFromRequest = parseSceneVersionFromRequest(buffer);
++  if (sceneVersionFromRequest >= sceneVersion) {
++    return false;
++  }
++
++  const existingElements = await getElementsFromBuffer(buffer, roomKey);
++  const reconciledElements = getSyncableElements(
++    reconcileElements(
++      elements,
++      existingElements as OrderedExcalidrawElement[] as RemoteExcalidrawElement[],
++      appState,
++    ),
++  );
++
++  const result: boolean = await saveElementsToBackend(
++    roomKey,
++    roomId,
++    reconciledElements,
++    sceneVersion,
++  );
++
++  if (result) {
++    httpStorageSceneVersionCache.set(socket, sceneVersion);
++    return reconciledElements;
++  }
++  return false;
++};
++
++export const loadFromHttpStorage = async (
++  roomId: string,
++  roomKey: string,
++  socket: Socket | null,
++): Promise<readonly SyncableExcalidrawElement[] | null> => {
++  const getResponse = await fetch(`${HTTP_STORAGE_BACKEND_URL}/rooms/${roomId}`);
++
++  if (!getResponse.ok) {
++    return null;
++  }
++
++  const buffer = await getResponse.arrayBuffer();
++  if (!buffer.byteLength) {
++    return null;
++  }
++  const elements = await getElementsFromBuffer(buffer, roomKey);
++
++  if (socket) {
++    httpStorageSceneVersionCache.set(socket, getSceneVersion(elements));
++  }
++
++  return getSyncableElements(restoreElements(elements, null));
++};
++
++const getElementsFromBuffer = async (
++  buffer: ArrayBuffer,
++  key: string,
++): Promise<readonly ExcalidrawElement[]> => {
++  // Buffer should contain both the IV (fixed length) and encrypted data
++  const sceneVersion = parseSceneVersionFromRequest(buffer);
++  const iv = new Uint8Array(
++    buffer.slice(
++      SCENE_VERSION_LENGTH_BYTES,
++      IV_LENGTH_BYTES + SCENE_VERSION_LENGTH_BYTES,
++    ),
++  );
++  const encrypted = buffer.slice(
++    IV_LENGTH_BYTES + SCENE_VERSION_LENGTH_BYTES,
++    buffer.byteLength,
++  );
++
++  return await decryptElements(
++    { sceneVersion, ciphertext: encrypted, iv },
++    key,
++  );
++};
++
++export const saveFilesToHttpStorage = async ({
++  prefix,
++  files,
++}: {
++  prefix: string;
++  files: { id: FileId; buffer: Uint8Array }[];
++}) => {
++  const erroredFiles: FileId[] = [];
++  const savedFiles: FileId[] = [];
++
++  // prevent unused param warning
++  void prefix;
++  await Promise.all(
++    files.map(async ({ id, buffer }) => {
++      try {
++        const payloadBlob = new Blob([buffer]);
++        const payload = await new Response(payloadBlob).arrayBuffer();
++        await fetch(`${HTTP_STORAGE_BACKEND_URL}/files/${id}`, {
++          method: "PUT",
++          body: payload,
++        });
++        savedFiles.push(id);
++      } catch (error: any) {
++        erroredFiles.push(id);
++      }
++    }),
++  );
++
++  return { savedFiles, erroredFiles };
++};
++
++export const loadFilesFromHttpStorage = async (
++  prefix: string,
++  decryptionKey: string,
++  filesIds: readonly FileId[],
++) => {
++  const loadedFiles: BinaryFileData[] = [];
++  const erroredFiles = new Map<FileId, true>();
++
++  await Promise.all(
++    [...new Set(filesIds)].map(async (id) => {
++      // prevent unused param warning
++      void prefix;
++      try {
++        const response = await fetch(`${HTTP_STORAGE_BACKEND_URL}/files/${id}`);
++        if (response.status < 400) {
++          const arrayBuffer = await response.arrayBuffer();
++
++          const { data, metadata } = await decompressData<BinaryFileMetadata>(
++            new Uint8Array(arrayBuffer),
++            {
++              decryptionKey,
++            },
++          );
++
++          const dataURL = new TextDecoder().decode(data) as DataURL;
++
++          loadedFiles.push({
++            mimeType: metadata.mimeType || MIME_TYPES.binary,
++            id,
++            dataURL,
++            created: metadata?.created || Date.now(),
++          });
++        } else {
++          erroredFiles.set(id, true);
++        }
++      } catch (error: any) {
++        erroredFiles.set(id, true);
++        console.error(error);
++      }
++    }),
++  );
++
++  return { loadedFiles, erroredFiles };
++};
++
++const saveElementsToBackend = async (
++  roomKey: string,
++  roomId: string,
++  elements: SyncableExcalidrawElement[],
++  sceneVersion: number,
++) => {
++  const { ciphertext, iv } = await encryptElements(roomKey, elements);
++
++  // Concatenate Scene Version, IV with encrypted data (IV does not have to be secret).
++  const numberBuffer = new ArrayBuffer(4);
++  const numberView = new DataView(numberBuffer);
++  numberView.setUint32(0, sceneVersion, false);
++  const sceneVersionBuffer = numberView.buffer;
++  const payloadBlob = await new Response(
++    new Blob([sceneVersionBuffer, iv.buffer, ciphertext]),
++  ).arrayBuffer();
++  const putResponse = await fetch(`${HTTP_STORAGE_BACKEND_URL}/rooms/${roomId}`, {
++    method: "PUT",
++    body: payloadBlob,
++  });
++
++  return putResponse.ok;
++};
++
++const parseSceneVersionFromRequest = (buffer: ArrayBuffer) => {
++  const view = new DataView(buffer);
++  return view.getUint32(0, false);
++};
++
++const decryptElements = async (
++  data: StoredScene,
++  roomKey: string,
++): Promise<readonly ExcalidrawElement[]> => {
++  const ciphertext = data.ciphertext;
++  const iv = data.iv;
++
++  const decrypted = await decryptData(iv, ciphertext, roomKey);
++  const decodedData = new TextDecoder("utf-8").decode(new Uint8Array(decrypted));
++  return JSON.parse(decodedData);
++};
++
++const encryptElements = async (
++  key: string,
++  elements: readonly ExcalidrawElement[],
++): Promise<{ ciphertext: ArrayBuffer; iv: Uint8Array }> => {
++  const json = JSON.stringify(elements);
++  const encoded = new TextEncoder().encode(json);
++  const { encryptedBuffer, iv } = await encryptData(key, encoded);
++
++  return { ciphertext: encryptedBuffer, iv };
++};
+\ No newline at end of file
+diff --git a/excalidraw-app/data/index.ts b/excalidraw-app/data/index.ts
+index 6ecb98f..3fc6e94 100644
+--- a/excalidraw-app/data/index.ts
++++ b/excalidraw-app/data/index.ts
+@@ -35,7 +35,7 @@ import {
+   ROOM_ID_BYTES,
+ } from "../app_constants";
+ import { encodeFilesForUpload } from "./FileManager";
+-import { saveFilesToFirebase } from "./firebase";
++import { saveFilesToHttpStorage } from "./httpStorage";
+ 
+ export type SyncableExcalidrawElement = OrderedExcalidrawElement &
+   MakeBrand<"SyncableExcalidrawElement">;
+@@ -316,7 +316,7 @@ export const exportToBackend = async (
+       url.hash = `json=${json.id},${encryptionKey}`;
+       const urlString = url.toString();
+ 
+-      await saveFilesToFirebase({
++      await saveFilesToHttpStorage({
+         prefix: `/files/shareLinks/${json.id}`,
+         files: filesToUpload,
+       });
+diff --git a/excalidraw-app/index.html b/excalidraw-app/index.html
+index 750824c..27912ec 100644
+--- a/excalidraw-app/index.html
++++ b/excalidraw-app/index.html
+@@ -214,7 +214,9 @@
+     </header>
+     <div id="root"></div>
+     <script type="module" src="index.tsx"></script>
+-    <% if (typeof PROD != 'undefined' && PROD == true) { %>
++    <% if (typeof PROD != 'undefined' && PROD == true &&
++    typeof VITE_APP_ENABLE_TRACKING != 'undefined' &&
++    VITE_APP_ENABLE_TRACKING === 'true') { %>
+     <!-- 100% privacy friendly analytics -->
+     <script>
+       // need to load this script dynamically bcs. of iframe embed tracking
+diff --git a/packages/excalidraw/components/LibraryMenuBrowseButton.tsx b/packages/excalidraw/components/LibraryMenuBrowseButton.tsx
+index 43fbedd..c1d42dd 100644
+--- a/packages/excalidraw/components/LibraryMenuBrowseButton.tsx
++++ b/packages/excalidraw/components/LibraryMenuBrowseButton.tsx
+@@ -11,6 +11,14 @@ const LibraryMenuBrowseButton = ({
+   theme: UIAppState["theme"];
+   id: string;
+ }) => {
++  // The public library browser lives on excalidraw.com and has no self-hostable
++  // backend (packages/excalidraw/data/library.ts also allowlists the host), so on
++  // an offline build VITE_APP_LIBRARY_URL is empty and the href below would
++  // resolve to this very page. Hide the button instead of linking to ourselves;
++  // set the build arg to the upstream URL to get the feature back.
++  if (!import.meta.env.VITE_APP_LIBRARY_URL) {
++    return null;
++  }
+   const referrer =
+     libraryReturnUrl || window.location.origin + window.location.pathname;
+   return (

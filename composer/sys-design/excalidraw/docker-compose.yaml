@@ -1,5 +1,5 @@
 ---
-x-basic-deploy-labels: &basic-deploy-labels
+x-basic-deploy-labels: &app-deploy-labels
   labels:
     - traefik.enable=true
     - traefik.swarm.lbswarm=${LB_SWARM:-true}
@@ -13,19 +13,19 @@ x-basic-deploy-labels: &basic-deploy-labels
     - traefik.http.services.excalidraw.loadbalancer.server.scheme=${PROTOCOL:-http}
     - traefik.http.services.excalidraw.loadbalancer.server.port=${PORT:-80}
 
-# x-storage-deploy-labels: &storage-deploy-labels
-#   labels:
-#     - traefik.enable=true
-#     - traefik.swarm.lbswarm=${LB_SWARM:-true}
-#     - traefik.swarm.network=proxy
-#     - traefik.http.routers.excalidraw-storage.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
-#     - traefik.http.routers.excalidraw-storage.rule=Host(`${DOMAIN_STORAGE?domain variable not set}`)
-#     - traefik.http.routers.excalidraw-storage.tls=true
-#     - traefik.http.routers.excalidraw-storage.tls.certresolver=${CERT_RESOLVER:-}
-#     - traefik.http.routers.excalidraw-storage.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
-#     - traefik.http.routers.excalidraw-storage.service=excalidraw-storage
-#     - traefik.http.services.excalidraw-storage.loadbalancer.server.scheme=${PROTOCOL_STORAGE:-http}
-#     - traefik.http.services.excalidraw-storage.loadbalancer.server.port=${PORT_STORAGE:-8080}
+x-storage-deploy-labels: &storage-deploy-labels
+  labels:
+    - traefik.enable=true
+    - traefik.swarm.lbswarm=${LB_SWARM:-true}
+    - traefik.swarm.network=proxy
+    - traefik.http.routers.excalidraw-storage.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.excalidraw-storage.rule=Host(`${DOMAIN?domain variable not set}`) && PathPrefix(`/api/v2`)
+    - traefik.http.routers.excalidraw-storage.tls=true
+    - traefik.http.routers.excalidraw-storage.tls.certresolver=${CERT_RESOLVER:-}
+    - traefik.http.routers.excalidraw-storage.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.excalidraw-storage.service=excalidraw-storage
+    - traefik.http.services.excalidraw-storage.loadbalancer.server.scheme=${PROTOCOL_STORAGE:-http}
+    - traefik.http.services.excalidraw-storage.loadbalancer.server.port=${PORT_STORAGE:-8080}
 
 x-room-deploy-labels: &room-deploy-labels
   labels:
@@ -33,13 +33,13 @@ x-room-deploy-labels: &room-deploy-labels
     - traefik.swarm.lbswarm=${LB_SWARM:-true}
     - traefik.swarm.network=proxy
     - traefik.http.routers.excalidraw-room.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
-    - traefik.http.routers.excalidraw-room.rule=Host(`${DOMAIN_ROOM?domain variable not set}`)
+    - traefik.http.routers.excalidraw-room.rule=Host(`${DOMAIN?domain variable not set}`) && PathPrefix(`/socket.io`)
     - traefik.http.routers.excalidraw-room.tls=true
     - traefik.http.routers.excalidraw-room.tls.certresolver=${CERT_RESOLVER:-}
     - traefik.http.routers.excalidraw-room.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
     - traefik.http.routers.excalidraw-room.service=excalidraw-room
     - traefik.http.services.excalidraw-room.loadbalancer.server.scheme=${PROTOCOL_ROOM:-http}
-    - traefik.http.services.excalidraw-room.loadbalancer.server.port=${PORT_ROOM:-80}
+    - traefik.http.services.excalidraw-room.loadbalancer.server.port=${PORT_ROOM:-8080}
 
 x-basic-deploy: &basic-deploy
   mode: replicated
@@ -53,20 +53,17 @@ x-basic-deploy: &basic-deploy
     order: stop-first
   restart_policy:
     condition: any
+    delay: 5s
   resources:
     limits:
       cpus: ${RESOURCES_LIMITS_CPUS:-1}
-      memory: ${RESOURCES_LIMITS_MEMORY:-500M}
+      memory: ${RESOURCES_LIMITS_MEMORY:-500m}
     reservations:
       cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
       memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
 
 x-basic: &basic
   env_file: ${ENV_FILE:-.env}
-  cap_add:
-    - CHOWN # Allows changing file ownership (`chown`,`chgrp`)
-    - SETGID # Allows setting group ID (`setgid`,`newgrp`,`chgrp`,`setregid()`)
-    - SETUID # Allows setting user ID (`setuid`,`su`,`sudo`,`passwd`)
   cap_drop: ["ALL"]
   security_opt:
     - no-new-privileges:true
@@ -81,22 +78,19 @@ x-basic: &basic
     as: -1
   # mem_limit: ${RESOURCES_LIMITS_MEMORY:-1g}
   networks:
-    proxy: {}
+    default: {}
   healthcheck:
     disable: true
   tmpfs:
-    - /tmp:rw,nosuid,nodev,noexec,relatime,size=512m
+    - /tmp:rw,relatime,size=512m,nodev,nosuid,noexec
   restart: always
-
-################################################################################
-################################################################################
-################################################################################
 
 x-basic-env: &basic-env
   DOMAIN: ${DOMAIN?domain variable not set}
-  # DOMAIN_STORAGE: ${DOMAIN_STORAGE?domain variable not set}
-  DOMAIN_ROOM: ${DOMAIN_ROOM?domain variable not set}
 
+################################################################################
+################################################################################
+################################################################################
 services:
   ##############################################################################
   ##############################################################################
@@ -107,27 +101,41 @@ services:
       dockerfile: ./Dockerfile
       args:
         <<: *basic-env
-        VERSION_NODE: 22.22.2
+        PUBLIC_PROTOCOL: ${PUBLIC_PROTOCOL:-https}
+        VERSION_NODE: ${VERSION_NODE:-22.22.2}
+        VERSION_NGINX: ${VERSION_NGINX:-1.31.7-alpine}
         VERSION_EXCALIDRAW: ${VERSION_EXCALIDRAW:-v0.18.1}
-    # https://github.com/excalidraw/excalidraw/releases
+        CACHE_INVALIDATOR: ${CACHE_INVALIDATOR:-}
+        VITE_APP_AI_BACKEND: ${VITE_APP_AI_BACKEND:-}
+        VITE_APP_LIBRARY_URL: ${VITE_APP_LIBRARY_URL:-https://libraries.excalidraw.com}
+        VITE_APP_LIBRARY_BACKEND: ${VITE_APP_LIBRARY_BACKEND:-https://us-central1-excalidraw-room-persistence.cloudfunctions.net/libraries}
+        VITE_APP_PLUS_LP: ${VITE_APP_PLUS_LP:-}
+        VITE_APP_PLUS_APP: ${VITE_APP_PLUS_APP:-}
+        VITE_APP_ENABLE_TRACKING: ${VITE_APP_ENABLE_TRACKING:-false}
     image: excalidraw:${VERSION_EXCALIDRAW:-v0.18.1}
     <<:
       - *basic
-      - *basic-deploy-labels
+      - *app-deploy-labels
     deploy:
       <<:
         - *basic-deploy
-        - *basic-deploy-labels
-    environment:
-      <<: *basic-env
+        - *app-deploy-labels
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
+    networks:
+      default: {}
+      proxy: {}
+    cap_add:
+      - NET_BIND_SERVICE
+      - CHOWN
+      - SETGID
+      - SETUID
     healthcheck:
       test:
         [
           "CMD-SHELL",
-          "curl -kIf ${PROTOCOL:-http}://127.0.0.1:${PORT:-80} > /dev/null 2>&1 || exit 1",
+          "wget -q -O /dev/null http://127.0.0.1:${PORT:-80} || exit 1",
         ]
       start_period: 10s
       interval: 30s
@@ -139,11 +147,12 @@ services:
   ##############################################################################
   excalidraw-room:
     build:
-      context: https://github.com/excalidraw/excalidraw-room.git#${VERSION_EXCALIDRAW_ROOM:-master}
-      dockerfile: ./Dockerfile
+      context: .
+      dockerfile: ./Dockerfile-room
       args:
-        NODE_ENV: ${NODE_ENV:-production}
-    image: excalidraw-room:${VERSION_EXCALIDRAW_ROOM:-master}
+        VERSION_NODE: ${VERSION_NODE:-22.22.2}
+        VERSION_EXCALIDRAW_ROOM: ${VERSION_EXCALIDRAW_ROOM:-03ff435860b508d7cd9e005cfc90f7977ae2a593}
+    image: excalidraw-room:${VERSION_EXCALIDRAW_ROOM:-03ff435860b508d7cd9e005cfc90f7977ae2a593}
     <<:
       - *basic
       - *room-deploy-labels
@@ -152,92 +161,84 @@ services:
         - *basic-deploy
         - *room-deploy-labels
     environment:
-      PORT: ${PORT_ROOM:-80}
-      CORS_ORIGIN: ${DOMAIN_ROOM?domain variable not set}
+      PORT: ${PORT_ROOM:-8080}
+      MAX_HTTP_BUFFER_SIZE: ${MAX_HTTP_BUFFER_SIZE:-5242880}
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
+    networks:
+      default: {}
+      proxy: {}
     healthcheck:
       test:
         [
           "CMD-SHELL",
-          "wget --no-verbose --tries=1 --spider --no-check-certificate ${PROTOCOL:-http}://127.0.0.1:${PORT:-80} || exit 1",
+          "wget -q -O /dev/null http://127.0.0.1:${PORT_ROOM:-8080}/ || exit 1",
         ]
       start_period: 10s
       interval: 30s
       timeout: 5s
       retries: 3
 
-  # ##############################################################################
-  # ##############################################################################
-  # ##############################################################################
-  # excalidraw-storage:
-  #   # build:
-  #   #   context: .
-  #   #   dockerfile: ./Dockerfile-storage
-  #   #   args:
-  #   #     NODE_ENV: ${NODE_ENV:-production}
-  #   image: alswl/excalidraw-storage-backend:${VERSION_EXCALIDRAW_STORAGE:-v2023.11.11}
-  #   <<: [*basic, *storage-deploy-labels]
-  #   deploy:
-  #     <<: [*basic-deploy, *storage-deploy-labels]
-  #   environment:
-  #     PORT: ${PORT_STORAGE:-8080}
-  #     GLOBAL_PREFIX: /api/v2
-  #     STORAGE_URI: redis://valkey:6379
-  #     LOG_LEVEL: warn
-  #     BODY_LIMIT: 50mb
-  #   volumes:
-  #     - /etc/timezone:/etc/timezone:ro
-  #     - /etc/localtime:/etc/localtime:ro
-  #   networks:
-  #     default: {}
-  #     proxy: {}
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  excalidraw-storage:
+    build:
+      context: .
+      dockerfile: ./Dockerfile-storage
+      args:
+        VERSION_NODE: ${VERSION_NODE:-22.22.2}
+    image: excalidraw-storage:${VERSION_STORAGE:-1.0.0}
+    <<:
+      - *basic
+      - *storage-deploy-labels
+    deploy:
+      <<:
+        - *basic-deploy
+        - *storage-deploy-labels
+      resources:
+        limits:
+          cpus: ${RESOURCES_LIMITS_CPUS_STORAGE:-1}
+          memory: ${RESOURCES_LIMITS_MEMORY_STORAGE:-1g}
+        reservations:
+          cpus: ${RESOURCES_RESERVATIONS_CPUS_STORAGE:-0.001}
+          memory: ${RESOURCES_RESERVATIONS_MEMORY_STORAGE:-32m}
+    environment:
+      PORT: ${PORT_STORAGE:-8080}
+      GLOBAL_PREFIX: ${GLOBAL_PREFIX_STORAGE:-/api/v2}
+      BODY_LIMIT: ${BODY_LIMIT_STORAGE:-50mb}
+      LOG_LEVEL: ${LOG_LEVEL_STORAGE:-info}
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - storage:/data
+    networks:
+      default: {}
+      proxy: {}
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget -q -O /dev/null http://127.0.0.1:${PORT_STORAGE:-8080}/health || exit 1",
+        ]
+      start_period: 10s
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
-  # ##############################################################################
-  # ##############################################################################
-  # ##############################################################################
-  # valkey:
-  #   # https://hub.docker.com/r/valkey/valkey
-  #   image: valkey/valkey:${VERSION_VALKEY:-9.1.2-alpine}
-  #   <<: *basic
-  #   deploy:
-  #     <<: *basic-deploy
-  #     resources:
-  #       limits:
-  #         cpus: ${RESOURCES_LIMITS_CPUS_VALKEY:-1}
-  #         memory: ${RESOURCES_LIMITS_MEMORY_VALKEY:-128m}
-  #       reservations:
-  #         cpus: ${RESOURCES_RESERVATIONS_CPUS_VALKEY:-0.001}
-  #         memory: ${RESOURCES_RESERVATIONS_MEMORY_VALKEY:-32m}
-  #   cap_add:
-  #     - SETUID
-  #     - SETGID
-  #   environment:
-  #     ALLOW_EMPTY_PASSWORD: ${ALLOW_EMPTY_PASSWORD:-true}
-  #   volumes:
-  #     - /etc/timezone:/etc/timezone:ro
-  #     - /etc/localtime:/etc/localtime:ro
-  #     - valkey:/data
-  #   command: --port 6379 --save 300 1 --loglevel warning
-  #   healthcheck:
-  #     test: ["CMD-SHELL", "valkey-cli ping | grep PONG"]
-  #     start_period: 10s
-  #     interval: 30s
-  #     timeout: 5s
-  #     retries: 3
-
-  ################################################################################
-  ################################################################################
-  ################################################################################
+################################################################################
+################################################################################
+################################################################################
 networks:
-  # default:
-  #   driver: ${NETWORK_MODE:-overlay}
-  #   attachable: true
-  #   driver_opts:
-  #     encrypted: "true"
+  default:
+    internal: true
+    driver: ${NETWORK_MODE:-overlay} # overlay | bridge
+    attachable: true
+    driver_opts:
+      encrypted: "true"
   proxy:
     external: true
-#
-# volumes:
-#   valkey: {}
+
+volumes:
+  storage: {}

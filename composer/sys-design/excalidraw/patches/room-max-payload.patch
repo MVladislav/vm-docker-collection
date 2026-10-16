@@ -1,0 +1,16 @@
+diff --git a/src/index.ts b/src/index.ts
+index 03bf0c0..1f06835 100755
+--- a/src/index.ts
++++ b/src/index.ts
+@@ -41,6 +41,11 @@ server.listen(port, () => {
+ try {
+   const io = new SocketIO(server, {
+     transports: ["websocket", "polling"],
++    // socket.io/engine.io defaults `maxHttpBufferSize` to 1e6. Excalidraw
++    // rebroadcasts the WHOLE encrypted scene on every join and every update, so
++    // a busy canvas silently loses the connection above ~1 MB. Overridable from
++    // the environment because the right ceiling is a deployment decision.
++    maxHttpBufferSize: Number(process.env.MAX_HTTP_BUFFER_SIZE) || 1e6,
+     cors: {
+       allowedHeaders: ["Content-Type", "Authorization"],
+       origin: process.env.CORS_ORIGIN || "*",

@@ -3,6 +3,14 @@
 !.gitempty
 
 !Dockerfile
+!Dockerfile-room
+!Dockerfile-storage
 !docker-compose.yaml
 
 !README.md
+
+!patches/
+!patches/*.patch
+
+!storage/
+!storage/*.js

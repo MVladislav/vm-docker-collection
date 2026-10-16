@@ -1,0 +1,35 @@
+# Storage backend for the excalidraw stack: two source files, no `npm install`
+# step at all (plain `node:http`, zero runtime dependencies).
+ARG VERSION_NODE=22.22.2
+FROM node:$VERSION_NODE-alpine
+
+WORKDIR /app
+# COPY keeps the build context's file mode, and git records only the executable
+# bit - so a host tree whose files are 0600 (restrictive umask, editor, rsync)
+# produced an image the `node` user could not read, and the container died with
+# EACCES on /app/server.js. Pin both mode and owner here so the image is the
+# same on every checkout.
+COPY --chmod=0644 --chown=node:node storage/server.js storage/store.js ./
+
+# /data is created AND chowned to uid 1000 here, so a fresh named volume mounted
+# here inherits that ownership with no init container. A bind mount or an NFS
+# volume with foreign ownership does NOT inherit it - `chown -R 1000:1000` on the
+# host first.
+RUN mkdir -p /data && chown node:node /data
+
+ENV NODE_ENV=production \
+    PORT=8080 \
+    DATA_DIR=/data \
+    GLOBAL_PREFIX=/api/v2 \
+    BODY_LIMIT=50mb \
+    LOG_LEVEL=info
+
+EXPOSE 8080
+
+USER node
+
+# Build-time assertion, run AS the runtime user: a container that cannot read its
+# own entrypoint is a crash loop, so prove readability here instead of at deploy.
+RUN node -e "for (const f of ['/app/server.js','/app/store.js']) require('node:fs').accessSync(f, require('node:fs').constants.R_OK)"
+
+CMD ["node", "/app/server.js"]
