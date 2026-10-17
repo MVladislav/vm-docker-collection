@@ -1,0 +1,15 @@
+---
+server:
+  cacheDir: /home/filebrowser/data/cache
+  disableUpdateCheck: true
+
+  sources:
+    - path: <SOURCE_PATH>
+      name: Files
+      config:
+        defaultEnabled: true
+
+http:
+  port: 8080
+  baseURL: /
+  trustProxyHeaders: true
