@@ -1,4 +1,4 @@
-FROM golang:1.27.1-alpine as build-env
+FROM golang:1.27.2-alpine as build-env
 RUN apk add build-base
 RUN go install -v github.com/projectdiscovery/nuclei/v2/cmd/nuclei@latest
 
