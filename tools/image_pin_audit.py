@@ -59,6 +59,15 @@ ACCEPTED_ROLLING_PINS = {
         "18.6-alpine3.24 would couple the service version to an OS build the "
         "vendor chooses, so postgres bumps stay manual"
     ),
+    "postgres:13.23-alpine": (
+        "same alpine-base coupling as the 18.6 entry above, and the tag string "
+        "really does move on every patch: the registry carries 13.20-alpine, "
+        "13.21-alpine, 13.22-alpine and 13.23-alpine side by side, so Renovate "
+        "proposes the next one. The three-part rule in `is_trackable_pin` "
+        "targets semver-style rolling tags like `16.0` (which match a whole "
+        "`16.0.x` line and never change) and does not apply to the "
+        "`MAJOR.MINOR-alpine` scheme upstream publishes"
+    ),
     "odoo:19.0": (
         "Odoo has no patch releases: upstream tags are `17.0`, `18.0`, `19.0`, "
         "`20.0` plus dated nightlies (`19.0-20260926`), so `19.0` is the "

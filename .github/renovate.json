@@ -66,7 +66,13 @@
       "versioningTemplate": "docker"
     }
   ],
-  "ignoreDeps": ["typo3", "excalidraw", "keycloak"],
+  "ignoreDeps": [
+    "typo3",
+    "excalidraw",
+    "excalidraw-room",
+    "excalidraw-storage",
+    "keycloak"
+  ],
   "ignorePaths": [
     "**/config/**",
     "**/docker-hwaccel.yaml",

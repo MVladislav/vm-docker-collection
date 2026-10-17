@@ -61,6 +61,7 @@ TPL_CLS = {
     "glance": "template",
     "heimdall": "scratch",
     "homepage": "template",
+    "filebrowser": "template",
     "kestra": "template",
     "n8n": "template",
     "portainer": "template",
