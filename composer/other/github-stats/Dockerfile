@@ -1,7 +1,7 @@
 # ===============================
 # Stage 1: Node build for github-readme-stats
 # ===============================
-FROM node:24.21.0-alpine AS stats-builder
+FROM node:24.22.0-alpine AS stats-builder
 
 # Workdir
 WORKDIR /app/stats
