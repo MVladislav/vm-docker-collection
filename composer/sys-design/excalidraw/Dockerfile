@@ -3,7 +3,7 @@
 # public URL is decided HERE at build time. One domain, path-routed, same-origin:
 #   ${DOMAIN}/api/v2/...    -> excalidraw-storage (scenes / rooms / files)
 #   ${DOMAIN}/socket.io/... -> excalidraw-room    (live collaboration)
-ARG VERSION_NODE=22.22.2 # https://hub.docker.com/_/node
+ARG VERSION_NODE=26.12.0 # https://hub.docker.com/_/node
 ARG VERSION_NGINX=1.31.7-alpine # https://hub.docker.com/_/nginx
 
 FROM node:$VERSION_NODE AS build

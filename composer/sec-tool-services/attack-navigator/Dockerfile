@@ -1,5 +1,5 @@
 # Declare and use ARG variables properly
-ARG VERSION_NODE=24.21.0
+ARG VERSION_NODE=26.12.0
 ARG VERSION_NGINX=1.31.6
 
 # ------------------------------------------------------------------------------
