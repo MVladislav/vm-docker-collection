@@ -2,7 +2,7 @@
 # Docker container for running the web interface
 
 # --- STAGE 1: BUILDER ---
-FROM python:3.14-slim AS builder
+FROM python:3.15-slim AS builder
 
 # Install all build-heavy dependencies and keep in cache for future builds
 RUN apt-get update && apt-get install -y \
@@ -38,7 +38,7 @@ RUN git clone https://github.com/EliasOenal/multimon-ng.git && \
     make -j$(nproc) && make install
 
 # --- STAGE 2: FINAL RUNTIME ---
-FROM python:3.14-slim
+FROM python:3.15-slim
 
 LABEL maintainer="INTERCEPT Project"
 LABEL description="Signal Intelligence Platform for SDR monitoring"
