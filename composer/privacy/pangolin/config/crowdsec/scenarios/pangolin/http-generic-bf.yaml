@@ -1,0 +1,65 @@
+---
+# Local replacement for the hub file crowdsecurity/http-generic-bf.yaml
+# (disabled via DISABLE_SCENARIOS), which is three scenarios in ONE file:
+#   crowdsecurity/http-generic-bf   - evt.Meta.sub_type == 'auth_fail' (DEAD on
+#     v1.8.1: no installed parser ever sets sub_type, kept only for parity)
+#   LePresidente/http-generic-401-bf - POST + 401, capacity 5 / 10s
+#   LePresidente/http-generic-403-bf - POST + 403, capacity 5 / 10s
+# The two live ones ban on FIVE POSTs in 10s. The Pangolin API is a JSON API
+# that answers 401/403 routinely (session expiry, non-admin hitting an org
+# route), and the WAF's own in-band 403 is POST+403, so one blocked scan also
+# feeds this bucket. Measured on a stock v1.8.1: 6 POST+403 access-log lines
+# -> ban (see AGENTS.md). Same detection, window widened to a minute.
+type: leaky
+name: pangolin/http-generic-bf
+description: "Detect generic http brute force (local)"
+filter: "evt.Meta.service == 'http' && evt.Meta.sub_type == 'auth_fail'"
+groupby: evt.Meta.source_ip
+capacity: 5
+leakspeed: "10s"
+blackhole: 1m
+labels:
+  confidence: 3
+  spoofable: 0
+  classification:
+    - attack.T1110
+  behavior: "http:bruteforce"
+  label: "HTTP Bruteforce"
+  service: http
+  remediation: true
+---
+type: leaky
+name: pangolin/http-generic-401-bf
+description: "Detect generic 401 Authorization error brute force (local, rate-tolerant)"
+filter: "evt.Meta.log_type == 'http_access-log' && evt.Parsed.verb == 'POST' && evt.Meta.http_status == '401'"
+groupby: evt.Meta.source_ip
+capacity: 20
+leakspeed: "60s"
+blackhole: 1m
+labels:
+  confidence: 3
+  spoofable: 0
+  classification:
+    - attack.T1110
+  behavior: "http:bruteforce"
+  label: "HTTP Bruteforce"
+  service: http
+  remediation: true
+---
+type: leaky
+name: pangolin/http-generic-403-bf
+description: "Detect generic 403 Forbidden (Authorization) error brute force (local, rate-tolerant)"
+filter: "evt.Meta.log_type == 'http_access-log' && evt.Parsed.verb == 'POST' && evt.Meta.http_status == '403'"
+groupby: evt.Meta.source_ip
+capacity: 20
+leakspeed: "60s"
+blackhole: 1m
+labels:
+  confidence: 3
+  spoofable: 0
+  classification:
+    - attack.T1110
+  behavior: "http:bruteforce"
+  label: "HTTP Bruteforce"
+  service: http
+  remediation: true

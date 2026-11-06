@@ -1,0 +1,29 @@
+---
+# Local replacement for crowdsecurity/http-xss-probing (DISABLE_SCENARIOS).
+# Upstream leakspeed is 1s: a Next.js console that fires parallel /api/v1 calls with
+# HTML-ish tokens in the query string overflows it trivially. Measured: 6 distinct
+# such requests -> 4h ban. Widening the window keeps distinct-payload XSS scanning.
+# `data:` must stay - it is what downloads xss_probe_patterns.txt on a fresh volume.
+type: leaky
+format: 2.0
+name: pangolin/http-xss-probing
+data:
+  - source_url: https://hub-data.crowdsec.net/web/xss_probe_patterns.txt
+    dest_file: xss_probe_patterns.txt
+    type: string
+description: "XSS probing with distinct payloads, rate-tolerant (local)"
+filter: "evt.Meta.log_type in ['http_access-log', 'http_error-log'] && any(File('xss_probe_patterns.txt'), {Upper(evt.Parsed.http_args) contains Upper(#)})"
+groupby: evt.Meta.source_ip
+distinct: evt.Parsed.http_args
+capacity: 30
+leakspeed: "60s"
+blackhole: 5m
+labels:
+  remediation: true
+  classification:
+    - attack.T1595.002
+  behavior: "http:exploit"
+  label: "XSS Attempt"
+  spoofable: 0
+  service: http
+  confidence: 3

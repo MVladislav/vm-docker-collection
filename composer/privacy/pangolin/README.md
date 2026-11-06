@@ -21,6 +21,10 @@ echo '<YOUR_API_TOKEN>' > config/secrets/dnschallenge_api_key_secret.txt
 # replace `IONOS_API_KEY_FILE` with your provider => https://go-acme.github.io/lego/dns/index.html
 echo "IONOS_API_KEY_FILE=/run/secrets/dnschallenge_api_key_secret" >> .env # pragma: allowlist secret
 echo "CERTIFICATES_ACME_DNSCHALLENGE_PROVIDER=ionos" >> .env
+
+echo "$(pwgen -s 32 1)" > config/secrets/crowdsec_lapi_key.txt
+
+chmod 644 config/secrets/*.txt
 ```
 
 ### create config files:
@@ -33,12 +37,10 @@ TMP_DOMAIN_BASE="home.local"
 TMP_DOMAIN_DASHBOARD="proxy.${TMP_DOMAIN_BASE}"
 TMP_DOMAIN_TRAEFIK="traefik.${TMP_DOMAIN_BASE}"
 TMP_SMTP_HOST="smtp.ionos.de"
-TMP_LAPI_KEY="$(pwgen -s 32 1)"
 
 # render each config from its template (one command per file)
 sed -e "s|<REPLACE_TRAEFIK_DOMAIN>|${TMP_DOMAIN_TRAEFIK}|" \
     -e "s|<REPLACE_DASHBOARDURL>|${TMP_DOMAIN_DASHBOARD}|" \
-    -e "s|<REPLACE_LAPI_KEY>|${TMP_LAPI_KEY}|" \
     ./config/traefik/dynamic_config.yml.tmpl > ./config/traefik/dynamic_config.yml
 
 sed -e "s|<REPLACE_DASHBOARDURL>|${TMP_DOMAIN_DASHBOARD}|" \
@@ -54,7 +56,7 @@ BASEDOMAIN=${TMP_DOMAIN_BASE}
 DASHBOARDURL=${TMP_DOMAIN_DASHBOARD}
 CERTIFICATES_ACME_EMAIL=info@${TMP_DOMAIN_BASE}
 EMAIL_SMTP_USER=no-reply@${TMP_DOMAIN_BASE}
-BOUNCER_KEY_traefik=${TMP_LAPI_KEY}
+BOUNCER_KEY_traefik=$(cat config/secrets/crowdsec_lapi_key.txt)
 EOF
 ```
 
@@ -86,18 +88,18 @@ RESOURCES_LIMITS_MEMORY_GEOIPUPDATE=64m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_PANGOLIN=1.24.0
-VERSION_GERBIL=1.5.2
-VERSION_TRAEFIK=v3.7.14
-VERSION_BADGER=v1.7.0
-VERSION_CROWDSEC_PLUGIN=v1.7.1
-VERSION_CROWDSEC=v1.8.1-debian
+VERSION_PANGOLIN=1.26.0
+VERSION_GERBIL=1.6.0
+VERSION_TRAEFIK=v3.7.17
+VERSION_BADGER=v1.8.0
+VERSION_CROWDSEC_PLUGIN=v1.8.1
+VERSION_CROWDSEC=v1.8.2-debian
 VERSION_MAXMIND=v8.0.0
 
-VERSION_NEWT=1.18.0
-VERSION_CLI=0.18.0
-VERSION_OLM=1.10.0
-VERSION_ALPINE=3.24.1
+VERSION_NEWT=1.20.0
+VERSION_CLI=0.20.0
+VERSION_OLM=1.10.1
+VERSION_ALPINE=3.24.4
 
 # APPLICATION general variable to adjust the apps
 # ______________________________________________________________________________
@@ -113,6 +115,28 @@ TRAEFIK_API_DASHBOARD=false
 # CERTIFICATES_ACME_EAB_KID=<EAB_KID>
 # CERTIFICATES_ACME_EAB_HMACENCODED=<EAB_HMACENCODED>
 ```
+
+### Remote Docker context (plain Compose)
+
+Plain Compose mounts file-backed configs and secrets from the **Docker daemon
+host**; selecting a remote context does not upload them. After creating the local
+`.env`, copy `config/` to the remote host and set `FILE_PATH` to that remote
+absolute directory.
+
+```sh
+SSH_HOST=your-ssh-host
+REMOTE_CONFIG_DIR="$(ssh "$SSH_HOST" 'printf "%s/pangolin" "$HOME"')"
+ssh "$SSH_HOST" "mkdir -p '$REMOTE_CONFIG_DIR'"
+scp -r ./config "$SSH_HOST:$REMOTE_CONFIG_DIR/"
+ssh "$SSH_HOST" "find '$REMOTE_CONFIG_DIR/config' -type d -exec chmod o+rx {} +"
+ssh "$SSH_HOST" "find '$REMOTE_CONFIG_DIR/config' -type f -exec chmod o+r {} +"
+printf 'FILE_PATH=%s\n' "$REMOTE_CONFIG_DIR" >> .env
+```
+
+Plain Compose bind-mounts these files with their host ownership and modes; with
+`cap_drop: [ALL]`, the containers need other-read/traverse access. This also makes
+the secret files world-readable on the remote host, so use only on a trusted,
+single-user Docker host.
 
 #### example short .env
 
@@ -159,7 +183,22 @@ extend `networks` sections with your network names where `newt` should have acce
 
 ## Guides & Insights
 
+### Firewall
+
+| Name                  | version   | protocol | port  |
+| --------------------- | --------- | -------- | ----- |
+| SSH                   | IPv4/IPv6 | TCP      | 22    |
+| Ping                  | IPv4/IPv6 | ICMP     |       |
+| Pangolin Web-GUI      | IPv4/IPv6 | TCP      | 443   |
+| Gerbil Tunnel         | IPv4/IPv6 | UDP      | 51820 |
+| Beszel SSH            | IPv4/IPv6 | TCP      | 45876 |
+| RAW TCP               | IPv4/IPv6 | TCP      | 4443  |
+| Gerbil Tunnel Clients | IPv4/IPv6 | UDP      | 21820 |
+
 ### Crowdsec
+
+> CrowdSec is an open-source security solution that provides intrusion detection,
+> WAF protection, and automated threat mitigation through IP blocking and collaborative threat intelligence.
 
 What: the Traefik bouncer + AppSec WAF are bound to the `websecure` entrypoint, so
 they cover the dashboard **and** every resource router Pangolin generates. Three
@@ -177,6 +216,29 @@ cs cscli appsec-configs list   # loaded rule sets
 
 A new decision needs up to 60 s to take effect (the bouncer caches the ban list).
 
+The upstream thresholds assume one small web app, which does not fit an
+entrypoint-wide bouncer in front of a JSON console, so six leaky buckets are
+replaced by local copies under `config/crowdsec/scenarios/pangolin/` with wider
+windows (`pangolin/http-admin-interface-probing`, `-http-probing`,
+`-http-sqli-probing`, `-http-xss-probing`, `-http-generic-401-bf`,
+`-http-generic-403-bf`). Filters and payload lists are unchanged, so every attack
+class upstream detects still is detected; only `capacity`/`leakspeed` differ. The
+upstream items are turned off with `DISABLE_SCENARIOS`.
+
+CRS remains enabled for out-of-band alerts. Its ban scenario capacity is locally
+raised from 5 to 20 because Pangolin CLI device login generated 6 events; the 30s
+leak interval and other CrowdSec protections remain unchanged.
+
+Silence a known-good source (your admin IP, an uptime probe). Allowlists live in
+the data volume and survive restarts, but they drop the events _before_ every
+scenario - an allowlisted IP gets no detection at all.
+
+```sh
+cs cscli allowlists create trusted --description "admin and monitoring"
+cs cscli allowlists add trusted <ip>
+cs cscli allowlists check <ip>     # "is allowlisted by ..."
+```
+
 #### Test the WAF
 
 Virtual patching is immediate - one request answers 403:
@@ -184,6 +246,15 @@ Virtual patching is immediate - one request answers 403:
 ```sh
 curl -sk -o /dev/null -w '%{http_code}\n' \
   https://<domain>/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php   # 403
+```
+
+Generic smoke test. Its rule runs out-of-band in `appsec-default`, so the request
+is answered 200 and the proof is the new `waf` alert row:
+
+```sh
+curl -sk -o /dev/null https://<domain>/crowdsec-test-NtktlJHV4TfBSK3wvlhiOBnl   # 200
+cs cscli alerts list                  # kind=waf row appeared
+cs cscli metrics show appsec          # crowdsecurity/appsec-generic-test: Triggered 1
 ```
 
 Behaviour bans need a burst, not a single hit (leaky buckets, and repeated identical
@@ -394,11 +465,11 @@ sudo loginctl enable-linger $USER
 > [`Free for individuals and small businesses`](https://docs.pangolin.net/self-host/enterprise-edition#licensing-overview)
 
 Same repository, only the tag differs - no compose edit. Set the pinned version in
-`.env` to the `ee-` prefixed tag of the version above (for `1.24.0` that is
-`ee-1.24.0`).
+`.env` to the `ee-` prefixed tag of the version above (for `1.26.0` that is
+`ee-1.26.0`).
 
 Other prefixes: `postgresql-<version>`, `ee-postgresql-<version>`. The trailing `-`
-matters: `ee-1.24.0` is published, `ee1.24.0` is not.
+matters: `ee-1.26.0` is published, `ee1.26.0` is not.
 
 After start: `/admin/license` → paste the key from <https://app.pangolin.net/>.
 

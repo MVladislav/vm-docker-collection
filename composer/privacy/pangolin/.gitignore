@@ -33,6 +33,11 @@ config/traefik/*
 config/crowdsec/*
 !config/crowdsec/*.yaml
 
+!config/crowdsec/scenarios/
+config/crowdsec/scenarios/*
+!config/crowdsec/scenarios/pangolin/
+!config/crowdsec/scenarios/pangolin/*.yaml
+
 !config/logrotate/
 config/logrotate/*
 !config/logrotate/rotate-accesslog.sh

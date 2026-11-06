@@ -47,11 +47,13 @@ gerbil:
   base_endpoint: "<REPLACE_DASHBOARDURL>"
   start_port: 51820
   clients_start_port: 21820
-  use_subdomain: false
-  # update exitNodes set address = '100.89.137.0/20';
-  subnet_group: 100.89.137.0/20
-  block_size: 24
-  site_block_size: 26
+  # Pangolin 1.24.0 defaults, CGNAT range. block_size/site_block_size are prefixes:
+  # /18 (16384 addrs) -> 16 exit nodes of /22 (1024 each), each split into 256
+  # site/client /30s = 4096 slots. Changing any of the three re-addresses every
+  # site and client - `pangctl clear-exit-nodes` + restart all Newt/olm peers.
+  subnet_group: 100.89.137.0/18
+  block_size: 22
+  site_block_size: 30
 
 rate_limits:
   global:

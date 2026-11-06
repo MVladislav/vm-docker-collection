@@ -28,8 +28,15 @@ http:
           crowdsecAppsecUnreadableBodyBlock: false
           crowdsecAppsecUnreachableBlock: false
           crowdsecAppsecFailureBlock: false
+          # Single node: traefik drops inbound X-Forwarded-For and sets it from
+          # the connection peer, so an empty list is correct. Multi-node only
+          # (443:8443 SNI proxy): list the proxy IPs, same values as
+          # TRAEFIK_ENTRYPOINTS_WEBSECURE_PROXYPROTOCOL_TRUSTEDIPS.
+          # forwardedHeadersTrustedIPs:
+          #   - "127.0.0.1/32"
+          #   - "::1/128"
           remediationHeadersCustomName: cs-remediation
-          crowdsecLapiKey: <REPLACE_LAPI_KEY>
+          crowdsecLapiKeyFile: /run/secrets/crowdsec_lapi_key
           crowdsecLapiHost: crowdsec:8080
           crowdsecLapiScheme: http
           httpTimeoutSeconds: 10
@@ -61,13 +68,36 @@ http:
         stsIncludeSubdomains: true
         stsPreload: true
         stsSeconds: 15552000
-        # contentSecurityPolicy: "default-src 'self'"
         customFrameOptionsValue: SAMEORIGIN
         customResponseHeaders:
           X-Permitted-Cross-Domain-Policies: "none"
           Permissions-Policy: "camera=(), geolocation=(), microphone=(), payment=(), usb=()"
         customRequestHeaders:
           X-Forwarded-Proto: https
+
+    # --------------------------------------------------------------------------
+    # The console on :3002 serves the browser document and sets no headers of its
+    # own, so the baseline below is added here. Per-router, not on the entrypoint:
+    # an entrypoint middleware would also land on every router Pangolin generates
+    # per proxied resource, and those serve third-party apps with their own CSP.
+    # 'unsafe-inline' is required - the App Router document ships inline scripts.
+    dashboard-security-headers:
+      headers:
+        contentSecurityPolicy: >-
+          default-src 'self';
+          script-src 'self' 'unsafe-inline';
+          style-src 'self' 'unsafe-inline';
+          img-src 'self' data: blob:;
+          font-src 'self' data:;
+          connect-src 'self';
+          object-src 'none';
+          base-uri 'self';
+          frame-ancestors 'none';
+          upgrade-insecure-requests
+        customResponseHeaders:
+          Cross-Origin-Opener-Policy: "same-origin-allow-popups"
+          Cross-Origin-Resource-Policy: "same-origin"
+          # Cross-Origin-Embedder-Policy: "credentialless"
 
     # --------------------------------------------------------------------------
     public-whitelist:
@@ -113,8 +143,9 @@ http:
       service: next-service
       entryPoints:
         - websecure
-      # middlewares:
-      #   - badger
+      middlewares:
+        # - badger
+        - dashboard-security-headers@file
       tls:
         certResolver: certificates
 
@@ -124,8 +155,9 @@ http:
       service: api-service
       entryPoints:
         - websecure
-      # middlewares:
-      #   - badger
+      middlewares:
+        # - badger
+        - dashboard-security-headers@file
       tls:
         certResolver: certificates
 
@@ -135,8 +167,9 @@ http:
       service: api-service
       entryPoints:
         - websecure
-      # middlewares:
-      #   - badger
+      middlewares:
+        # - badger
+        - dashboard-security-headers@file
       tls:
         certResolver: certificates
 

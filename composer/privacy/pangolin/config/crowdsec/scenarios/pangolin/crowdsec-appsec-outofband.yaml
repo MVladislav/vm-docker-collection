@@ -1,0 +1,20 @@
+---
+# Keep CRS out-of-band detection, but tolerate Pangolin CLI auth flows (6 events).
+type: leaky
+name: pangolin/crowdsec-appsec-outofband
+description: "Ban repeated CRS out-of-band detections (Pangolin-tolerant threshold)"
+filter: evt.Parsed.source == 'crowdsec-appsec' && evt.Appsec.HasOutBandMatches == true && evt.Parsed.outofband_action in ["deny", "drop"]
+blackhole: 2m
+leakspeed: 30s
+capacity: 20
+groupby: evt.Meta.source_ip
+labels:
+  type: exploit
+  behavior: "http:exploit"
+  remediation: true
+  confidence: 1
+  spoofable: 0
+  classification:
+    - attack.T1190
+  label: "Triggered multiple OutOfBand CrowdSec AppSec rules"
+  service: http

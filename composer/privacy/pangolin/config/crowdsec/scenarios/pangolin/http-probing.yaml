@@ -1,0 +1,24 @@
+---
+# Local replacement for crowdsecurity/http-probing (DISABLE_SCENARIOS).
+# Upstream bans after 10 distinct 404/403/400 non-static paths in 10s. Any console
+# action that makes the API 404 on several routes (stale bookmark, API version skew,
+# a SPA prefetch) reaches that in one page load. Same detection, slower burn.
+type: leaky
+name: pangolin/http-probing
+description: "Detect site scanning/probing from a single ip (local, rate-tolerant)"
+filter: "evt.Meta.service == 'http' && evt.Meta.http_status in ['404', '403', '400'] && evt.Parsed.static_ressource == 'false'"
+groupby: evt.Meta.source_ip
+distinct: "evt.Meta.http_path"
+capacity: 40
+reprocess: true
+leakspeed: "60s"
+blackhole: 5m
+labels:
+  remediation: true
+  classification:
+    - attack.T1595
+  behavior: "http:scan"
+  label: "HTTP Probing"
+  spoofable: 0
+  service: http
+  confidence: 1

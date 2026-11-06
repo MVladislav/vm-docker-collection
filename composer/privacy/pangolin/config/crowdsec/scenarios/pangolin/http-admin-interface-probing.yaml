@@ -1,0 +1,33 @@
+---
+# Local, FP-tolerant replacement for crowdsecurity/http-admin-interface-probing
+# (disabled via DISABLE_SCENARIOS). Upstream bans after TWO admin-ish paths answer
+# 403/404 inside 10s, but the Pangolin console owns /admin/{users,organizations,
+# license,idp,api-keys} - a signed-out or non-admin user clicking those trips it and
+# gets a 4h ban. Measured: 3 such requests -> ban (see AGENTS.md).
+# Kept: identical filter, distinct, groupby and payload list. Only thresholds differ.
+# `data:` is mandatory here: it is what fetches admin_interfaces.txt. Disabling the
+# upstream scenario drops its declaration, and File() then matches nothing.
+type: leaky
+name: pangolin/http-admin-interface-probing
+description: "Detect generic HTTP admin interface probing (local, rate-tolerant)"
+data:
+  - source_url: https://hub-data.crowdsec.net/web/admin_interfaces.txt
+    dest_file: admin_interfaces.txt
+    type: string
+filter: |
+  evt.Meta.service == 'http' and
+  evt.Meta.log_type in ['http_access-log', 'http_error-log'] and
+  evt.Meta.http_status in ['404', '403'] and
+  any(File("admin_interfaces.txt"), { Lower(evt.Meta.http_path) contains #})
+distinct: evt.Meta.http_path
+groupby: evt.Meta.source_ip
+capacity: 20
+leakspeed: "60s"
+blackhole: 1m
+labels:
+  type: scan
+  confidence: 3
+  spoofable: 0
+  behavior: "http:scan"
+  remediation: true
+  service: http
