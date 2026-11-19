@@ -6,7 +6,7 @@ description: "Ban repeated CRS out-of-band detections (Pangolin-tolerant thresho
 filter: evt.Parsed.source == 'crowdsec-appsec' && evt.Appsec.HasOutBandMatches == true && evt.Parsed.outofband_action in ["deny", "drop"]
 blackhole: 2m
 leakspeed: 30s
-capacity: 20
+capacity: 32
 groupby: evt.Meta.source_ip
 labels:
   type: exploit
