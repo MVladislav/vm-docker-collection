@@ -28,6 +28,10 @@ http:
           crowdsecAppsecUnreadableBodyBlock: false
           crowdsecAppsecUnreachableBlock: false
           crowdsecAppsecFailureBlock: false
+          # Plugin v1.8.2+: path prefixes that skip the AppSec query only - the
+          # ban list is still enforced. Empty/nil (default) inspects every path.
+          # crowdsecAppsecExcludedLocations:
+          #   - "/api/v1"
           # Single node: traefik drops inbound X-Forwarded-For and sets it from
           # the connection peer, so an empty list is correct. Multi-node only
           # (443:8443 SNI proxy): list the proxy IPs, same values as

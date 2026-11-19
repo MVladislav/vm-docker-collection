@@ -88,17 +88,17 @@ RESOURCES_LIMITS_MEMORY_GEOIPUPDATE=64m
 
 # APPLICATION version for easy update
 # ______________________________________________________________________________
-VERSION_PANGOLIN=1.26.0
+VERSION_PANGOLIN=1.27.0
 VERSION_GERBIL=1.6.0
-VERSION_TRAEFIK=v3.7.17
+VERSION_TRAEFIK=v3.7.19
 VERSION_BADGER=v1.8.0
-VERSION_CROWDSEC_PLUGIN=v1.8.1
+VERSION_CROWDSEC_PLUGIN=v1.8.2
 VERSION_CROWDSEC=v1.8.2-debian
 VERSION_MAXMIND=v8.0.0
 
-VERSION_NEWT=1.20.0
-VERSION_CLI=0.20.0
-VERSION_OLM=1.10.1
+VERSION_NEWT=1.20.1
+VERSION_CLI=0.23.0
+VERSION_OLM=1.10.2
 VERSION_ALPINE=3.24.4
 
 # APPLICATION general variable to adjust the apps
@@ -465,11 +465,11 @@ sudo loginctl enable-linger $USER
 > [`Free for individuals and small businesses`](https://docs.pangolin.net/self-host/enterprise-edition#licensing-overview)
 
 Same repository, only the tag differs - no compose edit. Set the pinned version in
-`.env` to the `ee-` prefixed tag of the version above (for `1.26.0` that is
-`ee-1.26.0`).
+`.env` to the `ee-` prefixed tag of the version above (for `1.27.0` that is
+`ee-1.27.0`).
 
 Other prefixes: `postgresql-<version>`, `ee-postgresql-<version>`. The trailing `-`
-matters: `ee-1.26.0` is published, `ee1.26.0` is not.
+matters: `ee-1.27.0` is published, `ee1.27.0` is not.
 
 After start: `/admin/license` → paste the key from <https://app.pangolin.net/>.
 

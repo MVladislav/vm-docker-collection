@@ -48,7 +48,7 @@ services:
   ##############################################################################
   pangolin:
     # https://hub.docker.com/r/fosrl/pangolin/tags
-    image: fosrl/pangolin:${VERSION_PANGOLIN:-1.26.0}
+    image: fosrl/pangolin:${VERSION_PANGOLIN:-1.27.0}
     depends_on:
       geoipupdate:
         condition: service_healthy
@@ -73,9 +73,24 @@ services:
         mode: 0440
         uid: "0"
         gid: "0"
+      # - source: logo_dark
+      #   target: /app/public/branding/logo-dark.svg
+      #   mode: 0440
+      #   uid: "0"
+      #   gid: "0"
+      # - source: logo_light
+      #   target: /app/public/branding/logo-light.svg
+      #   mode: 0440
+      #   uid: "0"
+      #   gid: "0"
+      # - source: favicon
+      #   target: /app/public/favicon.ico
+      #   mode: 0440
+      #   uid: "0"
+      #   gid: "0"
     volumes:
-      - /etc/timezone:/etc/timezone:ro
-      - /etc/localtime:/etc/localtime:ro
+      # - /etc/timezone:/etc/timezone:ro
+      # - /etc/localtime:/etc/localtime:ro
       - pangolin_data:/app/config
       - pangolin_branding:/app/public/branding
       - maxmind:${GEOIPUPDATE_DB_DIR:-/app/geo}
@@ -177,8 +192,8 @@ services:
       #   protocol: tcp
       #   mode: host
     volumes:
-      - /etc/timezone:/etc/timezone:ro
-      - /etc/localtime:/etc/localtime:ro
+      # - /etc/timezone:/etc/timezone:ro
+      # - /etc/localtime:/etc/localtime:ro
       # - /lib/modules:/lib/modules:ro
       # - /dev/net/tun:/dev/net/tun
       - pangolin_data:/var/config
@@ -212,7 +227,7 @@ services:
   ##############################################################################
   traefik:
     # https://hub.docker.com/_/traefik
-    image: traefik:${VERSION_TRAEFIK:-v3.7.17}
+    image: traefik:${VERSION_TRAEFIK:-v3.7.19}
     depends_on:
       pangolin:
         condition: service_healthy
@@ -244,8 +259,8 @@ services:
       - dnschallenge_api_key_secret
       - crowdsec_lapi_key
     volumes:
-      - /etc/timezone:/etc/timezone:ro
-      - /etc/localtime:/etc/localtime:ro
+      # - /etc/timezone:/etc/timezone:ro
+      # - /etc/localtime:/etc/localtime:ro
       # - /var/run/docker.sock:/var/run/docker.sock:ro
       - certificates:/certificates
       - traefik_logs:/var/log/traefik
@@ -349,7 +364,7 @@ services:
       TRAEFIK_EXPERIMENTAL_PLUGINS_BADGER_MODULENAME: github.com/fosrl/badger
       TRAEFIK_EXPERIMENTAL_PLUGINS_BADGER_VERSION: ${VERSION_BADGER:-v1.8.0} # https://github.com/fosrl/badger
       TRAEFIK_EXPERIMENTAL_PLUGINS_CROWDSEC_MODULENAME: github.com/maxlerebourg/crowdsec-bouncer-traefik-plugin
-      TRAEFIK_EXPERIMENTAL_PLUGINS_CROWDSEC_VERSION: ${VERSION_CROWDSEC_PLUGIN:-v1.8.1} # https://plugins.traefik.io/plugins/6335346ca4caa9ddeffda116/crowdsec-bouncer-traefik-plugin
+      TRAEFIK_EXPERIMENTAL_PLUGINS_CROWDSEC_VERSION: ${VERSION_CROWDSEC_PLUGIN:-v1.8.2} # https://plugins.traefik.io/plugins/6335346ca4caa9ddeffda116/crowdsec-bouncer-traefik-plugin
     healthcheck:
       test: "traefik healthcheck --ping"
       start_period: 10s
@@ -448,8 +463,8 @@ services:
     group_add:
       - adm
     volumes:
-      - /etc/timezone:/etc/timezone:ro
-      - /etc/localtime:/etc/localtime:ro
+      # - /etc/timezone:/etc/timezone:ro
+      # - /etc/localtime:/etc/localtime:ro
       - crowdsec_data:/etc/crowdsec
       - crowdsec_db:/var/lib/crowdsec/data
       # Syslog
@@ -484,8 +499,8 @@ services:
         target: /rotate-accesslog.sh
         mode: 0555
     volumes:
-      - /etc/timezone:/etc/timezone:ro
-      - /etc/localtime:/etc/localtime:ro
+      # - /etc/timezone:/etc/timezone:ro
+      # - /etc/localtime:/etc/localtime:ro
       - traefik_logs:/var/log-traefik
     command: ["/bin/sh", "/rotate-accesslog.sh"]
     networks:
@@ -508,8 +523,8 @@ services:
           cpus: ${RESOURCES_RESERVATIONS_CPUS_GEOIPUPDATE:-0.001}
           memory: ${RESOURCES_RESERVATIONS_MEMORY_GEOIPUPDATE:-32m}
     volumes:
-      - /etc/timezone:/etc/timezone:ro
-      - /etc/localtime:/etc/localtime:ro
+      # - /etc/timezone:/etc/timezone:ro
+      # - /etc/localtime:/etc/localtime:ro
       - maxmind:${GEOIPUPDATE_DB_DIR:-/app/geo}
     secrets:
       - geoipupdate_account_id
@@ -634,6 +649,13 @@ configs:
     file: ${FILE_PATH:-$PWD}/config/crowdsec/scenarios/pangolin/crowdsec-appsec-outofband.yaml
   logrotate_script:
     file: ${FILE_PATH:-$PWD}/config/logrotate/rotate-accesslog.sh
+
+  # logo_dark:
+  #   file: ${FILE_PATH:-$PWD}/config/pangolin/logo-dark.svg
+  # logo_light:
+  #   file: ${FILE_PATH:-$PWD}/config/pangolin/logo-light.svg
+  # favicon:
+  #   file: ${FILE_PATH:-$PWD}/config/pangolin/favicon.ico
 
 secrets:
   server_secret:
