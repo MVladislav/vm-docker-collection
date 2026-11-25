@@ -5,20 +5,28 @@ README.md + MAINTENANCE.md generator for vm-docker-collection.
 Reads composer/ folder structure and git history to generate the collection index
 with two-table split (current/maintained vs older/stale), POSSIBLE LATER table,
 and carries over Backlog/Quick PenTest/Best Practice/References sections.
+`--add-missing` discovers new stacks and suggests their row from the stack's
+README/compose files: the upstream GitHub repo is detected there and its
+one-line description is read from the GitHub API (offline = README fallback).
 
 Usage:
-    python tools/readme_gen.py --write          # regenerate README.md + MAINTENANCE.md
-    python tools/readme_gen.py --check          # verify index↔composer sync
+    python tools/readme_gen.py --write              # regenerate README.md + MAINTENANCE.md
+    python tools/readme_gen.py --check              # verify index↔composer sync
+    python tools/readme_gen.py --add-missing        # interactively index new composer stacks
+    python tools/readme_gen.py --add-missing --yes  # accept all suggestions (non-interactive)
 """
 
 import argparse
 import collections
 import datetime
 import glob
+import json
 import os
 import re
 import subprocess
 import sys
+import urllib.error
+import urllib.request
 
 # ----- configuration -----
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -26,6 +34,7 @@ COMPOSER_DIR = os.path.join(REPO_ROOT, "composer")
 README_PATH = os.path.join(REPO_ROOT, "README.md")
 MAINT_PATH = os.path.join(REPO_ROOT, "MAINTENANCE.md")
 TODAY = datetime.date.today()
+_GH_CACHE = {}  # owner/repo -> description, so one run never repeats a lookup
 
 # Emoji & display
 EMOJI = {
@@ -61,7 +70,6 @@ TPL_CLS = {
     "glance": "template",
     "heimdall": "scratch",
     "homepage": "template",
-    "filebrowser": "template",
     "kestra": "template",
     "n8n": "template",
     "portainer": "template",
@@ -182,19 +190,21 @@ TPL_CLS = {
     "searxng": "template",
     "shlink": "scratch",
     "stirling-pdf": "template",
+    "caiada-db": "template",
+    "ai-stack": "semi",
 }
 
 # New/uncommitted stacks not yet in README index
 EXTRA = {
-    "keycloak": (
-        "Identity Management",
-        "[keycloak](https://github.com/keycloak/keycloak)",
-        "Open-source identity and access management.",
+    "oauth2-proxy": (
+        "Dashboard",
+        "[oauth2-proxy](https://github.com/oauth2-proxy/oauth2-proxy)",
+        "A reverse proxy that provides authentication with Google, Azure, OpenID Connect and many more identity providers.",
     ),
-    "rootprint": (
-        "Digital Footprint",
-        "[rootprint](https://github.com/rootprint/rootprint)",
-        "Tool for analyzing and visualizing digital footprints.",
+    "pocket-id": (
+        "Password Manager",
+        "[pocket-id](https://github.com/pocket-id/pocket-id)",
+        "The most user-friendly OpenID Connect Certified\u2122 and OAuth 2.0 provider that lets users sign in to your applications with passkeys.",
     ),
 }
 LINK_OVERRIDES = {
@@ -251,7 +261,7 @@ INFRA = re.compile(
 # ----- helpers -----
 def run(cmd, cwd=None):
     return subprocess.run(
-        cmd, cwd=cwd or REPO_ROOT, capture_output=True, text=True
+        cmd, check=False, cwd=cwd or REPO_ROOT, capture_output=True, text=True
     ).stdout.strip()
 
 
@@ -302,10 +312,13 @@ def git_history():
                 or "/config/" in path
                 for path in stack_paths
             )
-            if not bulk and meaningful:
-                if row["focused"] is None or date > row["focused"]:
-                    row["focused"] = date
-                    row["focused_subject"] = subject or ""
+            if (
+                not bulk
+                and meaningful
+                and (row["focused"] is None or date > row["focused"])
+            ):
+                row["focused"] = date
+                row["focused_subject"] = subject or ""
     return history
 
 
@@ -350,7 +363,7 @@ def interp(s, depth=0):
         j += 1
     inner = s[i + 2 : j - 1]
     if ":-" in inner:
-        name, _, d = inner.partition(":-")
+        _, _, d = inner.partition(":-")
         s = s[:i] + interp(d, depth + 1) + s[j:]
     else:
         s = s[:i] + "" + s[j:]
@@ -369,7 +382,8 @@ def version_of(appdir, foldername):
     cands = []
     for f in sorted(glob.glob(os.path.join(appdir, "docker-compose*.yaml"))):
         try:
-            txt = open(f).read()
+            with open(f, encoding="utf-8", errors="replace") as fh:
+                txt = fh.read()
         except OSError:
             continue
         for m in re.finditer(r"image:\s*[\"']?([^\"'\s]+)", txt):
@@ -442,7 +456,7 @@ def scan_composer():
             bump_only = is_bump_only(stack_history["focused_subject"])
             apps[app] = (cat, d, age, cls, ver, bump_only)
     # EXTRA additions - only display info, not full tuple
-    for name, (typ, ncell, desc) in EXTRA.items():
+    for name in EXTRA:
         if name not in apps:
             apps[name] = (
                 "sys-security" if name == "keycloak" else "siem",
@@ -787,6 +801,9 @@ def generate_maintenance(apps):
     M.append("")
     M.append("```sh")
     M.append("python tools/readme_gen.py --write")
+    M.append(
+        "python tools/readme_gen.py --add-missing   # interactively index new composer stacks"
+    )
     M.append("```")
     M.append("")
     return "\n".join(M) + "\n"
@@ -794,10 +811,13 @@ def generate_maintenance(apps):
 
 # ----- main generation -----
 def generate(apps, old_readme_path=None):
-    if old_readme_path and os.path.exists(old_readme_path):
-        old_lines = open(old_readme_path).read().splitlines()
-    else:
-        old_lines = open(README_PATH).read().splitlines()
+    readme = (
+        old_readme_path
+        if old_readme_path and os.path.exists(old_readme_path)
+        else README_PATH
+    )
+    with open(readme, encoding="utf-8") as fh:
+        old_lines = fh.read().splitlines()
 
     app_rows, PL, BACKLOG, QUICK, BEST, REF, header = parse_old_readme(old_lines, apps)
 
@@ -807,7 +827,6 @@ def generate(apps, old_readme_path=None):
         if name in seen or name not in EXTRA:
             continue
         typ, ncell, desc = EXTRA[name]
-        cat = apps[name][0]
         app_rows.append((name, typ, ncell, desc))
     app_rows = [
         (name, typ, LINK_OVERRIDES.get(name, ncell), desc)
@@ -921,11 +940,24 @@ def generate(apps, old_readme_path=None):
     return result
 
 
+# ----- index helpers -----
+def index_rows(apps, readme_path=None):
+    """Parsed app rows of the current README index."""
+    with open(readme_path or README_PATH, encoding="utf-8") as fh:
+        lines = fh.read().splitlines()
+    return parse_old_readme(lines, apps)[0]
+
+
+def missing_from_index(apps, readme_path=None):
+    """Sorted composer stacks that have no row in the README index."""
+    indexed = {r[0] for r in index_rows(apps, readme_path)}
+    return sorted(set(apps) - indexed)
+
+
 # ----- sync check -----
 def check_sync(apps):
     """Verify composer/ folders match README index rows."""
-    old_lines = open(README_PATH).read().splitlines()
-    app_rows, _, _, _, _, _, _ = parse_old_readme(old_lines, apps)
+    app_rows = index_rows(apps)
 
     # Build set of apps in README index
     readme_apps = {r[0] for r in app_rows}
@@ -980,7 +1012,8 @@ def check_possible_later_roundtrip(apps):
     Regenerating must reproduce it exactly - this is the regression guard for
     the parser that silently dropped the whole section.
     """
-    before = open(README_PATH).read().splitlines()
+    with open(README_PATH, encoding="utf-8") as fh:
+        before = fh.read().splitlines()
     rows = parse_possible_later(before)
     if not rows:
         head = run(["git", "show", "HEAD:README.md"])
@@ -1022,6 +1055,302 @@ def check_stale_pins(apps):
     return bad
 
 
+# ----- add missing stacks interactively -----
+# The writer can only carry over rows that already exist in README.md, plus
+# rows listed in EXTRA. A new composer folder therefore stays "MISSING" until
+# someone adds its row by hand. This flow derives the three row cells from the
+# stack's own README, lets the user correct them, and persists them in EXTRA.
+def stack_readme(name, apps):
+    path = os.path.join(COMPOSER_DIR, apps[name][0], name, "README.md")
+    if not os.path.exists(path):
+        return ""
+    with open(path, encoding="utf-8", errors="replace") as f:
+        return f.read()
+
+
+def sibling_type(name, apps, rows):
+    """Reuse the most common `type` of the other rows in the same category."""
+    cat = apps[name][0]
+    counts = collections.Counter(
+        typ
+        for other, typ, _, _ in rows
+        if other != name
+        and other in apps
+        and apps[other][0] == cat
+        and typ
+        and not typ.startswith("**")
+    )
+    if counts:
+        return counts.most_common(1)[0][0]
+    return cat.replace("-", " ").title()
+
+
+GH_URL_RE = re.compile(
+    r"https?://github\.com/([A-Za-z0-9_.-]+)/([A-Za-z0-9_.-]+)", re.IGNORECASE
+)
+
+
+def stack_text(name, apps):
+    """README + compose files of a stack - upstream links live in both."""
+    parts = [stack_readme(name, apps)]
+    folder = os.path.join(COMPOSER_DIR, apps[name][0], name)
+    for pattern in ("docker-compose*.yaml", "docker-compose*.yml"):
+        for path in sorted(glob.glob(os.path.join(folder, pattern))):
+            try:
+                with open(path, encoding="utf-8", errors="replace") as fh:
+                    parts.append(fh.read())
+            except OSError:
+                pass
+    return "\n".join(parts)
+
+
+def github_repo_url(name, apps, text):
+    """Pick the stack's own GitHub repo, not a dependency linked in the README.
+
+    A repo/owner name matching the folder wins; an URL in the README preamble
+    and repeated mentions break ties. Returns a repo-root URL or None.
+    """
+    folder = re.sub(r"[-_]", "", name.lower())
+    preamble_end = text.split("```", 1)[0]
+    counts = {}
+    best, best_score = None, 0
+    for m in GH_URL_RE.finditer(text):
+        owner, repo = m.group(1), m.group(2)
+        url = f"https://github.com/{owner}/{repo}"
+        key = url.lower()
+        counts[key] = counts.get(key, 0) + 1
+        o = re.sub(r"[-_]", "", owner.lower())
+        r = re.sub(r"[-_]", "", repo.lower())
+        score = 0
+        if r == folder:
+            score += 6
+        if o == folder:
+            score += 4
+        if folder and (folder in r or r in folder):
+            score += 3
+        if m.start() < len(preamble_end):
+            score += 2
+        score += min(counts[key], 3)
+        if score > best_score:
+            best, best_score = url, score
+    # Without a name match we would only be guessing a dependency's repo.
+    return best if best_score >= 6 else None
+
+
+def github_description(url):
+    """Short repo description from the GitHub API ('' when unavailable)."""
+    m = GH_URL_RE.search(url)
+    if not m:
+        return ""
+    key = (m.group(1), m.group(2))
+    if key in _GH_CACHE:
+        return _GH_CACHE[key]
+    req = urllib.request.Request(
+        f"https://api.github.com/repos/{key[0]}/{key[1]}",
+        headers={
+            "Accept": "application/vnd.github+json",
+            "User-Agent": "vm-docker-collection/readme_gen",
+        },
+    )
+    token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
+    if token:
+        req.add_header("Authorization", f"Bearer {token}")
+    try:
+        with urllib.request.urlopen(req, timeout=6) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+        desc = data.get("description") or ""
+    except (urllib.error.URLError, OSError, ValueError, TypeError, AttributeError):
+        desc = ""
+    desc = " ".join(str(desc).split())
+    _GH_CACHE[key] = desc
+    return desc
+
+
+def suggest_entry(name, apps, rows):
+    """Derive (type, name cell, description, source) for a missing stack."""
+    text = stack_readme(name, apps)
+    # Only the preamble before the first code fence describes the stack. Below
+    # it, setup-style READMEs turn into numbered instructions and env dumps,
+    # which made earlier versions suggest a random later step as description.
+    preamble = []
+    for line in text.splitlines()[1:]:
+        if line.strip().startswith("```"):
+            break
+        preamble.append(line)
+    desc = ""
+    quote = ""
+    for line in preamble:
+        s = line.strip()
+        if not s or s.startswith(("#", "|")) or set(s) <= set("-=: "):
+            continue
+        if s.startswith(">"):
+            if not quote:
+                quote = " ".join(s.lstrip("> ").split())
+            continue
+        s = re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", s)
+        s = s.replace("`", "").replace("*", "")
+        s = " ".join(s.split())
+        if not s:
+            continue
+        desc = (desc + " " + s).strip()
+        if len(desc) > 170:
+            desc = desc[:167].rstrip() + "..."
+            break
+    if not desc:
+        desc = quote or f"{name} stack - see the stack README for setup."
+    desc = desc[0].upper() + desc[1:]
+    if not desc.endswith((".", "!", "?")):
+        desc += "."
+
+    all_text = stack_text(name, apps)
+    link = github_repo_url(name, apps, all_text)
+    source = "readme"
+    if link:
+        gh_desc = github_description(link)
+        if gh_desc:
+            desc = gh_desc
+            source = "github"
+    if not link:
+        # Non-GitHub upstream: keep the first meaningful markdown link.
+        generic = {
+            "readme",
+            "docs",
+            "documentation",
+            "docker",
+            "hub",
+            "license",
+            "badge",
+        }
+        for m in re.finditer(r"\[([^\]]+)\]\((https?://[^)\s]+)\)", all_text):
+            label, url = m.group(1), m.group(2)
+            if label.lower() in generic or "shields.io" in url or "badge" in url:
+                continue
+            link = url.rstrip("/")
+            break
+    if not link:
+        cat = apps[name][0]
+        link = f"./composer/{cat}/{name}/README.md"
+    if not desc.endswith((".", "!", "?", "...")):
+        desc += "."
+
+    # parse_old_readme() matches rows on the link TEXT - it must be the folder
+    # name exactly or --check keeps reporting the stack as missing.
+    return sibling_type(name, apps, rows), f"[{name}]({link})", desc, source
+
+
+def prompt(text):
+    """Write a prompt immediately, even when stdout is piped/buffered."""
+    sys.stdout.write(text)
+    sys.stdout.flush()
+    try:
+        return input()
+    except EOFError:
+        return ""
+
+
+def ask(label, default):
+    value = prompt(f"    {label} [{default}]: ").strip()
+    return value or default
+
+
+def patch_extra_source(entries, script_path=None):
+    """Insert entries into the EXTRA dict of this script (source edit)."""
+    path = script_path or os.path.abspath(__file__)
+    with open(path, encoding="utf-8") as f:
+        src = f.read()
+    m = re.search(r"(?ms)^EXTRA = \{\n(.*?)^\}\n", src)
+    if not m:
+        print(f"ERROR: could not locate the EXTRA dict in {path}")
+        return False
+    body = m.group(1)
+    if body.strip() and not body.rstrip().endswith(","):
+        body = body.rstrip("\n") + ",\n"
+    addition = ""
+    for name, (typ, ncell, desc) in entries.items():
+        addition += (
+            f"    {json.dumps(name)}: (\n"
+            f"        {json.dumps(typ)},\n"
+            f"        {json.dumps(ncell)},\n"
+            f"        {json.dumps(desc)},\n"
+            f"    ),\n"
+        )
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(src[: m.start(1)] + body + addition + src[m.end(1) :])
+    return True
+
+
+def add_missing_interactive(apps, yes=False):
+    """Index every missing composer stack; return a process exit code."""
+    missing = missing_from_index(apps)
+    if not missing:
+        print("OK: no missing stacks - nothing to add")
+        return 0
+    if not yes and not sys.stdin.isatty():
+        print(
+            "ERROR: --add-missing needs an interactive terminal, but stdin is not a TTY\n"
+            "(this happens in IDE runners, agent tools and piped commands).\n"
+            "Either run it in a normal terminal, or accept all suggestions with:\n"
+            "    python3 tools/readme_gen.py --add-missing --yes"
+        )
+        return 1
+
+    rows = index_rows(apps)
+    print(f"{len(missing)} composer stack(s) have no README index row:\n")
+    print(
+        "  For each stack: Enter or 'y' = add with the values shown,\n"
+        "  'n' = skip, 'e' = edit the three fields, 'q' = stop.\n"
+        "  Descriptions come from the upstream GitHub repo when one is found.\n"
+    )
+    accepted = {}
+    for name in missing:
+        typ, ncell, desc, source = suggest_entry(name, apps, rows)
+        print(f"  {name}  (composer/{apps[name][0]}/{name})")
+        print(f"      type: {typ}")
+        print(f"      link: {ncell}")
+        print(f"      desc: {desc}" + ("  (GitHub)" if source == "github" else ""))
+        answer = "y" if yes else prompt("    add? [Y/n/e=edit/q=stop] ").strip().lower()
+        if answer in ("n", "no", "skip", "s"):
+            print("    skipped")
+            continue
+        if answer in ("q", "quit"):
+            break
+        if answer in ("e", "edit"):
+            typ = ask("type", typ)
+            ncell = ask("name link", ncell)
+            desc = ask("description", desc)
+        # Rebuild the cell so the link text is always the folder name.
+        m = re.match(r"^\[[^\]]*\]\(([^)]*)\)$", ncell)
+        ncell = f"[{name}]({m.group(1) if m else ncell})"
+        accepted[name] = (typ, ncell, desc)
+        print(f"    queued: {name}")
+
+    fresh = {k: v for k, v in accepted.items() if k not in EXTRA}
+    already = sorted(set(accepted) - set(fresh))
+    if already:
+        print(f"Already in EXTRA (skipped): {', '.join(already)}")
+    accepted = fresh
+    if not accepted:
+        print("No rows accepted; nothing changed.")
+        return 1
+
+    if not patch_extra_source(accepted):
+        return 1
+    EXTRA.update(accepted)  # in-memory copy for this run's regeneration
+    readme_content = generate(apps, README_PATH)
+    maint_content = generate_maintenance(apps)
+    with open(README_PATH, "w", encoding="utf-8") as f:
+        f.write(readme_content)
+    with open(MAINT_PATH, "w", encoding="utf-8") as f:
+        f.write(maint_content)
+    print(f"Added to EXTRA: {', '.join(sorted(accepted))}")
+    print(f"Wrote {README_PATH} ({readme_content.count(chr(10))} lines)")
+    print(f"Wrote {MAINT_PATH} ({maint_content.count(chr(10))} lines)")
+    remaining = missing_from_index(apps)
+    if remaining:
+        print(f"Still missing (skipped): {', '.join(remaining)}")
+    return 0
+
+
 # ----- CLI -----
 def main():
     parser = argparse.ArgumentParser(
@@ -1033,13 +1362,26 @@ def main():
     parser.add_argument(
         "--check", action="store_true", help="Verify index↔composer sync"
     )
+    parser.add_argument(
+        "--add-missing",
+        action="store_true",
+        help="Interactively add missing composer stacks to EXTRA, then regenerate",
+    )
+    parser.add_argument(
+        "--yes",
+        action="store_true",
+        help="With --add-missing, accept all suggestions without prompting",
+    )
     args = parser.parse_args()
 
-    if not args.write and not args.check:
+    if not (args.write or args.check or args.add_missing):
         parser.print_help()
         return 1
 
     apps = scan_composer()
+
+    if args.add_missing:
+        return add_missing_interactive(apps, yes=args.yes)
 
     if args.check:
         ok = check_sync(apps)
@@ -1048,8 +1390,10 @@ def main():
     if args.write:
         readme_content = generate(apps, README_PATH)
         maint_content = generate_maintenance(apps)
-        open(README_PATH, "w").write(readme_content)
-        open(MAINT_PATH, "w").write(maint_content)
+        with open(README_PATH, "w", encoding="utf-8") as fh:
+            fh.write(readme_content)
+        with open(MAINT_PATH, "w", encoding="utf-8") as fh:
+            fh.write(maint_content)
         print(f"Wrote {README_PATH} ({readme_content.count(chr(10))} lines)")
         print(f"Wrote {MAINT_PATH} ({maint_content.count(chr(10))} lines)")
     return 0
