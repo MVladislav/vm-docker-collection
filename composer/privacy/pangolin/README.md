@@ -217,16 +217,19 @@ cs cscli appsec-configs list   # loaded rule sets
 A new decision needs up to 60 s to take effect (the bouncer caches the ban list).
 
 The upstream thresholds assume one small web app, which does not fit an
-entrypoint-wide bouncer in front of a JSON console, so six leaky buckets are
+entrypoint-wide bouncer in front of a JSON console, so seven leaky buckets are
 replaced by local copies under `config/crowdsec/scenarios/pangolin/` with wider
 windows (`pangolin/http-admin-interface-probing`, `-http-probing`,
 `-http-sqli-probing`, `-http-xss-probing`, `-http-generic-401-bf`,
-`-http-generic-403-bf`). Filters and payload lists are unchanged, so every attack
-class upstream detects still is detected; only `capacity`/`leakspeed` differ. The
-upstream items are turned off with `DISABLE_SCENARIOS`.
+`-http-generic-403-bf`, `-http-crawl-non_statics`). The crawl scenario keeps its
+fast 0.5s leak but raises capacity from 40 to 120: a Next.js settings list
+prefetches 51 RSC user pages in 5s and tripped the upstream threshold. Filters
+and payload lists are unchanged, so every attack class upstream detects still is
+detected; only `capacity`/`leakspeed` differ. The upstream items are turned off
+with `DISABLE_SCENARIOS`.
 
 CRS remains enabled for out-of-band alerts. Its ban scenario capacity is locally
-raised from 5 to 20 because Pangolin CLI device login generated 6 events; the 30s
+raised from 5 to 32 because Pangolin CLI device login generated 6 events; the 30s
 leak interval and other CrowdSec protections remain unchanged.
 
 Silence a known-good source (your admin IP, an uptime probe). Allowlists live in

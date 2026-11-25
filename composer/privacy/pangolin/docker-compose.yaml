@@ -439,6 +439,11 @@ services:
         mode: 0440
         uid: "0"
         gid: "0"
+      - source: crowdsec_scen_crawl_nostatics
+        target: /etc/crowdsec/scenarios/pangolin/http-crawl-non_statics.yaml
+        mode: 0440
+        uid: "0"
+        gid: "0"
       - source: crowdsec_scen_appsec_outofband
         target: /etc/crowdsec/scenarios/pangolin/crowdsec-appsec-outofband.yaml
         mode: 0440
@@ -459,6 +464,7 @@ services:
         crowdsecurity/http-sqli-probing
         crowdsecurity/http-probing
         crowdsecurity/http-generic-bf
+        crowdsecurity/http-crawl-non_statics
         crowdsecurity/crowdsec-appsec-outofband
     group_add:
       - adm
@@ -645,6 +651,8 @@ configs:
     file: ${FILE_PATH:-$PWD}/config/crowdsec/scenarios/pangolin/http-probing.yaml
   crowdsec_scen_generic_bf:
     file: ${FILE_PATH:-$PWD}/config/crowdsec/scenarios/pangolin/http-generic-bf.yaml
+  crowdsec_scen_crawl_nostatics:
+    file: ${FILE_PATH:-$PWD}/config/crowdsec/scenarios/pangolin/http-crawl-non_statics.yaml
   crowdsec_scen_appsec_outofband:
     file: ${FILE_PATH:-$PWD}/config/crowdsec/scenarios/pangolin/crowdsec-appsec-outofband.yaml
   logrotate_script:

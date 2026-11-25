@@ -1,0 +1,25 @@
+---
+# Local replacement for crowdsecurity/http-crawl-non_statics (DISABLE_SCENARIOS).
+# Upstream bans at 40 distinct non-static paths with a 0.5s leak; a Next.js settings
+# list prefetches 51 RSC user pages in 5s and gets a 4h ban (measured 2026-11-21).
+# Filter, distinct, groupby and cache_size are unchanged. Capacity is raised and
+# the fast 0.5s leak is kept, so a burst drains before the next page load.
+type: leaky
+name: pangolin/http-crawl-non_statics
+description: "Detect aggressive crawl on non static resources (local, rate-tolerant)"
+filter: "evt.Meta.log_type in ['http_access-log', 'http_error-log'] && evt.Parsed.static_ressource == 'false' && evt.Parsed.verb in ['GET', 'HEAD']"
+distinct: "evt.Parsed.file_name"
+leakspeed: 0.5s
+capacity: 120
+cache_size: 5
+groupby: "evt.Meta.source_ip + '/' + evt.Meta.target_fqdn"
+blackhole: 1m
+labels:
+  confidence: 1
+  spoofable: 0
+  classification:
+    - attack.T1595
+  behavior: "http:crawl"
+  service: http
+  label: "Aggressive Crawl"
+  remediation: true
