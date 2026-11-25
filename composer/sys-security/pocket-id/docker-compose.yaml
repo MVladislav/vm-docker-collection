@@ -1,0 +1,135 @@
+---
+x-basic-deploy-labels: &basic-deploy-labels
+  labels:
+    - traefik.enable=true
+    - traefik.swarm.lbswarm=${LB_SWARM:-true}
+    - traefik.swarm.network=proxy
+    - traefik.http.routers.pocket-id.entrypoints=${TRAEFIK_ENTRYPOINT:-https}
+    - traefik.http.routers.pocket-id.rule=Host(`${DOMAIN?domain variable not set}`)
+    - traefik.http.routers.pocket-id.tls=true
+    - traefik.http.routers.pocket-id.tls.certresolver=${CERT_RESOLVER:-}
+    - traefik.http.routers.pocket-id.middlewares=${MIDDLEWARE_SECURED:-default-secured@file}
+    - traefik.http.routers.pocket-id.service=pocket-id
+    - traefik.http.services.pocket-id.loadbalancer.server.scheme=${PROTOCOL:-http}
+    - traefik.http.services.pocket-id.loadbalancer.server.port=${PORT:-1411}
+
+x-basic-deploy: &basic-deploy
+  mode: replicated
+  replicas: 1
+  placement:
+    max_replicas_per_node: 1
+    constraints:
+      - "node.role==${NODE_ROLE:-manager}"
+      - node.platform.os == linux
+  update_config:
+    order: stop-first
+  restart_policy:
+    condition: any
+    delay: 5s
+  resources:
+    limits:
+      cpus: ${RESOURCES_LIMITS_CPUS:-1}
+      memory: ${RESOURCES_LIMITS_MEMORY:-1g}
+    reservations:
+      cpus: ${RESOURCES_RESERVATIONS_CPUS:-0.001}
+      memory: ${RESOURCES_RESERVATIONS_MEMORY:-32m}
+
+x-basic: &basic
+  env_file: ${ENV_FILE:-.env}
+  cap_drop: ["ALL"]
+  security_opt:
+    - no-new-privileges:true
+  ulimits:
+    memlock:
+      soft: -1
+      hard: -1
+    nofile:
+      soft: 655360
+      hard: 655360
+    fsize: -1
+    as: -1
+  # mem_limit: ${RESOURCES_LIMITS_MEMORY:-1g} # compose-only, swarm ignores it
+  networks:
+    default: {}
+  healthcheck:
+    disable: true
+  tmpfs:
+    - /tmp:rw,relatime,size=512m,nodev,nosuid,noexec
+  restart: always
+
+################################################################################
+################################################################################
+################################################################################
+services:
+  ##############################################################################
+  ##############################################################################
+  ##############################################################################
+  pocket-id:
+    # https://github.com/pocket-id/pocket-id/pkgs/container/pocket-id
+    image: ghcr.io/pocket-id/pocket-id:${VERSION_POCKET_ID:-v2.19.3}
+    <<:
+      - *basic
+      # - *basic-deploy-labels
+    deploy:
+      <<:
+        - *basic-deploy
+        - *basic-deploy-labels
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+    secrets:
+      - pocket_id_encryption_key_file
+      # - maxmind_license_key_file
+    environment:
+      TZ: ${TZ:-Europe/Berlin}
+      APP_URL: https://${DOMAIN?domain variable not set}
+      ENCRYPTION_KEY_FILE: /run/secrets/pocket_id_encryption_key_file
+      ANALYTICS_DISABLED: ${ANALYTICS_DISABLED:-true}
+      VERSION_CHECK_DISABLED: ${VERSION_CHECK_DISABLED:-true}
+      TRUST_PROXY: ${TRUST_PROXY:-127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,fe80::/10,::1/128}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      # upstream defaults to cdn.jsdelivr.net for OIDC client logos; "disabled" keeps the lookup local
+      ICON_LIBRARY_URL: ${ICON_LIBRARY_URL:-disabled}
+      #
+      # GeoIP for audit-log source locations, off unless a key is set
+      # MAXMIND_LICENSE_KEY_FILE: /run/secrets/maxmind_license_key_file
+      #
+      # upstream defaults to true (an OIDC client may register a plain http:// callback).
+      # false rejects those behind traefik; loopback callbacks still work.
+      ALLOW_INSECURE_CALLBACK_URLS: ${ALLOW_INSECURE_CALLBACK_URLS:-false}
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      - data:/app/data
+    networks:
+      default: {}
+      proxy: {}
+    healthcheck:
+      test: ["CMD", "/app/pocket-id", "healthcheck"]
+      start_period: 300s
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+################################################################################
+################################################################################
+################################################################################
+networks:
+  default:
+    internal: true
+    driver: ${NETWORK_MODE:-overlay}
+    attachable: true
+    driver_opts:
+      encrypted: "true"
+  proxy:
+    external: true
+
+volumes:
+  data: {}
+
+secrets:
+  pocket_id_encryption_key_file:
+    file: config/secrets/pocket_id_encryption_key_file.txt
+  # maxmind_license_key_file:
+  #   file: config/secrets/maxmind_license_key_file.txt

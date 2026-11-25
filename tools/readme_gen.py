@@ -173,6 +173,7 @@ TPL_CLS = {
     "infisical": "template",
     "keycloak": "template",
     "passbolt": "template",
+    "pocket-id": "template",
     "freshrss": "template",
     "ittools": "template",
     "omni-tools": "template",
@@ -238,6 +239,7 @@ UNFEATURED = {
     "affine",
     "calcom",
     "docmost",
+    "openproject",
 }
 
 # Infrastructure images to ignore in version detection
