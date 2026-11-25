@@ -156,7 +156,7 @@
   "search.useIgnoreFiles": true,
   "search.useGlobalIgnoreFiles": true,
   "search.useParentIgnoreFiles": true,
-  "git.autofetch": false,
+  "git.autofetch": true,
   "scm.defaultViewMode": "tree",
   "files.enableTrash": false,
   "files.restoreUndoStack": false,
@@ -187,7 +187,8 @@
     ".gitignore": "ignore",
     ".dockerignore": "ignore",
     "*.yaml": "yaml",
-    "Dockerfile": "dockerfile"
+    "*.yml": "yaml",
+    "Dockerfile*": "dockerfile"
   },
   "files.exclude": {
     "**/.git": false,
@@ -690,7 +691,7 @@
   "pasteImage.forceUnixStyleSeparator": true,
   "pasteImage.prefix": "./docs/",
   "cSpell.enabled": true,
-  "cSpell.language": "en,en-EN,de,de-DE,en-US",
+  "cSpell.language": "en,en-EN,en-US,de,de-DE",
   "cSpell.caseSensitive": true,
   "cSpell.maxDuplicateProblems": 20,
   "cSpell.maxNumberOfProblems": 500,

@@ -92,6 +92,73 @@ docker-swarm-compose code-server -f docker-compose.yaml -f docker-compose.volume
 
 ---
 
+## Firefox: clipboard and right-click menu
+
+This stack is served over **HTTPS** (Traefik + Let's Encrypt), so the browser
+context is secure (`window.isSecureContext === true`). The Firefox clipboard /
+context-menu problem below is **not** a TLS or Traefik issue - it reproduces on
+a valid Let's Encrypt certificate and comes from an upstream VS Code Web bug:
+[microsoft/vscode#237840](https://github.com/microsoft/vscode/issues/237840)
+(file tree, editor and integrated terminal), tracked for code-server as
+[coder/code-server#1106](https://github.com/coder/code-server/issues/1106).
+Both are still open as of 2026-10; no compose or Traefik change fixes it.
+
+Symptom: the first right-click shows Firefox's native **"Paste"** popup (greyed
+out for a moment) instead of VS Code's context menu; you have to right-click a
+second time. It is triggered by text that was copied _inside_ code-server; text
+copied from outside code-server pastes normally.
+
+### Workarounds
+
+1. **Firefox `about:config` (what most users end up with)** - set
+   `dom.events.testing.asyncClipboard` to `true`. This makes
+   `navigator.clipboard.readText()` work without transient user activation,
+   which is what VS Code Web needs.
+   - Caveat (Mozilla): this is a **testing** pref that disables _all_ clipboard
+     permission checks in Firefox - any page can read the clipboard without a
+     prompt. It is global; Firefox's per-site "Add Site Value" (128+) does **not**
+     work for this pref, because VS Code reads it without a site context.
+   - Undo: flip it back to `false` when you stop using code-server.
+
+2. **Scope the exception to the code-server origin** with the (third-party,
+   unsigned) [Grant Clipboard](https://addons.mozilla.org/en-US/firefox/addon/grant-clipboard/)
+   add-on - it allowlists origins and only grants clipboard access there. Same
+   underlying mechanism, narrower blast radius. Trade-off: it holds
+   `clipboardRead` + `<all_urls>` and is a single-author extension.
+
+3. **Managed browser** - deploy the pref centrally via Firefox enterprise policy
+   (`policies.json` → `Preferences: { "dom.events.testing.asyncClipboard": true }`).
+   Same global effect as (1), just centrally managed.
+
+4. **No-install, no-pref tricks** (Firefox native):
+   - `Shift+Right-click` → Firefox's native context menu → "Paste" works.
+   - `Shift+Insert` → native paste in the terminal.
+   - Terminal only: remove VS Code's `workbench.action.terminal.paste`
+     keybinding so `Ctrl+V` falls through to the browser's native paste into
+     xterm's textarea. Does not fix the editor/explorer menu. Example entry in
+     your user `keybindings.json`:
+
+     ```json
+     {
+       "key": "ctrl+v",
+       "command": "-workbench.action.terminal.paste",
+       "when": "terminalFocus"
+     }
+     ```
+
+5. **Use Chromium/Chrome (or a Chromium-based browser) for code-server.** The
+   bug is Firefox-only; no pref, no extension, no security downgrade. Recommended
+   if you are not tied to Firefox.
+
+### Not a fix
+
+- HTTPS / Let's Encrypt (this stack already serves HTTPS via Traefik) - does not
+  change the behaviour; confirmed on wildcard Let's Encrypt certificates with
+  `window.isSecureContext === true`.
+- Traefik middlewares / Permissions-Policy changes - unrelated.
+
+---
+
 ## References
 
 - <https://coder.com/docs/code-server/install#docker>

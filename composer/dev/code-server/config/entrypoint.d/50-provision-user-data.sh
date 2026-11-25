@@ -137,6 +137,7 @@ for ext in \
   eamodio.gitlens \
   esbenp.prettier-vscode \
   foxundermoon.shell-format \
+  monosans.djlint \
   ms-python.debugpy \
   ms-python.python \
   ms-python.vscode-python-envs \
