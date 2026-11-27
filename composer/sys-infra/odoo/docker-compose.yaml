@@ -101,7 +101,7 @@ services:
   ##############################################################################
   postgresql:
     # https://hub.docker.com/_/postgres
-    image: postgres:${VERSION_POSTGRESQL:-18.6-alpine}
+    image: postgres:${VERSION_POSTGRESQL:-19.0-alpine}
     <<: *basic
     deploy:
       <<:
