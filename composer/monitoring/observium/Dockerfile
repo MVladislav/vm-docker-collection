@@ -5,7 +5,7 @@
 # FROM ubuntu:${VERSION_UBUNTU}
 
 # https://hub.docker.com/_/debian
-ARG VERSION_DEBIAN=13.7-slim
+ARG VERSION_DEBIAN=13.8-slim
 FROM debian:${VERSION_DEBIAN}
 
 # ------------------------------------------------------------------------------
